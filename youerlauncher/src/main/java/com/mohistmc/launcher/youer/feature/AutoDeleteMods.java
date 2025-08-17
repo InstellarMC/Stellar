@@ -34,6 +34,8 @@ public class AutoDeleteMods {
         }
     }
 
+    private static final java.nio.file.Path modsDir = java.nio.file.Path.of("mods"); // Stellar - reduce io ops
+
     /**
      * MOD blacklist mapping table
      * Key: Full class name (e.g. "org.example.ModClass")
@@ -67,6 +69,16 @@ public class AutoDeleteMods {
      */
     public static void deleteIncompatibleMods() {
         System.out.println(I18n.as("update.mods"));
+
+        // Stellar start - reduce io ops
+        try {
+            if (!java.nio.file.Files.isDirectory(modsDir)) {
+                java.nio.file.Files.createDirectories(modsDir);
+            }
+        } catch (final java.io.IOException ignored) {
+        }
+        // Stellar end - reduce io ops
+
         MOD_BLACKLIST.forEach((className, reason) -> {
             try {
                 checkModFile(className);
@@ -83,14 +95,16 @@ public class AutoDeleteMods {
      */
     private static void checkModFile(String className) throws Exception {
         String classPath = className.replaceAll("\\.", "/") + ".class";
+        /* Stellar start - reduce io ops
         File modsDir = new File("mods");
 
         if (!modsDir.exists()) {
             modsDir.mkdir();
             return;
         }
+        */// Stellar end - reduce io ops
 
-        File[] jarFiles = modsDir.listFiles((dir, name) -> name.endsWith(".jar"));
+        File[] jarFiles = modsDir.toFile().listFiles((dir, name) -> name.endsWith(".jar")); // Stellar - reduce io ops
         if (jarFiles == null || jarFiles.length == 0) return;
 
         int threadCount = Math.min(jarFiles.length, Runtime.getRuntime().availableProcessors() * 2);
