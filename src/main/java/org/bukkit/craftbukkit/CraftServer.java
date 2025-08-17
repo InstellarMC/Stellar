@@ -3132,6 +3132,13 @@ public final class CraftServer implements Server {
         }
         // Purpur end
 
+        // Stellar start
+        @Override
+        public YamlConfiguration getStellarConfig() {
+            return CraftServer.this.console.stellarConfigurations.createLegacyObject(CraftServer.this.console);
+        }
+        // Stellar end
+
         @Override
         public void restart() {
             org.spigotmc.RestartCommand.restart();

@@ -38,7 +38,7 @@
      private void add(int p_340988_, float p_340961_) {
          this.foodLevel = Mth.clamp(p_340988_ + this.foodLevel, 0, 20);
          this.saturationLevel = Mth.clamp(p_340961_ + this.saturationLevel, 0.0F, (float)this.foodLevel);
-@@ -30,37 +_,66 @@
+@@ -30,37 +_,78 @@
          this.add(p_347533_.nutrition(), p_347533_.saturation());
      }
  
@@ -61,6 +61,18 @@
          Difficulty difficulty = p_38711_.level().getDifficulty();
 +        if (entityhuman == null) entityhuman = p_38711_;
          this.lastFoodLevel = this.foodLevel;
++        // Stellar start - allow infinite saturation
++        if (p_38711_.level().stellarConfig().players.infiniteSaturation) {
++            if (this.saturationLevel < 20 || this.foodLevel < 20) {
++                final var event = CraftEventFactory.callFoodLevelChangeEvent(p_38711_, 20);
++                if (!event.isCancelled()) {
++                    this.foodLevel = event.getFoodLevel();
++                    this.saturationLevel = 20.0f;
++                    ((ServerPlayer) p_38711_).connection.send(new ClientboundSetHealthPacket(((ServerPlayer) p_38711_).getBukkitEntity().getScaledHealth(), this.foodLevel, this.saturationLevel));
++                }
++            }
++        } else
++        // Stellar end - allow infinite saturation
          if (this.exhaustionLevel > 4.0F) {
              this.exhaustionLevel -= 4.0F;
              if (this.saturationLevel > 0.0F) {

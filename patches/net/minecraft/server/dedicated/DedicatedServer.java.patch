@@ -118,7 +118,7 @@
          DedicatedServerProperties dedicatedserverproperties = this.settings.getProperties();
          if (this.isSingleplayer()) {
              this.setLocalIp("127.0.0.1");
-@@ -133,13 +_,48 @@
+@@ -133,13 +_,52 @@
              this.setLocalIp(dedicatedserverproperties.serverIp);
          }
  
@@ -141,6 +141,10 @@
 +        this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
 +        this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
 +        // Paper end - initialize global and world-defaults configuration
++        // Stellar start - initialize global and world-defaults configuration
++        this.stellarConfigurations.initializeGlobalConfiguration(this.registryAccess());
++        this.stellarConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
++        // Stellar end - initialize global and world-defaults configuration
 +        // Mohsit start
 +        YouerConfig.init((java.io.File) options.valueOf("youer-settings"));
 +        YouerConfig.registerCommands();

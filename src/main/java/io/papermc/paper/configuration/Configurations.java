@@ -107,15 +107,21 @@ public abstract class Configurations<G, W> {
         return this.initializeGlobalConfiguration(creator(this.globalConfigClass, true));
     }
 
-    private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
+    protected void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException { // Stellar - private -> protected
+        // Stellar start - make trySaveFileNode protected and add platform and details parameters
+        trySaveFileNode(loader, node, filename, "Paper", " Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.");
+    }
+
+    protected void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename, String platform, String details) throws ConfigurateException {
         try {
             loader.save(node);
         } catch (ConfigurateException ex) {
             if (ex.getCause() instanceof AccessDeniedException) {
-                LOGGER.warn("Could not save {}: Paper could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.", filename, ex);
+                LOGGER.warn("Could not save {}: {} could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory.{}", filename, platform, details, ex);
             } else throw ex;
         }
     }
+    // Stellar end - make trySaveFileNode protected and add platform and details parameters
 
     protected G initializeGlobalConfiguration(final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
         final Path configFile = this.globalFolder.resolve(this.globalConfigFileName);
@@ -268,7 +274,7 @@ public abstract class Configurations<G, W> {
     protected void applyDefaultsAwareWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode worldNode, final ConfigurationNode defaultsNode) throws ConfigurateException {
     }
 
-    private UnaryOperator<ConfigurationOptions> applyObjectMapperFactory(final ObjectMapper.Factory factory) {
+    protected UnaryOperator<ConfigurationOptions> applyObjectMapperFactory(final ObjectMapper.Factory factory) { // Stellar - private -> protected
         return options -> options.serializers(builder -> builder
             .register(this::isConfigType, factory.asTypeSerializer())
             .registerAnnotatedObjects(factory));

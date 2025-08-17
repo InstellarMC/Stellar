@@ -9,6 +9,7 @@ public final class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
     static final int CURRENT_VERSION = 1;
     private static GlobalConfiguration INSTANCE;
+    public static boolean isFirstStart = false;
     public static GlobalConfiguration get() {
         return INSTANCE;
     }

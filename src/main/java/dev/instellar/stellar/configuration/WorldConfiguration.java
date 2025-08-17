@@ -5,11 +5,11 @@ import com.mohistmc.org.spongepowered.configurate.objectmapping.meta.Setting;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.Configuration;
 import io.papermc.paper.configuration.ConfigurationPart;
-import io.papermc.paper.configuration.PaperConfigurations;
+import io.papermc.paper.configuration.Configurations;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 
-public final class WorldConfiguration extends ConfigurationPart {
+public class WorldConfiguration extends ConfigurationPart {
 
     private static final Logger LOGGER = LogUtils.getLogger();
     static final int CURRENT_VERSION = 1;
@@ -21,7 +21,7 @@ public final class WorldConfiguration extends ConfigurationPart {
     }
 
     public boolean isDefault() {
-        return this.worldKey.equals(PaperConfigurations.WORLD_DEFAULTS_KEY);
+        return this.worldKey.equals(Configurations.WORLD_DEFAULTS_KEY);
     }
 
     @Setting(Configuration.VERSION_FIELD)
@@ -30,6 +30,9 @@ public final class WorldConfiguration extends ConfigurationPart {
     public Players players;
 
     public class Players extends ConfigurationPart {
+
+        @Comment("Configurates whether players can have infinite saturation.")
+        public boolean infiniteSaturation = false;
 
         @Comment("""
         Configurates tracking statistics that count time spent for an action (i.e. time played or sneak time)

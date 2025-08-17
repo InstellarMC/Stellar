@@ -2249,6 +2249,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
         }
         // Purpur end
 
+        // Stellar start
+        public @NotNull  org.bukkit.configuration.file.YamlConfiguration getStellarConfig() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        // Stellar end
+
         /**
          * Sends the component to the player
          *

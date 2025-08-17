@@ -459,7 +459,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     // Symlinks are not correctly checked in createDirectories
-    static void createDirectoriesSymlinkAware(Path path) throws IOException {
+    public static void createDirectoriesSymlinkAware(Path path) throws IOException { // Stellar - package-private -> public
         if (!Files.isDirectory(path)) {
             Files.createDirectories(path);
         }
