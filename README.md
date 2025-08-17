@@ -1,3 +1,8 @@
+# ⭐ Stellar
+
+High tuned Pixelmon server implementing Paper/Purpur based on Neoforge
+
+<!--
 <div align="center">
   <h1 align="center">Youer 1.21.1</h1>
   <h3 align="center">Minecraft NeoForge Hybrid server implementing the Bukkit/Spigot/Paper API</h3>
@@ -20,6 +25,7 @@
     </a>
   </p>
 </div>
+-->
 
 ## 🚀 Features
 
@@ -43,10 +49,12 @@
   - [x] api
   - [ ] server
 
+<!--
 ## 📚 Documentation
 
 - [English Documentation](https://mohistmc.com/youer/docs)
 - [中文文档](https://www.mohistmc.cn/docs/youer)
+-->
 
 ## ⚙️ Technical Stack
 
@@ -60,6 +68,7 @@
 | PurPur      | [GitHub](https://github.com/PurpurMC/Purpur.git)                    | Plugin support               | 🔄     |
 | Arclight    | [GitHub](https://github.com/IzzelAliz/Arclight.git)                 | Plugin Remapping and Message | ✅      |
 
+<!--
 ## 💖 Special Thanks To:
 -------------
 
@@ -70,3 +79,4 @@
 [<img src="https://user-images.githubusercontent.com/21148213/121807008-8ffc6700-cc52-11eb-96a7-2f6f260f8fda.png" alt="" width="150">](https://www.jetbrains.com)
 
 [JetBrains](https://www.jetbrains.com/), creators of the IntelliJ IDEA, supports MohistMC with one of their [Open Source Licenses](https://www.jetbrains.com/opensource/). IntelliJ IDEA is the recommended IDE for working with MohistMC, and most of the MohistMC team uses it.
+-->
