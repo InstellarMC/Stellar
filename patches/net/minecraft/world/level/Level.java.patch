@@ -88,7 +88,7 @@
      protected final NeighborUpdater neighborUpdater;
      private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
      private boolean tickingBlockEntities;
-@@ -114,6 +_,99 @@
+@@ -114,6 +_,105 @@
      private final RegistryAccess registryAccess;
      private final DamageSources damageSources;
      private long subTickCount;
@@ -124,6 +124,12 @@
 +    public java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator;
 +    // Paper end - add paper world config
 +    public org.purpurmc.purpur.PurpurWorldConfig purpurConfig; // Purpur
++    // Stellar start - add stellar world config
++    public dev.instellar.stellar.configuration.WorldConfiguration stellarConfig;
++    public dev.instellar.stellar.configuration.WorldConfiguration stellarConfig() {
++        return this.stellarConfig;
++    }
++    // Stellar end - add stellar world config
 +
 +    // Purpur start
 +    private com.google.common.cache.Cache<BreedingCooldownPair, Object> playerBreedingCooldowns;

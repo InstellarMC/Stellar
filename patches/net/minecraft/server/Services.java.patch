@@ -1,11 +1,11 @@
 --- a/net/minecraft/server/Services.java
 +++ b/net/minecraft/server/Services.java
-@@ -11,15 +_,30 @@
+@@ -11,15 +_,46 @@
  import net.minecraft.util.SignatureValidator;
  
  public record Services(
 -    MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache
-+    MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations // Paper - add paper configuration files
++    MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations, @javax.annotation.Nullable dev.instellar.stellar.configuration.StellarConfigurations stellarConfigurations // Paper - add paper configuration files // Stellar - add stellar configuration files
  ) {
 -    private static final String USERID_CACHE_FILE = "usercache.json";
 -
@@ -20,6 +20,16 @@
 +        return java.util.Objects.requireNonNull(this.paperConfigurations);
 +    }
 +    // Paper end - add paper configuration files
++    // Stellar start - add stellar configuration files
++    public Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations) {
++        this(sessionService, servicesKeySet, profileRepository, profileCache, paperConfigurations, null);
++    }
++
++    @Override
++    public dev.instellar.stellar.configuration.StellarConfigurations stellarConfigurations() {
++        return java.util.Objects.requireNonNull(this.stellarConfigurations);
++    }
++    // Stellar end - add stellar configuration files
 +    public static final String USERID_CACHE_FILE = "usercache.json"; // Paper - private -> public
 +
 +    public static Services create(YggdrasilAuthenticationService p_214345_, File p_214346_, joptsimple.OptionSet optionSet) throws Exception { // Paper - add optionset to load paper config files
@@ -31,6 +41,12 @@
 +        final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
 +        final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();
 +        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, p_214346_.toPath(), (File) optionSet.valueOf("spigot-settings"));
++        // Stellar start - load stellar config files from cli options
++        final java.nio.file.Path stellarConfigPath = ((File) optionSet.valueOf("stellar-settings-directory")).toPath();
++        dev.instellar.stellar.configuration.StellarConfigurations stellarConfigurations = dev.instellar.stellar.configuration.StellarConfigurations.setup(stellarConfigPath);
++        if (true)
++        return new Services(minecraftsessionservice, p_214345_.getServicesKeySet(), gameprofilerepository, gameprofilecache, paperConfigurations, stellarConfigurations);
++        else // Stellar end - load stellar config files from cli options
 +        return new Services(minecraftsessionservice, p_214345_.getServicesKeySet(), gameprofilerepository, gameprofilecache, paperConfigurations);
 +        // Paper end - load paper config files from cli options
      }

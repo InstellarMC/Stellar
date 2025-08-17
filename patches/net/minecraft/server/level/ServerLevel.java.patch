@@ -218,7 +218,7 @@
      public ServerLevel(
          MinecraftServer p_214999_,
          Executor p_215000_,
-@@ -230,11 +_,68 @@
+@@ -230,11 +_,76 @@
              p_215007_,
              p_214999_.getMaxChainedNeighborUpdates()
          );
@@ -284,6 +284,14 @@
 +                        p_214999_.registryAccess(),
 +                        (K != null ? K.getGameRules() : serverLevelData.getGameRules())));
 +        this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
++        // Stellar start - create stellar world config
++        this.stellarConfig = p_214999_.stellarConfigurations.createWorldConfig(
++                dev.instellar.stellar.configuration.StellarConfigurations.createWorldContextMap(
++                        p_215001_.levelDirectory.path(),
++                        name,
++                        p_215003_.location(),
++                        p_214999_.registryAccess(),
++                        (K != null ? K.getGameRules() : serverLevelData.getGameRules())));
 +        this.purpurConfig = new org.purpurmc.purpur.PurpurWorldConfig(name, environment); // Purpur
          boolean flag = p_214999_.forceSynchronousWrites();
          DataFixer datafixer = p_214999_.getFixerUpper();

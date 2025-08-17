@@ -154,7 +154,7 @@
      @Nullable
      private KeyPair keyPair;
      @Nullable
-@@ -254,18 +_,44 @@
+@@ -254,18 +_,45 @@
      public final Executor executor;
      @Nullable
      private String serverId;
@@ -188,6 +188,7 @@
 +    public final double[] recentTps = new double[ 3 ];
 +    // Spigot end
 +    public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
++    public final dev.instellar.stellar.configuration.StellarConfigurations stellarConfigurations; // Stellar - add stellar configuration files
 +    public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
 +    public boolean lagging = false; // Purpur
 +    public volatile Thread shutdownThread; // Paper
@@ -233,7 +234,7 @@
              this.services = p_236729_;
              if (p_236729_.profileCache() != null) {
                  p_236729_.profileCache().setExecutor(this);
-@@ -315,7 +_,10 @@
+@@ -315,7 +_,11 @@
              this.structureTemplateManager = new StructureTemplateManager(p_236726_.resourceManager(), p_236724_, p_236728_, holdergetter);
              this.serverThread = p_236723_;
              this.executor = Util.backgroundExecutor();
@@ -242,6 +243,7 @@
 +
 +            Runtime.getRuntime().addShutdownHook(new ServerShutdownThread(this));
 +            this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
++            this.stellarConfigurations = services.stellarConfigurations(); // Stellar - add stellar configuration files
          }
      }
  

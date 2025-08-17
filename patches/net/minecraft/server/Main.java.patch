@@ -42,7 +42,7 @@
          SharedConstants.tryDetectVersion();
          OptionParser optionparser = new OptionParser();
          OptionSpec<Void> optionspec = optionparser.accepts("nogui");
-@@ -83,6 +_,91 @@
+@@ -83,6 +_,98 @@
          OptionSpec<Void> optionspec13 = optionparser.accepts("jfrProfile");
          OptionSpec<Path> optionspec14 = optionparser.accepts("pidFile").withRequiredArg().withValuesConvertedBy(new PathConverter());
          OptionSpec<String> optionspec15 = optionparser.nonOptions();
@@ -131,6 +131,13 @@
 +                .defaultsTo(new File("youer-config","youer.yml"))
 +                .describedAs("Yml file");
 +        // Youer End
++        // Stellar start
++        optionparser.acceptsAll(List.of("stellar-settings-directory"), "Directory for Stellar settings")
++                .withRequiredArg()
++                .ofType(File.class)
++                .defaultsTo(new File(dev.instellar.stellar.configuration.StellarConfigurations.CONFIG_DIR))
++                .describedAs("Config directory");
++        // Stellar end
  
          try {
              OptionSet optionset = optionparser.parse(p_129699_);
