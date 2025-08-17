@@ -113,12 +113,16 @@ public class Main {
         }
         YouerModuleManager.INSTANCE.init(DataParser.launchArgs);
 
+        // Stellar start - bypass eula, reduce io ops
+        if (!Boolean.getBoolean("stellar.bypass-eula")) {
         if (!MojangEulaUtil.hasAcceptedEULA()) {
             System.out.println(i18n.as("eula"));
             while (!"true".equals(new Scanner(System.in).next())) {
             }
             MojangEulaUtil.writeInfos(i18n.as("eula.text", "https://account.mojang.com/documents/minecraft_eula") + "\n" + new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "\neula=true");
         }
+        }
+        // Stellar end - bypass eula, reduce io ops
         BootstrapLauncher.main(forgeArgs.toArray(String[]::new));
         ProxySelector.setDefault(new YouerProxySelector(ProxySelector.getDefault()));
     }
