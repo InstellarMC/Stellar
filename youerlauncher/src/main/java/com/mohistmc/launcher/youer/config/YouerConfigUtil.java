@@ -95,7 +95,7 @@ public class YouerConfigUtil {
     }
 
     public static boolean isCN() {
-        return YOUERLANG().contains("CN");
+        return false; // Stellar
     }
 
 

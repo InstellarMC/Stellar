@@ -89,11 +89,13 @@ public class Main {
         if (System.getProperty("log4j.configurationFile") == null) {
             System.setProperty("log4j.configurationFile", "log4j2_youer.xml");
         }
+        if (!Boolean.getBoolean("stellar.bypass-libraries-integrity")) { // Stellar - bypass libraries integrity check
         if (YouerConfigUtil.INSTALLATIONFINISHED() && YouerConfigUtil.CHECK_LIBRARIES()) {
             DefaultLibraries.run();
         }
         if (YouerConfigUtil.INSTALLATIONFINISHED()) {
             new Action();
+        }
         }
         AutoDeleteMods.deleteIncompatibleMods();
 
