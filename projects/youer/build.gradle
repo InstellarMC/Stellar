@@ -206,6 +206,10 @@ dependencies {
         exclude group: 'org.yaml'
     }
     // Pufferfish end
+
+    // Stellar start
+    libraries("com.github.luben:zstd-jni:1.5.7-4")
+    // Stellar end
 }
 
 neoDev {

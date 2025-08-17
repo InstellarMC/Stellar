@@ -9,3 +9,18 @@
      private static final Object2ObjectMap<String, RegionFileVersion> VERSIONS_BY_NAME = new Object2ObjectOpenHashMap<>();
      public static final RegionFileVersion VERSION_GZIP = register(
          new RegionFileVersion(
+@@ -46,6 +_,14 @@
+             "lz4",
+             p_321472_ -> new FastBufferedInputStream(new LZ4BlockInputStream(p_321472_)),
+             p_321471_ -> new BufferedOutputStream(new LZ4BlockOutputStream(p_321471_))
++        )
++    );
++    public static final RegionFileVersion VERSION_ZSTD = register(
++        new RegionFileVersion(
++            64,
++            "zstd",
++            in -> new FastBufferedInputStream(new com.github.luben.zstd.ZstdInputStream(in)),
++            out -> new BufferedOutputStream(new com.github.luben.zstd.ZstdOutputStream(out))
+         )
+     );
+     public static final RegionFileVersion VERSION_CUSTOM = register(new RegionFileVersion(127, null, p_323443_ -> {
