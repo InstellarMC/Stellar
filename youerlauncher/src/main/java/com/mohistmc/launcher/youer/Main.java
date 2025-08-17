@@ -97,6 +97,7 @@ public class Main {
             new Action();
         }
         }
+        if (!Boolean.getBoolean("stellar.bypass-incompat-mods")) // Stellar - bypass incompatible mods check
         AutoDeleteMods.deleteIncompatibleMods();
 
         List<String> forgeArgs = new ArrayList<>();
