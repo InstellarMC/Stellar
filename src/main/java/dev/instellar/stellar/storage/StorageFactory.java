@@ -3,7 +3,7 @@ package dev.instellar.stellar.storage;
 import com.mojang.logging.LogUtils;
 import dev.instellar.stellar.configuration.GlobalConfiguration;
 import dev.instellar.stellar.configuration.type.StorageEngine;
-import dev.instellar.stellar.configuration.type.StorageImplementation;
+import dev.instellar.stellar.storage.implementation.StorageImplementation;
 import dev.instellar.stellar.storage.implementation.sql.SqlStorage;
 import dev.instellar.stellar.storage.implementation.sql.connection.hikari.MariaDbConnectionFactory;
 import dev.instellar.stellar.storage.misc.StorageCredentials;

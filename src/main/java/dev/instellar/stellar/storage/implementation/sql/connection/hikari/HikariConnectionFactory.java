@@ -86,20 +86,20 @@ public abstract class HikariConnectionFactory implements ConnectionFactory {
         config.setPoolName("luckperms-hikari");
 
         // get the database info/credentials from the config file
-        final var addressSplit = this.credentials.getAddress().split(":");
+        final var addressSplit = this.credentials.address().split(":");
         final var address = addressSplit[0];
         final var port = addressSplit.length > 1 ? addressSplit[1] : defaultPort();
 
         // allow the implementation to configure the HikariConfig appropriately with these values
         try {
-            configureDatabase(config, address, port, this.credentials.getDatabase(), this.credentials.getUsername(), this.credentials.getPassword());
+            configureDatabase(config, address, port, this.credentials.database(), this.credentials.username(), this.credentials.password());
         } catch (NoSuchMethodError e) {
             LOGGER.error("Seems HikariCP is not compatible with this version of Minecraft server.", e);
             throw new RuntimeException("HikariCP is not compatible with this version of Minecraft server. Please update HikariCP or use a different connection factory.", e);
         }
 
         // get the extra connection properties from the config
-        final Map<String, Object> properties = new HashMap<>(this.credentials.getProperties());
+        final Map<String, Object> properties = new HashMap<>(this.credentials.properties());
 
         // allow the implementation to override/make changes to these properties
         overrideProperties(properties);
@@ -108,11 +108,11 @@ public abstract class HikariConnectionFactory implements ConnectionFactory {
         setProperties(config, properties);
 
         // configure the connection pool
-        config.setMaximumPoolSize(this.credentials.getMaxPoolSize());
-        config.setMinimumIdle(this.credentials.getMinIdleConnections());
-        config.setMaxLifetime(this.credentials.getMaxLifetime());
-        config.setKeepaliveTime(this.credentials.getKeepAliveTime());
-        config.setConnectionTimeout(this.credentials.getConnectionTimeout());
+        config.setMaximumPoolSize(this.credentials.maxPoolSize());
+        config.setMinimumIdle(this.credentials.minIdleConnections());
+        config.setMaxLifetime(this.credentials.maxLifetime());
+        config.setKeepaliveTime(this.credentials.keepAliveTime());
+        config.setConnectionTimeout(this.credentials.connectionTimeout());
 
         // don't perform any initial connection validation - we subsequently call #getConnection
         // to setup the schema anyways

@@ -2,6 +2,9 @@ package dev.instellar.stellar;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.mojang.logging.LogUtils;
+import dev.instellar.stellar.storage.Storage;
+import dev.instellar.stellar.storage.StorageFactory;
+import lombok.Getter;
 import net.neoforged.fml.util.thread.SidedThreadGroups;
 import org.slf4j.Logger;
 
@@ -33,6 +36,7 @@ public final class Stellar {
                     .build()
     );
 
-    // private dev.instellar.stellar.storage.Storage storage = StorageFactory
+    @Getter
+    private final Storage storage = StorageFactory.createStorage();
 
 }

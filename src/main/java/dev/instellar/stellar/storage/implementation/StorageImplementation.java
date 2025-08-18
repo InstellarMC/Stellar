@@ -1,4 +1,4 @@
-package dev.instellar.stellar.configuration.type;
+package dev.instellar.stellar.storage.implementation;
 
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;

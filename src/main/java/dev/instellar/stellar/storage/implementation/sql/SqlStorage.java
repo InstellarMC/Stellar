@@ -1,6 +1,6 @@
 package dev.instellar.stellar.storage.implementation.sql;
 
-import dev.instellar.stellar.configuration.type.StorageImplementation;
+import dev.instellar.stellar.storage.implementation.StorageImplementation;
 import dev.instellar.stellar.storage.implementation.sql.connection.ConnectionFactory;
 import lombok.Getter;
 
