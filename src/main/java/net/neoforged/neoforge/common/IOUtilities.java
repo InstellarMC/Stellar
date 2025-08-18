@@ -192,13 +192,15 @@ public final class IOUtilities {
         }
     }
 
-    public static void withIOWorker(Runnable task) {
-        saveDataTasks = saveDataTasks.thenRunAsync(task, Util.ioPool());
+    // Paper start - Write SavedData IO async
+    public static CompletableFuture<Void> withIOWorker(Runnable task) {
+        return saveDataTasks = saveDataTasks.thenRunAsync(task, Util.ioPool());
     }
 
-    public static void waitUntilIOWorkerComplete() {
+    public static CompletableFuture<Void> waitUntilIOWorkerComplete() {
         saveDataTasks.join();
-        saveDataTasks = CompletableFuture.completedFuture(null);
+        return saveDataTasks = CompletableFuture.completedFuture(null);
+        // Paper end - Write SavedData IO async
     }
 
     /**

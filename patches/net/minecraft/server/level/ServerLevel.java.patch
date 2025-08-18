@@ -618,7 +618,7 @@
          this.getProfiler().pop();
  
          for (Entity entity : p_8648_.getPassengers()) {
-@@ -792,6 +_,7 @@
+@@ -792,11 +_,12 @@
      public void save(@Nullable ProgressListener p_8644_, boolean p_8645_, boolean p_8646_) {
          ServerChunkCache serverchunkcache = this.getChunkSource();
          if (!p_8646_) {
@@ -626,7 +626,13 @@
              if (p_8644_ != null) {
                  p_8644_.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
-@@ -807,12 +_,30 @@
+ 
+-            this.saveLevelData();
++            this.saveLevelData(!p_8645_); // Paper - Write SavedData IO async
+             if (p_8644_ != null) {
+                 p_8644_.progressStage(Component.translatable("menu.savingChunks"));
+             }
+@@ -807,15 +_,33 @@
              } else {
                  this.entityManager.autoSave();
              }
@@ -647,7 +653,8 @@
          }
      }
  
-     private void saveLevelData() {
+-    private void saveLevelData() {
++    private void saveLevelData(boolean async) { // Paper - Write SavedData IO async
          if (this.dragonFight != null) {
 -            this.server.getWorldData().setEndDragonFightData(this.dragonFight.saveData());
 +            if (K != null) {
@@ -657,7 +664,11 @@
 +            }
          }
  
-         this.getChunkSource().getDataStorage().save();
+-        this.getChunkSource().getDataStorage().save();
++        this.getChunkSource().getDataStorage().save(async); // Paper - Write SavedData IO async
+     }
+ 
+     public <T extends Entity> List<? extends T> getEntities(EntityTypeTest<Entity, T> p_143281_, Predicate<? super T> p_143282_) {
 @@ -870,22 +_,45 @@
          return list.isEmpty() ? null : list.get(this.random.nextInt(list.size()));
      }

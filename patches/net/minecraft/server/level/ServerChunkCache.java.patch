@@ -1,5 +1,13 @@
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -46,6 +_,7 @@
+ import net.minecraft.world.level.storage.LevelStorageSource;
+ 
+ public class ServerChunkCache extends ChunkSource implements net.neoforged.neoforge.common.extensions.IServerChunkCacheExtension {
++    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+     private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
+     private final DistanceManager distanceManager;
+     public final ServerLevel level;
 @@ -65,6 +_,9 @@
      @VisibleForDebug
      private NaturalSpawner.SpawnState lastSpawnState;
@@ -124,7 +132,7 @@
      public boolean isPositionTicking(long p_143240_) {
          ChunkHolder chunkholder = this.getVisibleChunkIfPresent(p_143240_);
          if (chunkholder == null) {
-@@ -303,6 +_,26 @@
+@@ -303,6 +_,33 @@
          this.chunkMap.close();
      }
  
@@ -134,6 +142,13 @@
 +        }
 +        this.lightEngine.close();
 +        this.chunkMap.close();
++        // Paper start - Write SavedData IO async
++        try {
++            this.dataStorage.close();
++        } catch (IOException e) {
++            LOGGER.error("Failed to close persistent world data", e);
++        }
++        // Paper end - Write SavedData IO async
 +    }
 +
 +    // CraftBukkit start - modelled on below
