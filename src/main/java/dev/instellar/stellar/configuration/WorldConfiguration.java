@@ -6,6 +6,7 @@ import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.Configuration;
 import io.papermc.paper.configuration.ConfigurationPart;
 import io.papermc.paper.configuration.Configurations;
+import io.papermc.paper.configuration.type.number.IntOr;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 
@@ -39,6 +40,12 @@ public class WorldConfiguration extends ConfigurationPart {
         are updated every X ticks. With an interval of 20, reduces roughly 3ms per tick on a server w/ 80 players.""")
         public int intervalToTickActionStatistics = 20;
 
+    }
+
+    public Chunks chunks;
+    public class Chunks extends ConfigurationPart {
+
+        public IntOr.Disabled randomTickBatching = IntOr.Disabled.DISABLED;
     }
 
 }

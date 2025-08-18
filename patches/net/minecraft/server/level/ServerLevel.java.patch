@@ -461,7 +461,7 @@
                          this.addFreshEntity(skeletonhorse);
                      }
                  }
-@@ -492,18 +_,27 @@
+@@ -492,21 +_,32 @@
                  if (lightningbolt != null) {
                      lightningbolt.moveTo(Vec3.atBottomCenterOf(blockpos));
                      lightningbolt.setVisualOnly(flag1);
@@ -490,6 +490,28 @@
  
          profilerfiller.popPush("tickBlocks");
          if (p_8716_ > 0) {
++            final var batches = this.stellarConfig().chunks.randomTickBatching.or(1);
++            if (batches == 1 || this.random.nextInt(batches) == 0) {
+             LevelChunkSection[] alevelchunksection = p_8715_.getSections();
+ 
+             for (int j1 = 0; j1 < alevelchunksection.length; j1++) {
+@@ -515,7 +_,7 @@
+                     int k1 = p_8715_.getSectionYFromSectionIndex(j1);
+                     int k = SectionPos.sectionToBlockCoord(k1);
+ 
+-                    for (int l = 0; l < p_8716_; l++) {
++                    for (int l = 0; l < p_8716_ * batches; l++) { // Stellar - random tick batching
+                         BlockPos blockpos1 = this.getBlockRandomPos(i, k, j, 15);
+                         profilerfiller.push("randomTick");
+                         BlockState blockstate = levelchunksection.getBlockState(blockpos1.getX() - i, blockpos1.getY() - k, blockpos1.getZ() - j);
+@@ -532,6 +_,7 @@
+                     }
+                 }
+             }
++            }
+         }
+ 
+         profilerfiller.pop();
 @@ -542,8 +_,11 @@
          BlockPos blockpos = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, p_295060_);
          BlockPos blockpos1 = blockpos.below();
