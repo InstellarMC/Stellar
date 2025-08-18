@@ -8,11 +8,11 @@ import java.io.IOException;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public final class SqlStorage extends StorageImplementation {
+
+    private static final String PLAYER_SELECT_LATEST_DATA_ID_BY_UUID = "SELECT pl_latest_data FROM {prefix}player WHERE pl_game_uuid = UNHEX(REPLACE(?, '-', ''))";
 
     @Getter
     private final ConnectionFactory connectionFactory;
@@ -108,5 +108,25 @@ public final class SqlStorage extends StorageImplementation {
         } catch (Exception e) {
             LOGGER.error("Exception whilst disabling SQL storage", e);
         }
+    }
+
+    public Map<String, String> getPlayer(final UUID playerId) throws SQLException {
+        try (final var c = this.connectionFactory.getConnection()) {
+            try (final var ps = c.prepareStatement(this.statementProcessor.process(PLAYER_SELECT_LATEST_DATA_ID_BY_UUID))) {
+                ps.setString(1, playerId.toString());
+                try (final var rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        final String latestDataId = rs.getString("pl_latest_data");
+                        if (latestDataId != null) {
+                            return Collections.singletonMap(playerId.toString(), latestDataId);
+                        }
+                    }
+                    return Collections.emptyMap();
+                }
+            }
+        } catch (final SQLException e) {
+            return Map.of();
+        }
+
     }
 }

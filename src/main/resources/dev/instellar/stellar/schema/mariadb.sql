@@ -2,15 +2,15 @@
 
 CREATE TABLE `{prefix}player` (
   `pl_id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  `pl_mc_uuid` BINARY(16) NOT NULL,
-  `pl_mc_name` VARCHAR(32) NOT NULL,
+  `pl_game_uuid` BINARY(16) NOT NULL,
+  `pl_game_name` VARCHAR(32) NOT NULL,
   `pl_nickname` VARCHAR(32) NOT NULL,
   `pl_first_seen` DATETIME(6) NOT NULL,
   `pl_last_seen` DATETIME(6) NOT NULL,
   `pl_latest_data` INT UNSIGNED NULL,
   CONSTRAINT fk_pl_latest_data FOREIGN KEY (pl_latest_data) REFERENCES player_data (pd_id) ON DELETE SET NULL
 ) DEFAULT CHARSET = utf8mb4;
-CREATE UNIQUE INDEX `{prefix}pl_mc_uuid` ON `{prefix}player` (pl_mc_uuid);
+CREATE UNIQUE INDEX `{prefix}pl_game_uuid` ON `{prefix}player` (pl_game_uuid);
 CREATE INDEX `{prefix}pl_last_seen` ON `{prefix}player` (pl_last_seen);
 
 CREATE TABLE `{prefix}player_data` (
