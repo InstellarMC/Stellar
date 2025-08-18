@@ -66,9 +66,21 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      public static final int LATENCY_CHECK_INTERVAL = 15000;
      private static final int CLOSED_LISTENER_TIMEOUT = 15000;
-@@ -42,6 +_,25 @@
+@@ -35,20 +_,50 @@
+     protected final MinecraftServer server;
+     public final Connection connection;
+     private final boolean transferred;
+-    private long keepAliveTime;
+-    private boolean keepAlivePending;
+-    private long keepAliveChallenge;
++    // private long keepAliveTime; // Paper - improve keepalives
++    // private boolean keepAlivePending; // Paper - improve keepalives
++    // private long keepAliveChallenge; // Paper - improve keepalives
+     private long closedListenerTime;
      private boolean closed = false;
-     private int latency;
+-    private int latency;
++    private volatile int latency; // Paper - improve keepalives - make volatile
++    private final io.papermc.paper.util.KeepAlive keepAlive; // Paper - improve keepalives
      private volatile boolean suspendFlushingOnServerThread = false;
 +    /**
 +     * Holds the current connection type, based on the types of payloads that have been received so far.
@@ -92,14 +104,16 @@
  
      public ServerCommonPacketListenerImpl(MinecraftServer p_295057_, Connection p_294822_, CommonListenerCookie p_301980_) {
          this.server = p_295057_;
-@@ -49,6 +_,15 @@
-         this.keepAliveTime = Util.getMillis();
+         this.connection = p_294822_;
+-        this.keepAliveTime = Util.getMillis();
++        // this.keepAliveTime = Util.getMillis(); // Paper - improve keepalives
          this.latency = p_301980_.latency();
          this.transferred = p_301980_.transferred();
 +        // Neo: Set the connection type based on the cookie from the previous phase.
 +        this.connectionType = p_301980_.connectionType();
 +        // CraftBukkit start - add fields and methods
 +        this.cserver = p_295057_.server;
++        this.keepAlive = p_301980_.keepAlive(); // Paper - improve keepalives
 +    }
 +
 +    public void setPlayer(ServerPlayer player) {
@@ -120,10 +134,11 @@
          if (this.isSingleplayerOwner()) {
              LOGGER.info("Stopping singleplayer server as player logged out");
              this.server.halt(false);
-@@ -68,12 +_,13 @@
+@@ -68,12 +_,53 @@
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket p_294627_) {
++        /* Paper start - improve keepalives
 +        // PacketUtils.ensureRunningOnSameThread(p_294627_, this, this.player.serverLevel()); // CraftBukkit
          if (this.keepAlivePending && p_294627_.getId() == this.keepAliveChallenge) {
              int i = (int)(Util.getMillis() - this.keepAliveTime);
@@ -132,10 +147,49 @@
          } else if (!this.isSingleplayerOwner()) {
 -            this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE);
 +            this.disconnectAsync(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, PlayerKickEvent.Cause.TIMEOUT); // Paper - add proper async disconnect
++        }
++        */
++        handleKeepAlive0(p_294627_);
++        // Paper end - improve keepalives
++    }
++
++    private void handleKeepAlive0(ServerboundKeepAlivePacket packet) {
++        long now = System.nanoTime();
++        io.papermc.paper.util.KeepAlive.PendingKeepAlive pending = this.keepAlive.pendingKeepAlives.peek();
++        if (pending != null && pending.challengeId() == packet.getId()) {
++            this.keepAlive.pendingKeepAlives.remove(pending);
++
++            io.papermc.paper.util.KeepAlive.KeepAliveResponse response = new io.papermc.paper.util.KeepAlive.KeepAliveResponse(pending.txTimeNS(), now);
++
++            this.keepAlive.pingCalculator1m.update(response);
++            this.keepAlive.pingCalculator5s.update(response);
++
++            this.latency = this.keepAlive.pingCalculator5s.getAvgLatencyMS();
++            return;
++        }
++
++        for (java.util.Iterator<io.papermc.paper.util.KeepAlive.PendingKeepAlive> itr = this.keepAlive.pendingKeepAlives.iterator(); itr.hasNext();) {
++            io.papermc.paper.util.KeepAlive.PendingKeepAlive ka = itr.next();
++            if (ka.challengeId() == packet.getId()) {
++                itr.remove();
++
++                if (!this.processedDisconnect) {
++                    LOGGER.info("Disconnecting {} for sending keepalive response ({}) out-of-order!", this.playerProfile().getName(), packet.getId());
++                    this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, PlayerKickEvent.Cause.TIMEOUT); // Stellar - TODO: replace with a more specific cause w/ Configuration API
++                    return;
++                }
++                break;
++            }
++        }
++
++        if (!this.processedDisconnect) {
++            LOGGER.info("Disconnecting {} for sending keepalive response ({}) without matching challenge!", this.playerProfile().getName(), packet.getId());
++            this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, PlayerKickEvent.Cause.TIMEOUT); // Stellar - TODO: replace with a more specific cause w/ Configuration API
++            return;
          }
      }
  
-@@ -83,35 +_,107 @@
+@@ -83,35 +_,127 @@
  
      @Override
      public void handleCustomPayload(ServerboundCustomPayloadPacket p_294276_) {
@@ -233,9 +287,10 @@
 -            if (this.keepAlivePending) {
 -                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE);
 -            } else if (this.checkIfClosed(i)) {
++        long currentTime = Util.getMillis();
++        /* Paper start - improve keepalives
 +        // Paper start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 +        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
-+        long currentTime = Util.getMillis();
 +        long elapsedTime = currentTime - this.keepAliveTime;
 +
 +        if (!this.isSingleplayerOwner() && elapsedTime >= 15000L) { // Paper - use vanilla's 15000L between keep alive packets
@@ -251,6 +306,25 @@
              }
          }
 +        // Paper end - give clients a longer time to respond to pings as per pre 1.12.2 timings
++        */
++        if (this.checkIfClosed(currentTime) && !this.processedDisconnect) {
++            long currTime = System.nanoTime();
++
++            if ((currTime - this.keepAlive.lastKeepAliveTx) >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1L)) {
++                this.keepAlive.lastKeepAliveTx = currTime;
++
++                io.papermc.paper.util.KeepAlive.PendingKeepAlive pka = new io.papermc.paper.util.KeepAlive.PendingKeepAlive(currTime, currentTime);
++                this.keepAlive.pendingKeepAlives.add(pka);
++                this.send(new ClientboundKeepAlivePacket(pka.challengeId()));
++            }
++
++            io.papermc.paper.util.KeepAlive.PendingKeepAlive oldest = this.keepAlive.pendingKeepAlives.peek();
++            if (oldest != null && (currTime - oldest.txTimeNS()) > java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(KEEPALIVE_LIMIT)) {
++                LOGGER.info("{} was kicked due to keepalive timeout!", this.playerProfile().getName());
++                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE, PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause // Paper - improve keepalives // Stellar - TODO: replace with a more specific cause w/ Configuration API
++            }
++        }
++        // Paper end - improve keepalives
  
          this.server.getProfiler().pop();
      }
@@ -419,7 +493,7 @@
 +     * @return The cookie.
 +     */
 +    protected CommonListenerCookie createCookie(ClientInformation p_301973_, net.neoforged.neoforge.network.connection.ConnectionType connectionType) {
-+        return new CommonListenerCookie(this.playerProfile(), this.latency, p_301973_, this.transferred, connectionType);
++        return new CommonListenerCookie(this.playerProfile(), this.latency, p_301973_, this.transferred, connectionType, this.keepAlive); // Paper - improve keepalives
 +    }
 +
 +    @Override
