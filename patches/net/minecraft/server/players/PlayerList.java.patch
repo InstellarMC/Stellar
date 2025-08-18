@@ -62,7 +62,7 @@
  import org.slf4j.Logger;
  
  public abstract class PlayerList {
-@@ -128,15 +_,28 @@
+@@ -128,15 +_,54 @@
      private boolean allowCommandsForAllPlayers;
      private static final boolean ALLOW_LOGOUTIVATOR = false;
      private int sendAllPlayerInfoIn;
@@ -84,17 +84,45 @@
 +    public void loadAndSaveFiles() {
 +
 +    }; // Paper - fix converting txt to json file; moved from DedicatedPlayerList constructor
++
++    private static final Component DISCONNECT_REASON_CONNECT_FAILED = Component.translatable("multiplayer.status.cannot_connect");
++    private static final Component DISCONNECT_REASON_SERVER_CLOSED = Component.translatable("multiplayer.disconnect.server_shutdown");
  
      public void placeNewPlayer(Connection p_11262_, ServerPlayer p_11263_, CommonListenerCookie p_301988_) {
++        // Stellar start - async player join
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.asyncPlayerJoin) {
++            java.util.concurrent.CompletableFuture.supplyAsync(() -> this.load(p_11263_), dev.instellar.stellar.Stellar.BACKEND_EXECUTOR)
++            .exceptionallyAsync(e -> {
++                LOGGER.error("Failed to load player data for {}", p_11263_.getGameProfile().getName(), e);
++                p_11262_.disconnect(DISCONNECT_REASON_CONNECT_FAILED);
++                return Optional.empty();
++            }, this.server)
++            .thenAcceptAsync(optional -> {
++                if (this.server.hasStopped()) {
++                    p_11262_.disconnect(DISCONNECT_REASON_SERVER_CLOSED);
++                    return;
++                }
++
++                placeNewPlayer(p_11262_, p_11263_, p_301988_, optional);
++            }, this.server);
++        } else {
++            placeNewPlayer(p_11262_, p_11263_, p_301988_, this.load(p_11263_));
++        }
++    }
++
++    private void placeNewPlayer(Connection p_11262_, ServerPlayer p_11263_, CommonListenerCookie p_301988_, Optional<CompoundTag> optional1) {
++        // Stellar start - async player join
 +        p_11263_.isRealPlayer = true; // Paper
 +        p_11263_.loginTime = System.currentTimeMillis(); // Paper - Replace OfflinePlayer#getLastPlayed
          GameProfile gameprofile = p_11263_.getGameProfile();
          GameProfileCache gameprofilecache = this.server.getProfileCache();
          String s;
-@@ -149,10 +_,19 @@
+@@ -148,11 +_,20 @@
+             s = gameprofile.getName();
          }
  
-         Optional<CompoundTag> optional1 = this.load(p_11263_);
+-        Optional<CompoundTag> optional1 = this.load(p_11263_);
++        // Optional<CompoundTag> optional1 = this.load(p_11263_); // Stellar - async player join - moved to above
 +        // CraftBukkit start - Better rename detection
 +        if (optional1.isPresent()) {
 +            CompoundTag nbttagcompound = optional1.get();

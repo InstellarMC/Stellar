@@ -25,4 +25,9 @@ public final class GlobalConfiguration extends ConfigurationPart {
 
     }
 
+    public Performance performance;
+    public static class Performance extends ConfigurationPart {
+
+        public boolean asyncPlayerJoin = false;
+    }
 }
