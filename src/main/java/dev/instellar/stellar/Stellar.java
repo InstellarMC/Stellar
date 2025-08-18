@@ -10,7 +10,15 @@ import java.util.concurrent.Executors;
 
 public final class Stellar {
 
-    private Stellar() {
+    public static Stellar get() {
+        if (StellarHolder.INSTANCE == null) {
+            throw new IllegalStateException("Stellar has not been initialized yet. The server has not started or already stopped.");
+        }
+
+        return StellarHolder.INSTANCE;
+    }
+
+    Stellar() {
         throw new AssertionError();
     }
 
@@ -24,5 +32,7 @@ public final class Stellar {
                     .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandler(LOGGER))
                     .build()
     );
+
+    // private dev.instellar.stellar.storage.Storage storage = StorageFactory
 
 }

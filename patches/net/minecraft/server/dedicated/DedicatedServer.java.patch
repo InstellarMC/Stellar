@@ -118,7 +118,7 @@
          DedicatedServerProperties dedicatedserverproperties = this.settings.getProperties();
          if (this.isSingleplayer()) {
              this.setLocalIp("127.0.0.1");
-@@ -133,13 +_,53 @@
+@@ -133,13 +_,54 @@
              this.setLocalIp(dedicatedserverproperties.serverIp);
          }
  
@@ -158,6 +158,7 @@
 +        thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
 +        io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
 +        dev.instellar.stellar.command.StellarCommands.registerCommands(this); // Stellar - setup /stellar command
++        dev.instellar.stellar.StellarHolder.init(); // Stellar
 +        gg.pufferfish.pufferfish.PufferfishConfig.pufferfishFile = (java.io.File) options.valueOf("pufferfish-settings"); // Purpur
 +        gg.pufferfish.pufferfish.PufferfishConfig.load(); // Pufferfish
 +        gg.pufferfish.pufferfish.PufferfishCommand.init(); // Pufferfish

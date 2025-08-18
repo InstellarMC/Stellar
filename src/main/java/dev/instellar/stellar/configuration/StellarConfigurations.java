@@ -10,15 +10,16 @@ import com.mohistmc.org.spongepowered.configurate.serialize.SerializationExcepti
 import com.mohistmc.org.spongepowered.configurate.util.CheckedFunction;
 import com.mohistmc.org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 import com.mojang.logging.LogUtils;
+import dev.instellar.stellar.configuration.serializer.StorageEngineSerializer;
 import io.papermc.paper.configuration.*;
 import io.papermc.paper.configuration.mapping.InnerClassFieldDiscoverer;
+import io.papermc.paper.configuration.serializer.EnumValueSerializer;
 import io.papermc.paper.configuration.serializer.StringRepresentableSerializer;
 import io.papermc.paper.configuration.serializer.collections.FastutilMapSerializer;
 import io.papermc.paper.configuration.serializer.collections.TableSerializer;
 import io.papermc.paper.configuration.serializer.registry.RegistryHolderSerializer;
 import io.papermc.paper.configuration.serializer.registry.RegistryValueSerializer;
 import io.papermc.paper.configuration.type.DespawnRange;
-import io.papermc.paper.configuration.type.EngineMode;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongMap;
@@ -114,7 +115,9 @@ public final class StellarConfigurations extends Configurations<GlobalConfigurat
     }
 
     private static ConfigurationOptions defaultOptions(final ConfigurationOptions options) {
-        return options;
+        return options.serializers(builder -> builder
+                .register(new EnumValueSerializer())
+        );
     }
 
     @Override
@@ -133,7 +136,11 @@ public final class StellarConfigurations extends Configurations<GlobalConfigurat
     }
 
     private static ConfigurationOptions defaultGlobalOptions(final ConfigurationOptions options) {
-        return options.header(GLOBAL_HEADER);
+        return options
+                .header(GLOBAL_HEADER)
+                .serializers(builder -> builder
+                        .register(new StorageEngineSerializer())
+                );
     }
 
     @Override
@@ -199,7 +206,6 @@ public final class StellarConfigurations extends Configurations<GlobalConfigurat
                                 }, new TableSerializer())
                                 .register(DespawnRange.class, DespawnRange.SERIALIZER)
                                 .register(StringRepresentableSerializer::isValidFor, new StringRepresentableSerializer())
-                                .register(EngineMode.SERIALIZER)
                                 .register(new RegistryValueSerializer<>(new TypeToken<>() {
                                 }, access, Registries.ENTITY_TYPE, true))
                                 .register(new RegistryValueSerializer<>(Item.class, access, Registries.ITEM, true))

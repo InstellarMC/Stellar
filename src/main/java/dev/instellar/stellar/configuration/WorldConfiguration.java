@@ -9,6 +9,7 @@ import io.papermc.paper.configuration.Configurations;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 
+@SuppressWarnings("NotNullFieldNotInitialized")
 public class WorldConfiguration extends ConfigurationPart {
 
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -29,7 +30,7 @@ public class WorldConfiguration extends ConfigurationPart {
 
     public Players players;
 
-    public class Players extends ConfigurationPart {
+    public static class Players extends ConfigurationPart {
 
         @Comment("Configurates whether players can have infinite saturation.")
         public boolean infiniteSaturation = false;
