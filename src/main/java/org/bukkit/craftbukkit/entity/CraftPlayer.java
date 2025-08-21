@@ -223,8 +223,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void remove() {
-        // Will lead to an inconsistent player state if we remove the player as any other entity.
-        throw new UnsupportedOperationException(String.format("Cannot remove player %s, use Player#kickPlayer(String) instead.", this.getName()));
+        if (this.getHandle().getClass().equals(ServerPlayer.class)) { // special case for NMS plugins inheriting
+            // Will lead to an inconsistent player state if we remove the player as any other entity.
+            throw new UnsupportedOperationException(String.format("Cannot remove player %s, use Player#kickPlayer(String) instead.", this.getName()));
+        } else {
+            super.remove();
+        }
     }
 
     @Override
@@ -378,8 +382,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void sendRawMessage(UUID sender, String message) {
-        Preconditions.checkArgument(message != null, "message cannot be null");
-
+        if (message == null) message = "";
         if (this.getHandle().connection == null) return;
 
         for (Component component : CraftChatMessage.fromString(message)) {
