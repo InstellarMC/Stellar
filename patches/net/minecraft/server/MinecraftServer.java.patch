@@ -154,7 +154,7 @@
      @Nullable
      private KeyPair keyPair;
      @Nullable
-@@ -254,18 +_,45 @@
+@@ -254,18 +_,47 @@
      public final Executor executor;
      @Nullable
      private String serverId;
@@ -193,6 +193,7 @@
 +    public boolean lagging = false; // Purpur
 +    public volatile Thread shutdownThread; // Paper
 +    public volatile boolean abnormalExit = false; // Paper
++    public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
 +    public gg.pufferfish.pufferfish.util.AsyncExecutor mobSpawnExecutor = new gg.pufferfish.pufferfish.util.AsyncExecutor("MobSpawning"); // Pufferfish - optimize mob spawning
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> p_129873_) {
@@ -201,6 +202,7 @@
 -        thread.setUncaughtExceptionHandler((p_177909_, p_177910_) -> LOGGER.error("Uncaught exception in server thread", p_177910_));
 +        Thread thread = new ca.spottedleaf.moonrise.common.util.TickThread(() -> atomicreference.get().runServer(), "Server thread");
 +        thread.setUncaughtExceptionHandler((p_177909_, p_177910_) -> LOGGER.error(I18n.as("minecraftserver.1"), p_177910_));
++        thread.setPriority(Thread.NORM_PRIORITY+2); // Paper - Perf: Boost priority
          if (Runtime.getRuntime().availableProcessors() > 4) {
              thread.setPriority(8);
          }
@@ -616,7 +618,7 @@
                  }
              }
          }
-@@ -633,8 +_,27 @@
+@@ -633,8 +_,28 @@
          try {
              this.storageSource.close();
          } catch (IOException ioexception) {
@@ -641,6 +643,7 @@
 +        } catch (final Exception ignored) {
 +        }
 +        io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
++        ServerLifecycleHooks.handleServerStopped(this); // Youer
 +        this.onServerExit();
 +        // Paper end - Improved watchdog support
      }
@@ -813,7 +816,7 @@
                  this.startMeasuringTaskExecutionTime();
                  this.waitUntilNextTick();
                  this.finishMeasuringTaskExecutionTime();
-@@ -714,30 +_,39 @@
+@@ -714,30 +_,37 @@
                  this.isReady = true;
                  JvmProfiler.INSTANCE.onServerTick(this.smoothedTickTimeMillis);
              }
@@ -852,9 +855,8 @@
                  if (this.services.profileCache() != null) {
                      this.services.profileCache().clearExecutor();
                  }
- 
+-
 -                this.onServerExit();
-+                ServerLifecycleHooks.handleServerStopped(this);
              }
          }
      }
@@ -913,6 +915,25 @@
 +        }
 +        // Paper end
          return new TickTask(this.tickCount, p_129852_);
+     }
+ 
+@@ -844,15 +_,16 @@
+         if (super.pollTask()) {
+             return true;
+         } else {
++            boolean ret = false; // Paper - force execution of all worlds, do not just bias the first
+             if (this.tickRateManager.isSprinting() || this.haveTime()) {
+                 for (ServerLevel serverlevel : this.getAllLevels()) {
+                     if (serverlevel.getChunkSource().pollTask()) {
+-                        return true;
++                        ret = true; // Paper - force execution of all worlds, do not just bias the first
+                     }
+                 }
+             }
+ 
+-            return false;
++            return ret; // Paper - force execution of all worlds, do not just bias the first
+         }
      }
  
 @@ -900,12 +_,26 @@
@@ -1035,6 +1056,8 @@
          this.profiler.push("commandFunctions");
          this.getFunctions().tick();
          this.profiler.popPush("levels");
+-
+-        for (ServerLevel serverlevel : this.getAllLevels()) {
 +        // Run tasks that are waiting on processing
 +        while (!processQueue.isEmpty()) {
 +            processQueue.remove().run();
@@ -1064,8 +1087,7 @@
 +            serverlevel.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
 +            serverlevel.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
 +            serverlevel.hasRidableMoveEvent = org.purpurmc.purpur.event.entity.RidableMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Purpur
- 
--        for (ServerLevel serverlevel : this.getAllLevels()) {
++            serverlevel.updateLagCompensationTick(); // Paper - lag compensation
              this.profiler.push(() -> serverlevel + " " + serverlevel.dimension().location());
 +            /* Drop global time updates
              if (this.tickCount % 20 == 0) {
@@ -1250,7 +1272,7 @@
      public void executeIfPossible(Runnable p_202482_) {
          if (this.isStopped()) {
 -            throw new RejectedExecutionException("Server already shutting down");
-+            throw new RejectedExecutionException(I18n.as("minecraftserver.24"));
++            throw new io.papermc.paper.util.ServerStopRejectedExecutionException(I18n.as("minecraftserver.24"));
          } else {
              super.executeIfPossible(p_202482_);
          }
