@@ -8,6 +8,7 @@ project.version = project.neoforge_version
 System.out.println("NeoForge version ${project.version}")
 
 // Youer start
+/* Stellar start - enable configuration cache
 def gitInfo = gradleutils.gitInfo
 def originalProps = new Properties()
 file("gradle.properties").withInputStream { originalProps.load(it) }
@@ -17,6 +18,7 @@ file("gradle.properties").withWriter { writer ->
     writer.write("\n")
 }
 System.out.println("Git Commit " + originalProps.getProperty("git.abbreviatedId"))
+*/// Stellar end - enable configuration cache
 //Youer end
 
 allprojects {
