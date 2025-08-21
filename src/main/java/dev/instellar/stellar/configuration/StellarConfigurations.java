@@ -12,13 +12,22 @@ import com.mohistmc.org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.*;
 import io.papermc.paper.configuration.mapping.InnerClassFieldDiscoverer;
+import io.papermc.paper.configuration.serializer.ComponentSerializer;
+import io.papermc.paper.configuration.serializer.EnumValueSerializer;
+import io.papermc.paper.configuration.serializer.NbtPathSerializer;
 import io.papermc.paper.configuration.serializer.StringRepresentableSerializer;
 import io.papermc.paper.configuration.serializer.collections.FastutilMapSerializer;
+import io.papermc.paper.configuration.serializer.collections.MapSerializer;
 import io.papermc.paper.configuration.serializer.collections.TableSerializer;
 import io.papermc.paper.configuration.serializer.registry.RegistryHolderSerializer;
 import io.papermc.paper.configuration.serializer.registry.RegistryValueSerializer;
+import io.papermc.paper.configuration.type.BooleanOrDefault;
 import io.papermc.paper.configuration.type.DespawnRange;
+import io.papermc.paper.configuration.type.Duration;
+import io.papermc.paper.configuration.type.DurationOrDisabled;
 import io.papermc.paper.configuration.type.EngineMode;
+import io.papermc.paper.configuration.type.number.DoubleOr;
+import io.papermc.paper.configuration.type.number.IntOr;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongMap;
@@ -114,7 +123,19 @@ public final class StellarConfigurations extends Configurations<GlobalConfigurat
     }
 
     private static ConfigurationOptions defaultOptions(final ConfigurationOptions options) {
-        return options;
+        return options.serializers(builder -> builder
+                .register(MapSerializer.TYPE, new MapSerializer(false))
+                .register(new EnumValueSerializer())
+                .register(new ComponentSerializer())
+                .register(IntOr.Default.SERIALIZER)
+                .register(IntOr.Disabled.SERIALIZER)
+                .register(DoubleOr.Default.SERIALIZER)
+                .register(DoubleOr.Disabled.SERIALIZER)
+                .register(BooleanOrDefault.SERIALIZER)
+                .register(Duration.SERIALIZER)
+                .register(DurationOrDisabled.SERIALIZER)
+                .register(NbtPathSerializer.SERIALIZER)
+        );
     }
 
     @Override

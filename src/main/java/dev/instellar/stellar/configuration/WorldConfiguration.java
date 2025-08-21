@@ -44,7 +44,15 @@ public class WorldConfiguration extends ConfigurationPart {
 
     public Chunks chunks;
     public class Chunks extends ConfigurationPart {
-
+        @Comment("""
+                Instead of running random ticking once every tick,
+                you can run it once every *n* ticks, but when randomly
+                ticked chunks wil lbe ticked *n* times more.
+                
+                While this does affect vanilla behaviour, the nature of
+                random ticking is that this effect is barely noticeable,
+                but it can have a significant impact on TPS.
+                """)
         public IntOr.Disabled randomTickBatching = IntOr.Disabled.DISABLED;
     }
 
