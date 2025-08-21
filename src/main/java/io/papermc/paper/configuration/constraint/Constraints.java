@@ -40,4 +40,24 @@ public final class Constraints {
             }
         }
     }
+
+    // Stellar start - add maximum range constraint
+    @Documented
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface Max {
+        int value();
+
+        final class Factory implements Constraint.Factory<Max, Number> {
+            @Override
+            public Constraint<Number> make(Max data, Type type) {
+                return value -> {
+                    if (value != null && value.intValue() > data.value()) {
+                        throw new SerializationException(value + " is greater than the max " + data.value());
+                    }
+                };
+            }
+        }
+    }
+    // Stellar end - add maximum range constraint
 }
