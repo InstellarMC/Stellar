@@ -60,6 +60,20 @@ public class WorldConfiguration extends ConfigurationPart {
     public Blocks blocks;
     public class Blocks extends ConfigurationPart {
 
+        public Farmland farmland;
+        public class Farmland extends ConfigurationPart {
+
+            @Comment("""
+                    Configurates whether farmland should turn to dirt
+                    when above is solid block or occasionally trampled by a player.
+                    
+                    When enabled, ignores all events do firing from either neoforge or paper.""")
+            public boolean turnToDirt = true;
+
+            @Comment("Configurates whether farmland no need to place near water to be hydrated.")
+            public boolean infiniteMoisture = false;
+        }
+
         public Snow snow;
         public class Snow extends ConfigurationPart {
             @Constraints.Min(0)
