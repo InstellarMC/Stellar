@@ -535,14 +535,45 @@
          }
  
          if (this.isRaining()) {
-@@ -555,10 +_,14 @@
+@@ -553,12 +_,45 @@
+                 if (blockstate.is(Blocks.SNOW)) {
+                     int j = blockstate.getValue(SnowLayerBlock.LAYERS);
                      if (j < Math.min(i, 8)) {
++                        // Stellar start - smooth snow accumulation
++                        boolean canSnow = true;
++
++                        // Ensure snow doesn't get more than N layers taller than its neighbors
++                        // We only need to check blocks that are taller than the minimum step height
++                        final var step = this.stellarConfig().blocks.snow.smoothAccumlationStep;
++                        if (step > 0 && j >= step) {
++                            final var min = j - step;
++                            for (final var direction : Direction.Plane.HORIZONTAL) {
++                                final var blockPosNeighbor = blockpos.relative(direction);
++                                final var blockStateNeighbor = this.getBlockState(blockPosNeighbor);
++                                if (blockStateNeighbor.is(Blocks.SNOW)) {
++                                    // Special check for snow layers, if neighbors are too short, don't accumulate
++                                    final var neighborLayers = blockStateNeighbor.getValue(SnowLayerBlock.LAYERS);
++                                    if (neighborLayers < min) {
++                                        canSnow = false;
++                                        break;
++                                    }
++                                } else if (!Block.isFaceFull(blockStateNeighbor.getCollisionShape(this, blockPosNeighbor), direction.getOpposite())) {
++                                    // Since our layer is tall enough already, if we have a non-full neighbor block, don't accumulate
++                                    canSnow = false;
++                                    break;
++                                }
++                            }
++                        }
++
++                        if (canSnow) {
                          BlockState blockstate1 = blockstate.setValue(SnowLayerBlock.LAYERS, Integer.valueOf(j + 1));
                          Block.pushEntitiesUp(blockstate, blockstate1, this, blockpos);
 -                        this.setBlockAndUpdate(blockpos, blockstate1);
 +                        this.callEvent(true);
 +                        this.setBlockAndUpdate(blockpos1, blockstate1);
 +                        CraftEventFactory.handleBlockFormEvent(this, blockpos, this.mohist$defaultBlockState, null); // CraftBukkit
++                        }
++                        // Stellar end - smooth snow accumulation
                      }
                  } else {
 -                    this.setBlockAndUpdate(blockpos, Blocks.SNOW.defaultBlockState());

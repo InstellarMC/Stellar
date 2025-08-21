@@ -48,12 +48,23 @@ public class WorldConfiguration extends ConfigurationPart {
                 Instead of running random ticking once every tick,
                 you can run it once every *n* ticks, but when randomly
                 ticked chunks wil lbe ticked *n* times more.
-                
+
                 While this does affect vanilla behaviour, the nature of
                 random ticking is that this effect is barely noticeable,
                 but it can have a significant impact on TPS.
                 """)
         public IntOr.Disabled randomTickBatching = IntOr.Disabled.DISABLED;
+    }
+
+    public Blocks blocks;
+    public class Blocks extends ConfigurationPart {
+
+        public Snow snow;
+        public class Snow extends ConfigurationPart {
+            @Constraints.Min(0)
+            @Constraints.Max(7)
+            public int smoothAccumlationStep = 0;
+        }
     }
 
 }
