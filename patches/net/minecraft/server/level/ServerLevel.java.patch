@@ -544,7 +544,7 @@
 +
 +                        // Ensure snow doesn't get more than N layers taller than its neighbors
 +                        // We only need to check blocks that are taller than the minimum step height
-+                        final var step = this.stellarConfig().blocks.snow.smoothAccumlationStep;
++                        final var step = this.stellarConfig().blocks.snow.smoothAccumulationStep;
 +                        if (step > 0 && j >= step) {
 +                            final var min = j - step;
 +                            for (final var direction : Direction.Plane.HORIZONTAL) {
@@ -553,7 +553,7 @@
 +                                if (blockStateNeighbor.is(Blocks.SNOW)) {
 +                                    // Special check for snow layers, if neighbors are too short, don't accumulate
 +                                    final var neighborLayers = blockStateNeighbor.getValue(SnowLayerBlock.LAYERS);
-+                                    if (neighborLayers < min) {
++                                    if (neighborLayers <= min) {
 +                                        canSnow = false;
 +                                        break;
 +                                    }

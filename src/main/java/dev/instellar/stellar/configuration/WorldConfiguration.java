@@ -6,6 +6,7 @@ import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.Configuration;
 import io.papermc.paper.configuration.ConfigurationPart;
 import io.papermc.paper.configuration.Configurations;
+import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.type.number.IntOr;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
@@ -63,7 +64,7 @@ public class WorldConfiguration extends ConfigurationPart {
         public class Snow extends ConfigurationPart {
             @Constraints.Min(0)
             @Constraints.Max(7)
-            public int smoothAccumlationStep = 0;
+            public int smoothAccumulationStep = 0;
         }
     }
 
