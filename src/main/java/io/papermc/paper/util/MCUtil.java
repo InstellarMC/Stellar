@@ -136,6 +136,14 @@ public final class MCUtil {
         return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2);
     }
 
+    public static Location toLocation(Level world, Vec3 pos) {
+        return new Location(world.getWorld(), pos.x(), pos.y(), pos.z());
+    }
+
+    public static Location toLocation(Level world, Vec3 pos, float yaw, float pitch) {
+        return new Location(world.getWorld(), pos.x(), pos.y(), pos.z(), yaw, pitch);
+    }
+
     public static Location toLocation(Level world, double x, double y, double z) {
         return new Location(world.getWorld(), x, y, z);
     }
