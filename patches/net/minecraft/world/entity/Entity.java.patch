@@ -852,7 +852,7 @@
      public boolean saveAsPassenger(CompoundTag p_20087_) {
          if (this.removalReason != null && !this.removalReason.shouldSave()) {
              return false;
-@@ -1636,26 +_,57 @@
+@@ -1636,26 +_,58 @@
                  return false;
              } else {
                  p_20087_.putString("id", s);
@@ -900,6 +900,7 @@
              }
  
              Vec3 vec3 = this.getDeltaMovement();
++            this.setDeltaMovement(io.papermc.paper.util.MCUtil.sanitizeNanInf(this.deltaMovement, 0D)); // Stellar - remove NaN values before usage in saving
              p_20241_.put("Motion", this.newDoubleList(vec3.x, vec3.y, vec3.z));
 +            // CraftBukkit start - Checking for NaN pitch/yaw and resetting to zero
 +            // TODO: make sure this is the best way to address this.
@@ -994,6 +995,18 @@
              return p_20241_;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
+@@ -1735,8 +_,11 @@
+             ListTag listtag1 = p_20259_.getList("Motion", 6);
+             ListTag listtag2 = p_20259_.getList("Rotation", 5);
+             double d0 = listtag1.getDouble(0);
++            d0 = io.papermc.paper.util.MCUtil.sanitizeNanInf(d0, 0D); // Stellar - avoid setting NaN values
+             double d1 = listtag1.getDouble(1);
++            d1 = io.papermc.paper.util.MCUtil.sanitizeNanInf(d0, 0D); // Stellar - avoid setting NaN values
+             double d2 = listtag1.getDouble(2);
++            d2 = io.papermc.paper.util.MCUtil.sanitizeNanInf(d0, 0D); // Stellar - avoid setting NaN values
+             this.setDeltaMovement(Math.abs(d0) > 10.0 ? 0.0 : d0, Math.abs(d1) > 10.0 ? 0.0 : d1, Math.abs(d2) > 10.0 ? 0.0 : d2);
+             double d3 = 3.0000512E7;
+             this.setPosRaw(
 @@ -1784,6 +_,8 @@
                  this.setGlowingTag(p_20259_.getBoolean("Glowing"));
                  this.setTicksFrozen(p_20259_.getInt("TicksFrozen"));
