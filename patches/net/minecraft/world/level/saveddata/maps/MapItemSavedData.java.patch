@@ -28,6 +28,14 @@
  import org.slf4j.Logger;
  
  public class MapItemSavedData extends SavedData {
+@@ -58,6 +_,7 @@
+     public byte scale;
+     public byte[] colors = new byte[16384];
+     public boolean locked;
++    private final org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper - Use Vanilla map renderer when possible
+     public final List<MapItemSavedData.HoldingPlayer> carriedBy = Lists.newArrayList();
+     public final Map<Player, MapItemSavedData.HoldingPlayer> carriedByPlayers = Maps.newHashMap();
+     private final Map<String, MapBanner> bannerMarkers = Maps.newHashMap();
 @@ -65,6 +_,14 @@
      private final Map<String, MapFrame> frameMarkers = Maps.newHashMap();
      private int trackedDecorationCount;
@@ -172,7 +180,7 @@
              int i = this.minDirtyX;
              int j = this.minDirtyY;
              int k = this.maxDirtyX + 1 - this.minDirtyX;
-@@ -515,15 +_,18 @@
+@@ -515,15 +_,28 @@
  
              for (int i1 = 0; i1 < k; i1++) {
                  for (int j1 = 0; j1 < l; j1++) {
@@ -187,8 +195,18 @@
  
          @Nullable
          Packet<?> nextUpdatePacket(MapId p_324558_) {
-+            RenderData render = MapItemSavedData.this.mapView.render((CraftPlayer) this.player.getBukkitEntity()); // CraftBukkit
++            final var mapUpdateInterval = dev.instellar.stellar.configuration.GlobalConfiguration.get().items.mapUpdateInterval.or(5);
++            // Paper start
++            if (!this.dirtyData && this.tick % mapUpdateInterval != 0) {
++                // this won't end up sending, so don't render it!
++                this.tick++;
++                return null;
++            }
 +
++            final boolean vanillaMaps = this.shouldUseVanillaMap();
++            // Use Vanilla map renderer when possible - much simpler/faster than the CB rendering
++            org.bukkit.craftbukkit.map.RenderData render = !vanillaMaps ? MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()) : MapItemSavedData.this.vanillaRender;
++            // Paper end
              MapItemSavedData.MapPatch mapitemsaveddata$mappatch;
              if (this.dirtyData) {
                  this.dirtyData = false;
@@ -198,7 +216,7 @@
              Collection<MapDecoration> collection;
 -            if (this.dirtyDecorations && this.tick++ % 5 == 0) {
 +            // CraftBukkit start
-+            if ((true || this.dirtyDecorations) && this.tick++ % dev.instellar.stellar.configuration.GlobalConfiguration.get().items.mapUpdateInterval.or(5) == 0) { // custom maps don't update this yet
++            if ((!vanillaMaps || this.dirtyDecorations) && this.tick++ % mapUpdateInterval == 0) { // custom maps don't update this yet
                  this.dirtyDecorations = false;
 -                collection = MapItemSavedData.this.decorations.values();
 +
@@ -220,3 +238,14 @@
              } else {
                  collection = null;
              }
+@@ -562,6 +_,10 @@
+ 
+         private void markDecorationsDirty() {
+             this.dirtyDecorations = true;
++        }
++
++        private boolean shouldUseVanillaMap() {
++            return mapView.getRenderers().size() == 1 && mapView.getRenderers().getFirst().getClass() == org.bukkit.craftbukkit.map.CraftMapRenderer.class;
+         }
+     }
+ 
