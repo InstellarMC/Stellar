@@ -108,8 +108,8 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
                 }
                 // Paper end - Different message for short timeout
                 log.log(Level.SEVERE, "------------------------------");
-                log.log(Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Youer!):"); // Paper
-                WatchdogThread.dumpThread(ManagementFactory.getThreadMXBean().getThreadInfo(MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE), log);
+                log.log(Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Stellar!):"); // Paper
+                WatchdogThread.dumpThread(ManagementFactory.getThreadMXBean().getThreadInfo(MinecraftServer.getServer().serverThread.threadId(), Integer.MAX_VALUE), log);
                 log.log(Level.SEVERE, "------------------------------");
                 //
                 // Paper start - Only print full dump on long timeouts
