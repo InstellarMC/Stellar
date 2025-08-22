@@ -36,7 +36,7 @@
      }
  
      public static long getEpochMillis() {
-@@ -146,32 +_,28 @@
+@@ -146,32 +_,29 @@
          return FILENAME_DATE_TIME_FORMATTER.format(ZonedDateTime.now());
      }
  
@@ -81,6 +81,7 @@
 -            }, Util::onThreadException, true);
 +            executorService = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<>(), target -> new io.papermc.paper.util.ServerWorkerThread(target, p_137478_, priorityModifier));
          }
++        // Paper end - Perf: use simpler thread pool
  
 -        return executorservice;
 +        return executorService;
