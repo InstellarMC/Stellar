@@ -1,0 +1,42 @@
+--- a/net/minecraft/world/entity/ai/behavior/PoiCompetitorScan.java
++++ b/net/minecraft/world/entity/ai/behavior/PoiCompetitorScan.java
+@@ -24,13 +_,32 @@
+                                 p_258580_.getPoiManager()
+                                     .getType(globalpos.pos())
+                                     .ifPresent(
+-                                        p_258588_ -> p_258576_.<List<LivingEntity>>get(p_258591_)
+-                                                .stream()
+-                                                .filter(p_258593_ -> p_258593_ instanceof Villager && p_258593_ != p_258581_)
+-                                                .map(p_258583_ -> (Villager)p_258583_)
+-                                                .filter(LivingEntity::isAlive)
+-                                                .filter(p_258596_ -> competesForSameJobsite(globalpos, p_258588_, p_258596_))
+-                                                .reduce(p_258581_, PoiCompetitorScan::selectWinner)
++                                            // Stellar start - Improve performance of PoiCompetitorScan by unrolling stream
++                                            poi -> {
++                                                final var livingEntities = p_258576_.get(p_258591_);
++
++                                                var winner = p_258581_;
++                                                for (final var other : livingEntities) {
++                                                    if (other == p_258581_) {
++                                                        continue;
++                                                    }
++
++                                                    if (!(other instanceof final net.minecraft.world.entity.npc.Villager otherVillager)) {
++                                                        continue;
++                                                    }
++
++                                                    if (!other.isAlive()) {
++                                                        continue;
++                                                    }
++
++                                                    if (!competesForSameJobsite(globalpos, poi, otherVillager)) {
++                                                        continue;
++                                                    }
++
++                                                    winner = selectWinner(winner, otherVillager);
++                                                }
++                                            }
++                                            // Stellar end - Improve performance of PoiCompetitorScan by unrolling stream
+                                     );
+                                 return true;
+                             }
