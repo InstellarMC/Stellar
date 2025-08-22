@@ -140,6 +140,24 @@
          Holder<MapDecorationType> p_335830_,
          @Nullable LevelAccessor p_77939_,
          String p_77940_,
+@@ -366,10 +_,16 @@
+     }
+ 
+     public void setColorsDirty(int p_164790_, int p_164791_) {
++        // Stellar start - Fix unnecessary map data saves
++        this.setColorsDirty(p_164790_, p_164791_, true);
++    }
++
++    public void setColorsDirty(int x, int z, boolean markFileDirty) {
++        if (markFileDirty) // Stellar end - Fix unnecessary map data saves
+         this.setDirty();
+ 
+         for (MapItemSavedData.HoldingPlayer mapitemsaveddata$holdingplayer : this.carriedBy) {
+-            mapitemsaveddata$holdingplayer.markColorsDirty(p_164790_, p_164791_);
++            mapitemsaveddata$holdingplayer.markColorsDirty(x, z);
+         }
+     }
+ 
 @@ -506,7 +_,13 @@
              this.player = p_77970_;
          }

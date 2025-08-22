@@ -63,7 +63,7 @@ public class CraftMapCanvas implements MapCanvas {
             return;
         if (this.buffer[y * 128 + x] != color) {
             this.buffer[y * 128 + x] = color;
-            this.mapView.worldMap.setColorsDirty(x, y);
+            this.mapView.worldMap.setColorsDirty(x, y, false); // Stellar - Fix unnecessary map data saves
         }
     }
 
