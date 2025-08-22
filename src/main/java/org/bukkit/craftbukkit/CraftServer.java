@@ -1977,10 +1977,14 @@ public final class CraftServer implements Server {
     @Override
     @Deprecated
     public CraftMapView getMap(int id) {
-        MapItemSavedData worldmap = this.console.getLevel(net.minecraft.world.level.Level.OVERWORLD).getMapData(new MapId(id));
-        if (worldmap == null) {
-            return null;
-        }
+        // Stellar start - Fix NPE before worlds are loaded
+        final var overworld = this.console.overworld();
+        if (overworld == null) return null;
+
+        final var worldmap = overworld.getMapData(new MapId(id));
+        if (worldmap == null) return null;
+        // Stellar end - Fix NPE before worlds are loaded
+
         return worldmap.mapView;
     }
 
