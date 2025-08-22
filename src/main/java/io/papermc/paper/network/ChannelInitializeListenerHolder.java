@@ -15,7 +15,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 public final class ChannelInitializeListenerHolder {
 
-    private static final Map<Key, ChannelInitializeListener> LISTENERS = new HashMap<>();
+    private static final Map<Key, ChannelInitializeListener> LISTENERS = new java.util.LinkedHashMap<>();
     private static final Map<Key, ChannelInitializeListener> IMMUTABLE_VIEW = Collections.unmodifiableMap(LISTENERS);
 
     private ChannelInitializeListenerHolder() {
