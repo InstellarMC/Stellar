@@ -2322,7 +2322,13 @@ public final class CraftServer implements Server {
 
     @Override
     public GameMode getDefaultGameMode() {
-        return GameMode.getByValue(this.console.getLevel(net.minecraft.world.level.Level.OVERWORLD).serverLevelData.getGameType().getId());
+        // Stellar start - Allow before worlds are initialized
+        return GameMode.getByValue(net.minecraft.Optionull.mapOrDefault(
+            this.console.overworld(),
+            l -> l.serverLevelData.getGameType(),
+            this.console.getProperties().gamemode
+        ).getId());
+        // Stellar end - Allow before worlds are initialized
     }
 
     @Override
