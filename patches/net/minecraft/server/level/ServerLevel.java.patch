@@ -1090,6 +1090,14 @@
      }
  
      @Nullable
+@@ -1681,6 +_,7 @@
+ 
+     final class EntityCallbacks implements LevelCallback<Entity> {
+         public void onCreated(Entity p_143355_) {
++            p_143355_.setOldPosAndRot(); // Stellar - update old pos / rot for new entities as it will default to Vec3.ZERO
+         }
+ 
+         public void onDestroyed(Entity p_143359_) {
 @@ -1688,11 +_,18 @@
          }
  
