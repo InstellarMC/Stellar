@@ -40,6 +40,13 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
         return nmsEntity.getBukkitEntity();
     }
 
+    @Override
+    @NotNull
+    default CommandSourceStack withExecutor(final @NotNull Entity executor) {
+        com.google.common.base.Preconditions.checkNotNull(executor, "Executor cannot be null.");
+        return this.getHandle().withEntity(((org.bukkit.craftbukkit.entity.CraftEntity) executor).getHandle());
+    }
+
     // OLD METHODS
     @Override
     default Entity getBukkitEntity() {
