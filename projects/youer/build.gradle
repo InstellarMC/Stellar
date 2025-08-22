@@ -107,7 +107,7 @@ dependencies {
     libraries "net.neoforged:bus:${project.eventbus_version}"
     libraries "net.neoforged:coremods:${project.coremods_version}"
     libraries "cpw.mods:modlauncher:${project.modlauncher_version}"
-    libraries "net.neoforged:mergetool:${project.mergetool_version}-api"
+    libraries "net.neoforged:mergetool:${project.mergetool_version}" // Stellar - remove api suffix
     libraries "com.electronwill.night-config:core:${project.nightconfig_version}"
     libraries "com.electronwill.night-config:toml:${project.nightconfig_version}"
     libraries "org.apache.maven:maven-artifact:${project.apache_maven_artifact_version}"
@@ -414,11 +414,25 @@ artifacts {
     }
 }
 
+def libsZip = layout.buildDirectory.file("libraries/libraries.zip") // Stellar
 task downloadMultipleFiles(type: Download) {
     src([
             'https://maven.mohistmc.com/libraries/1.21.1/youer/libraries.zip'
     ])
     dest layout.buildDirectory.dir("libraries")
+
+    // Stellar start - to avoid downloading the same file multiple times
+    overwrite false
+    outputs.file(libsZip)
+
+    onlyIf { !libsZip.get().asFile.exists() }
+
+    doFirst {
+        // Ensure the directory exists
+        libsZip.get().asFile.parentFile.mkdirs()
+        logger.lifecycle("Downloading libraries.zip → ${libsZip.get().asFile.parentFile}")
+    }
+    // Stellar end - to avoid downloading the same file multiple times
 }
 
 configurations {
@@ -440,9 +454,10 @@ def installerDeps = {
 dependencies installerDeps
 
 task youerJar(type: Jar, dependsOn: [youerJar0, downloadMultipleFiles, project(':youerlauncher').tasks.jar]) {
+    group = "build" // Stellar
     archiveClassifier = 'server'
     archiveExtension = 'jar'
-    archiveBaseName = 'youer'
+    archiveBaseName = 'stellar' // Stellar
     archiveVersion = '1.21.1-' + gradleutils.gitInfo.abbreviatedId
     destinationDirectory = file('build/libs')
 
@@ -457,9 +472,9 @@ task youerJar(type: Jar, dependsOn: [youerJar0, downloadMultipleFiles, project('
         attributes([
                 'Specification-Title'   : 'Youer',
                 'Specification-Vendor'  : 'MohistMC',
-                'Implementation-Title'  : 'Youer',
+                'Implementation-Title'  : 'Stellar', // Stellar
                 'Implementation-Version': archiveVersion,
-                'Implementation-Vendor' : 'MohistMC'
+                'Implementation-Vendor' : 'InstellarMC' // Stellar
         ] as LinkedHashMap, 'com/mohistmc/launcher/youer/')
     }
 
@@ -517,4 +532,3 @@ task youerJar(type: Jar, dependsOn: [youerJar0, downloadMultipleFiles, project('
         rename { 'versions/mcp.txt' }
     }
 }
-
