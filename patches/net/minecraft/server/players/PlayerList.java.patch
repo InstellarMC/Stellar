@@ -785,18 +785,17 @@
              this.sendAllPlayerInfoIn = 0;
          }
      }
-@@ -529,6 +_,38 @@
+@@ -529,6 +_,37 @@
          }
      }
  
 +    // CraftBukkit start - add a world/entity limited version
 +    public void broadcastAll(Packet packet, Player entityhuman) {
-+        for (int i = 0; i < this.players.size(); ++i) {
-+            ServerPlayer entityplayer =  this.players.get(i);
++        for (final var entityplayer : this.players) { // Stellar - replace for i with for each for thread safety
 +            if (entityhuman != null && !entityplayer.getBukkitEntity().canSee(entityhuman.getBukkitEntity())) {
 +                continue;
 +            }
-+            ((ServerPlayer) this.players.get(i)).connection.send(packet);
++            ((ServerPlayer) entityplayer).connection.send(packet); // Stellar - replace for i with for each for thread safety
 +        }
 +    }
 +
