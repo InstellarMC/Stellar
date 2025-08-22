@@ -24,7 +24,7 @@
  
  public class HangingEntityItem extends Item {
      private static final Component TOOLTIP_RANDOM_VARIANT = Component.translatable("painting.random").withStyle(ChatFormatting.GRAY);
-@@ -68,6 +_,19 @@
+@@ -68,6 +_,20 @@
  
              if (hangingentity.survives()) {
                  if (!level.isClientSide) {
@@ -38,6 +38,7 @@
 +                    level.getCraftServer().getPluginManager().callEvent(event);
 +
 +                    if (event.isCancelled()) {
++                        if (player != null) player.containerMenu.sendAllDataToRemote(); // Stellar - Fix inventory desync
 +                        return InteractionResult.FAIL;
 +                    }
 +                    // CraftBukkit end
