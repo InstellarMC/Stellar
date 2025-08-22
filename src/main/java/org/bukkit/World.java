@@ -1748,7 +1748,15 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Saves world to disk
      */
-    public void save();
+    default void save() {
+        save(false);
+    };
+
+    /**
+     * Saves world to disk
+     * @param flush Whether to wait for the chunk writer to finish
+     */
+    void save(boolean flush);
 
     /**
      * Gets a list of all applied {@link BlockPopulator}s for this World
