@@ -123,6 +123,17 @@ public class PaperPluginsCommand extends BukkitCommand {
         return builder.build();
     }
 
+    private static Component header(final String header, final int color, final int count, final boolean showSize) {
+        final TextComponent.Builder componentHeader = Component.text().color(TextColor.color(color))
+                .append(Component.text(header));
+
+        if (showSize) {
+            componentHeader.appendSpace().append(Component.text("(" + count + ")"));
+        }
+
+        return componentHeader.append(Component.text(":")).build();
+    }
+
     private static Component asPlainComponents(String strings) {
         net.kyori.adventure.text.TextComponent.Builder builder = Component.text();
         for (String string : strings.split("\n")) {
@@ -181,13 +192,18 @@ public class PaperPluginsCommand extends BukkitCommand {
             }
         }
 
-        Component infoMessage = Component.text("Server Plugins (%s):".formatted(paperPlugins.size() + spigotPlugins.size()), NamedTextColor.WHITE);
+        final int sizePaperPlugins = paperPlugins.size();
+        final int sizeSpigotPlugins = spigotPlugins.size();
+        final int sizePlugins = sizePaperPlugins + sizeSpigotPlugins;
+        final boolean hasAllPluginTypes = (sizePaperPlugins > 0 && sizeSpigotPlugins > 0);
+
+        Component infoMessage = Component.text("Server Plugins (%s):".formatted(sizePlugins), NamedTextColor.WHITE);
             //.append(INFO_ICON_START.hoverEvent(SERVER_PLUGIN_INFO)); TODO: Add docs
 
         sender.sendMessage(infoMessage);
 
         if (!paperPlugins.isEmpty()) {
-            sender.sendMessage(PAPER_HEADER);
+            sender.sendMessage(header("Paper Plugins", 0x0288D1, sizePaperPlugins, hasAllPluginTypes));
         }
 
         for (Component component : formatProviders(paperPlugins)) {
@@ -195,7 +211,7 @@ public class PaperPluginsCommand extends BukkitCommand {
         }
 
         if (!spigotPlugins.isEmpty()) {
-            sender.sendMessage(BUKKIT_HEADER);
+            sender.sendMessage(header("Bukkit Plugins", 0xED8106, sizeSpigotPlugins, hasAllPluginTypes));
         }
         
         for (Component component : formatProviders(spigotPlugins)) {
