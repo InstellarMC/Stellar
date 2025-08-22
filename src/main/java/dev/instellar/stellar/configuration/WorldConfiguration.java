@@ -82,4 +82,11 @@ public class WorldConfiguration extends ConfigurationPart {
         }
     }
 
+    public Misc misc;
+    public class Misc extends ConfigurationPart {
+
+        @Comment("Defines how many orbs groups can exist in an area.")
+        @Constraints.Min(1)
+        public IntOr.Default xpOrbGroupsPerArea = IntOr.Default.USE_DEFAULT;
+    }
 }
