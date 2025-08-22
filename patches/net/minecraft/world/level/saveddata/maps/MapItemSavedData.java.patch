@@ -198,7 +198,7 @@
              Collection<MapDecoration> collection;
 -            if (this.dirtyDecorations && this.tick++ % 5 == 0) {
 +            // CraftBukkit start
-+            if ((true || this.dirtyDecorations) && this.tick++ % 5 == 0) { // custom maps don't update this yet
++            if ((true || this.dirtyDecorations) && this.tick++ % dev.instellar.stellar.configuration.GlobalConfiguration.get().items.mapUpdateInterval.or(5) == 0) { // custom maps don't update this yet
                  this.dirtyDecorations = false;
 -                collection = MapItemSavedData.this.decorations.values();
 +
