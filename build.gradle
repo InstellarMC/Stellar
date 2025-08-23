@@ -38,6 +38,8 @@ allprojects {
     }
     configurations.configureEach {
         exclude group: 'com.mojang', module: 'brigadier'
+
+        resolutionStrategy.force("net.neoforged:mergetool:${project.mergetool_version}") // Stellar - Pinning the mergetool version to the one used in the project
     }
 }
 
