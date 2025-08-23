@@ -1,0 +1,21 @@
+--- a/net/minecraft/world/level/entity/EntityTickList.java
++++ b/net/minecraft/world/level/entity/EntityTickList.java
+@@ -16,6 +_,10 @@
+ 
+     private void ensureActiveIsNotIterated() {
+         if (this.iterated == this.active) {
++            // Stellar start - lithium: entity_ticking - avoid slow iteration, allocate instead
++            this.passive = this.active;
++            this.active = ((it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap) this.active).clone();
++            /*
+             this.passive.clear();
+ 
+             for (Entry<Entity> entry : Int2ObjectMaps.fastIterable(this.active)) {
+@@ -25,6 +_,7 @@
+             Int2ObjectMap<Entity> int2objectmap = this.active;
+             this.active = this.passive;
+             this.passive = int2objectmap;
++            */// Stellar end - lithium: entity_ticking - avoid slow iteration, allocate instead
+         }
+     }
+ 

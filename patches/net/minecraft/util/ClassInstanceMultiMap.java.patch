@@ -1,0 +1,55 @@
+--- a/net/minecraft/util/ClassInstanceMultiMap.java
++++ b/net/minecraft/util/ClassInstanceMultiMap.java
+@@ -14,7 +_,7 @@
+ import net.minecraft.Util;
+ 
+ public class ClassInstanceMultiMap<T> extends AbstractCollection<T> {
+-    private final Map<Class<?>, List<T>> byClass = Maps.newHashMap();
++    private final Map<Class<?>, List<T>> byClass = new it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap(); // Stellar - lithium: collections.entity_by_type
+     private final Class<T> baseClass;
+     private final List<T> allInstances = Lists.newArrayList();
+ 
+@@ -56,6 +_,17 @@
+     }
+ 
+     public <S> Collection<S> find(Class<S> p_13534_) {
++        // Stellar start - lithium: collections.entity_filtering
++        // Only perform the slow Class#isAssignableFrom(Class) if a list doesn't exist for the type, otherwise
++        // we can assume it's already valid. The slow-path code is moved to a separate method to help the JVM inline this.
++        Collection<T> collection = this.byClass.get(p_13534_);
++
++        if (collection == null) {
++            collection = this.createAllOfType(p_13534_);
++        }
++
++        return (Collection<S>) Collections.unmodifiableCollection(collection);
++        /*
+         if (!this.baseClass.isAssignableFrom(p_13534_)) {
+             throw new IllegalArgumentException("Don't know how to search for " + p_13534_);
+         } else {
+@@ -63,7 +_,24 @@
+                 .computeIfAbsent(p_13534_, p_337572_ -> this.allInstances.stream().filter(p_337572_::isInstance).collect(Util.toMutableList()));
+             return (Collection<S>)Collections.unmodifiableCollection(list);
+         }
+-    }
++        */// Stellar end - lithium: collections.entity_filtering
++    }
++
++    // Stellar start - lithium: collections.entity_filtering
++    private <S> Collection<T> createAllOfType(Class<S> type) {
++        List<T> list = new java.util.ArrayList<>();
++
++        for (T allElement : this.allInstances) {
++            if (type.isInstance(allElement)) {
++                list.add(allElement);
++            }
++        }
++
++        this.byClass.put(type, list);
++
++        return list;
++    }
++    // Stellar end - lithium: collections.entity_filtering
+ 
+     @Override
+     public Iterator<T> iterator() {

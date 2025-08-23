@@ -1,8 +1,13 @@
 --- a/net/minecraft/world/entity/ai/attributes/AttributeMap.java
 +++ b/net/minecraft/world/entity/ai/attributes/AttributeMap.java
-@@ -23,14 +_,21 @@
-     private final Set<AttributeInstance> attributesToSync = new ObjectOpenHashSet<>();
-     private final Set<AttributeInstance> attributesToUpdate = new ObjectOpenHashSet<>();
+@@ -20,17 +_,24 @@
+ public class AttributeMap {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final Map<Holder<Attribute>, AttributeInstance> attributes = new Object2ObjectOpenHashMap<>();
+-    private final Set<AttributeInstance> attributesToSync = new ObjectOpenHashSet<>();
+-    private final Set<AttributeInstance> attributesToUpdate = new ObjectOpenHashSet<>();
++    private final Set<AttributeInstance> attributesToSync = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>(0); // Stellar - lithium: collections.attributes
++    private final Set<AttributeInstance> attributesToUpdate = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>(0); // Stellar - lithium: collections.attributes
      private final AttributeSupplier supplier;
 +    private final net.minecraft.world.entity.LivingEntity entity; // Purpur
  
