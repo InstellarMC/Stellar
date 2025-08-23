@@ -24,7 +24,7 @@
      private final BlockEntityType<?> type;
      @Nullable
      public Level level;
-@@ -36,12 +_,20 @@
+@@ -36,12 +_,23 @@
      protected boolean remove;
      private BlockState blockState;
      private DataComponentMap components = DataComponentMap.EMPTY;
@@ -35,6 +35,8 @@
 +    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 +    public CraftPersistentDataContainer persistentDataContainer;
 +    // CraftBukkit end
++
++    public boolean supportTestResult; // Stellar - lithium: minimal_nonvanilla.world.block_entity_ticking.support_cache
  
      public BlockEntity(BlockEntityType<?> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
          this.type = p_155228_;
@@ -42,6 +44,7 @@
          this.validateBlockState(p_155230_);
          this.blockState = p_155230_;
 +        this.persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY); // Paper - always init
++        this.supportTestResult = this.getType().isValid(p_155230_); // Stellar - lithium: minimal_nonvanilla.world.block_entity_ticking.support_cache
      }
  
      private void validateBlockState(BlockState p_353132_) {
@@ -142,10 +145,16 @@
              CrashReportCategory.populateBlockDetails(p_58887_, this.level, this.worldPosition, this.level.getBlockState(this.worldPosition));
          }
      }
-@@ -246,6 +_,32 @@
+@@ -246,10 +_,43 @@
          return this.type;
      }
  
++    // Stellar start - lithium: minimal_nonvanilla.world.block_entity_ticking.support_cache
++    public boolean isSupported() {
++        return this.supportTestResult;
++    }
++    // Stellar end - lithium: minimal_nonvanilla.world.block_entity_ticking.support_cache
++
 +    @Override
 +    public CompoundTag getPersistentData() {
 +        if (this.customPersistentData == null)
@@ -175,6 +184,11 @@
      @Deprecated
      public void setBlockState(BlockState p_155251_) {
          this.validateBlockState(p_155251_);
+         this.blockState = p_155251_;
++        this.supportTestResult = this.getType().isValid(p_155251_); // Stellar - lithium: minimal_nonvanilla.world.block_entity_ticking.support_cache
+     }
+ 
+     protected void applyImplicitComponents(BlockEntity.DataComponentInput p_338718_) {
 @@ -281,6 +_,32 @@
          this.components = datacomponentpatch.split().added();
      }

@@ -329,10 +329,11 @@
              this.dragonFight = new EndDragonFight(this, i, p_214999_.getWorldData().endDragonFightData());
          } else {
              this.dragonFight = null;
-@@ -298,6 +_,52 @@
+@@ -298,7 +_,60 @@
          this.randomSequences = Objects.requireNonNullElseGet(
              p_288977_, () -> this.getDataStorage().computeIfAbsent(RandomSequences.factory(i), "random_sequences")
          );
+-    }
 +
 +        net.neoforged.neoforge.attachment.LevelAttachmentsSavedData.init(this);
 +        // Neo: Move the initialization of customSpawners to the end of costructor
@@ -379,9 +380,17 @@
 +        });
 +        // CraftBukkit end
 +        ConfigByWorlds.initMods(this);
-     }
++    }
++
++    // Stellar start - lithium(profiler): Avoid indirection when accessing the profiler
++    @Override
++    public final ProfilerFiller getProfiler() {
++        return this.getServer().getProfiler();
++    }
++    // Stellar end - lithium(profiler): Avoid indirection when accessing the profiler
  
      @Deprecated
+     @VisibleForTesting
 @@ -340,12 +_,21 @@
  
          int i = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);

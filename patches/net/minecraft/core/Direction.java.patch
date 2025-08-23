@@ -1,0 +1,95 @@
+--- a/net/minecraft/core/Direction.java
++++ b/net/minecraft/core/Direction.java
+@@ -55,6 +_,12 @@
+         .sorted(Comparator.comparingInt(p_235683_ -> p_235683_.data2d))
+         .toArray(Direction[]::new);
+ 
++    // Stellar start - lithium: math.fast_blockpos - Avoid indirection to aid inlining
++    private final int offsetX;
++    private final int offsetY;
++    private final int offsetZ;
++    // Stellar end - lithium: math.fast_blockpos - Avoid indirection to aid inlining
++
+     private Direction(
+         int p_122356_, int p_122357_, int p_122358_, String p_122359_, Direction.AxisDirection p_122360_, Direction.Axis p_122361_, Vec3i p_122362_
+     ) {
+@@ -65,6 +_,12 @@
+         this.axis = p_122361_;
+         this.axisDirection = p_122360_;
+         this.normal = p_122362_;
++
++        // Stellar start - lithium: math.fast_blockpos - Avoid indirection to aid inlining
++        this.offsetX = p_122362_.getX();
++        this.offsetY = p_122362_.getY();
++        this.offsetZ = p_122362_.getZ();
++        // Stellar end - lithium: math.fast_blockpos - Avoid indirection to aid inlining
+     }
+ 
+     public static Direction[] orderedByNearest(Entity p_122383_) {
+@@ -148,7 +_,9 @@
+     }
+ 
+     public Direction getOpposite() {
+-        return from3DDataValue(this.oppositeIndex);
++        // Stellar start - lithium: math.fast_util - Avoid indirection to aid inlining
++        return VALUES[this.oppositeIndex];
++        // Stellar end - lithium: math.fast_util - Avoid indirection to aid inlining
+     }
+ 
+     public Direction getClockWise(Direction.Axis p_175363_) {
+@@ -227,16 +_,16 @@
+         };
+     }
+ 
+-    public int getStepX() {
+-        return this.normal.getX();
+-    }
+-
+-    public int getStepY() {
+-        return this.normal.getY();
+-    }
+-
+-    public int getStepZ() {
+-        return this.normal.getZ();
++    public final int getStepX() { // Stellar - Perf: Final for inline
++        return this.offsetX; // Stellar - lithium: math.fast_blockpos - Avoid indirection to aid inlining
++    }
++
++    public final int getStepY() { // Stellar - Perf: Final for inline
++        return this.offsetY; // Stellar - lithium: math.fast_blockpos - Avoid indirection to aid inlining
++    }
++
++    public final int getStepZ() { // Stellar - Perf: Final for inline
++        return this.offsetZ; // Stellar - lithium: math.fast_blockpos - Avoid indirection to aid inlining
+     }
+ 
+     public Vector3f step() {
+@@ -310,7 +_,9 @@
+     }
+ 
+     public static Direction getRandom(RandomSource p_235673_) {
+-        return Util.getRandom(VALUES, p_235673_);
++        // Stellar - lithium: math.fast_util - Avoid expensive array/modulo operations
++        return VALUES[p_235673_.nextInt(VALUES.length)];
++        // Stellar end - lithium: math.fast_util - Avoid expensive array/modulo operations
+     }
+ 
+     public static Direction getNearest(double p_122367_, double p_122368_, double p_122369_) {
+@@ -322,7 +_,7 @@
+         float f = Float.MIN_VALUE;
+ 
+         for (Direction direction1 : VALUES) {
+-            float f1 = p_122373_ * (float)direction1.normal.getX() + p_122374_ * (float)direction1.normal.getY() + p_122375_ * (float)direction1.normal.getZ();
++            float f1 = p_122373_ * (float)direction1.offsetX + p_122374_ * (float)direction1.offsetY + p_122375_ * (float)direction1.offsetZ; // Stellar - lithium: math.fast_blockpos - Avoid indirection to aid inlining
+             if (f1 > f) {
+                 f = f1;
+                 direction = direction1;
+@@ -368,7 +_,7 @@
+         float f = p_122371_ * (float) (Math.PI / 180.0);
+         float f1 = -Mth.sin(f);
+         float f2 = Mth.cos(f);
+-        return (float)this.normal.getX() * f1 + (float)this.normal.getZ() * f2 > 0.0F;
++        return (float)this.offsetX * f1 + (float)this.offsetZ * f2 > 0.0F; // Stellar - lithium: math.fast_blockpos - Avoid indirection to aid inlining
+     }
+ 
+     public static enum Axis implements StringRepresentable, Predicate<Direction> {
