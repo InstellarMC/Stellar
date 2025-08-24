@@ -1,17 +1,5 @@
 --- a/net/minecraft/util/Mth.java
 +++ b/net/minecraft/util/Mth.java
-@@ -14,6 +_,11 @@
- import org.joml.Vector3f;
- 
- public class Mth {
-+    // Stellar start - lithium: math.sine_lut
-+    static {
-+        net.caffeinemc.mods.lithium.common.util.math.CompactSineLUT.init();
-+    }
-+    // Stellar end - lithium: math.sine_lut
-     private static final long UUID_VERSION = 61440L;
-     private static final long UUID_VERSION_TYPE_4 = 16384L;
-     private static final long UUID_VARIANT = -4611686018427387904L;
 @@ -29,7 +_,7 @@
      public static final Vector3f Y_AXIS = new Vector3f(0.0F, 1.0F, 0.0F);
      public static final Vector3f X_AXIS = new Vector3f(1.0F, 0.0F, 0.0F);
