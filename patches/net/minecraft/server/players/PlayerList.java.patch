@@ -62,7 +62,7 @@
  import org.slf4j.Logger;
  
  public abstract class PlayerList {
-@@ -128,15 +_,54 @@
+@@ -128,15 +_,55 @@
      private boolean allowCommandsForAllPlayers;
      private static final boolean ALLOW_LOGOUTIVATOR = false;
      private int sendAllPlayerInfoIn;
@@ -71,6 +71,7 @@
 +    // CraftBukkit start
 +    private CraftServer cserver;
 +    private final Map<String,ServerPlayer> playersByName = new java.util.HashMap<>();
++    public @Nullable String collideRuleTeamName; // Paper - Configurable player collision
  
      public PlayerList(MinecraftServer p_203842_, LayeredRegistryAccess<RegistryLayer> p_251844_, PlayerDataStorage p_203844_, int p_203845_) {
 +        this.cserver = p_203842_.server = new CraftServer((DedicatedServer) p_203842_, this);
