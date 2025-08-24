@@ -68,7 +68,7 @@
 -        }
 +        // Stellar start - lithium(world/temperature_cache)
 +        // Removes the 1024 entry biome temperature cache hash map because the cache seems to be slow and rarely hit
-+        return this.getHeightAdjustedTemperature(p_47506_);
++        return this.getHeightAdjustedTemperature(p_47506_); // Paper - optimise random ticking
 +        // Stellar end - lithium(world/temperature_cache)
      }
  

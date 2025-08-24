@@ -14,7 +14,7 @@
      void setRemoved(Entity.RemovalReason p_156798_);
 +
 +    // CraftBukkit start - add Bukkit remove cause
-+    default void setRemovedCB(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++    default void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
 +        this.setRemoved(entity_removalreason);
 +    }
 +    // CraftBukkit end

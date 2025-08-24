@@ -53,6 +53,15 @@
      }
  
      public Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> getTypeNameForDataFixer() {
+@@ -115,7 +_,7 @@
+         return CompletableFuture.supplyAsync(Util.wrapThreadWithTaskName("init_biomes", () -> {
+             p_223163_.fillBiomesFromNoise(this.biomeSource, p_223160_.sampler());
+             return p_223163_;
+-        }), Util.backgroundExecutor());
++        }), Runnable::run); // Paper - rewrite chunk system
+     }
+ 
+     public abstract void applyCarvers(
 @@ -132,6 +_,24 @@
      public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(
          ServerLevel p_223038_, HolderSet<Structure> p_223039_, BlockPos p_223040_, int p_223041_, boolean p_223042_
@@ -87,6 +96,15 @@
                  blockpos$mutableblockpos.set(SectionPos.sectionToBlockCoord(chunkpos.x, 8), 32, SectionPos.sectionToBlockCoord(chunkpos.z, 8));
                  double d1 = blockpos$mutableblockpos.distSqr(p_223185_);
                  boolean flag = pair == null || d1 < d0;
+@@ -293,7 +_,7 @@
+                     return Pair.of(p_223203_.getLocatePos(p_223204_), holder);
+                 }
+ 
+-                ChunkAccess chunkaccess = p_223200_.getChunk(p_223204_.x, p_223204_.z, ChunkStatus.STRUCTURE_STARTS);
++                ChunkAccess chunkaccess = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevelReader)p_223200_).moonrise$syncLoadNonFull(p_223204_.x, p_223204_.z, ChunkStatus.STRUCTURE_STARTS); // Paper - rewrite chunk system
+                 StructureStart structurestart = p_223201_.getStartForStructure(SectionPos.bottomOf(chunkaccess), holder.value(), chunkaccess);
+                 if (structurestart != null && structurestart.isValid() && (!p_223202_ || tryAddReference(p_223201_, structurestart))) {
+                     return Pair.of(p_223203_.getLocatePos(structurestart.getChunkPos()), holder);
 @@ -313,6 +_,31 @@
          }
      }

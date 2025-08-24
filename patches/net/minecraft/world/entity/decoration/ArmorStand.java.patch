@@ -112,14 +112,25 @@
          CompoundTag compoundtag1 = p_31600_.getCompound("Pose");
          this.readPose(compoundtag1);
      }
-@@ -290,6 +_,7 @@
+@@ -290,9 +_,15 @@
  
      @Override
      protected void pushEntities() {
+-        for (Entity entity : this.level().getEntities(this, this.getBoundingBox(), RIDABLE_MINECARTS)) {
+-            if (this.distanceToSqr(entity) <= 0.2) {
+-                entity.push(this);
 +        if (!this.level().paperConfig().entities.armorStands.doCollisionEntityLookups) return; // Paper - Option to prevent armor stands from doing entity lookups
-         for (Entity entity : this.level().getEntities(this, this.getBoundingBox(), RIDABLE_MINECARTS)) {
-             if (this.distanceToSqr(entity) <= 0.2) {
-                 entity.push(this);
++        java.util.List<AbstractMinecart> list = this.level().getEntitiesOfClass(AbstractMinecart.class, this.getBoundingBox(), RIDABLE_MINECARTS); // Paper - optimise collisions
++        java.util.Iterator<AbstractMinecart> iterator = list.iterator();
++
++        while (iterator.hasNext()) {
++            Entity entity = (Entity) iterator.next();
++
++            if (this.distanceToSqr(entity) <= 0.2D) {
++                entity.push((Entity) this);
+             }
+         }
+     }
 @@ -352,7 +_,7 @@
          return equipmentslot;
      }
