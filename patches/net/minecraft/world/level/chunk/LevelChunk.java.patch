@@ -17,6 +17,15 @@
  import org.slf4j.Logger;
  
  public class LevelChunk extends ChunkAccess implements net.neoforged.neoforge.attachment.IAttachmentHolder {
+@@ -72,7 +_,7 @@
+             return "<null>";
+         }
+     };
+-    private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel = Maps.newHashMap();
++    private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(); // Stellar - lithium: collections.block_entity_tickers
+     public boolean loaded;
+     public final Level level;
+     @Nullable
 @@ -82,6 +_,12 @@
      private final Int2ObjectMap<GameEventListenerRegistry> gameEventListenerRegistrySections;
      private final LevelChunkTicks<Block> blockTicks;
@@ -108,6 +117,35 @@
                          p_62866_.onPlace(this.level, p_62865_, blockstate, p_62867_);
                      }
  
+@@ -290,12 +_,28 @@
+                         }
+ 
+                         if (blockentity == null) {
++                            // Stellar start - lithium(block_entity_ticking)
++                            // Modded EntityBlock objects are not always the same as state.getBlock(), use their object if possible
++                            // blockentity = ((EntityBlock)block).newBlockEntity(p_62865_, p_62866_);
++                            BlockState blockState = this.getBlockState(p_62865_);
++                            if (p_62866_ == blockState) {
+                             blockentity = ((EntityBlock)block).newBlockEntity(p_62865_, p_62866_);
++                            } else if (blockState.hasBlockEntity()) {
++                                // Create our block entity of correct type if applicable
++                                blockentity = ((EntityBlock) blockState.getBlock()).newBlockEntity(p_62865_, blockState);
++                            }
++                            // Stellar end - lithium(block_entity_ticking)
+                             if (blockentity != null) {
+                                 this.addAndRegisterBlockEntity(blockentity);
+                             }
+                         } else {
+                             blockentity.setBlockState(p_62866_);
++                            // Stellar start - lithium(block_entity_ticking)
++                            BlockState updatedBlockState = this.getBlockState(p_62865_);
++                            if (updatedBlockState != p_62866_) {
++                                blockentity.setBlockState(updatedBlockState);
++                            }
++                            // Stellar end - lithium(block_entity_ticking)
+                             this.updateBlockEntityTicker(blockentity);
+                         }
+                     }
 @@ -327,6 +_,10 @@
      @Nullable
      public BlockEntity getBlockEntity(BlockPos p_62868_, LevelChunk.EntityCreationType p_62869_) {
@@ -303,14 +341,18 @@
      class BoundTickingBlockEntity<T extends BlockEntity> implements TickingBlockEntity {
          private final T blockEntity;
          private final BlockEntityTicker<T> ticker;
-@@ -679,20 +_,24 @@
+@@ -679,20 +_,26 @@
                  if (LevelChunk.this.isTicking(blockpos)) {
                      try {
                          ProfilerFiller profilerfiller = LevelChunk.this.level.getProfiler();
 +                        net.neoforged.neoforge.server.timings.TimeTracker.BLOCK_ENTITY_UPDATE.trackStart(blockEntity);
                          profilerfiller.push(this::getType);
-                         BlockState blockstate = LevelChunk.this.getBlockState(blockpos);
-                         if (this.blockEntity.getType().isValid(blockstate)) {
+-                        BlockState blockstate = LevelChunk.this.getBlockState(blockpos);
+-                        if (this.blockEntity.getType().isValid(blockstate)) {
++                        // Stellar start - lithium(minimal_nonvanilla.world.block_entity_ticking.support_cache): use cached state
++                        BlockState blockstate = this.blockEntity.getBlockState();
++                        if (this.blockEntity.isSupported()) {
++                        // Stellar end - lithium(minimal_nonvanilla.world.block_entity_ticking.support_cache): use cached state
                              this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), blockstate, this.blockEntity);
                              this.loggedInvalidBlockState = false;
 -                        } else if (!this.loggedInvalidBlockState) {

@@ -518,10 +518,23 @@
      }
  
      public void updateNeighborsAtExceptFromFacing(BlockPos p_46591_, Block p_46592_, Direction p_46593_) {
-@@ -342,6 +_,14 @@
+@@ -340,14 +_,39 @@
+         return this.getChunkSource().getLightEngine();
+     }
  
++    // Stellar start - lithium(world/inline_block_access)
++    private static final BlockState OUTSIDE_WORLD_BLOCK = Blocks.VOID_AIR.defaultBlockState();
++    private static final BlockState INSIDE_WORLD_DEFAULT_BLOCK = Blocks.AIR.defaultBlockState();
++    // Stellar end - lithium(world/inline_block_access)
++
      @Override
      public BlockState getBlockState(BlockPos p_46732_) {
+-        if (this.isOutsideBuildHeight(p_46732_)) {
+-            return Blocks.VOID_AIR.defaultBlockState();
+-        } else {
+-            LevelChunk levelchunk = this.getChunk(SectionPos.blockToSectionCoord(p_46732_.getX()), SectionPos.blockToSectionCoord(p_46732_.getZ()));
+-            return levelchunk.getBlockState(p_46732_);
+-        }
 +        // CraftBukkit start - tree generation
 +        if (captureTreeGeneration) {
 +            CraftBlockState previous = capturedBlockStates.get(p_46732_);
@@ -530,9 +543,27 @@
 +            }
 +        }
 +        // CraftBukkit end
-         if (this.isOutsideBuildHeight(p_46732_)) {
-             return Blocks.VOID_AIR.defaultBlockState();
-         } else {
++        // Stellar start - lithium(world/inline_block_access)
++        LevelChunk levelchunk = this.getChunk(SectionPos.blockToSectionCoord(p_46732_.getX()), SectionPos.blockToSectionCoord(p_46732_.getZ()));
++        net.minecraft.world.level.chunk.LevelChunkSection[] sections = levelchunk.getSections();
++
++        int chunkY = this.getSectionIndex(p_46732_.getY());
++        // worldChunk.isEmpty() for EmptyChunk which is only VOID_AIR, used for client-side unloaded chunk
++        if (chunkY < 0 || chunkY >= sections.length || levelchunk.isEmpty()) {
++            return OUTSIDE_WORLD_BLOCK;
++        }
++
++        net.minecraft.world.level.chunk.LevelChunkSection section = sections[chunkY];
++        if (section == null || section.hasOnlyAir()) {
++            return INSIDE_WORLD_DEFAULT_BLOCK;
++        }
++
++        return section.getBlockState(p_46732_.getX() & 15, p_46732_.getY() & 15, p_46732_.getZ() & 15);
++        // This code path is slower than with the extra world height limit check. Tradeoff in favor of the default path.
++        // Stellar end - lithium(world/inline_block_access)
+     }
+ 
+     @Override
 @@ -489,10 +_,32 @@
          (this.tickingBlockEntities ? this.pendingBlockEntityTickers : this.blockEntityTickers).add(p_151526_);
      }
@@ -566,8 +597,44 @@
          if (!this.pendingBlockEntityTickers.isEmpty()) {
              this.blockEntityTickers.addAll(this.pendingBlockEntityTickers);
              this.pendingBlockEntityTickers.clear();
-@@ -516,12 +_,15 @@
+@@ -505,23 +_,50 @@
+             TickingBlockEntity tickingblockentity = iterator.next();
+             if (tickingblockentity.isRemoved()) {
+                 iterator.remove();
+-            } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
++            } else if (flag && this.shouldTickBlocksAt0(tickingblockentity.getPos())) { // Stellar - lithium(block_entity_ticking/chunk_ticking)
+                 tickingblockentity.tick();
+             }
+         }
  
++        this.cachedLastTickableChunk = Long.MIN_VALUE; // Stellar - lithium(block_entity_ticking/chunk_ticking): invalidate cache
++
+         this.tickingBlockEntities = false;
+         profilerfiller.pop();
+     }
+ 
++    // Stellar start - lithium(block_entity_ticking/chunk_ticking)
++    // Speed up checking whether a chunk ticks block entities during block entity ticking
++    private long cachedLastTickableChunk;
++    private boolean shouldTickBlocksAt0(BlockPos pos) {
++        if (pos == null) {
++            return false;
++        }
++
++        final long chunkpos = ChunkPos.asLong(pos);
++        if (chunkpos == cachedLastTickableChunk) {
++            return true;
++        }
++
++        final boolean flag = this.shouldTickBlocksAt(chunkpos);
++        if (flag) {
++            cachedLastTickableChunk = chunkpos;
++        }
++
++        return flag;
++    }
++    // Stellar end - lithium(block_entity_ticking/chunk_ticking)
++
      public <T extends Entity> void guardEntityTick(Consumer<T> p_46654_, T p_46655_) {
          try {
 +            TimeTracker.ENTITY_UPDATE.trackStart(p_46655_);

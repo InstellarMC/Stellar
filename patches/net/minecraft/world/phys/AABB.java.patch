@@ -8,6 +8,34 @@
      public final double minX;
      public final double minY;
      public final double minZ;
+@@ -92,11 +_,25 @@
+     }
+ 
+     public double min(Direction.Axis p_82341_) {
+-        return p_82341_.choose(this.minX, this.minY, this.minZ);
++        // Stellar start - lithium: math.fast_util - Simplify the code to better help the JVM optimize it
++        return switch (p_82341_.ordinal()) {
++            case 0 -> this.minX;
++            case 1 -> this.minY;
++            case 2 -> this.minZ;
++            default -> throw new IncompatibleClassChangeError();
++        };
++        // Stellar end - lithium: math.fast_util - Simplify the code to better help the JVM optimize it
+     }
+ 
+     public double max(Direction.Axis p_82375_) {
+-        return p_82375_.choose(this.maxX, this.maxY, this.maxZ);
++        // Stellar start - lithium: math.fast_util - Simplify the code to better help the JVM optimize it
++        return switch (p_82375_.ordinal()) {
++            case 0 -> this.maxX;
++            case 1 -> this.maxY;
++            case 2 -> this.maxZ;
++            default -> throw new IncompatibleClassChangeError();
++        };
++        // Stellar end - lithium: math.fast_util - Simplify the code to better help the JVM optimize it
+     }
+ 
+     @Override
 @@ -340,7 +_,7 @@
      }
  

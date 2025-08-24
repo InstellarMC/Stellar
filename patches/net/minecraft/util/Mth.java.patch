@@ -1,0 +1,25 @@
+--- a/net/minecraft/util/Mth.java
++++ b/net/minecraft/util/Mth.java
+@@ -29,7 +_,7 @@
+     public static final Vector3f Y_AXIS = new Vector3f(0.0F, 1.0F, 0.0F);
+     public static final Vector3f X_AXIS = new Vector3f(1.0F, 0.0F, 0.0F);
+     public static final Vector3f Z_AXIS = new Vector3f(0.0F, 0.0F, 1.0F);
+-    private static final float[] SIN = Util.make(new float[65536], p_14077_ -> {
++    public static float[] SIN = Util.make(new float[65536], p_14077_ -> { // Stellar - private -> public-final
+         for (int i = 0; i < p_14077_.length; i++) {
+             p_14077_[i] = (float)Math.sin((double)i * Math.PI * 2.0 / 65536.0);
+         }
+@@ -46,11 +_,11 @@
+     private static final double[] COS_TAB = new double[257];
+ 
+     public static float sin(float p_14032_) {
+-        return SIN[(int)(p_14032_ * 10430.378F) & 65535];
++        return net.caffeinemc.mods.lithium.common.util.math.CompactSineLUT.sin(p_14032_); // Stellar - lithium: math.sine_lut - Use optimized implementation
+     }
+ 
+     public static float cos(float p_14090_) {
+-        return SIN[(int)(p_14090_ * 10430.378F + 16384.0F) & 65535];
++        return net.caffeinemc.mods.lithium.common.util.math.CompactSineLUT.cos(p_14090_); // Stellar - lithium: math.sine_lut - Use optimized implementation
+     }
+ 
+     public static float sqrt(float p_14117_) {

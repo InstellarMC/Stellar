@@ -186,7 +186,7 @@
      public boolean dropFromExplosion(Explosion p_49826_) {
          return true;
      }
-@@ -485,17 +_,70 @@
+@@ -485,11 +_,52 @@
          return this.stateDefinition.getPossibleStates().stream().collect(ImmutableMap.toImmutableMap(Function.identity(), p_152459_));
      }
  
@@ -239,10 +239,10 @@
      protected void tryDropExperience(ServerLevel p_220823_, BlockPos p_220824_, ItemStack p_220825_, IntProvider p_220826_) {
          int i = EnchantmentHelper.processBlockExperience(p_220823_, p_220825_, p_220826_.sample(p_220823_.getRandom()));
          if (i > 0) {
-             this.popExperience(p_220823_, p_220824_, i);
+@@ -497,15 +_,33 @@
          }
      }
-+
+ 
 +    // Spigot start
 +    public static float range(float min, float value, float max) {
 +        if (value < min) {
@@ -254,6 +254,33 @@
 +        return value;
 +    }
 +    // Spigot end
- 
++
      public static final class BlockStatePairKey {
          private final BlockState first;
+         private final BlockState second;
+         private final Direction direction;
++        private final int hash; // Stellar - lithium(cached_hashcode)
+ 
+         public BlockStatePairKey(BlockState p_49984_, BlockState p_49985_, Direction p_49986_) {
+             this.first = p_49984_;
+             this.second = p_49985_;
+             this.direction = p_49986_;
++
++            int h = this.first.hashCode();
++            h = 31 * h + this.second.hashCode();
++            h = 31 * h + this.direction.hashCode();
++            this.hash = h;
+         }
+ 
+         @Override
+@@ -523,9 +_,7 @@
+ 
+         @Override
+         public int hashCode() {
+-            int i = this.first.hashCode();
+-            i = 31 * i + this.second.hashCode();
+-            return 31 * i + this.direction.hashCode();
++            return this.hash; // Stellar - lithium(cached_hashcode)
+         }
+     }
+ }

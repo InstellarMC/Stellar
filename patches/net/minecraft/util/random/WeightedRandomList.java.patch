@@ -1,0 +1,11 @@
+--- a/net/minecraft/util/random/WeightedRandomList.java
++++ b/net/minecraft/util/random/WeightedRandomList.java
+@@ -13,6 +_,8 @@
+     private final ImmutableList<E> items;
+ 
+     WeightedRandomList(List<? extends E> p_146327_) {
++        // Stellar - lithium: collections.mob_spawning
++        if (p_146327_.size() > 4) this.items = ImmutableList.copyOf(new net.caffeinemc.mods.lithium.common.util.collections.HashedReferenceList<>(p_146327_)); else
+         this.items = ImmutableList.copyOf(p_146327_);
+         this.totalWeight = WeightedRandom.getTotalWeight(p_146327_);
+     }

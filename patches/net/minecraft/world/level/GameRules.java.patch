@@ -247,6 +247,20 @@
          GameRules.Key<T> key = new GameRules.Key<>(p_46190_, p_46191_);
          GameRules.Type<?> type = GAME_RULE_TYPES.put(key, p_46192_);
          if (type != null) {
+@@ -220,11 +_,11 @@
+     }
+ 
+     public GameRules() {
+-        this.rules = GAME_RULE_TYPES.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, p_46210_ -> p_46210_.getValue().createRule()));
++        this.rules = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(GAME_RULE_TYPES.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, p_46210_ -> p_46210_.getValue().createRule()))); // Stellar - lithium: collections.gamerules
+     }
+ 
+     private GameRules(Map<GameRules.Key<?>, GameRules.Value<?>> p_46162_) {
+-        this.rules = p_46162_;
++        this.rules = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(p_46162_); // Stellar - lithium: collections.gamerules
+     }
+ 
+     public <T extends GameRules.Value<T>> T getRule(GameRules.Key<T> p_46171_) {
 @@ -250,7 +_,7 @@
      }
  
