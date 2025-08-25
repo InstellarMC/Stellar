@@ -105,17 +105,223 @@
                  StructureStart structurestart = p_223201_.getStartForStructure(SectionPos.bottomOf(chunkaccess), holder.value(), chunkaccess);
                  if (structurestart != null && structurestart.isValid() && (!p_223202_ || tryAddReference(p_223201_, structurestart))) {
                      return Pair.of(p_223203_.getLocatePos(structurestart.getChunkPos()), holder);
-@@ -313,6 +_,31 @@
+@@ -313,99 +_,171 @@
          }
      }
  
-+    public void applyBiomeDecorationCB(WorldGenLevel pLevel, ChunkAccess pChunk, StructureManager pStructureManager) { // CraftBukkit
-+        this.applyBiomeDecorationCB(pLevel, pChunk, pStructureManager, true);
+-    public void applyBiomeDecoration(WorldGenLevel p_223087_, ChunkAccess p_223088_, StructureManager p_223089_) {
+-        ChunkPos chunkpos = p_223088_.getPos();
+-        if (!SharedConstants.debugVoidTerrain(chunkpos)) {
+-            SectionPos sectionpos = SectionPos.of(chunkpos, p_223087_.getMinSection());
+-            BlockPos blockpos = sectionpos.origin();
+-            Registry<Structure> registry = p_223087_.registryAccess().registryOrThrow(Registries.STRUCTURE);
+-            Map<Integer, List<Structure>> map = registry.stream().collect(Collectors.groupingBy(p_223103_ -> p_223103_.step().ordinal()));
+-            List<FeatureSorter.StepFeatureData> list = this.featuresPerStep.get();
+-            WorldgenRandom worldgenrandom = new WorldgenRandom(new XoroshiroRandomSource(RandomSupport.generateUniqueSeed()));
+-            long i = worldgenrandom.setDecorationSeed(p_223087_.getSeed(), blockpos.getX(), blockpos.getZ());
+-            Set<Holder<Biome>> set = new ObjectArraySet<>();
+-            ChunkPos.rangeClosed(sectionpos.chunk(), 1).forEach(p_223093_ -> {
+-                ChunkAccess chunkaccess = p_223087_.getChunk(p_223093_.x, p_223093_.z);
+-
+-                for (LevelChunkSection levelchunksection : chunkaccess.getSections()) {
+-                    levelchunksection.getBiomes().getAll(set::add);
++    public void addVanillaDecorations(WorldGenLevel generatoraccessseed, ChunkAccess ichunkaccess, StructureManager structuremanager) { // CraftBukkit
++        ChunkPos chunkcoordintpair = ichunkaccess.getPos();
++
++        if (!SharedConstants.debugVoidTerrain(chunkcoordintpair)) {
++            SectionPos sectionposition = SectionPos.of(chunkcoordintpair, generatoraccessseed.getMinSection());
++            BlockPos blockposition = sectionposition.origin();
++            Registry<Structure> iregistry = generatoraccessseed.registryAccess().registryOrThrow(Registries.STRUCTURE);
++            Map<Integer, List<Structure>> map = (Map) iregistry.stream().collect(Collectors.groupingBy((structure) -> {
++                return structure.step().ordinal();
++            }));
++            List<FeatureSorter.StepFeatureData> list = (List) this.featuresPerStep.get();
++            WorldgenRandom seededrandom = new WorldgenRandom(new XoroshiroRandomSource(RandomSupport.generateUniqueSeed()));
++            long i = seededrandom.setDecorationSeed(generatoraccessseed.getSeed(), blockposition.getX(), blockposition.getZ());
++            Set<Holder<Biome>> set = new ObjectArraySet();
++
++            ChunkPos.rangeClosed(sectionposition.chunk(), 1).forEach((chunkcoordintpair1) -> {
++                ChunkAccess ichunkaccess1 = generatoraccessseed.getChunk(chunkcoordintpair1.x, chunkcoordintpair1.z);
++                LevelChunkSection[] achunksection = ichunkaccess1.getSections();
++                int j = achunksection.length;
++
++                for (int k = 0; k < j; ++k) {
++                    LevelChunkSection chunksection = achunksection[k];
++                    PalettedContainerRO<Holder<Biome>> palettedcontainerro = chunksection.getBiomes(); // CraftBukkit - decompile error
++
++                    java.util.Objects.requireNonNull(set);
++                    palettedcontainerro.getAll(set::add);
+                 }
++
+             });
+             set.retainAll(this.biomeSource.possibleBiomes());
+             int j = list.size();
+ 
+             try {
+-                Registry<PlacedFeature> registry1 = p_223087_.registryAccess().registryOrThrow(Registries.PLACED_FEATURE);
+-                int i1 = Math.max(GenerationStep.Decoration.values().length, j);
+-
+-                for (int k = 0; k < i1; k++) {
+-                    int l = 0;
+-                    if (p_223089_.shouldGenerateStructures()) {
+-                        for (Structure structure : map.getOrDefault(k, Collections.emptyList())) {
+-                            worldgenrandom.setFeatureSeed(i, l, k);
+-                            Supplier<String> supplier = () -> registry.getResourceKey(structure).map(Object::toString).orElseGet(structure::toString);
++                Registry<PlacedFeature> iregistry1 = generatoraccessseed.registryAccess().registryOrThrow(Registries.PLACED_FEATURE);
++                int k = Math.max(GenerationStep.Decoration.values().length, j);
++
++                for (int l = 0; l < k; ++l) {
++                    int i1 = 0;
++                    java.util.Iterator iterator;
++                    CrashReportCategory crashreportsystemdetails;
++
++                    if (structuremanager.shouldGenerateStructures()) {
++                        List<Structure> list1 = (List) map.getOrDefault(l, Collections.emptyList());
++
++                        for (iterator = list1.iterator(); iterator.hasNext(); ++i1) {
++                            Structure structure = (Structure) iterator.next();
++
++                            seededrandom.setFeatureSeed(i, i1, l);
++                            Supplier<String> supplier = () -> {
++                                Optional optional = iregistry.getResourceKey(structure).map(Object::toString);
++
++                                java.util.Objects.requireNonNull(structure);
++                                return (String) optional.orElseGet(structure::toString);
++                            };
+ 
+                             try {
+-                                p_223087_.setCurrentlyGenerating(supplier);
+-                                p_223089_.startsForStructure(sectionpos, structure)
+-                                    .forEach(
+-                                        p_223086_ -> p_223086_.placeInChunk(p_223087_, p_223089_, this, worldgenrandom, getWritableArea(p_223088_), chunkpos)
+-                                    );
++                                generatoraccessseed.setCurrentlyGenerating(supplier);
++                                structuremanager.startsForStructure(sectionposition, structure).forEach((structurestart) -> {
++                                    structurestart.placeInChunk(generatoraccessseed, structuremanager, this, seededrandom, ChunkGenerator.getWritableArea(ichunkaccess), chunkcoordintpair);
++                                });
+                             } catch (Exception exception) {
+-                                CrashReport crashreport1 = CrashReport.forThrowable(exception, "Feature placement");
+-                                crashreport1.addCategory("Feature").setDetail("Description", supplier::get);
+-                                throw new ReportedException(crashreport1);
+-                            }
++                                CrashReport crashreport = CrashReport.forThrowable(exception, "Feature placement");
+ 
+-                            l++;
++                                crashreportsystemdetails = crashreport.addCategory("Feature");
++                                java.util.Objects.requireNonNull(supplier);
++                                crashreportsystemdetails.setDetail("Description", supplier::get);
++                                throw new ReportedException(crashreport);
++                            }
+                         }
+                     }
+ 
+-                    if (k < j) {
+-                        IntSet intset = new IntArraySet();
+-
+-                        for (Holder<Biome> holder : set) {
+-                            List<HolderSet<PlacedFeature>> list1 = this.generationSettingsGetter.apply(holder).features();
+-                            if (k < list1.size()) {
+-                                HolderSet<PlacedFeature> holderset = list1.get(k);
+-                                FeatureSorter.StepFeatureData featuresorter$stepfeaturedata1 = list.get(k);
+-                                holderset.stream()
+-                                    .map(Holder::value)
+-                                    .forEach(p_223174_ -> intset.add(featuresorter$stepfeaturedata1.indexMapping().applyAsInt(p_223174_)));
++                    if (l < j) {
++                        IntArraySet intarrayset = new IntArraySet();
++
++                        iterator = set.iterator();
++
++                        while (iterator.hasNext()) {
++                            Holder<Biome> holder = (Holder) iterator.next();
++                            List<HolderSet<PlacedFeature>> list2 = ((BiomeGenerationSettings) this.generationSettingsGetter.apply(holder)).features();
++
++                            if (l < list2.size()) {
++                                HolderSet<PlacedFeature> holderset = (HolderSet) list2.get(l);
++                                FeatureSorter.StepFeatureData featuresorter_b = (FeatureSorter.StepFeatureData) list.get(l);
++
++                                holderset.stream().map(Holder::value).forEach((placedfeature) -> {
++                                    intarrayset.add(featuresorter_b.indexMapping().applyAsInt(placedfeature));
++                                });
+                             }
+                         }
+ 
+-                        int j1 = intset.size();
+-                        int[] aint = intset.toIntArray();
++                        int j1 = intarrayset.size();
++                        int[] aint = intarrayset.toIntArray();
++
+                         Arrays.sort(aint);
+-                        FeatureSorter.StepFeatureData featuresorter$stepfeaturedata = list.get(k);
++                        FeatureSorter.StepFeatureData featuresorter_b1 = (FeatureSorter.StepFeatureData) list.get(l);
+ 
+-                        for (int k1 = 0; k1 < j1; k1++) {
++                        for (int k1 = 0; k1 < j1; ++k1) {
+                             int l1 = aint[k1];
+-                            PlacedFeature placedfeature = featuresorter$stepfeaturedata.features().get(l1);
+-                            Supplier<String> supplier1 = () -> registry1.getResourceKey(placedfeature).map(Object::toString).orElseGet(placedfeature::toString);
+-                            worldgenrandom.setFeatureSeed(i, l1, k);
++                            PlacedFeature placedfeature = (PlacedFeature) featuresorter_b1.features().get(l1);
++                            Supplier<String> supplier1 = () -> {
++                                Optional optional = iregistry1.getResourceKey(placedfeature).map(Object::toString);
++
++                                java.util.Objects.requireNonNull(placedfeature);
++                                return (String) optional.orElseGet(placedfeature::toString);
++                            };
++
++                            // Paper start - Configurable feature seeds; change populationSeed used in random
++                            long featurePopulationSeed = i;
++                            final long configFeatureSeed = generatoraccessseed.getMinecraftWorld().paperConfig().featureSeeds.features.getLong(placedfeature.feature());
++                            if (configFeatureSeed != -1) {
++                                featurePopulationSeed = seededrandom.setDecorationSeed(configFeatureSeed, blockposition.getX(), blockposition.getZ()); // See seededrandom.setDecorationSeed from above
++                            }
++                            seededrandom.setFeatureSeed(featurePopulationSeed, l1, l);
++                            // Paper end - Configurable feature seeds
+ 
+                             try {
+-                                p_223087_.setCurrentlyGenerating(supplier1);
+-                                placedfeature.placeWithBiomeCheck(p_223087_, this, worldgenrandom, blockpos);
++                                generatoraccessseed.setCurrentlyGenerating(supplier1);
++                                placedfeature.placeWithBiomeCheck(generatoraccessseed, this, seededrandom, blockposition);
+                             } catch (Exception exception1) {
+-                                CrashReport crashreport2 = CrashReport.forThrowable(exception1, "Feature placement");
+-                                crashreport2.addCategory("Feature").setDetail("Description", supplier1::get);
+-                                throw new ReportedException(crashreport2);
++                                CrashReport crashreport1 = CrashReport.forThrowable(exception1, "Feature placement");
++
++                                crashreportsystemdetails = crashreport1.addCategory("Feature");
++                                java.util.Objects.requireNonNull(supplier1);
++                                crashreportsystemdetails.setDetail("Description", supplier1::get);
++                                throw new ReportedException(crashreport1);
+                             }
+                         }
+                     }
+                 }
+ 
+-                p_223087_.setCurrentlyGenerating(null);
++                generatoraccessseed.setCurrentlyGenerating((Supplier) null);
+             } catch (Exception exception2) {
+-                CrashReport crashreport = CrashReport.forThrowable(exception2, "Biome decoration");
+-                crashreport.addCategory("Generation").setDetail("CenterX", chunkpos.x).setDetail("CenterZ", chunkpos.z).setDetail("Decoration Seed", i);
+-                throw new ReportedException(crashreport);
+-            }
+-        }
+-    }
++                CrashReport crashreport2 = CrashReport.forThrowable(exception2, "Biome decoration");
++
++                crashreport2.addCategory("Generation").setDetail("CenterX", (Object) chunkcoordintpair.x).setDetail("CenterZ", (Object) chunkcoordintpair.z).setDetail("Decoration Seed", (Object) i);
++                throw new ReportedException(crashreport2);
++            }
++        }
 +    }
 +
-+    public void applyBiomeDecorationCB(WorldGenLevel pLevel, ChunkAccess pChunk, StructureManager pStructureManager, boolean vanilla) {
++    // CraftBukkit start
++    public void applyBiomeDecoration(WorldGenLevel world, ChunkAccess chunk, StructureManager structureAccessor) {
++        this.applyBiomeDecoration(world, chunk, structureAccessor, true);
++    }
++
++    public void applyBiomeDecoration(WorldGenLevel pLevel, ChunkAccess pChunk, StructureManager pStructureManager, boolean vanilla) {
 +        if (vanilla) {
-+            this.applyBiomeDecoration(pLevel, pChunk, pStructureManager);
++            this.addVanillaDecorations(pLevel, pChunk, pStructureManager);
 +        }
 +        org.bukkit.World world = pLevel.getMinecraftWorld().getWorld();
 +        // only call when a populator is present (prevents unnecessary entity conversion)
@@ -131,28 +337,11 @@
 +            limitedRegion.saveEntities();
 +            limitedRegion.breakLink();
 +        }
-+        // CraftBukkit end
 +    }
-+
-     public void applyBiomeDecoration(WorldGenLevel p_223087_, ChunkAccess p_223088_, StructureManager p_223089_) {
-         ChunkPos chunkpos = p_223088_.getPos();
-         if (!SharedConstants.debugVoidTerrain(chunkpos)) {
-@@ -384,7 +_,14 @@
-                             int l1 = aint[k1];
-                             PlacedFeature placedfeature = featuresorter$stepfeaturedata.features().get(l1);
-                             Supplier<String> supplier1 = () -> registry1.getResourceKey(placedfeature).map(Object::toString).orElseGet(placedfeature::toString);
--                            worldgenrandom.setFeatureSeed(i, l1, k);
-+                            // Paper start - Configurable feature seeds; change populationSeed used in random
-+                            long featurePopulationSeed = i;
-+                            final long configFeatureSeed = p_223087_.getMinecraftWorld().paperConfig().featureSeeds.features.getLong(placedfeature.feature());
-+                            if (configFeatureSeed != -1) {
-+                                featurePopulationSeed = worldgenrandom.setDecorationSeed(configFeatureSeed, blockpos.getX(), blockpos.getZ()); // See seededrandom.setDecorationSeed from above
-+                            }
-+                            worldgenrandom.setFeatureSeed(featurePopulationSeed, l1, k);
-+                            // Paper end - Configurable feature seeds
++    // CraftBukkit end
  
-                             try {
-                                 p_223087_.setCurrentlyGenerating(supplier1);
+     private static BoundingBox getWritableArea(ChunkAccess p_187718_) {
+         ChunkPos chunkpos = p_187718_.getPos();
 @@ -429,6 +_,10 @@
          return this.biomeSource;
      }
