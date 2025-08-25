@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
-@@ -45,7 +_,8 @@
+@@ -45,13 +_,14 @@
  import net.minecraft.world.level.storage.DimensionDataStorage;
  import net.minecraft.world.level.storage.LevelStorageSource;
  
@@ -10,6 +10,13 @@
      private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
      private final DistanceManager distanceManager;
      public final ServerLevel level;
+     final Thread mainThread;
+     final ThreadedLevelLightEngine lightEngine;
+-    private final ServerChunkCache.MainThreadExecutor mainThreadProcessor;
++    public final ServerChunkCache.MainThreadExecutor mainThreadProcessor; // Paper - public
+     public final ChunkMap chunkMap;
+     private final DimensionDataStorage dataStorage;
+     private long lastInhabitedUpdate;
 @@ -64,6 +_,65 @@
      @Nullable
      @VisibleForDebug
@@ -76,7 +83,7 @@
  
      public ServerChunkCache(
          ServerLevel p_214982_,
-@@ -106,6 +_,46 @@
+@@ -106,6 +_,66 @@
          this.clearCache();
      }
  
@@ -93,6 +100,26 @@
 +        this.chunkMap.setChunkGenerator(chunkGenerator);
 +    }
 +    // CraftBukkit end
++    // Paper start
++    // Paper - rewrite chunk system
++
++    @Nullable
++    public ChunkAccess getChunkAtImmediately(int x, int z) {
++        ChunkHolder holder = this.chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
++        if (holder == null) {
++            return null;
++        }
++
++        return holder.getLatestChunk();
++    }
++
++    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
++        this.distanceManager.addTicket(ticketType, chunkPos, ticketLevel, identifier);
++    }
++
++    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
++        this.distanceManager.removeTicket(ticketType, chunkPos, ticketLevel, identifier);
++    }
 +
 +    // "real" get chunk if loaded
 +    // Note: Partially copied from the getChunkAt method below
@@ -542,7 +569,7 @@
      public void setSimulationDistance(int p_184027_) {
          this.distanceManager.updateSimulationDistance(p_184027_);
      }
-@@ -509,7 +_,7 @@
+@@ -509,10 +_,10 @@
          this.distanceManager.removeTicketsOnClosing();
      }
  
@@ -550,7 +577,11 @@
 +    public static record ChunkAndHolder(LevelChunk chunk, ChunkHolder holder) { // Paper - rewrite chunk system - public
      }
  
-     final class MainThreadExecutor extends BlockableEventLoop<Runnable> {
+-    final class MainThreadExecutor extends BlockableEventLoop<Runnable> {
++    public final class MainThreadExecutor extends BlockableEventLoop<Runnable> { // Paper - public
+         MainThreadExecutor(Level p_8494_) {
+             super("Chunk source main thread executor for " + p_8494_.dimension().location());
+         }
 @@ -549,13 +_,17 @@
          }
  

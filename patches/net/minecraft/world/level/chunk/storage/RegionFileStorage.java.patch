@@ -9,7 +9,7 @@
      public static final String ANVIL_EXTENSION = ".mca";
      private static final int MAX_CACHE_SIZE = 256;
      public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap<>();
-@@ -22,33 +_,255 @@
+@@ -22,89 +_,378 @@
      private final Path folder;
      private final boolean sync;
  
@@ -183,7 +183,7 @@
 +
 +    // Paper start
 +    private static void printOversizedLog(String msg, Path file, int x, int z) {
-+        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + " - You may ask for help on Discord, but do not file an issue. These error messages can not be removed."); // Purpur // Plazma - Fork-friendly Rebranding
++        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " - You may ask for help on Discord, but do not file an issue. These error messages can not be removed."); // Purpur // Stellar - Fork-friendly Rebranding
 +    }
 +
 +    private static CompoundTag readOversizedChunk(RegionFile regionfile, ChunkPos chunkCoordinate) throws IOException {
@@ -221,6 +221,17 @@
      @Nullable
      public CompoundTag read(ChunkPos p_63707_) throws IOException {
 -        RegionFile regionfile = this.getRegionFile(p_63707_);
+-
+-        CompoundTag compoundtag;
+-        try (DataInputStream datainputstream = regionfile.getChunkDataInputStream(p_63707_)) {
+-            if (datainputstream == null) {
+-                return null;
+-            }
+-
+-            compoundtag = NbtIo.read(datainputstream);
+-        }
+-
+-        return compoundtag;
 +        // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing // Stellar
 +        RegionFile regionfile = this.getRegionFile(p_63707_, true);
 +        if (regionfile == null) {
@@ -282,10 +293,6 @@
 +        }
 +
 +        return nbttagcompound;
- 
-         CompoundTag compoundtag;
-         try (DataInputStream datainputstream = regionfile.getChunkDataInputStream(p_63707_)) {
-@@ -63,48 +_,126 @@
      }
  
      public void scanChunk(ChunkPos p_196957_, StreamTagVisitor p_196958_) throws IOException {

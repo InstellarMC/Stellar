@@ -221,11 +221,47 @@
          private boolean calculateSolid() {
              if (this.owner.properties.forceSolidOn) {
                  return true;
-@@ -472,6 +_,7 @@
+@@ -472,6 +_,43 @@
              }
  
              this.legacySolid = this.calculateSolid();
++            // Paper start - rewrite chunk system
 +            this.isConditionallyFullOpaque = this.canOcclude & this.useShapeForLightOcclusion;
++            this.opacityIfCached = this.cache == null || this.isConditionallyFullOpaque ? -1 : this.cache.lightBlock;
++            // Paper end - rewrite chunk system
++            // Paper start - optimise collisions
++            if (this.cache != null) {
++                final VoxelShape collisionShape = this.cache.collisionShape;
++                try {
++                    this.constantCollisionShape = this.getCollisionShape(null, null, null);
++                    this.constantAABBCollision = this.constantCollisionShape == null ? null : ((ca.spottedleaf.moonrise.patches.collisions.shape.CollisionVoxelShape)this.constantCollisionShape).moonrise$getSingleAABBRepresentation();
++                } catch (final Throwable throwable) {
++                    this.constantCollisionShape = null;
++                    this.constantAABBCollision = null;
++                }
++                this.occludesFullBlock = ((ca.spottedleaf.moonrise.patches.collisions.shape.CollisionVoxelShape)collisionShape).moonrise$occludesFullBlock();
++                this.emptyCollisionShape = collisionShape.isEmpty();
++                // init caches
++                initCaches(collisionShape);
++                if (collisionShape != Shapes.empty() && collisionShape != Shapes.block()) {
++                    for (final Direction direction : DIRECTIONS_CACHED) {
++                        // initialise the directional face shape cache as well
++                        final VoxelShape shape = Shapes.getFaceShape(collisionShape, direction);
++                        initCaches(shape);
++                    }
++                }
++                if (this.cache.occlusionShapes != null) {
++                    for (final VoxelShape shape : this.cache.occlusionShapes) {
++                        initCaches(shape);
++                    }
++                }
++            } else {
++                this.occludesFullBlock = false;
++                this.emptyCollisionShape = false;
++                this.constantCollisionShape = null;
++                this.constantAABBCollision = null;
++            }
++            // Paper end - optimise collisions
          }
  
          public Block getBlock() {
