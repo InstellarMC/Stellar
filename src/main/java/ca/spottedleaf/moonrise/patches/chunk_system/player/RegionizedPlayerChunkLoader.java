@@ -437,6 +437,7 @@ public final class RegionizedPlayerChunkLoader {
                 new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(this.world.getWorld().getChunkAt(chunkPos.longKey), this.player.getBukkitEntity()).callEvent();
             }
             // Paper end - PlayerChunkUnloadEvent
+            net.neoforged.neoforge.event.EventHooks.fireChunkUnWatch(this.player, chunkPos, this.world); // Stellar - support neo
         }
 
         private final SingleUserAreaMap<PlayerChunkLoaderData> broadcastMap = new SingleUserAreaMap<>(this) {

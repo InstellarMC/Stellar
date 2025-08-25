@@ -68,7 +68,12 @@ public final class ChunkSystem {
     }
 
     public static boolean screenEntity(final ServerLevel level, final Entity entity) {
-        return true;
+        // Stellar start - add fromDisk param
+        return screenEntity(level, entity, false);
+    }
+
+    public static boolean screenEntity(final ServerLevel level, final Entity entity, final boolean fromDisk) { // Stellar end - add fromDisk param
+        return !net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.EntityJoinLevelEvent(entity, level, fromDisk)).isCanceled(); // Stellar - support neo
     }
 
     public static void onChunkHolderCreate(final ServerLevel level, final ChunkHolder holder) {

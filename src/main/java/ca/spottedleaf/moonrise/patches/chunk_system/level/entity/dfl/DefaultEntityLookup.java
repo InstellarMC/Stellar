@@ -84,7 +84,7 @@ public final class DefaultEntityLookup extends EntityLookup {
     }
 
     @Override
-    protected boolean screenEntity(final Entity entity) {
+    protected boolean screenEntity(final Entity entity, final boolean fromDisk) { // Stellar - add fromDisk param
         return true;
     }
 

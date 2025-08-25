@@ -40,6 +40,7 @@ import net.minecraft.server.level.TicketType;
 import net.minecraft.util.SortedArraySet;
 import net.minecraft.util.Unit;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.LevelChunk;
 import org.slf4j.Logger;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -1058,6 +1059,11 @@ public final class ChunkHolderManager {
         ChunkSystem.onChunkHolderDelete(this.world, holder.vanillaChunkHolder);
         this.chunkHolders.remove(CoordinateUtils.getChunkKey(holder.chunkX, holder.chunkZ));
 
+        // Stellar start - support neo
+        if (holder.vanillaChunkHolder.getLatestChunk() instanceof LevelChunk levelchunk) {
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.level.ChunkEvent.Unload(levelchunk));
+        }
+        // Stellar end - support neo
     }
 
     // note: never call while inside the chunk system, this will absolutely break everything

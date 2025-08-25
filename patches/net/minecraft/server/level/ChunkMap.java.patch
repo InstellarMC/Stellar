@@ -606,7 +606,7 @@
      }
  
      public int getTickingGenerated() {
-@@ -709,119 +_,89 @@
+@@ -709,119 +_,82 @@
      }
  
      private boolean saveChunkIfNeeded(ChunkHolder p_198875_) {
@@ -669,10 +669,6 @@
 -                return false;
 -            }
 -        }
-+        // TODO(Sayakie): Paper - rewrite chunk system // Stellar - support NeoForge event firing
-+        CompoundTag compoundtag = ChunkSerializer.write(this.level, p_140259_);
-+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.level.ChunkDataEvent.Save(p_140259_, p_140259_.getLevel() != null ? p_140259_.getLevel() : this.level, compoundtag));
-+
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
  
@@ -748,9 +744,6 @@
      private static void dropChunk(ServerPlayer p_294215_, ChunkPos p_294758_) {
 -        p_294215_.connection.chunkSender.dropChunk(p_294215_, p_294758_);
 -    }
-+        // TODO(Sayakie): Paper - rewrite chunk system // Stellar - support NeoForge event firing
-+        net.neoforged.neoforge.event.EventHooks.fireChunkUnWatch(p_294215_, p_294758_, p_294215_.serverLevel());
-+
 +        // Paper - rewrite chunk system
 +    }
 +

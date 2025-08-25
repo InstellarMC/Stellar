@@ -107,7 +107,7 @@ public final class ServerEntityLookup extends EntityLookup {
     }
 
     @Override
-    protected boolean screenEntity(final Entity entity) {
-        return ChunkSystem.screenEntity(this.serverWorld, entity);
+    protected boolean screenEntity(final Entity entity, final boolean fromDisk) {
+        return ChunkSystem.screenEntity(this.serverWorld, entity, fromDisk);
     }
 }

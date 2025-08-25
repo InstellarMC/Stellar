@@ -348,10 +348,15 @@ public final class ChunkLoadTask extends ChunkProgressionTask {
                 final ChunkAccess deserialized = ChunkSerializer.read(
                         this.world, this.world.getPoiManager(), this.world.getChunkSource().chunkMap.storageInfo(), new ChunkPos(this.chunkX, this.chunkZ), data
                 );
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.level.ChunkDataEvent.Load(deserialized, data, net.minecraft.world.level.chunk.status.ChunkType.LEVELCHUNK)); // Stellar - support neo
                 return new TaskResult<>(deserialized, null);
             } catch (final Throwable thr2) {
                 LOGGER.error("Failed to parse chunk data for task: " + this.toString() + ", chunk data will be lost", thr2);
-                return new TaskResult<>(this.getEmptyChunk(), null);
+                // Stellar start - support neo
+                final var empty = this.getEmptyChunk();
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.level.ChunkDataEvent.Load(empty, data, net.minecraft.world.level.chunk.status.ChunkType.PROTOCHUNK));
+                return new TaskResult<>(empty, null);
+                // Stellar end - support neo
             }
         }
 

@@ -7,6 +7,7 @@ import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
 import ca.spottedleaf.moonrise.common.util.WorldUtil;
 import ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.util.AbortableIterationConsumer;
 import net.minecraft.util.Mth;
@@ -91,7 +92,10 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
 
     protected abstract void entityEndTicking(final Entity entity);
 
-    protected abstract boolean screenEntity(final Entity entity);
+    protected boolean screenEntity(final Entity entity) { // Stellar start - add fromDisk param
+        return screenEntity(entity, false);
+    }
+    protected abstract boolean screenEntity(final Entity entity, final boolean fromDisk); // Stellar end - add fromDisk param
 
     private static Entity maskNonAccessible(final Entity entity) {
         if (entity == null) {
@@ -414,7 +418,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
             return false;
         }
 
-        if (!this.screenEntity(entity)) {
+        if (!this.screenEntity(entity, fromDisk)) { // Stellar - add fromDisk param
             return false;
         }
 
@@ -445,6 +449,8 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
         this.addEntityCallback(entity);
 
         this.entityStatusChange(entity, slices, Visibility.HIDDEN, getEntityStatus(entity), false, !fromDisk, false);
+
+        entity.onAddedToLevel(); // Stellar - support neo
 
         return true;
     }
@@ -1034,9 +1040,11 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
     protected final class EntityCallback implements EntityInLevelCallback {
 
         public final Entity entity;
+        private long currentSectionKey; // Stellar - support neo - track current section for entity move events
 
         public EntityCallback(final Entity entity) {
             this.entity = entity;
+            this.currentSectionKey = SectionPos.asLong(entity.blockPosition()); // Stellar - support neo - track current section for entity move events
         }
 
         @Override
@@ -1052,6 +1060,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
             final Visibility newVisibility = getEntityStatus(entity);
 
             EntityLookup.this.entityStatusChange(entity, newSlices, oldVisibility, newVisibility, true, false, false);
+            net.neoforged.neoforge.common.CommonHooks.onEntityEnterSection(this.entity, this.currentSectionKey, (this.currentSectionKey = SectionPos.asLong(this.entity.blockPosition()))); // Stellar - support neo - track current section for entity move events
         }
 
         @Override

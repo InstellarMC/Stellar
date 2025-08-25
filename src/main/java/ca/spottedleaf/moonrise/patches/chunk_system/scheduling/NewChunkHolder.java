@@ -1801,6 +1801,7 @@ public final class NewChunkHolder {
             }
 
             final CompoundTag save = ChunkSerializer.write(this.world, chunk);
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.level.ChunkDataEvent.Save(chunk, this.world, save));
 
             if (unloading) {
                 completing = true;
