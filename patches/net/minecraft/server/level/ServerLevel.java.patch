@@ -1474,6 +1474,18 @@
              this.getServer().getPlayerList().broadcastAll(new ClientboundSetDefaultSpawnPositionPacket(p_8734_, p_8735_));
          }
  
+@@ -1385,6 +_,11 @@
+                     DebugPackets.sendPoiRemovedPacket(this, blockpos);
+                 }));
+             optional1.ifPresent(p_215057_ -> this.getServer().execute(() -> {
++                    // Paper start - Remove stale POIs
++                    if (optional.isEmpty() && this.getPoiManager().exists(blockpos, poiType -> true)) {
++                        this.getPoiManager().remove(blockpos);
++                    }
++                    // Paper end - Remove stale POIs
+                     this.getPoiManager().add(blockpos, (Holder<PoiType>)p_215057_);
+                     DebugPackets.sendPoiAddedPacket(this, blockpos);
+                 }));
 @@ -1440,7 +_,7 @@
                  }
              }
