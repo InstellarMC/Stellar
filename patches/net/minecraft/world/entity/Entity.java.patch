@@ -217,7 +217,7 @@
 +    }
 +    // Paper end
 +    // Paper start - rewrite chunk system
-+    private final boolean isHardColliding = this.moonrise$isHardCollidingUncached();
++    private final boolean isHardColliding; // Stellar
 +    private net.minecraft.server.level.FullChunkStatus chunkStatus;
 +    private int sectionX = Integer.MIN_VALUE;
 +    private int sectionY = Integer.MIN_VALUE;
@@ -349,13 +349,14 @@
          SynchedEntityData.Builder synchedentitydata$builder = new SynchedEntityData.Builder(this);
          synchedentitydata$builder.define(DATA_SHARED_FLAGS_ID, (byte)0);
          synchedentitydata$builder.define(DATA_AIR_SUPPLY_ID, this.getMaxAirSupply());
-@@ -263,7 +_,10 @@
+@@ -263,7 +_,11 @@
          this.defineSynchedData(synchedentitydata$builder);
          this.entityData = synchedentitydata$builder.build();
          this.setPos(0.0, 0.0, 0.0);
 +        net.neoforged.neoforge.event.entity.EntityEvent.Size sizeEvent = net.neoforged.neoforge.event.EventHooks.getEntitySizeForge(this, Pose.STANDING, this.dimensions);
 +        this.dimensions = sizeEvent.getNewSize();
          this.eyeHeight = this.dimensions.eyeHeight();
++        this.isHardColliding = this.moonrise$isHardCollidingUncached(); // Stellar
 +        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.EntityEvent.EntityConstructing(this));
      }
  

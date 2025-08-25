@@ -147,11 +147,13 @@
          this.setHealth(this.getMaxHealth());
          this.blocksBuilding = true;
          this.rotA = (float)((Math.random() + 1.0) * 0.01F);
-@@ -267,6 +_,7 @@
+@@ -267,6 +_,9 @@
          this.yHeadRot = this.getYRot();
          NbtOps nbtops = NbtOps.INSTANCE;
          this.brain = this.makeBrain(new Dynamic<>(nbtops, nbtops.createMap(ImmutableMap.of(nbtops.createString("memories"), nbtops.emptyMap()))));
 +        this.craftAttributes = new CraftAttributeMap(attributes); // CraftBukkit
++        // CraftBukkit - setHealth(getMaxHealth()) inlined and simplified to skip the instanceof check for EntityPlayer, as getBukkitEntity() is not initialized in constructor
++        this.entityData.set(LivingEntity.DATA_HEALTH_ID, (float) this.getAttribute(Attributes.MAX_HEALTH).getValue());
      }
  
      public Brain<?> getBrain() {
