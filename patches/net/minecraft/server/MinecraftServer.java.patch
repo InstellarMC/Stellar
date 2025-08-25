@@ -407,6 +407,15 @@
          if (!JvmProfiler.INSTANCE.isRunning()) {
          }
  
+@@ -354,7 +_,7 @@
+     }
+ 
+     protected void createLevels(ChunkProgressListener p_129816_) {
+-        ServerLevelData serverleveldata = this.worldData.overworldData();
++        ServerLevelData serverleveldata = (PrimaryLevelData)this.worldData.overworldData();
+         boolean flag = this.worldData.isDebugWorld();
+         Registry<LevelStem> registry = this.registries.compositeAccess().registryOrThrow(Registries.LEVEL_STEM);
+         WorldOptions worldoptions = this.worldData.worldGenOptions();
 @@ -367,11 +_,14 @@
          ServerLevel serverlevel = new ServerLevel(
              this, this.executor, this.storageSource, serverleveldata, Level.OVERWORLD, levelstem, p_129816_, flag, j, list, true, null
@@ -450,13 +459,14 @@
                  ServerLevel serverlevel1 = new ServerLevel(
                      this,
                      this.executor,
-@@ -419,12 +_,43 @@
+@@ -419,12 +_,45 @@
                      false,
                      randomsequences
                  );
++                this.addLevel(serverlevel1); // Paper - Put world into worldlist before initing the world; move up // Stellar - DerivedLevelData -> PrimaryLevelData
 +                this.initWorld(serverlevel1, derivedleveldata, worldData, worldoptions); // CraftBukkit
                  worldborder.addListener(new BorderChangeListener.DelegateBorderChangeListener(serverlevel1.getWorldBorder()));
-                 this.levels.put(resourcekey1, serverlevel1);
+-                this.levels.put(resourcekey1, serverlevel1);
 +                NeoForge.EVENT_BUS.post(new LevelEvent.Load(levels.get(resourcekey)));
              }
          }
@@ -484,6 +494,7 @@
 +        }
 +        // Paper end - Configurable player collision
 +
++        /* Stellar start - moved down
 +        this.server.enablePlugins(PluginLoadOrder.POSTWORLD);
 +        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
 +        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
@@ -491,6 +502,7 @@
 +        ((SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
 +        this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
 +        this.connection.acceptConnections();
++        */// Stellar end - moved down
      }
  
      private static void setInitialSpawn(ServerLevel p_177897_, ServerLevelData p_177898_, boolean p_177899_, boolean p_177900_) {
@@ -590,7 +602,7 @@
          for (ServerLevel serverlevel1 : this.levels.values()) {
              ForcedChunksSavedData forcedchunkssaveddata = serverlevel1.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
              if (forcedchunkssaveddata != null) {
-@@ -513,13 +_,17 @@
+@@ -513,13 +_,27 @@
                      ChunkPos chunkpos = new ChunkPos(k);
                      serverlevel1.getChunkSource().updateChunkForced(chunkpos, true);
                  }
@@ -607,10 +619,20 @@
          this.updateMobSpawningFlags();
 +        this.forceTicks = false;
 +        // CraftBukkit end
++
++        // Stellar start - moved from createLevels - call plugins here so make sure worlds are fully loaded
++        this.server.enablePlugins(PluginLoadOrder.POSTWORLD);
++        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
++        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
++        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - call commands event for regular plugins
++        ((SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
++        this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
++        this.connection.acceptConnections();
++        // Stellar end - moved from createLevels - call plugins here so make sure worlds are fully loaded
      }
  
      public GameType getDefaultGameType() {
-@@ -537,28 +_,43 @@
+@@ -537,28 +_,50 @@
      public abstract boolean shouldRconBroadcast();
  
      public boolean saveAllChunks(boolean p_129886_, boolean p_129887_, boolean p_129888_) {
@@ -634,6 +656,7 @@
              flag = true;
          }
  
++        /*
          ServerLevel serverlevel2 = this.overworld();
          ServerLevelData serverleveldata = this.worldData.overworldData();
 -        serverleveldata.setWorldBorder(serverlevel2.getWorldBorder().createSettings());
@@ -650,10 +673,16 @@
 +            }
 +        }
 +        // CraftBukkit end
++        */
 +        if (flush) {
              for (ServerLevel serverlevel1 : this.getAllLevels()) {
 -                LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", serverlevel1.getChunkSource().chunkMap.getStorageName());
-+                LOGGER.info(I18n.as("minecraftserver.6", serverlevel1.getChunkSource().chunkMap.getStorageName()));
++                try {
++                    NeoForge.EVENT_BUS.post(new LevelEvent.Unload(serverlevel1)); // Paper - rewrite chunk system // Stellar - support neo
++                    LOGGER.info(I18n.as("minecraftserver.6", serverlevel1.getChunkSource().chunkMap.getStorageName()));
++                } catch (final Exception ex) {
++                    LOGGER.error(I18n.as("minecraftserver.11"), (Throwable)ex);
++                }
              }
  
 -            LOGGER.info("ThreadedAnvilChunkStorage: All dimensions are saved");
@@ -726,7 +755,7 @@
              this.nextTickTimeNanos = Util.getNanos() + TimeUtil.NANOSECONDS_PER_MILLISECOND;
  
              for (ServerLevel serverlevel1 : this.getAllLevels()) {
-@@ -615,17 +_,8 @@
+@@ -615,17 +_,7 @@
              this.waitUntilNextTick();
          }
  
@@ -741,7 +770,6 @@
 -                }
 -            }
 -        }
-+        try { this.getAllLevels().forEach(net.neoforged.neoforge.event.level.LevelEvent.Unload::new); } catch (final Exception ioexception1) { LOGGER.error(I18n.as("minecraftserver.11"), (Throwable)ioexception1); } // Paper - rewrite chunk system // Stellar - Support NeoForge world unload event
 +        this.saveAllChunks(false, true, true, true); // Paper - rewrite chunk system
  
          this.isSaving = false;

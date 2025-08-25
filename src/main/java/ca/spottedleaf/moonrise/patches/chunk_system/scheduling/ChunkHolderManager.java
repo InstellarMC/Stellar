@@ -262,8 +262,9 @@ public final class ChunkHolderManager {
     public void saveAllChunks(final boolean flush, final boolean shutdown, final boolean logProgress) {
         final List<NewChunkHolder> holders = this.getChunkHolders();
 
-        if (logProgress) {
-            LOGGER.info("Saving all chunkholders for world '" + WorldUtil.getWorldName(this.world) + "'");
+        final int len = holders.size(); // Stellar
+        if (logProgress && len > 0) { // Stellar - don't log if there's nothing to save
+            LOGGER.info("Saving " + len + " chunkholders for world '" + WorldUtil.getWorldName(this.world) + "'"); // Stellar
         }
 
         final DecimalFormat format = new DecimalFormat("#0.00");
@@ -279,7 +280,7 @@ public final class ChunkHolderManager {
         int savedEntity = 0;
         int savedPoi = 0;
 
-        for (int i = 0, len = holders.size(); i < len; ++i) {
+        for (int i = 0; i < len; ++i) { // Stellar
             final NewChunkHolder holder = holders.get(i);
             try {
                 final NewChunkHolder.SaveStat saveStat = holder.save(shutdown);

@@ -324,7 +324,7 @@
      }
  
      public Level getLevel() {
-@@ -270,38 +_,60 @@
+@@ -270,38 +_,55 @@
          return this.mainThreadProcessor.pollTask();
      }
  
@@ -379,11 +379,6 @@
 +
 +    public void close(boolean save) throws IOException {
 +        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.close(save, true); // Paper - rewrite chunk system
-+        // TODO(Sayakie): should we remove this?
-+        if (save) {
-+            this.save(true);
-+        }
-+        // ~ end
 +        // Paper start - Write SavedData IO async
 +        try {
 +            this.dataStorage.close();
