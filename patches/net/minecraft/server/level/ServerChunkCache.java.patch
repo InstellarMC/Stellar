@@ -17,10 +17,14 @@
      public final ChunkMap chunkMap;
      private final DimensionDataStorage dataStorage;
      private long lastInhabitedUpdate;
-@@ -64,6 +_,65 @@
+@@ -64,6 +_,69 @@
      @Nullable
      @VisibleForDebug
      private NaturalSpawner.SpawnState lastSpawnState;
++    // Paper start
++    private final ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable<net.minecraft.world.level.chunk.LevelChunk> fullChunks = new ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable<>();
++    long chunkFutureAwaitCounter;
++    // Paper end
 +    // Paper start - rewrite chunk system
 +
 +    @Override
@@ -189,7 +193,7 @@
 +                return ret;
 +            }
 +
-+            return p_8363_ ? this.getChunkFallback(p_8360_, p_8361_, p_330876_, create) : null;
++            return p_8363_ ? this.getChunkFallback(p_8360_, p_8361_, p_330876_, p_8363_) : null;
          }
 +
 +        return this.getChunkFallback(p_8360_, p_8361_, p_330876_, p_8363_);
@@ -253,7 +257,7 @@
 +        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.level, p_8457_, p_8458_, "Scheduling chunk load off-main");
 +
 +        final int minLevel = ChunkLevel.byStatus(p_331599_);
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder chunkHolder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(chunkX, chunkZ);
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder chunkHolder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(p_8457_, p_8458_);
 +
 +        final boolean needsFullScheduling = p_331599_ == ChunkStatus.FULL && (chunkHolder == null || !chunkHolder.getChunkStatus().isOrAfter(FullChunkStatus.FULL));
 +
@@ -353,7 +357,7 @@
 -            return !this.level.shouldTickBlocksAt(p_143240_) ? false : chunkholder.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK).isSuccess();
 -        }
 +        // Paper start - rewrite chunk system
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder newChunkHolder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(pos);
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder newChunkHolder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(p_143240_);
 +        return newChunkHolder != null && newChunkHolder.isTickingReady();
 +        // Paper end - rewrite chunk system
      }

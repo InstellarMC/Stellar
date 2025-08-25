@@ -24,7 +24,7 @@
                      leashable.setLeashedTo(this, true);
                      flag = true;
                  }
-@@ -87,14 +_,36 @@
+@@ -87,14 +_,35 @@
  
              boolean flag1 = false;
              if (!flag) {
@@ -57,8 +57,7 @@
                      }
 +                    // CraftBukkit start
 +                    if (die) {
-+                        this.setRemoved$cause(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
-+                        this.discard();
++                        this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
 +                    }
 +                    // CraftBukkit end
                  }

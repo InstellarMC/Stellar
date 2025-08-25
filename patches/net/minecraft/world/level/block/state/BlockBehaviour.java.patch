@@ -265,6 +265,19 @@
          }
  
          public Block getBlock() {
+@@ -493,6 +_,12 @@
+             return this.legacySolid;
+         }
+ 
++        // Paper start - Protect Bedrock and End Portal/Frames from being destroyed
++        public final boolean isDestroyable() {
++            return getBlock().isDestroyable();
++        }
++        // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
++
+         public boolean isValidSpawn(BlockGetter p_60644_, BlockPos p_60645_, EntityType<?> p_60646_) {
+             return this.getBlock().properties.isValidSpawn.test(this.asState(), p_60644_, p_60645_, p_60646_);
+         }
 @@ -523,12 +_,14 @@
              return this.useShapeForLightOcclusion;
          }

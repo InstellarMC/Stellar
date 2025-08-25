@@ -136,7 +136,7 @@ public class GenerationTask {
         }
     }
 
-    private void enqueueChunks(LongList chunks) {
+    public void enqueueChunks(LongList chunks) {
         for (int i = 0; i < chunks.size(); i++) {
             long chunk = chunks.getLong(i);
             this.acquireChunk(chunk);

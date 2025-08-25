@@ -258,7 +258,7 @@
 -        if (p_83118_ == block() && p_83119_ == block()) {
 +        // Paper start - optimise collisions
 +        final boolean firstBlock = p_83119_ == BLOCK;
-+        final boolean secondBlock = second == BLOCK;
++        final boolean secondBlock = p_83119_ == BLOCK;
 +
 +        if (firstBlock & secondBlock) {
              return true;

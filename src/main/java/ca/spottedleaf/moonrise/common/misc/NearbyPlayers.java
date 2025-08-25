@@ -122,7 +122,7 @@ public final class NearbyPlayers {
         players[NearbyMapType.GENERAL_SMALL.ordinal()].update(chunk.x, chunk.z, GENERAL_SMALL_VIEW_DISTANCE);
         players[NearbyMapType.GENERAL_REALLY_SMALL.ordinal()].update(chunk.x, chunk.z, GENERAL_REALLY_SMALL_VIEW_DISTANCE);
         players[NearbyMapType.TICK_VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getTickViewDistance(player));
-        players[NearbyMapType.VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getViewDistance(player));
+        players[NearbyMapType.VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getLoadViewDistance(player));
         players[NearbyMapType.SPAWN_RANGE.ordinal()].update(chunk.x, chunk.z, ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE); // Moonrise - chunk tick iteration
     }
 
@@ -158,16 +158,9 @@ public final class NearbyPlayers {
 
         private static final ServerPlayer[] EMPTY_PLAYERS_ARRAY = new ServerPlayer[0];
 
-        private final long chunkKey;
-        private final NearbyPlayers nearbyPlayers;
         private final ReferenceList<ServerPlayer>[] players = new ReferenceList[TOTAL_MAP_TYPES];
         private int nonEmptyLists;
         private long updateCount;
-
-        public TrackedChunk(final long chunkKey, final NearbyPlayers nearbyPlayers) {
-            this.chunkKey = chunkKey;
-            this.nearbyPlayers = nearbyPlayers;
-        }
 
         public boolean isEmpty() {
             return this.nonEmptyLists == 0;
@@ -188,10 +181,7 @@ public final class NearbyPlayers {
             final ReferenceList<ServerPlayer> list = this.players[idx];
             if (list == null) {
                 ++this.nonEmptyLists;
-                final ReferenceList<ServerPlayer> players = (this.players[idx] = new ReferenceList<>(EMPTY_PLAYERS_ARRAY));
-                this.nearbyPlayers.directByChunk[idx].put(this.chunkKey, players);
-                players.add(player);
-
+                (this.players[idx] = new ReferenceList<>(EMPTY_PLAYERS_ARRAY)).add(player);
                 return;
             }
 
@@ -215,7 +205,6 @@ public final class NearbyPlayers {
 
             if (list.size() == 0) {
                 this.players[idx] = null;
-                this.nearbyPlayers.directByChunk[idx].remove(this.chunkKey);
                 --this.nonEmptyLists;
             }
         }
@@ -234,19 +223,9 @@ public final class NearbyPlayers {
         protected void addCallback(final ServerPlayer parameter, final int chunkX, final int chunkZ) {
             final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
 
-            final TrackedChunk chunk = NearbyPlayers.this.byChunk.get(chunkKey);
-            final NearbyMapType type = this.type;
-            if (chunk != null) {
-                chunk.addPlayer(parameter, type);
-                type.addTo(parameter, NearbyPlayers.this.world, chunkX, chunkZ);
-            } else {
-                final TrackedChunk created = new TrackedChunk(chunkKey, NearbyPlayers.this);
-                NearbyPlayers.this.byChunk.put(chunkKey, created);
-                created.addPlayer(parameter, type);
-                type.addTo(parameter, NearbyPlayers.this.world, chunkX, chunkZ);
-
-                ((ChunkSystemLevel)NearbyPlayers.this.world).moonrise$requestChunkData(chunkKey).nearbyPlayers = created;
-            }
+            NearbyPlayers.this.byChunk.computeIfAbsent(chunkKey, (final long keyInMap) -> {
+                return new TrackedChunk();
+            }).addPlayer(parameter, this.type);
         }
 
         @Override
@@ -258,16 +237,10 @@ public final class NearbyPlayers {
                 throw new IllegalStateException("Chunk should exist at " + new ChunkPos(chunkKey));
             }
 
-            final NearbyMapType type = this.type;
-            chunk.removePlayer(parameter, type);
-            type.removeFrom(parameter, NearbyPlayers.this.world, chunkX, chunkZ);
+            chunk.removePlayer(parameter, this.type);
 
             if (chunk.isEmpty()) {
                 NearbyPlayers.this.byChunk.remove(chunkKey);
-                final ChunkData chunkData = ((ChunkSystemLevel)NearbyPlayers.this.world).moonrise$releaseChunkData(chunkKey);
-                if (chunkData != null) {
-                    chunkData.nearbyPlayers = null;
-                }
             }
         }
     }

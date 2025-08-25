@@ -37,10 +37,18 @@
              for (int i = 0; (float)i < f * 16.0F; i++) {
                  float f2 = this.random.nextFloat() * (float) (Math.PI * 2);
                  float f3 = this.random.nextFloat() * 0.5F + 0.5F;
-@@ -195,6 +_,7 @@
+@@ -194,7 +_,14 @@
+     }
  
      @Override
-     public void remove(Entity.RemovalReason p_149847_) {
+-    public void remove(Entity.RemovalReason p_149847_) {
++    public void remove(Entity.RemovalReason reason) {
++        // CraftBukkit start - add Bukkit remove cause
++        this.remove(reason, null);
++    }
++
++    @Override
++    public void remove(Entity.RemovalReason p_149847_, org.bukkit.event.entity.EntityRemoveEvent.Cause cause) {
 +        // CraftBukkit end
          int i = this.getSize();
          if (!this.level().isClientSide && i > 1 && this.isDeadOrDying()) {
@@ -95,19 +103,6 @@
              }
          }
  
-@@ -227,6 +_,12 @@
-     }
- 
-     @Override
-+    public void remove(Entity.RemovalReason p_149847_, org.bukkit.event.entity.EntityRemoveEvent.Cause cause) {
-+        setRemoved$cause(cause);
-+        this.remove(p_149847_);
-+    }
-+
-+    @Override
-     public void push(Entity p_33636_) {
-         super.push(p_33636_);
-         if (p_33636_ instanceof IronGolem && this.isDealsDamage()) {
 @@ -305,7 +_,7 @@
                  }
  

@@ -184,7 +184,7 @@
 -        int i = this.skyEngine == null ? 0 : this.skyEngine.getLightValue(p_75832_) - p_75833_;
 -        int j = this.blockEngine == null ? 0 : this.blockEngine.getLightValue(p_75832_);
 -        return Math.max(j, i);
-+        // Paper - rewrite chunk system
++        return this.lightEngine.getRawBrightness(p_75832_, p_75833_); // Paper - rewrite chunk system
      }
  
      public boolean lightOnInSection(SectionPos p_285319_) {

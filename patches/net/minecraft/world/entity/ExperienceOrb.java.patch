@@ -87,7 +87,7 @@
          List<ExperienceOrb> list = p_147097_.getEntities(EntityTypeTest.forClass(ExperienceOrb.class), aabb, p_147081_ -> canMerge(p_147081_, i, p_147099_));
          if (!list.isEmpty()) {
              ExperienceOrb experienceorb = list.get(0);
-@@ -177,8 +_,14 @@
+@@ -177,9 +_,14 @@
      }
  
      private void merge(ExperienceOrb p_147101_) {
@@ -98,10 +98,11 @@
 +        // Paper end - call orb merge event
          this.count = this.count + p_147101_.count;
          this.age = Math.min(this.age, p_147101_.age);
-+        p_147101_.setRemoved$cause(org.bukkit.event.entity.EntityRemoveEvent.Cause.MERGE);  // CraftBukkit - add Bukkit remove cause
-         p_147101_.discard();
+-        p_147101_.discard();
++        p_147101_.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.MERGE); // CraftBukkit - add Bukkit remove cause
      }
  
+     private void setUnderwaterMovement() {
 @@ -201,7 +_,7 @@
              this.markHurt();
              this.health = (int)((float)this.health - p_20786_);

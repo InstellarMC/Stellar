@@ -119,14 +119,15 @@
          if (!flag) {
              return false;
          } else {
-@@ -217,6 +_,7 @@
+@@ -217,7 +_,7 @@
      }
  
      private void unloadEntity(EntityAccess p_157586_) {
-+        ((Entity)p_157586_).setRemoved$cause(EntityRemoveEvent.Cause.UNLOAD); // CraftBukkit - add Bukkit remove cause
-         p_157586_.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK);
+-        p_157586_.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK);
++        p_157586_.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveEvent.Cause.UNLOAD); // CraftBukkit - add Bukkit remove cause
          p_157586_.setLevelCallback(EntityInLevelCallback.NULL);
      }
+ 
 @@ -228,8 +_,15 @@
      private void processPendingLoads() {
          ChunkEntities<T> chunkentities;

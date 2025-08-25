@@ -259,7 +259,7 @@
          Rotations rotations = this.entityData.get(DATA_HEAD_POSE);
          if (!this.headPose.equals(rotations)) {
              this.setHeadPose(rotations);
-@@ -598,9 +_,28 @@
+@@ -598,9 +_,27 @@
          return this.isSmall();
      }
  
@@ -275,8 +275,7 @@
 -        this.remove(Entity.RemovalReason.KILLED);
 +        Collection<ItemEntity> captureDrops = this.captureDrops(null);
 +        CraftEventFactory.callEntityDeathEvent(this, this.damageSources().genericKill(), captureDrops); // CraftBukkit - call event
-+        setRemoved$cause(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH);
-+        this.remove(Entity.RemovalReason.KILLED); // CraftBukkit - add Bukkit remove cause
++        this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
 +        // CraftBukkit end
 +        this.gameEvent(GameEvent.ENTITY_DIE);
 +    }

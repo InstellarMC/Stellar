@@ -191,7 +191,7 @@
      protected ChunkHolder getUpdatingChunkIfPresent(long p_140175_) {
 -        return this.updatingChunkMap.get(p_140175_);
 +        // Paper start - rewrite chunk system
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(pos);
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(p_140175_);
 +        return holder == null ? null : holder.vanillaChunkHolder;
 +        // Paper end - rewrite chunk system
      }
@@ -200,7 +200,7 @@
      public ChunkHolder getVisibleChunkIfPresent(long p_140328_) {
 -        return this.visibleChunkMap.get(p_140328_);
 +        // Paper start - rewrite chunk system
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(pos);
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(p_140328_);
 +        return holder == null ? null : holder.vanillaChunkHolder;
 +        // Paper end - rewrite chunk system
      }
@@ -264,6 +264,18 @@
      }
  
      public ReportedException debugFuturesAndCreateReportedException(IllegalStateException p_203752_, String p_203753_) {
+@@ -351,9 +_,9 @@
+                     }
+                 );
+         stringbuilder.append("Updating:").append(System.lineSeparator());
+-        this.updatingChunkMap.values().forEach(consumer);
++        ca.spottedleaf.moonrise.common.util.ChunkSystem.getUpdatingChunkHolders(this.level).forEach(consumer); // Paper
+         stringbuilder.append("Visible:").append(System.lineSeparator());
+-        this.visibleChunkMap.values().forEach(consumer);
++        ca.spottedleaf.moonrise.common.util.ChunkSystem.getVisibleChunkHolders(this.level).forEach(consumer); // Paper
+         CrashReport crashreport = CrashReport.forThrowable(p_203752_, "Chunk loading");
+         CrashReportCategory crashreportcategory = crashreport.addCategory("Chunk loading");
+         crashreportcategory.setDetail("Details", p_203753_);
 @@ -362,80 +_,25 @@
      }
  
@@ -800,6 +812,60 @@
      }
  
      void dumpChunks(Writer p_140275_) throws IOException {
+@@ -861,33 +_,26 @@
+             .addColumn("fluid_ticks")
+             .build(p_140275_);
+         TickingTracker tickingtracker = this.distanceManager.tickingTracker();
+-
+-        for (Entry<ChunkHolder> entry : this.visibleChunkMap.long2ObjectEntrySet()) {
+-            long i = entry.getLongKey();
+-            ChunkPos chunkpos = new ChunkPos(i);
+-            ChunkHolder chunkholder = entry.getValue();
+-            Optional<ChunkAccess> optional = Optional.ofNullable(chunkholder.getLatestChunk());
+-            Optional<LevelChunk> optional1 = optional.flatMap(
+-                p_214932_ -> p_214932_ instanceof LevelChunk ? Optional.of((LevelChunk)p_214932_) : Optional.empty()
+-            );
+-            csvoutput.writeRow(
+-                chunkpos.x,
+-                chunkpos.z,
+-                chunkholder.getTicketLevel(),
+-                optional.isPresent(),
+-                optional.map(ChunkAccess::getPersistedStatus).orElse(null),
+-                optional1.map(LevelChunk::getFullStatus).orElse(null),
+-                printFuture(chunkholder.getFullChunkFuture()),
+-                printFuture(chunkholder.getTickingChunkFuture()),
+-                printFuture(chunkholder.getEntityTickingChunkFuture()),
+-                this.distanceManager.getTicketDebugString(i),
+-                this.anyPlayerCloseEnoughForSpawning(chunkpos),
+-                optional1.<Integer>map(p_214953_ -> p_214953_.getBlockEntities().size()).orElse(0),
+-                tickingtracker.getTicketDebugString(i),
+-                tickingtracker.getLevel(i),
+-                optional1.<Integer>map(p_214946_ -> p_214946_.getBlockTicks().count()).orElse(0),
+-                optional1.<Integer>map(p_214937_ -> p_214937_.getFluidTicks().count()).orElse(0)
+-            );
++        java.util.Iterator<ChunkHolder> objectbidirectionaliterator = ca.spottedleaf.moonrise.common.util.ChunkSystem.getVisibleChunkHolders(this.level).iterator(); // Paper
++
++        while (objectbidirectionaliterator.hasNext()) {
++            ChunkHolder playerchunk = objectbidirectionaliterator.next(); // Paper
++            long i = playerchunk.pos.toLong(); // Paper
++            ChunkPos chunkcoordintpair = new ChunkPos(i);
++            // Paper - move up
++            Optional<ChunkAccess> optional = Optional.ofNullable(playerchunk.getLatestChunk());
++            Optional<LevelChunk> optional1 = optional.flatMap((ichunkaccess) -> {
++                return ichunkaccess instanceof LevelChunk ? Optional.of((LevelChunk) ichunkaccess) : Optional.empty();
++            });
++
++            // CraftBukkit - decompile error // Stellar - fix naming conflict
++            csvoutput.writeRow(chunkcoordintpair.x, chunkcoordintpair.z, playerchunk.getTicketLevel(), optional.isPresent(), optional.map(ChunkAccess::getPersistedStatus).orElse(null), optional1.map(LevelChunk::getFullStatus).orElse(null), ChunkMap.printFuture(playerchunk.getFullChunkFuture()), ChunkMap.printFuture(playerchunk.getTickingChunkFuture()), ChunkMap.printFuture(playerchunk.getEntityTickingChunkFuture()), this.distanceManager.getTicketDebugString(i), this.anyPlayerCloseEnoughForSpawning(chunkcoordintpair), optional1.map((chunk) -> {
++                return chunk.getBlockEntities().size();
++            }).orElse(0), tickingtracker.getTicketDebugString(i), tickingtracker.getLevel(i), optional1.map((chunk) -> {
++                return chunk.getBlockTicks().count();
++            }).orElse(0), optional1.map((chunk) -> {
++                return chunk.getFluidTicks().count();
++            }).orElse(0));
+         }
+     }
+ 
 @@ -907,19 +_,46 @@
      }
  
@@ -1296,7 +1362,7 @@
 +     * See {@link net.neoforged.neoforge.server.command.generation.GenerationTask#enqueueChunks} as an example usage of this method.
 +     */
 +    public void scheduleOnMainThreadMailbox(ChunkTaskPriorityQueueSorter.Message<Runnable> msg) {
-+        mainThreadMailbox.tell(msg);
++        this.worldGenContext.mainThreadMailBox().tell(msg); // Stellar - rewrite chunk system
 +    }
 +
 +    public void setChunkGenerator(ChunkGenerator generator) {

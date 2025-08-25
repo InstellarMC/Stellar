@@ -90,7 +90,7 @@
      public Direction getOpposite() {
 -        return from3DDataValue(this.oppositeIndex);
 +        // Stellar start - lithium: math.fast_util - Avoid indirection to aid inlining
-+        return this.opposite // Paper - optimise collisions
++        return this.opposite; // Paper - optimise collisions
 +        // Stellar end - lithium: math.fast_util - Avoid indirection to aid inlining
      }
  

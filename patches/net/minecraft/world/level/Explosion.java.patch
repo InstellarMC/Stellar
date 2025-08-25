@@ -286,7 +286,7 @@
      }
  
      private ExplosionDamageCalculator makeDamageCalculator(@Nullable Entity p_46063_) {
-@@ -214,53 +_,60 @@
+@@ -214,53 +_,114 @@
      }
  
      public void explode() {
@@ -297,32 +297,8 @@
 +        // CraftBukkit end
          this.level.gameEvent(this.source, GameEvent.EXPLODE, new Vec3(this.x, this.y, this.z));
 -        Set<BlockPos> set = Sets.newHashSet();
-+
-+        // Paper start - collision optimisations
-+        this.blockCache = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
-+
-+        this.chunkPosCache = new long[CHUNK_CACHE_WIDTH * CHUNK_CACHE_WIDTH];
-+        java.util.Arrays.fill(this.chunkPosCache, ChunkPos.INVALID_CHUNK_POS);
-+
-+        this.chunkCache = new net.minecraft.world.level.chunk.LevelChunk[CHUNK_CACHE_WIDTH * CHUNK_CACHE_WIDTH];
-+
-+        final ca.spottedleaf.moonrise.patches.collisions.ExplosionBlockCache[] blockCache = new ca.spottedleaf.moonrise.patches.collisions.ExplosionBlockCache[BLOCK_EXPLOSION_CACHE_WIDTH * BLOCK_EXPLOSION_CACHE_WIDTH * BLOCK_EXPLOSION_CACHE_WIDTH];
-+
-+        // use initial cache value that is most likely to be used: the source position
-+        final ca.spottedleaf.moonrise.patches.collisions.ExplosionBlockCache initialCache;
-+        {
-+            final int blockX = Mth.floor(this.x);
-+            final int blockY = Mth.floor(this.y);
-+            final int blockZ = Mth.floor(this.z);
-+
-+            final long key = BlockPos.asLong(blockX, blockY, blockZ);
-+
-+            initialCache = this.getOrCacheExplosionBlock(blockX, blockY, blockZ, key, true);
-+        }
-+        // Paper end - collision optimisations
-+
-         int i = 16;
- 
+-        int i = 16;
+-
 -        for (int j = 0; j < 16; j++) {
 -            for (int k = 0; k < 16; k++) {
 -                for (int l = 0; l < 16; l++) {
@@ -359,10 +335,7 @@
 -                            d4 += d0 * 0.3F;
 -                            d6 += d1 * 0.3F;
 -                            d8 += d2 * 0.3F;
--                        }
--                    }
--                }
--            }
++
 +        // Paper start - collision optimisations
 +        this.blockCache = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
 +
@@ -383,10 +356,89 @@
 +            final long key = BlockPos.asLong(blockX, blockY, blockZ);
 +
 +            initialCache = this.getOrCacheExplosionBlock(blockX, blockY, blockZ, key, true);
-         }
--
--        this.toBlow.addAll(set);
++        }
 +        // Paper end - collision optimisations
++
++        boolean flag = true;
++
++        int i;
++        int j;
++
++        // Paper start - collision optimisations
++        for (int ray = 0, len = CACHED_RAYS.length; ray < len;) {
++            ca.spottedleaf.moonrise.patches.collisions.ExplosionBlockCache cachedBlock = initialCache;
++
++            double currX = this.x;
++            double currY = this.y;
++            double currZ = this.z;
++
++            final double incX = CACHED_RAYS[ray];
++            final double incY = CACHED_RAYS[ray + 1];
++            final double incZ = CACHED_RAYS[ray + 2];
++
++            ray += 3;
++            float power = this.radius * (0.7F + this.level.random.nextFloat() * 0.6F);
++            do {
++                final int blockX = Mth.floor(currX);
++                final int blockY = Mth.floor(currY);
++                final int blockZ = Mth.floor(currZ);
++
++                final long key = BlockPos.asLong(blockX, blockY, blockZ);
++
++                if (cachedBlock.key != key) {
++                    final int cacheKey =
++                            (blockX & BLOCK_EXPLOSION_CACHE_MASK) |
++                                    (blockY & BLOCK_EXPLOSION_CACHE_MASK) << (BLOCK_EXPLOSION_CACHE_SHIFT) |
++                                    (blockZ & BLOCK_EXPLOSION_CACHE_MASK) << (BLOCK_EXPLOSION_CACHE_SHIFT + BLOCK_EXPLOSION_CACHE_SHIFT);
++                    cachedBlock = blockCache[cacheKey];
++                    if (cachedBlock == null || cachedBlock.key != key) {
++                        blockCache[cacheKey] = cachedBlock = this.getOrCacheExplosionBlock(blockX, blockY, blockZ, key, true);
++                    }
++                }
++
++                if (cachedBlock.outOfWorld) {
++                    break;
++                }
++                // Paper end - collision optimisations
++                BlockState iblockdata = cachedBlock.blockState; // Paper - optimise collisions
++                // Paper - collision optimisations
++
++                // Paper start - collision optimisations
++                power -= cachedBlock.resistance;
++
++                if (power > 0.0f && cachedBlock.shouldExplode == null && iblockdata.isDestroyable()) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
++                    // note: we expect shouldBlockExplode to be pure with respect to power, as Vanilla currently is.
++                    // basically, it is unused, which allows us to cache the result
++                    final boolean shouldExplode = this.damageCalculator.shouldBlockExplode((Explosion)(Object)this, this.level, cachedBlock.immutablePos, cachedBlock.blockState, power);
++                    cachedBlock.shouldExplode = shouldExplode ? Boolean.TRUE : Boolean.FALSE;
++                    if (shouldExplode) {
++                        if (this.fire || !cachedBlock.blockState.isAir()) {
++                            this.toBlow.add(cachedBlock.immutablePos);
++                            // Paper start - prevent headless pistons from forming
++                            if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowHeadlessPistons && iblockdata.getBlock() == net.minecraft.world.level.block.Blocks.MOVING_PISTON) {
++                                net.minecraft.world.level.block.entity.BlockEntity extension = this.level.getBlockEntity(cachedBlock.immutablePos); // Paper - optimise collisions
++                                if (extension instanceof net.minecraft.world.level.block.piston.PistonMovingBlockEntity blockEntity && blockEntity.isSourcePiston()) {
++                                    net.minecraft.core.Direction direction = iblockdata.getValue(net.minecraft.world.level.block.piston.PistonHeadBlock.FACING);
++                                    this.toBlow.add(cachedBlock.immutablePos.relative(direction.getOpposite())); // Paper - optimise collisions
++                                }
++                            }
++                            // Paper end - prevent headless pistons from forming
+                         }
+                     }
+                 }
+-            }
++
++                power -= 0.22500001F;
++                currX += incX;
++                currY += incY;
++                currZ += incZ;
++            } while (power > 0.0f);
++            // Paper end - collision optimisations
+         }
+ 
+-        this.toBlow.addAll(set);
++        // Paper - optimise collisions
++
          float f2 = this.radius * 2.0F;
          int k1 = Mth.floor(this.x - (double)f2 - 1.0);
          int l1 = Mth.floor(this.x + (double)f2 + 1.0);

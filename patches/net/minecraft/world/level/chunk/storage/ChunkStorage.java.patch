@@ -40,7 +40,7 @@
      public ChunkStorage(RegionStorageInfo p_326130_, Path p_196912_, DataFixer p_196913_, boolean p_196914_) {
          this.fixerUpper = p_196913_;
 -        this.worker = new IOWorker(p_326130_, p_196912_, p_196914_);
-+        this.storage = new IOWorker(storageKey, directory, dsync).storage; // Paper - rewrite chunk system
++        this.storage = new IOWorker(p_326130_, p_196912_, p_196914_).storage; // Paper - rewrite chunk system
      }
  
      public boolean isOldChunkAround(ChunkPos p_223452_, int p_223453_) {

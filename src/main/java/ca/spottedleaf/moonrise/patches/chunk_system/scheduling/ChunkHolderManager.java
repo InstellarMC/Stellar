@@ -58,7 +58,7 @@ import java.util.function.Predicate;
 
 public final class ChunkHolderManager {
 
-    private static final Logger LOGGER = LogUtils.getClassLogger();
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final int FULL_LOADED_TICKET_LEVEL    = ChunkLevel.FULL_CHUNK_LEVEL;
     public static final int BLOCK_TICKING_TICKET_LEVEL  = ChunkLevel.BLOCK_TICKING_LEVEL;
@@ -485,12 +485,22 @@ public final class ChunkHolderManager {
 
     public <T> boolean addTicketAtLevel(final TicketType<T> type, final ChunkPos chunkPos, final int level,
                                         final T identifier) {
-        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier);
+        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier, false);
+    }
+
+    public <T> boolean addTicketAtLevel(final TicketType<T> type, final ChunkPos chunkPos, final int level,
+                                        final T identifier, final boolean forceTicks) {
+        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier, forceTicks);
     }
 
     public <T> boolean addTicketAtLevel(final TicketType<T> type, final int chunkX, final int chunkZ, final int level,
                                         final T identifier) {
-        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkX, chunkZ), level, identifier);
+        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkX, chunkZ), level, identifier, false);
+    }
+
+    public <T> boolean addTicketAtLevel(final TicketType<T> type, final int chunkX, final int chunkZ, final int level,
+                                        final T identifier, final boolean forceTicks) {
+        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkX, chunkZ), level, identifier, forceTicks);
     }
 
     private void addExpireCount(final int chunkX, final int chunkZ) {
@@ -530,10 +540,13 @@ public final class ChunkHolderManager {
     // supposed to return true if the ticket was added and did not replace another
     // but, we always return false if the ticket cannot be added
     public <T> boolean addTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier) {
-        return this.addTicketAtLevel(type, chunk, level, identifier, true);
+        return this.addTicketAtLevel(type, chunk, level, identifier, false, true);
+    }
+    public <T> boolean addTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier, final boolean forceTicks) {
+        return this.addTicketAtLevel(type, chunk, level, identifier, forceTicks, true);
     }
 
-    <T> boolean addTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier, final boolean lock) {
+    <T> boolean addTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier, final boolean forceTicks, final boolean lock) {
         final long removeDelay = type.timeout <= 0 ? NO_TIMEOUT_MARKER : type.timeout;
         if (level > MAX_TICKET_LEVEL) {
             return false;
@@ -541,7 +554,7 @@ public final class ChunkHolderManager {
 
         final int chunkX = CoordinateUtils.getChunkX(chunk);
         final int chunkZ = CoordinateUtils.getChunkZ(chunk);
-        final Ticket<T> ticket = new Ticket<>(type, level, identifier);
+        final Ticket<T> ticket = new Ticket<>(type, level, identifier, forceTicks);
         ((ChunkSystemTicket<T>)(Object)ticket).moonrise$setRemoveDelay(removeDelay);
 
         final ReentrantAreaLock.Node ticketLock = lock ? this.ticketLockArea.lock(chunkX, chunkZ) : null;
@@ -583,25 +596,37 @@ public final class ChunkHolderManager {
     }
 
     public <T> boolean removeTicketAtLevel(final TicketType<T> type, final ChunkPos chunkPos, final int level, final T identifier) {
-        return this.removeTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier);
+        return this.removeTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier, false);
+    }
+
+    public <T> boolean removeTicketAtLevel(final TicketType<T> type, final ChunkPos chunkPos, final int level, final T identifier, final boolean forceTicks) {
+        return this.removeTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier, forceTicks);
     }
 
     public <T> boolean removeTicketAtLevel(final TicketType<T> type, final int chunkX, final int chunkZ, final int level, final T identifier) {
-        return this.removeTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkX, chunkZ), level, identifier);
+        return this.removeTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkX, chunkZ), level, identifier, false);
+    }
+
+    public <T> boolean removeTicketAtLevel(final TicketType<T> type, final int chunkX, final int chunkZ, final int level, final T identifier, final boolean forceTicks) {
+        return this.removeTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkX, chunkZ), level, identifier, forceTicks);
     }
 
     public <T> boolean removeTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier) {
-        return this.removeTicketAtLevel(type, chunk, level, identifier, true);
+        return this.removeTicketAtLevel(type, chunk, level, identifier, false, true);
     }
 
-    <T> boolean removeTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier, final boolean lock) {
+    public <T> boolean removeTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier, final boolean forceTicks) {
+        return this.removeTicketAtLevel(type, chunk, level, identifier, forceTicks, true);
+    }
+
+    <T> boolean removeTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier, final boolean forceTicks, final boolean lock) {
         if (level > MAX_TICKET_LEVEL) {
             return false;
         }
 
         final int chunkX = CoordinateUtils.getChunkX(chunk);
         final int chunkZ = CoordinateUtils.getChunkZ(chunk);
-        final Ticket<T> probe = new Ticket<>(type, level, identifier);
+        final Ticket<T> probe = new Ticket<>(type, level, identifier, forceTicks);
 
         final ReentrantAreaLock.Node ticketLock = lock ? this.ticketLockArea.lock(chunkX, chunkZ) : null;
         try {

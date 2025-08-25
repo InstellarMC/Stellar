@@ -112,7 +112,7 @@
      }
  
      private static int getTicketLevelAt(SortedArraySet<Ticket<?>> p_140798_) {
-@@ -104,67 +_,23 @@
+@@ -104,67 +_,20 @@
      protected abstract ChunkHolder updateChunkScheduling(long p_140780_, int p_140781_, @Nullable ChunkHolder p_140782_, int p_140783_);
  
      public boolean runAllUpdates(ChunkMap p_140806_) {
@@ -179,9 +179,6 @@
 -    }
 +        return this.getChunkHolderManager().processTicketUpdates(); // Paper - rewrite chunk system
 +    }
-+
-+    public AtomicBoolean removeTicketCB = new AtomicBoolean(false);
-+    public AtomicBoolean addTicketCB = new AtomicBoolean(false);
 +
 +    boolean addTicket(long p_140785_, Ticket<?> p_140786_) { // CraftBukkit - void -> boolean // Stellar
 +        return this.getChunkHolderManager().addTicketAtLevel((TicketType)p_140786_.getType(), p_140785_, p_140786_.getTicketLevel(), p_140786_.key); // Paper - rewrite chunk system

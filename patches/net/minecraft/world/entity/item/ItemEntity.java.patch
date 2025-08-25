@@ -248,7 +248,7 @@
              return false;
          } else if (!this.getItem().isEmpty() && this.getItem().is(Items.NETHER_STAR) && p_32013_.is(DamageTypeTags.IS_EXPLOSION)) {
              return false;
-@@ -278,11 +_,17 @@
+@@ -278,12 +_,17 @@
          } else if (this.level().isClientSide) {
              return true;
          } else {
@@ -262,11 +262,12 @@
              this.gameEvent(GameEvent.ENTITY_DAMAGE, p_32013_.getEntity());
              if (this.health <= 0) {
 -                this.getItem().onDestroyed(this);
+-                this.discard();
 +                this.getItem().onDestroyed(this, p_32013_);
-+                this.setRemoved$cause(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH);
-                 this.discard();
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH);
              }
  
+             return true;
 @@ -292,9 +_,15 @@
  
      @Override
