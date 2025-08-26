@@ -1010,24 +1010,61 @@
      }
  
      public void moveRelative(float p_19921_, Vec3 p_19922_) {
-@@ -1407,6 +_,7 @@
+@@ -1407,30 +_,32 @@
          this.yo = p_20250_;
          this.zo = d1;
          this.setPos(d0, p_20250_, d1);
+-    }
+-
+-    public void moveTo(Vec3 p_20220_) {
+-        this.moveTo(p_20220_.x, p_20220_.y, p_20220_.z);
+-    }
+-
+-    public void moveTo(double p_20105_, double p_20106_, double p_20107_) {
+-        this.moveTo(p_20105_, p_20106_, p_20107_, this.getYRot(), this.getXRot());
+-    }
+-
+-    public void moveTo(BlockPos p_20036_, float p_20037_, float p_20038_) {
+-        this.moveTo(p_20036_.getBottomCenter(), p_20037_, p_20038_);
+-    }
+-
+-    public void moveTo(Vec3 p_352318_, float p_352438_, float p_352125_) {
+-        this.moveTo(p_352318_.x, p_352318_.y, p_352318_.z, p_352438_, p_352125_);
+-    }
+-
+-    public void moveTo(double p_20108_, double p_20109_, double p_20110_, float p_20111_, float p_20112_) {
+-        this.setPosRaw(p_20108_, p_20109_, p_20110_);
+-        this.setYRot(p_20111_);
+-        this.setXRot(p_20112_);
 +        if (this.valid) this.level.getChunk((int) Math.floor(this.getX()) >> 4, (int) Math.floor(this.getZ()) >> 4); // CraftBukkit
++    }
++
++    public void moveTo(Vec3 pos) {
++        this.moveTo(pos.x, pos.y, pos.z);
++    }
++
++    public void moveTo(double x, double y, double z) {
++        this.moveTo(x, y, z, this.getYRot(), this.getXRot());
++    }
++
++    public void moveTo(BlockPos pos, float yaw, float pitch) {
++        this.moveTo(pos.getBottomCenter(), yaw, pitch);
++    }
++
++    public void moveTo(Vec3 pos, float yaw, float pitch) {
++        this.moveTo(pos.x, pos.y, pos.z, yaw, pitch);
++    }
++
++    public void moveTo(double x, double y, double z, float yaw, float pitch) {
++        this.setPosRaw(x, y, z);
++        this.setYRot(yaw);
++        this.setXRot(pitch);
+         this.setOldPosAndRot();
+         this.reapplyPosition();
++        this.setYHeadRot(yaw); // Paper - Update head rotation
      }
  
-     public void moveTo(Vec3 p_20220_) {
-@@ -1421,7 +_,9 @@
-         this.moveTo(p_20036_.getBottomCenter(), p_20037_, p_20038_);
-     }
- 
-+    public AtomicBoolean disable$moveTo = new AtomicBoolean(false);
-     public void moveTo(Vec3 p_352318_, float p_352438_, float p_352125_) {
-+        if (disable$moveTo.getAndSet(false)) return;
-         this.moveTo(p_352318_.x, p_352318_.y, p_352318_.z, p_352438_, p_352125_);
-     }
- 
+     public final void setOldPosAndRot() {
 @@ -1510,11 +_,26 @@
          this.push(p_347665_.x, p_347665_.y, p_347665_.z);
      }

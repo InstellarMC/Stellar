@@ -22,14 +22,25 @@
      @Override
      protected AABB calculateBoundingBox(BlockPos p_344831_, Direction p_345917_) {
          float f = 0.46875F;
-@@ -139,6 +_,10 @@
-         double d3 = (double)paintingvariant.height();
-         double d4 = direction$axis == Direction.Axis.Z ? 0.0625 : (double)paintingvariant.width();
+@@ -141,6 +_,10 @@
          return AABB.ofSize(vec31, d2, d3, d4);
-+    }
-+
-+    private static double mohist$offsetForPaintingSize(int p_345028_) { // CraftBukkit - static
-+        return p_345028_ % 2 == 0 ? 0.5 : 0.0;
      }
  
++    private static double mohist$offsetForPaintingSize(int p_345028_) { // CraftBukkit - static
++        return p_345028_ % 2 == 0 ? 0.5 : 0.0;
++    }
++
      private double offsetForPaintingSize(int p_345028_) {
+         return p_345028_ % 2 == 0 ? 0.5 : 0.0;
+     }
+@@ -163,8 +_,8 @@
+     }
+ 
+     @Override
+-    public void moveTo(double p_31929_, double p_31930_, double p_31931_, float p_31932_, float p_31933_) {
+-        this.setPos(p_31929_, p_31930_, p_31931_);
++    public void moveTo(double x, double y, double z, float yaw, float pitch) {
++        this.setPos(x, y, z);
+     }
+ 
+     @Override
