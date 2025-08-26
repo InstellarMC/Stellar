@@ -206,7 +206,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private double healthScale = 20;
     private CraftWorldBorder clientWorldBorder = null;
     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
-    protected net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
     public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper - more resource pack API
     private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
     private long lastSaveTime; // Paper - getLastPlayed replacement API
@@ -3326,7 +3325,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         return this.adventure$pointers;
     }
-
     @Override
     public float getCooldownPeriod() {
         return getHandle().getCurrentItemAttackStrengthDelay();

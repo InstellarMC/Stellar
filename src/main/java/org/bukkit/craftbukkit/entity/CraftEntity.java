@@ -75,7 +75,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     private final EntityType entityType;
     private EntityDamageEvent lastDamageEvent;
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
-
+    protected net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
     // Paper start - Folia shedulers
     public final io.papermc.paper.threadedregions.EntityScheduler taskScheduler = new io.papermc.paper.threadedregions.EntityScheduler(this);
     private final io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler apiScheduler = new io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler(this);
@@ -649,6 +649,20 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public void customName(final net.kyori.adventure.text.Component customName) {
         this.getHandle().setCustomName(customName != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(customName) : null);
     }
+
+    @Override
+    public net.kyori.adventure.pointer.Pointers pointers() {
+        if (this.adventure$pointers == null) {
+            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
+                .withDynamic(net.kyori.adventure.identity.Identity.DISPLAY_NAME, this::name)
+                .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUniqueId)
+                .withStatic(net.kyori.adventure.permission.PermissionChecker.POINTER, this::permissionValue)
+                .build();
+        }
+
+        return this.adventure$pointers;
+    }
+    // Paper end
 
     @Override
     public void setCustomName(String name) {
