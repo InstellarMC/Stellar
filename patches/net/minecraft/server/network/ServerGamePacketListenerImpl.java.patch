@@ -1085,7 +1085,7 @@
                              InteractionResult interactionresult = this.player
                                  .gameMode
                                  .useItemOn(this.player, serverlevel, itemstack, interactionhand, blockhitresult);
-@@ -1109,7 +_,7 @@
+@@ -1109,10 +_,10 @@
                                  && wasBlockPlacementAttempt(this.player, itemstack)) {
                                  Component component = Component.translatable("build.tooHigh", i - 1).withStyle(ChatFormatting.RED);
                                  this.player.sendSystemMessage(component, true);
@@ -1093,7 +1093,11 @@
 +                            } else if (interactionresult.shouldSwing() ) {
                                  this.player.swing(interactionhand, true);
                              }
-                         }
+-                        }
++                        } else { this.player.containerMenu.sendAllDataToRemote(); } // Paper - Fix inventory desync; MC-99075
+                     } else {
+                         Component component1 = Component.translatable("build.tooHigh", i - 1).withStyle(ChatFormatting.RED);
+                         this.player.sendSystemMessage(component1, true);
 @@ -1135,6 +_,8 @@
      @Override
      public void handleUseItem(ServerboundUseItemPacket p_9932_) {
