@@ -1175,42 +1175,65 @@
      }
  
      @Override
-@@ -1418,6 +_,9 @@
-             .teleport(this.getX() + p_251611_, this.getY() + p_248861_, this.getZ() + p_252266_, this.getYRot(), this.getXRot(), RelativeMovement.ALL);
-     }
- 
-+    // Youer start
-+    public AtomicReference<PlayerTeleportEvent.TeleportCause> teleportToS$cause = new AtomicReference<>(PlayerTeleportEvent.TeleportCause.UNKNOWN);
-+
-     @Override
-     public boolean teleportTo(
-         ServerLevel p_265564_, double p_265424_, double p_265680_, double p_265312_, Set<RelativeMovement> p_265192_, float p_265059_, float p_265266_
-@@ -1430,8 +_,10 @@
-         }
- 
-         if (p_265564_ == this.level()) {
-+            this.connection.teleport$cause(teleportToS$cause.getAndSet(PlayerTeleportEvent.TeleportCause.UNKNOWN));
-             this.connection.teleport(p_265424_, p_265680_, p_265312_, p_265059_, p_265266_, p_265192_);
-         } else {
-+            this.teleportTo$cause.set(teleportToS$cause.getAndSet(PlayerTeleportEvent.TeleportCause.UNKNOWN));
-             this.teleportTo(p_265564_, p_265424_, p_265680_, p_265312_, p_265059_, p_265266_);
-         }
- 
-@@ -1440,6 +_,14 @@
+@@ -1408,34 +_,38 @@
      }
  
      @Override
-+    public boolean teleportTo(
-+            ServerLevel p_265564_, double p_265424_, double p_265680_, double p_265312_, Set<RelativeMovement> p_265192_, float p_265059_, float p_265266_, PlayerTeleportEvent.TeleportCause cause
-+    ) {
-+        teleportToS$cause.set(cause);
-+        return teleportTo(p_265564_, p_265424_, p_265680_, p_265312_, p_265192_, p_265059_, p_265266_);
+-    public void teleportTo(double p_8969_, double p_8970_, double p_8971_) {
+-        this.connection.teleport(p_8969_, p_8970_, p_8971_, this.getYRot(), this.getXRot(), RelativeMovement.ROTATION);
+-    }
+-
+-    @Override
+-    public void teleportRelative(double p_251611_, double p_248861_, double p_252266_) {
+-        this.connection
+-            .teleport(this.getX() + p_251611_, this.getY() + p_248861_, this.getZ() + p_252266_, this.getYRot(), this.getXRot(), RelativeMovement.ALL);
+-    }
+-
+-    @Override
+-    public boolean teleportTo(
+-        ServerLevel p_265564_, double p_265424_, double p_265680_, double p_265312_, Set<RelativeMovement> p_265192_, float p_265059_, float p_265266_
+-    ) {
+-        ChunkPos chunkpos = new ChunkPos(BlockPos.containing(p_265424_, p_265680_, p_265312_));
+-        p_265564_.getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 1, this.getId());
++    public void teleportTo(double destX, double destY, double destZ) {
++        this.connection.teleport(destX, destY, destZ, this.getYRot(), this.getXRot(), RelativeMovement.ROTATION);
 +    }
 +
 +    @Override
-     public void moveTo(double p_9171_, double p_9172_, double p_9173_) {
-         super.moveTo(p_9171_, p_9172_, p_9173_);
-         this.connection.resetPosition();
++    public void teleportRelative(double offsetX, double offsetY, double offsetZ) {
++        this.connection.teleport(this.getX() + offsetX, this.getY() + offsetY, this.getZ() + offsetZ, this.getYRot(), this.getXRot(), RelativeMovement.ALL);
++    }
++
++    @Override
++    public boolean teleportTo(ServerLevel world, double destX, double destY, double destZ, Set<RelativeMovement> flags, float yaw, float pitch) {
++        // CraftBukkit start
++        return this.teleportTo(world, destX, destY, destZ, flags, yaw, pitch, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
++    }
++
++    @Override
++    public boolean teleportTo(ServerLevel world, double destX, double destY, double destZ, Set<RelativeMovement> flags, float yaw, float pitch, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        // CraftBukkit end
++        ChunkPos chunkpos = new ChunkPos(BlockPos.containing(destX, destY, destZ));
++        world.getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 1, this.getId());
+         this.stopRiding();
+         if (this.isSleeping()) {
+             this.stopSleepInBed(true, true);
+         }
+ 
+-        if (p_265564_ == this.level()) {
+-            this.connection.teleport(p_265424_, p_265680_, p_265312_, p_265059_, p_265266_, p_265192_);
++        if (world == this.level()) {
++            this.connection.teleport(destX, destY, destZ, yaw, pitch, flags, cause); // CraftBukkit
+         } else {
+-            this.teleportTo(p_265564_, p_265424_, p_265680_, p_265312_, p_265059_, p_265266_);
++            this.teleportTo(world, destX, destY, destZ, yaw, pitch, cause); // CraftBukkit
+         }
+ 
+-        this.setYHeadRot(p_265059_);
++        this.setYHeadRot(yaw);
+         return true;
+     }
+ 
 @@ -1468,9 +_,18 @@
      }
  
@@ -1435,16 +1458,37 @@
      }
  
      @Override
-@@ -1674,6 +_,9 @@
+@@ -1674,16 +_,26 @@
          return this.advancements;
      }
  
-+    // Mohist start
-+    public AtomicReference<PlayerTeleportEvent.TeleportCause> teleportTo$cause = new AtomicReference<>(PlayerTeleportEvent.TeleportCause.UNKNOWN);
+-    public void teleportTo(ServerLevel p_9000_, double p_9001_, double p_9002_, double p_9003_, float p_9004_, float p_9005_) {
 +    // CraftBukkit start
-     public void teleportTo(ServerLevel p_9000_, double p_9001_, double p_9002_, double p_9003_, float p_9004_, float p_9005_) {
++    public void teleportTo(ServerLevel targetWorld, double x, double y, double z, float yaw, float pitch) {
++        this.teleportTo(targetWorld, x, y, z, yaw, pitch, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
++    }
++
++    public void teleportTo(ServerLevel targetWorld, double x, double y, double z, float yaw, float pitch, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        // CraftBukkit end
          this.setCamera(this);
          this.stopRiding();
+-        if (p_9000_ == this.level()) {
+-            this.connection.teleport(p_9001_, p_9002_, p_9003_, p_9004_, p_9005_);
++        /* CraftBukkit start - replace with bukkit handling for multi-world
++        if (targetWorld == this.level()) {
++            this.connection.teleport(x, y, z, yaw, pitch);
+         } else {
+             this.changeDimension(
+-                new DimensionTransition(p_9000_, new Vec3(p_9001_, p_9002_, p_9003_), Vec3.ZERO, p_9004_, p_9005_, DimensionTransition.DO_NOTHING)
++                new DimensionTransition(targetWorld, new Vec3(x, y, z), Vec3.ZERO, yaw, pitch, DimensionTransition.DO_NOTHING)
+             );
+         }
++        */
++        this.getBukkitEntity().teleport(new org.bukkit.Location(targetWorld.getWorld(), x, y, z, yaw, pitch), cause);
++        // CraftBukkit end
+     }
+ 
+     @Nullable
 @@ -1709,11 +_,44 @@
          );
      }

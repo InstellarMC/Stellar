@@ -855,90 +855,98 @@
  
              return true;
          } else {
-@@ -999,11 +_,81 @@
+@@ -999,31 +_,105 @@
          return false;
      }
  
-+    // CraftBukkit start - Delegate to teleport(Location)
-     public void teleport(double p_9775_, double p_9776_, double p_9777_, float p_9778_, float p_9779_) {
+-    public void teleport(double p_9775_, double p_9776_, double p_9777_, float p_9778_, float p_9779_) {
 -        this.teleport(p_9775_, p_9776_, p_9777_, p_9778_, p_9779_, Collections.emptySet());
-+        this.teleport(p_9775_, p_9776_, p_9777_, p_9778_, p_9779_, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
+-    }
+-
+-    public void teleport(double p_9781_, double p_9782_, double p_9783_, float p_9784_, float p_9785_, Set<RelativeMovement> p_9786_) {
+-        double d0 = p_9786_.contains(RelativeMovement.X) ? this.player.getX() : 0.0;
+-        double d1 = p_9786_.contains(RelativeMovement.Y) ? this.player.getY() : 0.0;
+-        double d2 = p_9786_.contains(RelativeMovement.Z) ? this.player.getZ() : 0.0;
+-        float f = p_9786_.contains(RelativeMovement.Y_ROT) ? this.player.getYRot() : 0.0F;
+-        float f1 = p_9786_.contains(RelativeMovement.X_ROT) ? this.player.getXRot() : 0.0F;
+-        this.awaitingPositionFromClient = new Vec3(p_9781_, p_9782_, p_9783_);
++    // CraftBukkit start - Delegate to teleport(Location)
++    public void teleport(double x, double y, double z, float yaw, float pitch) {
++        this.teleport(x, y, z, yaw, pitch, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
 +    }
-+    public boolean teleport(double d0, double d1, double d2, float f, float f1, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
-+        return this.teleport(d0, d1, d2, f, f1, Collections.emptySet(), cause);
++    public boolean teleport(double x, double y, double z, float yaw, float pitch, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        return this.teleport(x, y, z, yaw, pitch, Collections.emptySet(), cause);
 +    }
 +
-+    private final AtomicReference<PlayerTeleportEvent.TeleportCause> teleport$cause = new AtomicReference<>(PlayerTeleportEvent.TeleportCause.UNKNOWN);
-+    private final AtomicBoolean teleport$boolean = new AtomicBoolean(false);
-+    public void teleport$cause(PlayerTeleportEvent.TeleportCause cause) {
-+        this.teleport$cause.set(cause);
-     }
- 
-     public void teleport(double p_9781_, double p_9782_, double p_9783_, float p_9784_, float p_9785_, Set<RelativeMovement> p_9786_) {
++    public void teleport(double x, double y, double z, float yaw, float pitch, Set<RelativeMovement> flags) {
++        this.teleport(x, y, z, yaw, pitch, flags, PlayerTeleportEvent.TeleportCause.UNKNOWN);
++    }
++
++    public boolean teleport(double d0, double d1, double d2, float f, float f1, Set<RelativeMovement> flags, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) { // CraftBukkit - Return event status
 +        org.bukkit.entity.Player player = this.getCraftPlayer();
 +        org.bukkit.Location from = player.getLocation();
-+        double x = p_9781_;
-+        double y = p_9782_;
-+        double z = p_9783_;
-+        float yaw = p_9784_;
-+        float pitch = p_9785_;
++        double x = d0;
++        double y = d1;
++        double z = d2;
++        float yaw = f;
++        float pitch = f1;
 +        org.bukkit.Location to = new org.bukkit.Location(this.getCraftPlayer().getWorld(), x, y, z, yaw, pitch);
 +        // SPIGOT-5171: Triggered on join
 +        if (from.equals(to)) {
-+            this.internalTeleport(p_9781_, p_9782_, p_9783_, p_9784_, p_9785_, p_9786_);
-+            teleport$boolean.set(false);
-+            return; // CraftBukkit - Return event status
++            this.internalTeleport(d0, d1, d2, f, f1, flags);
++            return true; // CraftBukkit - Return event status
 +        }
-+        if (!AsyncCatcher.catchAsync()) {
-+            // Paper start - Teleport API
-+            Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
-+            for (RelativeMovement relativeArgument : p_9786_) {
-+                relativeFlags.add(org.bukkit.craftbukkit.entity.CraftPlayer.toApiRelativeFlag(relativeArgument));
-+            }
-+            PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), teleport$cause.getAndSet(PlayerTeleportEvent.TeleportCause.UNKNOWN), java.util.Set.copyOf(relativeFlags));
-+            // Paper end - Teleport API
-+            this.cserver.getPluginManager().callEvent(event);
-+            if (event.isCancelled() || !to.equals(event.getTo())) {
-+                // p_9786_ = Collections.emptySet(); // Can't relative teleport // Paper - Teleport API; Now you can!
-+                to = event.isCancelled() ? event.getFrom() : event.getTo();
-+                p_9781_ = to.getX();
-+                p_9782_ = to.getY();
-+                p_9783_ = to.getZ();
-+                p_9784_ = to.getYaw();
-+                p_9785_ = to.getPitch();
-+            }
-+            this.internalTeleport(p_9781_, p_9782_, p_9783_, p_9784_, p_9785_, p_9786_);
-+            teleport$boolean.set(!event.isCancelled());
-+        } else {
-+            this.internalTeleport(p_9781_, p_9782_, p_9783_, p_9784_, p_9785_, p_9786_);
-+            teleport$boolean.set(false);
-+        }
-+    }
 +
-+    public boolean teleport(double d0, double d1, double d2, float f, float f1, Set<RelativeMovement> set, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) { // CraftBukkit - Return event status
-+        this.teleport$cause(cause);
-+        teleport(d0, d1, d2, f, f1, set);
-+        return teleport$boolean.getAndSet(false);
++        // Paper start - Teleport API
++        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
++        for (RelativeMovement relativeArgument : flags) {
++            relativeFlags.add(org.bukkit.craftbukkit.entity.CraftPlayer.toApiRelativeFlag(relativeArgument));
++        }
++        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause, java.util.Set.copyOf(relativeFlags));
++        // Paper end - Teleport API
++        this.cserver.getPluginManager().callEvent(event);
++        if (event.isCancelled() || !to.equals(event.getTo())) {
++            // flags = Collections.emptySet(); // Can't relative teleport // Paper - Teleport API; Now you can!
++            to = event.isCancelled() ? event.getFrom() : event.getTo();
++            d0 = to.getX();
++            d1 = to.getY();
++            d2 = to.getZ();
++            f = to.getYaw();
++            f1 = to.getPitch();
++        }
++        this.internalTeleport(d0, d1, d2, f, f1, flags);
++        return !event.isCancelled(); // CraftBukkit - Return event status
 +    }
 +
 +    public void teleport(org.bukkit.Location dest) {
 +        internalTeleport(dest.getX(), dest.getY(), dest.getZ(), dest.getYaw(), dest.getPitch(), Collections.emptySet());
 +    }
 +
-+    public void internalTeleport(double p_9781_, double p_9782_, double p_9783_, float p_9784_, float p_9785_, Set<RelativeMovement> p_9786_) {
-+        // CraftBukkit start
-+        if (Float.isNaN(p_9784_)) {
-+            p_9784_ = 0;
++    public void internalTeleport(double x, double y, double z, float yaw, float pitch, Set<RelativeMovement> flags) { // Paper
++        org.spigotmc.AsyncCatcher.catchOp("teleport"); // Paper
++        // Paper start - Prevent teleporting dead entities
++        if (player.isRemoved()) {
++            LOGGER.info("Attempt to teleport removed player {} restricted", player.getScoreboardName());
++            if (server.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Attempt to teleport removed player");
++            return;
 +        }
-+        if (Float.isNaN(p_9785_)) {
-+            p_9785_ = 0;
++        // Paper end - Prevent teleporting dead entities
++        // CraftBukkit start
++        if (Float.isNaN(yaw)) {
++            yaw = 0;
++        }
++        if (Float.isNaN(pitch)) {
++            pitch = 0;
 +        }
 +        this.justTeleported = true;
 +        // CraftBukkit end
-         double d0 = p_9786_.contains(RelativeMovement.X) ? this.player.getX() : 0.0;
-         double d1 = p_9786_.contains(RelativeMovement.Y) ? this.player.getY() : 0.0;
-         double d2 = p_9786_.contains(RelativeMovement.Z) ? this.player.getZ() : 0.0;
-@@ -1014,6 +_,14 @@
++        double d0 = flags.contains(RelativeMovement.X) ? this.player.getX() : 0.0;
++        double d1 = flags.contains(RelativeMovement.Y) ? this.player.getY() : 0.0;
++        double d2 = flags.contains(RelativeMovement.Z) ? this.player.getZ() : 0.0;
++        float f = flags.contains(RelativeMovement.Y_ROT) ? this.player.getYRot() : 0.0F;
++        float f1 = flags.contains(RelativeMovement.X_ROT) ? this.player.getXRot() : 0.0F;
++        this.awaitingPositionFromClient = new Vec3(x, y, z);
+         if (++this.awaitingTeleport == Integer.MAX_VALUE) {
              this.awaitingTeleport = 0;
          }
  
@@ -951,9 +959,14 @@
 +        // CraftBukkit end
 +
          this.awaitingTeleportTime = this.tickCount;
-         this.player.absMoveTo(p_9781_, p_9782_, p_9783_, p_9784_, p_9785_);
+-        this.player.absMoveTo(p_9781_, p_9782_, p_9783_, p_9784_, p_9785_);
++        this.player.absMoveTo(x, y, z, yaw, pitch); // Paper - Fix Entity Teleportation and cancel velocity if teleported
          this.player
-@@ -1024,6 +_,7 @@
+             .connection
+-            .send(new ClientboundPlayerPositionPacket(p_9781_ - d0, p_9782_ - d1, p_9783_ - d2, p_9784_ - f, p_9785_ - f1, p_9786_, this.awaitingTeleport));
++            .send(new ClientboundPlayerPositionPacket(x - d0, y - d1, z - d2, yaw - f, pitch - f1, flags, this.awaitingTeleport));
+     }
+ 
      @Override
      public void handlePlayerAction(ServerboundPlayerActionPacket p_9889_) {
          PacketUtils.ensureRunningOnSameThread(p_9889_, this, this.player.serverLevel());
