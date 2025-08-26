@@ -1,4 +1,4 @@
-package io.papermc.paper.event.player;
+package com.destroystokyo.paper.event.player;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
