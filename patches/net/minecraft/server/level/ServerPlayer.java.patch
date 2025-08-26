@@ -59,7 +59,15 @@
  import net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket;
  import net.minecraft.network.protocol.game.CommonPlayerSpawnInfo;
  import net.minecraft.network.protocol.status.ServerStatus;
-@@ -93,6 +_,7 @@
+@@ -76,6 +_,7 @@
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.PlayerAdvancements;
++import net.minecraft.server.level.ServerPlayer.RespawnPosAngle;
+ import net.minecraft.server.network.ServerGamePacketListenerImpl;
+ import net.minecraft.server.network.TextFilter;
+ import net.minecraft.server.players.PlayerList;
+@@ -93,10 +_,12 @@
  import net.minecraft.world.Container;
  import net.minecraft.world.InteractionHand;
  import net.minecraft.world.MenuProvider;
@@ -67,6 +75,11 @@
  import net.minecraft.world.damagesource.DamageSource;
  import net.minecraft.world.effect.MobEffectInstance;
  import net.minecraft.world.effect.MobEffects;
+ import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.Entity.RemovalReason;
+ import net.minecraft.world.entity.EntitySelector;
+ import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.EquipmentSlot;
 @@ -121,10 +_,12 @@
  import net.minecraft.world.entity.projectile.AbstractArrow;
  import net.minecraft.world.entity.vehicle.AbstractMinecart;
@@ -1175,7 +1188,7 @@
      }
  
      @Override
-@@ -1418,6 +_,9 @@
+@@ -1418,41 +_,48 @@
              .teleport(this.getX() + p_251611_, this.getY() + p_248861_, this.getZ() + p_252266_, this.getYRot(), this.getXRot(), RelativeMovement.ALL);
      }
  
@@ -1183,55 +1196,90 @@
 +    public AtomicReference<PlayerTeleportEvent.TeleportCause> teleportToS$cause = new AtomicReference<>(PlayerTeleportEvent.TeleportCause.UNKNOWN);
 +
      @Override
-     public boolean teleportTo(
-         ServerLevel p_265564_, double p_265424_, double p_265680_, double p_265312_, Set<RelativeMovement> p_265192_, float p_265059_, float p_265266_
-@@ -1430,8 +_,10 @@
+-    public boolean teleportTo(
+-        ServerLevel p_265564_, double p_265424_, double p_265680_, double p_265312_, Set<RelativeMovement> p_265192_, float p_265059_, float p_265266_
+-    ) {
+-        ChunkPos chunkpos = new ChunkPos(BlockPos.containing(p_265424_, p_265680_, p_265312_));
+-        p_265564_.getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 1, this.getId());
++    public boolean teleportTo(ServerLevel world, double destX, double destY, double destZ, Set<RelativeMovement> flags, float yaw, float pitch) {
++        // CraftBukkit start
++        return this.teleportTo(world, destX, destY, destZ, flags, yaw, pitch, TeleportCause.UNKNOWN);
++    }
++
++    public boolean teleportTo(ServerLevel world, double destX, double destY, double destZ, Set<RelativeMovement> flags, float yaw, float pitch, TeleportCause cause) {
++        ChunkPos chunkpos = new ChunkPos(BlockPos.containing(destX, destY, destZ));
++
++        world.getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 1, this.getId());
+         this.stopRiding();
+         if (this.isSleeping()) {
+             this.stopSleepInBed(true, true);
          }
  
-         if (p_265564_ == this.level()) {
-+            this.connection.teleport$cause(teleportToS$cause.getAndSet(PlayerTeleportEvent.TeleportCause.UNKNOWN));
-             this.connection.teleport(p_265424_, p_265680_, p_265312_, p_265059_, p_265266_, p_265192_);
+-        if (p_265564_ == this.level()) {
+-            this.connection.teleport(p_265424_, p_265680_, p_265312_, p_265059_, p_265266_, p_265192_);
++        if (world == this.level()) {
++            this.connection.teleport(destX, destY, destZ, yaw, pitch, flags, cause); // CraftBukkit
          } else {
-+            this.teleportTo$cause.set(teleportToS$cause.getAndSet(PlayerTeleportEvent.TeleportCause.UNKNOWN));
-             this.teleportTo(p_265564_, p_265424_, p_265680_, p_265312_, p_265059_, p_265266_);
+-            this.teleportTo(p_265564_, p_265424_, p_265680_, p_265312_, p_265059_, p_265266_);
++            this.teleportTo(world, destX, destY, destZ, yaw, pitch, cause); // CraftBukkit
          }
  
-@@ -1440,6 +_,14 @@
+-        this.setYHeadRot(p_265059_);
++        this.setYHeadRot(yaw);
+         return true;
      }
  
      @Override
-+    public boolean teleportTo(
-+            ServerLevel p_265564_, double p_265424_, double p_265680_, double p_265312_, Set<RelativeMovement> p_265192_, float p_265059_, float p_265266_, PlayerTeleportEvent.TeleportCause cause
-+    ) {
-+        teleportToS$cause.set(cause);
-+        return teleportTo(p_265564_, p_265424_, p_265680_, p_265312_, p_265192_, p_265059_, p_265266_);
-+    }
-+
-+    @Override
-     public void moveTo(double p_9171_, double p_9172_, double p_9173_) {
-         super.moveTo(p_9171_, p_9172_, p_9173_);
+-    public void moveTo(double p_9171_, double p_9172_, double p_9173_) {
+-        super.moveTo(p_9171_, p_9172_, p_9173_);
++    public void moveTo(double x, double y, double z) {
++        super.moveTo(x, y, z);
          this.connection.resetPosition();
-@@ -1468,9 +_,18 @@
      }
  
-     public boolean setGameMode(GameType p_143404_) {
+     @Override
+-    public void crit(Entity p_9045_) {
+-        this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(p_9045_, 4));
++    public void crit(Entity target) {
++        this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(target, 4));
+     }
+ 
+     @Override
+-    public void magicCrit(Entity p_9186_) {
+-        this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(p_9186_, 5));
++    public void magicCrit(Entity target) {
++        this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(target, 5));
+     }
+ 
+     @Override
+@@ -1467,13 +_,22 @@
+         return (ServerLevel)this.level();
+     }
+ 
+-    public boolean setGameMode(GameType p_143404_) {
++    public boolean setGameMode(GameType gameMode) {
 +        // Paper start - Expand PlayerGameModeChangeEvent
-+        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.setGameMode(p_143404_, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
++        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
 +        return event == null ? false : event.isCancelled();
 +    }
 +    @Nullable
-+    public org.bukkit.event.player.PlayerGameModeChangeEvent setGameMode(GameType p_143404_, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, @Nullable net.kyori.adventure.text.Component message) {
++    public org.bukkit.event.player.PlayerGameModeChangeEvent setGameMode(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, @Nullable net.kyori.adventure.text.Component message) {
          boolean flag = this.isSpectator();
 -        if (!this.gameMode.changeGameModeForPlayer(p_143404_)) {
 -            return false;
 +
-+        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.gameMode.changeGameModeForPlayer(p_143404_, cause, message);
++        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.gameMode.changeGameModeForPlayer(gameMode, cause, message);
 +        if (event == null || event.isCancelled()) {
 +            return null;
 +            // Paper end - Expand PlayerGameModeChangeEvent
          } else {
-             this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float)p_143404_.getId()));
-             if (p_143404_ == GameType.SPECTATOR) {
+-            this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float)p_143404_.getId()));
+-            if (p_143404_ == GameType.SPECTATOR) {
++            this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float)gameMode.getId()));
++            if (gameMode == GameType.SPECTATOR) {
+                 this.removeEntitiesOnShoulder();
+                 this.stopRiding();
+                 EnchantmentHelper.stopLocationBasedEffects(this);
 @@ -1486,7 +_,7 @@
  
              this.onUpdateAbilities();
@@ -1241,12 +1289,35 @@
          }
      }
  
-@@ -1529,9 +_,15 @@
+@@ -1501,15 +_,15 @@
      }
  
-     public void sendChatMessage(OutgoingChatMessage p_249852_, boolean p_250110_, ChatType.Bound p_252108_) {
+     @Override
+-    public void sendSystemMessage(Component p_215097_) {
+-        this.sendSystemMessage(p_215097_, false);
++    public void sendSystemMessage(Component message) {
++        this.sendSystemMessage(message, false);
+     }
+ 
+-    public void sendSystemMessage(Component p_240560_, boolean p_240545_) {
+-        if (this.acceptsSystemMessages(p_240545_)) {
++    public void sendSystemMessage(Component message, boolean overlay) {
++        if (this.acceptsSystemMessages(overlay)) {
+             this.connection
+                 .send(
+-                    new ClientboundSystemChatPacket(p_240560_, p_240545_),
++                    new ClientboundSystemChatPacket(message, overlay),
+                     PacketSendListener.exceptionallySend(
+                         () -> {
+                             if (this.acceptsSystemMessages(false)) {
+@@ -1528,10 +_,16 @@
+         }
+     }
+ 
+-    public void sendChatMessage(OutgoingChatMessage p_249852_, boolean p_250110_, ChatType.Bound p_252108_) {
++    public void sendChatMessage(OutgoingChatMessage message, boolean filterMaskEnabled, ChatType.Bound params) {
 +        // Paper start
-+        this.sendChatMessage(p_249852_, p_250110_, p_252108_, null);
++        this.sendChatMessage(message, filterMaskEnabled, params, null);
 +    }
 +    public void sendChatMessage(OutgoingChatMessage message, boolean filterMaskEnabled, ChatType.Bound params, @Nullable Component unsigned) {
 +        // Paper end
@@ -1258,10 +1329,19 @@
      }
  
      public String getIpAddress() {
-@@ -1540,16 +_,57 @@
+@@ -1540,20 +_,53 @@
              : "<unknown>";
      }
  
+-    public void updateOptions(ClientInformation p_301998_) {
+-        this.language = p_301998_.language();
+-        this.requestedViewDistance = p_301998_.viewDistance();
+-        this.chatVisibility = p_301998_.chatVisibility();
+-        this.canChatColor = p_301998_.chatColors();
+-        this.textFilteringEnabled = p_301998_.textFilteringEnabled();
+-        this.allowsListing = p_301998_.allowsListing();
+-        this.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte)p_301998_.modelCustomisation());
+-        this.getEntityData().set(DATA_PLAYER_MAIN_HAND, (byte)p_301998_.mainHand().getId());
 +    // Paper start - Client option API
 +    private java.util.Map<io.papermc.paper.ClientOption<?>, ?> getClientOptionMap(String locale, int viewDistance, io.papermc.paper.ClientOption.ChatVisibility chatVisibility, boolean chatColors, io.papermc.paper.PaperSkinParts skinParts, org.bukkit.inventory.MainHand mainHand, boolean allowsServerListing, boolean textFilteringEnabled) {
 +        java.util.Map<io.papermc.paper.ClientOption<?>, Object> map = new java.util.HashMap<>();
@@ -1277,54 +1357,63 @@
 +    }
 +    // Paper end
 +
-     public void updateOptions(ClientInformation p_301998_) {
--        this.language = p_301998_.language();
--        this.requestedViewDistance = p_301998_.viewDistance();
--        this.chatVisibility = p_301998_.chatVisibility();
--        this.canChatColor = p_301998_.chatColors();
--        this.textFilteringEnabled = p_301998_.textFilteringEnabled();
--        this.allowsListing = p_301998_.allowsListing();
--        this.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte)p_301998_.modelCustomisation());
--        this.getEntityData().set(DATA_PLAYER_MAIN_HAND, (byte)p_301998_.mainHand().getId());
--    }
-+        new io.papermc.paper.event.player.PlayerClientOptionsChangeEvent(getBukkitEntity(), getClientOptionMap(p_301998_.language(), p_301998_.viewDistance(), io.papermc.paper.ClientOption.ChatVisibility.valueOf(p_301998_.chatVisibility().name()), p_301998_.chatColors(), new io.papermc.paper.PaperSkinParts(p_301998_.modelCustomisation()), p_301998_.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT, p_301998_.allowsListing(), p_301998_.textFilteringEnabled())).callEvent(); // Paper - settings event
++    public void updateOptions(ClientInformation clientOptions) {
++        new io.papermc.paper.event.player.PlayerClientOptionsChangeEvent(getBukkitEntity(), getClientOptionMap(clientOptions.language(), clientOptions.viewDistance(), io.papermc.paper.ClientOption.ChatVisibility.valueOf(clientOptions.chatVisibility().name()), clientOptions.chatColors(), new io.papermc.paper.PaperSkinParts(clientOptions.modelCustomisation()), clientOptions.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT, clientOptions.allowsListing(), clientOptions.textFilteringEnabled())).callEvent(); // Paper - settings event
 +        // CraftBukkit start
-+        if (getMainArm() != p_301998_.mainHand()) {
++        if (getMainArm() != clientOptions.mainHand()) {
 +            PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(getBukkitEntity(), getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
 +            this.server.server.getPluginManager().callEvent(event);
 +        }
-+        if (this.language == null || !this.language.equals(p_301998_.language())) { // Paper
-+            PlayerLocaleChangeEvent event = new PlayerLocaleChangeEvent(getBukkitEntity(), p_301998_.language());
++        if (this.language == null || !this.language.equals(clientOptions.language())) { // Paper
++            PlayerLocaleChangeEvent event = new PlayerLocaleChangeEvent(getBukkitEntity(), clientOptions.language());
 +            this.server.server.getPluginManager().callEvent(event);
 +        }
 +        // CraftBukkit end
-+        this.language = p_301998_.language();
-+        this.adventure$locale = java.util.Objects.requireNonNullElse(net.kyori.adventure.translation.Translator.parseLocale(this.language), java.util.Locale.US); // Paper
-+        this.requestedViewDistance = p_301998_.viewDistance();
-+        this.chatVisibility = p_301998_.chatVisibility();
-+        this.canChatColor = p_301998_.chatColors();
-+        this.textFilteringEnabled = p_301998_.textFilteringEnabled();
-+        this.allowsListing = p_301998_.allowsListing();
-+        this.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte)p_301998_.modelCustomisation());
-+        this.getEntityData().set(DATA_PLAYER_MAIN_HAND, (byte)p_301998_.mainHand().getId());
++        // Paper start - don't call options events on login
++        this.updateOptionsNoEvents(clientOptions);
 +    }
-+
-+    // Paper start - don't call options events on login
-+    public void updateOptionsNoEvents(ClientInformation p_301998_) {
-+        this.language = p_301998_.language();
++    public void updateOptionsNoEvents(ClientInformation clientOptions) {
++        // Paper end
++        this.language = clientOptions.language();
 +        this.adventure$locale = java.util.Objects.requireNonNullElse(net.kyori.adventure.translation.Translator.parseLocale(this.language), java.util.Locale.US); // Paper
-+        this.requestedViewDistance = p_301998_.viewDistance();
-+        this.chatVisibility = p_301998_.chatVisibility();
-+        this.canChatColor = p_301998_.chatColors();
-+        this.textFilteringEnabled = p_301998_.textFilteringEnabled();
-+        this.allowsListing = p_301998_.allowsListing();
-+        this.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte)p_301998_.modelCustomisation());
-+        this.getEntityData().set(DATA_PLAYER_MAIN_HAND, (byte)p_301998_.mainHand().getId());
-+    }
-+    // Paper end
++        this.requestedViewDistance = clientOptions.viewDistance();
++        this.chatVisibility = clientOptions.chatVisibility();
++        this.canChatColor = clientOptions.chatColors();
++        this.textFilteringEnabled = clientOptions.textFilteringEnabled();
++        this.allowsListing = clientOptions.allowsListing();
++        this.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte)clientOptions.modelCustomisation());
++        this.getEntityData().set(DATA_PLAYER_MAIN_HAND, (byte)clientOptions.mainHand().getId());
+     }
  
      public ClientInformation clientInformation() {
          int i = this.getEntityData().get(DATA_PLAYER_MODE_CUSTOMISATION);
+         HumanoidArm humanoidarm = HumanoidArm.BY_ID.apply(this.getEntityData().get(DATA_PLAYER_MAIN_HAND));
++
+         return new ClientInformation(
+             this.language, this.requestedViewDistance, this.chatVisibility, this.canChatColor, i, humanoidarm, this.textFilteringEnabled, this.allowsListing
+         );
+@@ -1567,8 +_,8 @@
+         return this.chatVisibility;
+     }
+ 
+-    private boolean acceptsSystemMessages(boolean p_240568_) {
+-        return this.chatVisibility == ChatVisiblity.HIDDEN ? p_240568_ : true;
++    private boolean acceptsSystemMessages(boolean overlay) {
++        return this.chatVisibility == ChatVisiblity.HIDDEN ? overlay : true;
+     }
+ 
+     private boolean acceptsChatMessages() {
+@@ -1579,8 +_,8 @@
+         return this.requestedViewDistance;
+     }
+ 
+-    public void sendServerStatus(ServerStatus p_215110_) {
+-        this.connection.send(new ClientboundServerDataPacket(p_215110_.description(), p_215110_.favicon().map(ServerStatus.Favicon::iconBytes)));
++    public void sendServerStatus(ServerStatus metadata) {
++        this.connection.send(new ClientboundServerDataPacket(metadata.description(), metadata.favicon().map(ServerStatus.Favicon::iconBytes)));
+     }
+ 
+     @Override
 @@ -1590,7 +_,67 @@
  
      public void resetLastActionTime() {
@@ -1394,23 +1483,30 @@
  
      public ServerStatsCounter getStats() {
          return this.stats;
-@@ -1617,7 +_,23 @@
-     public void setCamera(@Nullable Entity p_9214_) {
-         Entity entity = this.getCamera();
-         this.camera = (Entity)(p_9214_ == null ? this : p_9214_);
+@@ -1614,15 +_,31 @@
+         return (Entity)(this.camera == null ? this : this.camera);
+     }
+ 
+-    public void setCamera(@Nullable Entity p_9214_) {
+-        Entity entity = this.getCamera();
+-        this.camera = (Entity)(p_9214_ == null ? this : p_9214_);
+-        if (entity != this.camera) {
++    public void setCamera(@Nullable Entity entity) {
++        Entity camera = this.getCamera();
++        this.camera = (Entity)(entity == null ? this : entity);
 +        while (this.camera instanceof PartEntity<?> partEntity) this.camera = partEntity.getParent(); // Neo: fix MC-46486
-         if (entity != this.camera) {
++        if (camera != this.camera) {
 +            // Paper start - Add PlayerStartSpectatingEntityEvent and PlayerStopSpectatingEntity
 +            if (this.camera == this) {
-+                io.papermc.paper.event.player.PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new io.papermc.paper.event.player.PlayerStopSpectatingEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity());
++                io.papermc.paper.event.player.PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new io.papermc.paper.event.player.PlayerStopSpectatingEntityEvent(this.getBukkitEntity(), camera.getBukkitEntity());
 +                if (!playerStopSpectatingEntityEvent.callEvent()) {
-+                    this.camera = entity; // rollback camera entity again
++                    this.camera = camera; // rollback camera entity again
 +                    return;
 +                }
 +            } else {
-+                io.papermc.paper.event.player.PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new io.papermc.paper.event.player.PlayerStartSpectatingEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), p_9214_.getBukkitEntity());
++                io.papermc.paper.event.player.PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new io.papermc.paper.event.player.PlayerStartSpectatingEntityEvent(this.getBukkitEntity(), camera.getBukkitEntity(), entity.getBukkitEntity());
 +                if (!playerStartSpectatingEntityEvent.callEvent()) {
-+                    this.camera = entity; // rollback camera entity again
++                    this.camera = camera; // rollback camera entity again
 +                    return;
 +                }
 +            }
@@ -1418,15 +1514,38 @@
              if (this.camera.level() instanceof ServerLevel serverlevel) {
                  this.teleportTo(serverlevel, this.camera.getX(), this.camera.getY(), this.camera.getZ(), Set.of(), this.getYRot(), this.getXRot());
              }
-@@ -1653,7 +_,15 @@
+ 
+-            if (p_9214_ != null) {
++            if (entity != null) {
+                 this.serverLevel().getChunkSource().move(this);
+             }
+ 
+@@ -1639,11 +_,11 @@
+     }
+ 
+     @Override
+-    public void attack(Entity p_9220_) {
++    public void attack(Entity target) {
+         if (this.gameMode.getGameModeForPlayer() == GameType.SPECTATOR) {
+-            this.setCamera(p_9220_);
++            this.setCamera(target);
+         } else {
+-            super.attack(p_9220_);
++            super.attack(target);
+         }
+     }
+ 
+@@ -1653,12 +_,22 @@
  
      @Nullable
      public Component getTabListDisplayName() {
 -        return null;
++        // Neo start
 +        if (!this.hasTabListName) {
 +            this.tabListDisplayName = EventHooks.getPlayerTabListDisplayName(this);
 +            this.hasTabListName = true;
 +        }
++        // Neo end
 +        return this.tabListDisplayName;
 +    }
 +
@@ -1435,77 +1554,174 @@
      }
  
      @Override
-@@ -1674,6 +_,9 @@
+-    public void swing(InteractionHand p_9031_) {
+-        super.swing(p_9031_);
++    public void swing(InteractionHand hand) {
++        super.swing(hand);
+         this.resetAttackStrengthTicker();
+     }
+ 
+@@ -1674,16 +_,24 @@
          return this.advancements;
      }
  
-+    // Mohist start
-+    public AtomicReference<PlayerTeleportEvent.TeleportCause> teleportTo$cause = new AtomicReference<>(PlayerTeleportEvent.TeleportCause.UNKNOWN);
+-    public void teleportTo(ServerLevel p_9000_, double p_9001_, double p_9002_, double p_9003_, float p_9004_, float p_9005_) {
 +    // CraftBukkit start
-     public void teleportTo(ServerLevel p_9000_, double p_9001_, double p_9002_, double p_9003_, float p_9004_, float p_9005_) {
++    public void teleportTo(ServerLevel targetWorld, double x, double y, double z, float yaw, float pitch) {
++        this.teleportTo(targetWorld, x, y, z, yaw, pitch, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
++    }
++
++    public void teleportTo(ServerLevel targetWorld, double x, double y, double z, float yaw, float pitch, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        // CraftBukkit end
          this.setCamera(this);
          this.stopRiding();
-@@ -1709,11 +_,44 @@
+-        if (p_9000_ == this.level()) {
+-            this.connection.teleport(p_9001_, p_9002_, p_9003_, p_9004_, p_9005_);
++        /*CraftBukkit start - replace with bukkit handling for multi-world
++        if (targetWorld == this.level()) {
++            this.connection.teleport(x, y, z, yaw, pitch);
+         } else {
+-            this.changeDimension(
+-                new DimensionTransition(p_9000_, new Vec3(p_9001_, p_9002_, p_9003_), Vec3.ZERO, p_9004_, p_9005_, DimensionTransition.DO_NOTHING)
+-            );
++            this.changeDimension(new DimensionTransition(targetWorld, new Vec3D(x, y, z), Vec3D.ZERO, yaw, pitch, DimensionTransition.DO_NOTHING));
+         }
++        */
++        this.getBukkitEntity().teleport(new Location(targetWorld.getWorld(), x, y, z, yaw, pitch), cause);
++        // CraftBukkit end
+     }
+ 
+     @Nullable
+@@ -1703,75 +_,120 @@
+         return this.respawnForced;
+     }
+ 
+-    public void copyRespawnPosition(ServerPlayer p_348642_) {
++    public void copyRespawnPosition(ServerPlayer player) {
+         this.setRespawnPosition(
+-            p_348642_.getRespawnDimension(), p_348642_.getRespawnPosition(), p_348642_.getRespawnAngle(), p_348642_.isRespawnForced(), false
++            player.getRespawnDimension(), player.getRespawnPosition(), player.getRespawnAngle(), player.isRespawnForced(), false
          );
      }
  
-+    // Youer start
-+    private final AtomicReference<PlayerSpawnChangeEvent.Cause> setRespawnPosition$cause = new AtomicReference<>(PlayerSpawnChangeEvent.Cause.UNKNOWN);
-+
-+    public void setRespawnPosition$cause(PlayerSpawnChangeEvent.Cause cause) {
-+        this.setRespawnPosition$cause.set(cause);
-+    }
-+
-     public void setRespawnPosition(ResourceKey<Level> p_9159_, @Nullable BlockPos p_9160_, float p_9161_, boolean p_9162_, boolean p_9163_) {
-+        if (EventHooks.onPlayerSpawnSet(this, p_9160_ == null ? Level.OVERWORLD : p_9159_, p_9160_, p_9162_)) return;
-+        Location spawnLoc = null;
-+        boolean willNotify = false;
-         if (p_9160_ != null) {
+-    public void setRespawnPosition(ResourceKey<Level> p_9159_, @Nullable BlockPos p_9160_, float p_9161_, boolean p_9162_, boolean p_9163_) {
+-        if (p_9160_ != null) {
 -            boolean flag = p_9160_.equals(this.respawnPosition) && p_9159_.equals(this.respawnDimension);
 -            if (p_9163_ && !flag) {
 -                this.sendSystemMessage(Component.translatable("block.minecraft.set_spawn"));
-+            boolean flag2 = p_9160_.equals(this.respawnPosition) && p_9159_.equals(this.respawnDimension);
-+            spawnLoc = io.papermc.paper.util.MCUtil.toLocation(this.getServer().getLevel(p_9159_), p_9160_);
-+            spawnLoc.setYaw(p_9161_);
-+            willNotify = p_9163_ && !flag2;
++    @Deprecated // Paper - Add PlayerSetSpawnEvent
++    public void setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage) {
++        // Paper start - Add PlayerSetSpawnEvent
++        this.setRespawnPosition(dimension, pos, angle, forced, sendMessage, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.UNKNOWN);
++    }
++    @Deprecated
++    public boolean setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage, PlayerSpawnChangeEvent.Cause cause) {
++        return this.setRespawnPosition(dimension, pos, angle, forced, sendMessage, cause == PlayerSpawnChangeEvent.Cause.RESET ?
++            com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN : com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.valueOf(cause.name()));
++    }
++    public void setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause cause) {
++        if (EventHooks.onPlayerSpawnSet(this, pos == null ? Level.OVERWORLD : dimension, pos, forced)) return; // Neo
++        Location spawnLoc = null;
++        boolean willNotify = false;
++        if (pos != null) {
++            boolean flag2 = pos.equals(this.respawnPosition) && dimension.equals(this.respawnDimension);
++            spawnLoc = io.papermc.paper.util.MCUtil.toLocation(this.getServer().getLevel(dimension), pos);
++            spawnLoc.setYaw(angle);
++            willNotify = sendMessage && !flag2;
 +        }
-+        PlayerSpawnChangeEvent.Cause cause = setRespawnPosition$cause.getAndSet(PlayerSpawnChangeEvent.Cause.UNKNOWN);
-+        PlayerSetSpawnEvent.Cause causePaper = cause == PlayerSpawnChangeEvent.Cause.RESET ?
-+                PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN : PlayerSetSpawnEvent.Cause.valueOf(cause.name());
-+        PlayerSpawnChangeEvent dumbEvent = new PlayerSpawnChangeEvent(this.getBukkitEntity(), spawnLoc, p_9162_,
-+                causePaper == io.papermc.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN ? PlayerSpawnChangeEvent.Cause.RESET : PlayerSpawnChangeEvent.Cause.valueOf(cause.name()));
++
++        PlayerSpawnChangeEvent dumbEvent = new PlayerSpawnChangeEvent(this.getBukkitEntity(), spawnLoc, forced,
++            cause == com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN ? PlayerSpawnChangeEvent.Cause.RESET : PlayerSpawnChangeEvent.Cause.valueOf(cause.name()));
 +        dumbEvent.callEvent();
 +
-+        io.papermc.paper.event.player.PlayerSetSpawnEvent event = new io.papermc.paper.event.player.PlayerSetSpawnEvent(this.getBukkitEntity(), causePaper, dumbEvent.getNewSpawn(), dumbEvent.isForced(), willNotify, willNotify ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null);
++        com.destroystokyo.paper.event.player.PlayerSetSpawnEvent event = new com.destroystokyo.paper.event.player.PlayerSetSpawnEvent(this.getBukkitEntity(), cause, dumbEvent.getNewSpawn(), dumbEvent.isForced(), willNotify, willNotify ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null);
 +        event.setCancelled(dumbEvent.isCancelled());
 +        if (!event.callEvent()) {
 +            return;
 +        }
 +        if (event.getLocation() != null) {
-+            p_9159_ = event.getLocation().getWorld() != null ? ((CraftWorld) event.getLocation().getWorld()).getHandle().dimension() : p_9159_;
-+            p_9160_ = io.papermc.paper.util.MCUtil.toBlockPosition(event.getLocation());
-+            p_9161_ = event.getLocation().getYaw();
-+            p_9162_ = event.isForced();
++            dimension = event.getLocation().getWorld() != null ? ((CraftWorld) event.getLocation().getWorld()).getHandle().dimension() : dimension;
++            pos = io.papermc.paper.util.MCUtil.toBlockPosition(event.getLocation());
++            angle = event.getLocation().getYaw();
++            forced = event.isForced();
 +            // Paper end - Add PlayerSetSpawnEvent
 +
 +            if (event.willNotifyPlayer() && event.getNotification() != null) { // Paper - Add PlayerSetSpawnEvent
 +                this.sendSystemMessage(PaperAdventure.asVanilla(event.getNotification())); // Paper - Add PlayerSetSpawnEvent
              }
  
-             this.respawnPosition = p_9160_;
-@@ -1727,6 +_,11 @@
+-            this.respawnPosition = p_9160_;
+-            this.respawnDimension = p_9159_;
+-            this.respawnAngle = p_9161_;
+-            this.respawnForced = p_9162_;
++            this.respawnPosition = pos;
++            this.respawnDimension = dimension;
++            this.respawnAngle = angle;
++            this.respawnForced = forced;
+         } else {
+             this.respawnPosition = null;
+             this.respawnDimension = Level.OVERWORLD;
+             this.respawnAngle = 0.0F;
              this.respawnForced = false;
          }
++
++        return true; // Paper - Add PlayerSetSpawnEvent
      }
-+    public void setRespawnPosition(ResourceKey<Level> p_9159_, @Nullable BlockPos p_9160_, float p_9161_, boolean p_9162_, boolean p_9163_, PlayerSpawnChangeEvent.Cause cause) {
-+        setRespawnPosition$cause(cause);
-+        setRespawnPosition(p_9159_, p_9160_, p_9161_, p_9162_, p_9163_);
-+    }
-+    // Youer end
  
      public SectionPos getLastSectionPos() {
          return this.lastSectionPos;
-@@ -1767,6 +_,8 @@
+     }
+ 
+-    public void setLastSectionPos(SectionPos p_9120_) {
+-        this.lastSectionPos = p_9120_;
++    public void setLastSectionPos(SectionPos section) {
++        this.lastSectionPos = section;
+     }
+ 
+     public ChunkTrackingView getChunkTrackingView() {
+         return this.chunkTrackingView;
+     }
+ 
+-    public void setChunkTrackingView(ChunkTrackingView p_296310_) {
+-        this.chunkTrackingView = p_296310_;
++    public void setChunkTrackingView(ChunkTrackingView chunkFilter) {
++        this.chunkTrackingView = chunkFilter;
+     }
+ 
+     @Override
+-    public void playNotifySound(SoundEvent p_9019_, SoundSource p_9020_, float p_9021_, float p_9022_) {
++    public void playNotifySound(SoundEvent sound, SoundSource category, float volume, float pitch) {
+         this.connection
+             .send(
+                 new ClientboundSoundPacket(
+-                    BuiltInRegistries.SOUND_EVENT.wrapAsHolder(p_9019_),
+-                    p_9020_,
++                    BuiltInRegistries.SOUND_EVENT.wrapAsHolder(sound),
++                    category,
+                     this.getX(),
+                     this.getY(),
+                     this.getZ(),
+-                    p_9021_,
+-                    p_9022_,
++                    volume,
++                    pitch,
+                     this.random.nextLong()
+                 )
+             );
+     }
+ 
+     @Override
+-    public ItemEntity drop(ItemStack p_9085_, boolean p_9086_, boolean p_9087_) {
+-        ItemEntity itementity = super.drop(p_9085_, p_9086_, p_9087_);
++    public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership) {
++        // CraftBukkit start - SPIGOT-2942: Add boolean to call event
++        return this.drop(stack, throwRandomly, retainOwnership, true);
++    }
++
++    @Override
++    public ItemEntity drop(ItemStack stack, boolean flag, boolean flag1, boolean callEvent) {
++        ItemEntity itementity = super.drop(stack, flag, flag1, callEvent);
++        // CraftBukkit end
          if (itementity == null) {
              return null;
          } else {
@@ -1513,11 +1729,19 @@
 +            else
              this.level().addFreshEntity(itementity);
              ItemStack itemstack = itementity.getItem();
-             if (p_9087_) {
-@@ -1781,6 +_,75 @@
+-            if (p_9087_) {
++            if (flag1) {
+                 if (!itemstack.isEmpty()) {
+-                    this.awardStat(Stats.ITEM_DROPPED.get(itemstack.getItem()), p_9085_.getCount());
++                    this.awardStat(Stats.ITEM_DROPPED.get(itemstack.getItem()), itemstack.getCount()); // Paper - Fix PlayerDropItemEvent using wrong item
+                 }
+ 
+                 this.awardStat(Stats.DROP);
+@@ -1781,6 +_,77 @@
          }
      }
  
++    // Neo start
 +    /**
 +     * Returns the language last reported by the player as their local language.
 +     * Defaults to en_us if the value is unknown.
@@ -1586,6 +1810,7 @@
 +            this.getServer().getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, this));
 +        }
 +    }
++    // Neo end
 +
      public TextFilter getTextFilter() {
          return this.textFilter;

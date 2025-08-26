@@ -47,7 +47,7 @@
  import net.minecraft.world.item.ElytraItem;
  import net.minecraft.world.item.Equipable;
  import net.minecraft.world.item.Item;
-@@ -126,11 +_,26 @@
+@@ -126,13 +_,29 @@
  import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
  import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
  import net.minecraft.world.phys.AABB;
@@ -73,7 +73,10 @@
 +import org.spigotmc.AsyncCatcher;
  
  public abstract class LivingEntity extends Entity implements Attackable, net.neoforged.neoforge.common.extensions.ILivingEntityExtension {
++
      private static final Logger LOGGER = LogUtils.getLogger();
+     private static final String TAG_ACTIVE_EFFECTS = "active_effects";
+     private static final ResourceLocation SPEED_MODIFIER_POWDER_SNOW_ID = ResourceLocation.withDefaultNamespace("powder_snow");
 @@ -158,7 +_,7 @@
      private static final double MAX_LINE_OF_SIGHT_TEST_RANGE = 128.0;
      protected static final int LIVING_ENTITY_FLAG_IS_USING = 1;
@@ -107,7 +110,7 @@
      protected int lerpSteps;
      protected double lerpX;
      protected double lerpY;
-@@ -251,13 +_,37 @@
+@@ -251,24 +_,62 @@
      private float swimAmount;
      private float swimAmountO;
      protected Brain<?> brain;
@@ -115,6 +118,11 @@
 +    public boolean skipDropExperience;
      private final Reference2ObjectMap<Enchantment, Set<EnchantmentLocationBasedEffect>> activeLocationDependentEnchantments = new Reference2ObjectArrayMap<>();
      protected float appliedScale = 1.0F;
+-
+-    protected LivingEntity(EntityType<? extends LivingEntity> p_20966_, Level p_20967_) {
+-        super(p_20966_, p_20967_);
+-        this.attributes = new AttributeMap(DefaultAttributes.getSupplier(p_20966_));
+-        this.setHealth(this.getMaxHealth());
 +    /**
 +     * This field stores information about damage dealt to this entity.
 +     * a new {@link net.neoforged.neoforge.common.damagesource.DamageContainer} is instantiated
@@ -126,6 +134,7 @@
 +
 +    // CraftBukkit start
 +    public int expToDrop;
++    public ArrayList<DefaultDrop> drops = new ArrayList<>(); // Paper - Restore vanilla drops behavior
 +    public final CraftAttributeMap craftAttributes;
 +    public boolean collides = true;
 +    public Set<UUID> collidableExemptions = new HashSet<>();
@@ -133,31 +142,84 @@
 +    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
 +    public CraftLivingEntity getBukkitLivingEntity() { return (CraftLivingEntity) super.getBukkitEntity(); } // Paper
 +    protected boolean shouldBurnInDay = false; public boolean shouldBurnInDay() { return this.shouldBurnInDay; } public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; } // Purpur - API for any mob to burn daylight
++
 +    @Override
 +    public float getBukkitYaw() {
 +        return getYHeadRot();
 +    }
 +    // CraftBukkit end
- 
-     protected LivingEntity(EntityType<? extends LivingEntity> p_20966_, Level p_20967_) {
-         super(p_20966_, p_20967_);
--        this.attributes = new AttributeMap(DefaultAttributes.getSupplier(p_20966_));
-+        this.attributes = new AttributeMap(DefaultAttributes.getSupplier(p_20966_), this);
-+        this.fake$setHealth(true);
-         this.setHealth(this.getMaxHealth());
-         this.blocksBuilding = true;
-         this.rotA = (float)((Math.random() + 1.0) * 0.01F);
-@@ -267,6 +_,9 @@
-         this.yHeadRot = this.getYRot();
-         NbtOps nbtops = NbtOps.INSTANCE;
-         this.brain = this.makeBrain(new Dynamic<>(nbtops, nbtops.createMap(ImmutableMap.of(nbtops.createString("memories"), nbtops.emptyMap()))));
++    // Spigot start
++    public void inactiveTick()
++    {
++        super.inactiveTick();
++        ++this.noActionTime; // Above all the floats
++    }
++    // Spigot end
++
++    protected LivingEntity(EntityType<? extends LivingEntity> type, Level world) {
++        super(type, world);
++        this.attributes = new AttributeMap(DefaultAttributes.getSupplier(type), this); // Purpur
++        this.initAttributes(); // Purpur
 +        this.craftAttributes = new CraftAttributeMap(attributes); // CraftBukkit
 +        // CraftBukkit - setHealth(getMaxHealth()) inlined and simplified to skip the instanceof check for EntityPlayer, as getBukkitEntity() is not initialized in constructor
 +        this.entityData.set(LivingEntity.DATA_HEALTH_ID, (float) this.getAttribute(Attributes.MAX_HEALTH).getValue());
+         this.blocksBuilding = true;
+         this.rotA = (float)((Math.random() + 1.0) * 0.01F);
+         this.reapplyPosition();
+         this.timeOffs = (float)Math.random() * 12398.0F;
+         this.setYRot((float)(Math.random() * (float) (Math.PI * 2)));
+         this.yHeadRot = this.getYRot();
++
+         NbtOps nbtops = NbtOps.INSTANCE;
+         this.brain = this.makeBrain(new Dynamic<>(nbtops, nbtops.createMap(ImmutableMap.of(nbtops.createString("memories"), nbtops.emptyMap()))));
      }
  
++    protected void initAttributes() {} // Purpur
++
      public Brain<?> getBrain() {
-@@ -320,8 +_,11 @@
+         return this.brain;
+     }
+@@ -277,8 +_,8 @@
+         return Brain.provider(ImmutableList.of(), ImmutableList.of());
+     }
+ 
+-    protected Brain<?> makeBrain(Dynamic<?> p_21069_) {
+-        return this.brainProvider().makeBrain(p_21069_);
++    protected Brain<?> makeBrain(Dynamic<?> dynamic) {
++        return this.brainProvider().makeBrain(dynamic);
+     }
+ 
+     @Override
+@@ -286,19 +_,19 @@
+         this.hurt(this.damageSources().genericKill(), Float.MAX_VALUE);
+     }
+ 
+-    public boolean canAttackType(EntityType<?> p_21032_) {
++    public boolean canAttackType(EntityType<?> type) {
+         return true;
+     }
+ 
+     @Override
+-    protected void defineSynchedData(SynchedEntityData.Builder p_326178_) {
+-        p_326178_.define(DATA_LIVING_ENTITY_FLAGS, (byte)0);
+-        p_326178_.define(DATA_EFFECT_PARTICLES, List.of());
+-        p_326178_.define(DATA_EFFECT_AMBIENCE_ID, false);
+-        p_326178_.define(DATA_ARROW_COUNT_ID, 0);
+-        p_326178_.define(DATA_STINGER_COUNT_ID, 0);
+-        p_326178_.define(DATA_HEALTH_ID, 1.0F);
+-        p_326178_.define(SLEEPING_POS_ID, Optional.empty());
++    protected void defineSynchedData(SynchedEntityData.Builder builder) {
++        builder.define(DATA_LIVING_ENTITY_FLAGS, (byte)0);
++        builder.define(DATA_EFFECT_PARTICLES, List.of());
++        builder.define(DATA_EFFECT_AMBIENCE_ID, false);
++        builder.define(DATA_ARROW_COUNT_ID, 0);
++        builder.define(DATA_STINGER_COUNT_ID, 0);
++        builder.define(DATA_HEALTH_ID, 1.0F);
++        builder.define(SLEEPING_POS_ID, Optional.empty());
+     }
+ 
+     public static AttributeSupplier.Builder createLivingAttributes() {
+@@ -320,50 +_,65 @@
              .add(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE)
              .add(Attributes.WATER_MOVEMENT_EFFICIENCY)
              .add(Attributes.MOVEMENT_EFFICIENCY)
@@ -169,24 +231,60 @@
 +    public boolean shouldSendAttribute(Attribute attribute) { return true; } // Purpur
  
      @Override
-     protected void checkFallDamage(double p_20990_, boolean p_20991_, BlockState p_20992_, BlockPos p_20993_) {
-@@ -348,7 +_,14 @@
+-    protected void checkFallDamage(double p_20990_, boolean p_20991_, BlockState p_20992_, BlockPos p_20993_) {
++    protected void checkFallDamage(double heightDifference, boolean onGround, BlockState state, BlockPos landedPosition) {
+         if (!this.isInWater()) {
+             this.updateInWaterStateAndDoWaterCurrentPushing();
+         }
+ 
+-        if (this.level() instanceof ServerLevel serverlevel && p_20991_ && this.fallDistance > 0.0F) {
+-            this.onChangedBlock(serverlevel, p_20993_);
++        if (this.level() instanceof ServerLevel serverlevel && onGround && this.fallDistance > 0.0F) {
++            this.onChangedBlock(serverlevel, landedPosition);
+             double d7 = this.getAttributeValue(Attributes.SAFE_FALL_DISTANCE);
+-            if ((double)this.fallDistance > d7 && !p_20992_.isAir()) {
++
++            if ((double)this.fallDistance > d7 && !state.isAir()) {
+                 double d0 = this.getX();
+                 double d1 = this.getY();
+                 double d2 = this.getZ();
+                 BlockPos blockpos = this.blockPosition();
+-                if (p_20993_.getX() != blockpos.getX() || p_20993_.getZ() != blockpos.getZ()) {
+-                    double d3 = d0 - (double)p_20993_.getX() - 0.5;
+-                    double d5 = d2 - (double)p_20993_.getZ() - 0.5;
++
++                if (landedPosition.getX() != blockpos.getX() || landedPosition.getZ() != blockpos.getZ()) {
++                    double d3 = d0 - (double)landedPosition.getX() - 0.5;
++                    double d5 = d2 - (double)landedPosition.getZ() - 0.5;
+                     double d6 = Math.max(Math.abs(d3), Math.abs(d5));
+-                    d0 = (double)p_20993_.getX() + 0.5 + d3 / d6 * 0.5;
+-                    d2 = (double)p_20993_.getZ() + 0.5 + d5 / d6 * 0.5;
++
++                    d0 = (double)landedPosition.getX() + 0.5 + d3 / d6 * 0.5;
++                    d2 = (double)landedPosition.getZ() + 0.5 + d5 / d6 * 0.5;
+                 }
+ 
                  float f = (float)Mth.ceil((double)this.fallDistance - d7);
                  double d4 = Math.min((double)(0.2F + f / 15.0F), 2.5);
                  int i = (int)(150.0 * d4);
 -                ((ServerLevel)this.level()).sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, p_20992_), d0, d1, d2, i, 0.0, 0.0, 0.0, 0.15F);
-+                if (!p_20992_.addLandingEffects((ServerLevel) this.level(), p_20993_, p_20992_, this, i))
-+                    // CraftBukkit start - visiblity api
-+                    if (this instanceof ServerPlayer) {
-+                        ((ServerLevel) this.level()).sendParticles((ServerPlayer) this, new BlockParticleOption(ParticleTypes.BLOCK, p_20992_),  d0, d1, d2, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D, false);
-+                    } else {
-+                        ((ServerLevel) this.level()).sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, p_20992_),  d0, d1, d2, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D);
-+                    }
++
++                if (!state.addLandingEffects((ServerLevel) this.level(), landedPosition, state, this, i)) // Neo
++                // CraftBukkit start - visiblity api
++                if (this instanceof ServerPlayer) {
++                    ((ServerLevel) this.level()).sendParticles((ServerPlayer) this, new BlockParticleOption(ParticleTypes.BLOCK, state),  d0, d1, d2, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D, false);
++                } else {
++                    ((ServerLevel) this.level()).sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),  d0, d1, d2, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D);
++                }
 +                // CraftBukkit end
              }
          }
  
-@@ -358,6 +_,7 @@
+-        super.checkFallDamage(p_20990_, p_20991_, p_20992_, p_20993_);
+-        if (p_20991_) {
++        super.checkFallDamage(heightDifference, onGround, state, landedPosition);
++        if (onGround) {
+             this.lastClimbablePos = Optional.empty();
          }
      }
  
@@ -194,7 +292,32 @@
      public final boolean canBreatheUnderwater() {
          return this.getType().is(EntityTypeTags.CAN_BREATHE_UNDER_WATER);
      }
-@@ -403,6 +_,9 @@
+ 
+-    public float getSwimAmount(float p_20999_) {
+-        return Mth.lerp(p_20999_, this.swimAmountO, this.swimAmount);
++    public float getSwimAmount(float tickDelta) {
++        return Mth.lerp(tickDelta, this.swimAmountO, this.swimAmount);
+     }
+ 
+     public boolean hasLandedInLiquid() {
+@@ -390,19 +_,25 @@
+         if (this.isAlive()) {
+             boolean flag = this instanceof Player;
+             if (!this.level().isClientSide) {
+-                if (this.isInWall()) {
++                if (shouldCheckForSuffocation() && this.isInWall()) { // Pufferfish - optimize suffocation
+                     this.hurt(this.damageSources().inWall(), 1.0F);
+                 } else if (flag && !this.level().getWorldBorder().isWithinBounds(this.getBoundingBox())) {
+                     double d4 = this.level().getWorldBorder().getDistanceToBorder(this) + this.level().getWorldBorder().getDamageSafeZone();
++
+                     if (d4 < 0.0) {
+                         double d0 = this.level().getWorldBorder().getDamagePerBlock();
++
+                         if (d0 > 0.0) {
++                            if (level().purpurConfig.teleportIfOutsideBorder && this instanceof ServerPlayer serverPlayer) { serverPlayer.teleport(io.papermc.paper.util.MCUtil.toLocation(level(), ((ServerLevel) level()).getSharedSpawnPos())); return; } // Purpur
+                             this.hurt(this.damageSources().outOfBorder(), (float)Math.max(1, Mth.floor(-d4 * d0)));
+                         }
+                     }
                  }
              }
  
@@ -204,15 +327,54 @@
              if (this.isEyeInFluid(FluidTags.WATER)
                  && !this.level().getBlockState(BlockPos.containing(this.getX(), this.getEyeY(), this.getZ())).is(Blocks.BUBBLE_COLUMN)) {
                  boolean flag1 = !this.canBreatheUnderwater()
+@@ -434,6 +_,7 @@
+ 
+             if (this.level() instanceof ServerLevel serverlevel1) {
+                 BlockPos blockpos = this.blockPosition();
++
+                 if (!Objects.equal(this.lastPos, blockpos)) {
+                     this.lastPos = blockpos;
+                     this.onChangedBlock(serverlevel1, blockpos);
 @@ -441,7 +_,7 @@
              }
          }
  
 -        if (this.isAlive() && (this.isInWaterRainOrBubble() || this.isInPowderSnow)) {
-+        if (this.isAlive() && (this.isInWaterRainOrBubble() || this.isInPowderSnow || this.isInFluidType((fluidType, height) -> this.canFluidExtinguish(fluidType)))) {
++        if (this.isAlive() && (this.isInWaterRainOrBubble() || this.isInPowderSnow || this.isInFluidType((fluidType, height) -> this.canFluidExtinguish(fluidType)))) { // Neo
              this.extinguishFire();
          }
  
+@@ -475,7 +_,7 @@
+             }
+         }
+ 
+-        this.tickEffects();
++        this.tickEffects(); // TODO: Stellar
+         this.animStepO = this.animStep;
+         this.yBodyRotO = this.yBodyRot;
+         this.yHeadRotO = this.yHeadRot;
+@@ -513,8 +_,8 @@
+         }
+     }
+ 
+-    protected void onChangedBlock(ServerLevel p_345126_, BlockPos p_21175_) {
+-        EnchantmentHelper.runLocationChangedEffects(p_345126_, this);
++    protected void onChangedBlock(ServerLevel world, BlockPos pos) {
++        EnchantmentHelper.runLocationChangedEffects(world, this);
+     }
+ 
+     public boolean isBaby() {
+@@ -530,8 +_,8 @@
+         return attributemap == null ? 1.0F : this.sanitizeScale((float)attributemap.getValue(Attributes.SCALE));
+     }
+ 
+-    protected float sanitizeScale(float p_320290_) {
+-        return p_320290_;
++    protected float sanitizeScale(float scale) {
++        return scale;
+     }
+ 
+     protected boolean isAffectedByFluids() {
 @@ -542,7 +_,7 @@
          this.deathTime++;
          if (this.deathTime >= 20 && !this.level().isClientSide() && !this.isRemoved()) {
@@ -222,62 +384,158 @@
          }
      }
  
-@@ -634,7 +_,7 @@
+@@ -554,7 +_,7 @@
+         return !this.isBaby();
+     }
+ 
+-    protected int decreaseAirSupply(int p_21303_) {
++    protected int decreaseAirSupply(int air) {
+         AttributeInstance attributeinstance = this.getAttribute(Attributes.OXYGEN_BONUS);
+         double d0;
+         if (attributeinstance != null) {
+@@ -563,15 +_,15 @@
+             d0 = 0.0;
+         }
+ 
+-        return d0 > 0.0 && this.random.nextDouble() >= 1.0 / (d0 + 1.0) ? p_21303_ : p_21303_ - 1;
+-    }
+-
+-    protected int increaseAirSupply(int p_21307_) {
+-        return Math.min(p_21307_ + 4, this.getMaxAirSupply());
+-    }
+-
+-    public final int getExperienceReward(ServerLevel p_345212_, @Nullable Entity p_345512_) {
+-        return EnchantmentHelper.processMobExperience(p_345212_, p_345512_, this, this.getBaseExperienceReward());
++        return d0 > 0.0 && this.random.nextDouble() >= 1.0 / (d0 + 1.0) ? air : air - 1;
++    }
++
++    protected int increaseAirSupply(int air) {
++        return Math.min(air + 4, this.getMaxAirSupply());
++    }
++
++    public final int getExperienceReward(ServerLevel world, @Nullable Entity attacker) {
++        return EnchantmentHelper.processMobExperience(world, attacker, this, this.getBaseExperienceReward());
+     }
+ 
+     protected int getBaseExperienceReward() {
+@@ -596,13 +_,13 @@
+         return this.lastHurtByMobTimestamp;
+     }
+ 
+-    public void setLastHurtByPlayer(@Nullable Player p_21248_) {
+-        this.lastHurtByPlayer = p_21248_;
++    public void setLastHurtByPlayer(@Nullable Player attacking) {
++        this.lastHurtByPlayer = attacking;
+         this.lastHurtByPlayerTime = this.tickCount;
+     }
+ 
+-    public void setLastHurtByMob(@Nullable LivingEntity p_21039_) {
+-        this.lastHurtByMob = p_21039_;
++    public void setLastHurtByMob(@Nullable LivingEntity attacker) {
++        this.lastHurtByMob = attacker;
+         this.lastHurtByMobTimestamp = this.tickCount;
+     }
+ 
+@@ -615,9 +_,9 @@
+         return this.lastHurtMobTimestamp;
+     }
+ 
+-    public void setLastHurtMob(Entity p_21336_) {
+-        if (p_21336_ instanceof LivingEntity) {
+-            this.lastHurtMob = (LivingEntity)p_21336_;
++    public void setLastHurtMob(Entity target) {
++        if (target instanceof LivingEntity) {
++            this.lastHurtMob = (LivingEntity)target;
+         } else {
+             this.lastHurtMob = null;
+         }
+@@ -629,35 +_,41 @@
+         return this.noActionTime;
+     }
+ 
+-    public void setNoActionTime(int p_21311_) {
+-        this.noActionTime = p_21311_;
++    public void setNoActionTime(int despawnCounter) {
++        this.noActionTime = despawnCounter;
      }
  
      public boolean shouldDiscardFriction() {
 -        return this.discardFriction;
+-    }
+-
+-    public void setDiscardFriction(boolean p_147245_) {
+-        this.discardFriction = p_147245_;
+-    }
+-
+-    protected boolean doesEmitEquipEvent(EquipmentSlot p_217035_) {
 +        return !this.frictionState.toBooleanOrElse(!this.discardFriction); // Paper - Friction API
-     }
- 
-     public void setDiscardFriction(boolean p_147245_) {
-@@ -664,13 +_,43 @@
-         }
-     }
- 
-+    public void onEquipItem(EquipmentSlot p_238393_, ItemStack p_238394_, ItemStack p_238395_, boolean silent) {
-+        boolean flag = p_238395_.isEmpty() && p_238394_.isEmpty();
-+        if (!flag && !ItemStack.isSameItemSameComponents(p_238394_, p_238395_) && !this.firstTick) {
-+            Equipable equipable = Equipable.get(p_238395_);
-+            if (!this.level().isClientSide() && !this.isSpectator()) {
-+                if (!this.isSilent() && equipable != null && equipable.getEquipmentSlot() == p_238393_ && !silent) {
-+                    this.level()
-+                            .playSeededSound(
-+                                    null, this.getX(), this.getY(), this.getZ(), equipable.getEquipSound(), this.getSoundSource(), 1.0F, 1.0F, this.random.nextLong()
-+                            );
-+                }
-+
-+                if (this.doesEmitEquipEvent(p_238393_)) {
-+                    this.gameEvent(equipable != null ? GameEvent.EQUIP : GameEvent.UNEQUIP);
-+                }
-+            }
-+        }
 +    }
 +
-     @Override
-     public void remove(Entity.RemovalReason p_276115_) {
-         if (p_276115_ == Entity.RemovalReason.KILLED || p_276115_ == Entity.RemovalReason.DISCARDED) {
-             this.triggerOnDeathMobEffects(p_276115_);
-         }
++    public void setDiscardFriction(boolean noDrag) {
++        this.discardFriction = noDrag;
++    }
++
++    protected boolean doesEmitEquipEvent(EquipmentSlot slot) {
+         return true;
+     }
  
--        super.remove(p_276115_);
-+        super.remove(p_276115_); // CraftBukkit
-+        this.brain.clearMemories();
+-    public void onEquipItem(EquipmentSlot p_238393_, ItemStack p_238394_, ItemStack p_238395_) {
+-        boolean flag = p_238395_.isEmpty() && p_238394_.isEmpty();
+-        if (!flag && !ItemStack.isSameItemSameComponents(p_238394_, p_238395_) && !this.firstTick) {
+-            Equipable equipable = Equipable.get(p_238395_);
++    public void onEquipItem(EquipmentSlot slot, ItemStack oldStack, ItemStack newStack) {
++        // CraftBukkit start
++        this.onEquipItem(slot, oldStack, newStack, false);
++    }
++
++    public void onEquipItem(EquipmentSlot slot, ItemStack oldStack, ItemStack newStack, boolean silent) {
++        // CraftBukkit end
++        boolean flag = newStack.isEmpty() && oldStack.isEmpty();
++        if (!flag && !ItemStack.isSameItemSameComponents(oldStack, newStack) && !this.firstTick) {
++            Equipable equipable = Equipable.get(newStack);
+             if (!this.level().isClientSide() && !this.isSpectator()) {
+-                if (!this.isSilent() && equipable != null && equipable.getEquipmentSlot() == p_238393_) {
++                if (!this.isSilent() && equipable != null && equipable.getEquipmentSlot() == slot && !silent) { // CraftBukkit
+                     this.level()
+                         .playSeededSound(
+                             null, this.getX(), this.getY(), this.getZ(), equipable.getEquipSound(), this.getSoundSource(), 1.0F, 1.0F, this.random.nextLong()
+                         );
+                 }
+ 
+-                if (this.doesEmitEquipEvent(p_238393_)) {
++                if (this.doesEmitEquipEvent(slot)) {
+                     this.gameEvent(equipable != null ? GameEvent.EQUIP : GameEvent.UNEQUIP);
+                 }
+             }
+@@ -665,31 +_,44 @@
+     }
+ 
+     @Override
+-    public void remove(Entity.RemovalReason p_276115_) {
+-        if (p_276115_ == Entity.RemovalReason.KILLED || p_276115_ == Entity.RemovalReason.DISCARDED) {
+-            this.triggerOnDeathMobEffects(p_276115_);
++    public void remove(Entity.RemovalReason reason) {
++        // CraftBukkit start - add Bukkit remove cause
++        this.remove(reason, null);
 +    }
 +
 +    @Override
-+    public void remove(Entity.RemovalReason p_276115_, org.bukkit.event.entity.EntityRemoveEvent.Cause cause) {
++    public void remove(Entity.RemovalReason entity_removalreason, org.bukkit.event.entity.EntityRemoveEvent.Cause cause) {
 +        // CraftBukkit end
-+        if (p_276115_ == Entity.RemovalReason.KILLED || p_276115_ == Entity.RemovalReason.DISCARDED) {
-+            this.triggerOnDeathMobEffects(p_276115_);
-+        }
-+
-+        super.remove(p_276115_, cause); // CraftBukkit
++        if (entity_removalreason == Entity.RemovalReason.KILLED || entity_removalreason == Entity.RemovalReason.DISCARDED) {
++            this.triggerOnDeathMobEffects(entity_removalreason);
+         }
+ 
+-        super.remove(p_276115_);
++        super.remove(entity_removalreason, cause); // CraftBukkit
          this.brain.clearMemories();
      }
  
-@@ -679,11 +_,17 @@
-             mobeffectinstance.onMobRemoved(this, p_350496_);
+-    protected void triggerOnDeathMobEffects(Entity.RemovalReason p_350496_) {
++    protected void triggerOnDeathMobEffects(Entity.RemovalReason reason) {
+         for (MobEffectInstance mobeffectinstance : this.getActiveEffects()) {
+-            mobeffectinstance.onMobRemoved(this, p_350496_);
++            mobeffectinstance.onMobRemoved(this, reason);
          }
  
 +        this.removeAllEffects(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.DEATH); // CraftBukkit
@@ -285,35 +543,64 @@
      }
  
      @Override
-     public void addAdditionalSaveData(CompoundTag p_21145_) {
+-    public void addAdditionalSaveData(CompoundTag p_21145_) {
+-        p_21145_.putFloat("Health", this.getHealth());
+-        p_21145_.putShort("HurtTime", (short)this.hurtTime);
+-        p_21145_.putInt("HurtByTimestamp", this.lastHurtByMobTimestamp);
+-        p_21145_.putShort("DeathTime", (short)this.deathTime);
+-        p_21145_.putFloat("AbsorptionAmount", this.getAbsorptionAmount());
+-        p_21145_.put("attributes", this.getAttributes().save());
++    public void addAdditionalSaveData(CompoundTag nbt) {
 +        // Paper start - Friction API
 +        if (this.frictionState != net.kyori.adventure.util.TriState.NOT_SET) {
-+            p_21145_.putString("Paper.FrictionState", this.frictionState.toString());
++            nbt.putString("Paper.FrictionState", this.frictionState.toString());
 +        }
 +        // Paper end - Friction API
-         p_21145_.putFloat("Health", this.getHealth());
-         p_21145_.putShort("HurtTime", (short)this.hurtTime);
-         p_21145_.putInt("HurtByTimestamp", this.lastHurtByMobTimestamp);
-@@ -708,11 +_,28 @@
++        nbt.putFloat("Health", this.getHealth());
++        nbt.putShort("HurtTime", (short)this.hurtTime);
++        nbt.putInt("HurtByTimestamp", this.lastHurtByMobTimestamp);
++        nbt.putShort("DeathTime", (short)this.deathTime);
++        nbt.putFloat("AbsorptionAmount", this.getAbsorptionAmount());
++        nbt.put("attributes", this.getAttributes().save());
+         if (!this.activeEffects.isEmpty()) {
+             ListTag listtag = new ListTag();
+ 
+@@ -697,10 +_,10 @@
+                 listtag.add(mobeffectinstance.save());
+             }
+ 
+-            p_21145_.put("active_effects", listtag);
++            nbt.put("active_effects", listtag);
+         }
+ 
+-        p_21145_.putBoolean("FallFlying", this.isFallFlying());
++        nbt.putBoolean("FallFlying", this.isFallFlying());
+         this.getSleepingPos().ifPresent(p_21099_ -> {
+             p_21145_.putInt("SleepingX", p_21099_.getX());
+             p_21145_.putInt("SleepingY", p_21099_.getY());
+@@ -708,17 +_,34 @@
          });
          DataResult<Tag> dataresult = this.brain.serializeStart(NbtOps.INSTANCE);
          dataresult.resultOrPartial(LOGGER::error).ifPresent(p_21102_ -> p_21145_.put("Brain", p_21102_));
-+        p_21145_.putBoolean("Purpur.ShouldBurnInDay", this.shouldBurnInDay); // Purpur - API for any mob to burn daylight
++        nbt.putBoolean("Purpur.ShouldBurnInDay", this.shouldBurnInDay); // Purpur - API for any mob to burn daylight
      }
  
      @Override
-     public void readAdditionalSaveData(CompoundTag p_21096_) {
+-    public void readAdditionalSaveData(CompoundTag p_21096_) {
 -        this.internalSetAbsorptionAmount(p_21096_.getFloat("AbsorptionAmount"));
+-        if (p_21096_.contains("attributes", 9) && this.level() != null && !this.level().isClientSide) {
+-            this.getAttributes().load(p_21096_.getList("attributes", 10));
++    public void readAdditionalSaveData(CompoundTag nbt) {
 +        // Paper start - Check for NaN
-+        float absorptionAmount = p_21096_.getFloat("AbsorptionAmount");
++        float absorptionAmount = nbt.getFloat("AbsorptionAmount");
 +        if (Float.isNaN(absorptionAmount)) {
 +            absorptionAmount = 0;
 +        }
 +        this.internalSetAbsorptionAmount(absorptionAmount);
 +        // Paper end - Check for NaN
 +        // Paper start - Friction API
-+        if (p_21096_.contains("Paper.FrictionState")) {
-+            String fs = p_21096_.getString("Paper.FrictionState");
++        if (nbt.contains("Paper.FrictionState")) {
++            String fs = nbt.getString("Paper.FrictionState");
 +            try {
 +                frictionState = net.kyori.adventure.util.TriState.valueOf(fs);
 +            } catch (Exception ignored) {
@@ -321,16 +608,33 @@
 +            }
 +        }
 +        // Paper end - Friction API
-         if (p_21096_.contains("attributes", 9) && this.level() != null && !this.level().isClientSide) {
-             this.getAttributes().load(p_21096_.getList("attributes", 10));
++        if (nbt.contains("attributes", 9) && this.level() != null && !this.level().isClientSide) {
++            this.getAttributes().load(nbt.getList("attributes", 10));
          }
-@@ -729,6 +_,17 @@
+ 
+-        if (p_21096_.contains("active_effects", 9)) {
+-            ListTag listtag = p_21096_.getList("active_effects", 10);
++        if (nbt.contains("active_effects", 9)) {
++            ListTag listtag = nbt.getList("active_effects", 10);
+ 
+             for (int i = 0; i < listtag.size(); i++) {
+                 CompoundTag compoundtag = listtag.getCompound(i);
+@@ -729,50 +_,98 @@
              }
          }
  
+-        if (p_21096_.contains("Health", 99)) {
+-            this.setHealth(p_21096_.getFloat("Health"));
+-        }
+-
+-        this.hurtTime = p_21096_.getShort("HurtTime");
+-        this.deathTime = p_21096_.getShort("DeathTime");
+-        this.lastHurtByMobTimestamp = p_21096_.getInt("HurtByTimestamp");
+-        if (p_21096_.contains("Team", 8)) {
+-            String s = p_21096_.getString("Team");
 +        // CraftBukkit start
-+        if (p_21096_.contains("Bukkit.MaxHealth")) {
-+            Tag nbtbase = p_21096_.get("Bukkit.MaxHealth");
++        if (nbt.contains("Bukkit.MaxHealth")) {
++            Tag nbtbase = nbt.get("Bukkit.MaxHealth");
 +            if (nbtbase.getId() == 5) {
 +                this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(((net.minecraft.nbt.FloatTag) nbtbase).getAsDouble());
 +            } else if (nbtbase.getId() == 3) {
@@ -339,25 +643,54 @@
 +        }
 +        // CraftBukkit end
 +
-         if (p_21096_.contains("Health", 99)) {
-             this.setHealth(p_21096_.getFloat("Health"));
-         }
-@@ -740,6 +_,7 @@
-             String s = p_21096_.getString("Team");
++        if (nbt.contains("Health", 99)) {
++            this.setHealth(nbt.getFloat("Health"));
++        }
++
++        this.hurtTime = nbt.getShort("HurtTime");
++        this.deathTime = nbt.getShort("DeathTime");
++        this.lastHurtByMobTimestamp = nbt.getInt("HurtByTimestamp");
++        if (nbt.contains("Team", 8)) {
++            String s = nbt.getString("Team");
              Scoreboard scoreboard = this.level().getScoreboard();
              PlayerTeam playerteam = scoreboard.getPlayerTeam(s);
 +            if (!this.level().paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof net.minecraft.world.entity.player.Player)) { playerteam = null; } // Paper - Perf: Disable Scoreboards for non players by default
              boolean flag = playerteam != null && scoreboard.addPlayerToTeam(this.getStringUUID(), playerteam);
              if (!flag) {
                  LOGGER.warn("Unable to add mob to team \"{}\" (that team probably doesn't exist)", s);
-@@ -762,17 +_,51 @@
-         if (p_21096_.contains("Brain", 10)) {
-             this.brain = this.makeBrain(new Dynamic<>(NbtOps.INSTANCE, p_21096_.get("Brain")));
+             }
          }
+ 
+-        if (p_21096_.getBoolean("FallFlying")) {
++        if (nbt.getBoolean("FallFlying")) {
+             this.setSharedFlag(7, true);
+         }
+ 
+-        if (p_21096_.contains("SleepingX", 99) && p_21096_.contains("SleepingY", 99) && p_21096_.contains("SleepingZ", 99)) {
+-            BlockPos blockpos = new BlockPos(p_21096_.getInt("SleepingX"), p_21096_.getInt("SleepingY"), p_21096_.getInt("SleepingZ"));
++        if (nbt.contains("SleepingX", 99) && nbt.contains("SleepingY", 99) && nbt.contains("SleepingZ", 99)) {
++            BlockPos blockpos = new BlockPos(nbt.getInt("SleepingX"), nbt.getInt("SleepingY"), nbt.getInt("SleepingZ"));
++            if (this.position().distanceToSqr(blockposition.getX(), blockposition.getY(), blockposition.getZ()) < 16 * 16) { // Paper - The sleeping pos will always also set the actual pos, so a desync suggests something is wrong
+             this.setSleepingPos(blockpos);
+             this.entityData.set(DATA_POSE, Pose.SLEEPING);
+             if (!this.firstTick) {
+                 this.setPosToBed(blockpos);
+             }
+-        }
+-
+-        if (p_21096_.contains("Brain", 10)) {
+-            this.brain = this.makeBrain(new Dynamic<>(NbtOps.INSTANCE, p_21096_.get("Brain")));
+-        }
 -    }
++            } // Paper - The sleeping pos will always also set the actual pos, so a desync suggests something is wrong
++        }
++
++        if (nbt.contains("Brain", 10)) {
++            this.brain = this.makeBrain(new Dynamic<>(NbtOps.INSTANCE, nbt.get("Brain")));
++        }
 +        // Purpur start - API for any mob to burn daylight
-+        if (p_21096_.contains("Purpur.ShouldBurnInDay")) {
-+            this.shouldBurnInDay = p_21096_.getBoolean("Purpur.ShouldBurnInDay");
++        if (nbt.contains("Purpur.ShouldBurnInDay")) {
++            this.shouldBurnInDay = nbt.getBoolean("Purpur.ShouldBurnInDay");
 +        }
 +        // Purpur end - API for any mob to burn daylight
 +    }
@@ -377,7 +710,7 @@
 +            this.cause = cause;
 +        }
 +
-+        private ProcessableEffect(Holder<MobEffect>  type, EntityPotionEffectEvent.Cause cause) {
++        private ProcessableEffect(Holder<MobEffect> type, EntityPotionEffectEvent.Cause cause) {
 +            this.type = type;
 +            this.cause = cause;
 +        }
