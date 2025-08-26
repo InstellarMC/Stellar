@@ -15,7 +15,7 @@ public class DataParser {
     public static void parseVersions() {
         versionMap.put("neoforge", FileUtils.readFileFromJar(DataParser.class.getClassLoader(), "versions/neoforge.txt").getFirst());
         versionMap.put("minecraft", FileUtils.readFileFromJar(DataParser.class.getClassLoader(), "versions/minecraft.txt").getFirst());
-        versionMap.put("youer", FileUtils.readFileFromJar(DataParser.class.getClassLoader(), "versions/youer.txt").getFirst());
+        versionMap.put("stellar", FileUtils.readFileFromJar(DataParser.class.getClassLoader(), "versions/stellar.txt").getFirst());
         versionMap.put("mcp", FileUtils.readFileFromJar(DataParser.class.getClassLoader(), "versions/mcp.txt").getFirst());
 
         Main.MCVERSION = versionMap.get("minecraft");
