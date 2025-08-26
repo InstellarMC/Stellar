@@ -3494,31 +3494,38 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public int getViewDistance() {
-        return Bukkit.getViewDistance();
+        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getLoadViewDistance(this.getHandle()) - 1;
     }
 
     @Override
     public void setViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        // Paper - rewrite chunk system - TODO do this better
+        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)this.getHandle())
+                .moonrise$getViewDistanceHolder().setLoadViewDistance(viewDistance + 1);
     }
 
     @Override
     public int getSimulationDistance() {
-        return Bukkit.getSimulationDistance();
+        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getTickViewDistance(this.getHandle());
     }
 
     @Override
     public void setSimulationDistance(final int simulationDistance) {
+        // Paper - rewrite chunk system - TODO do this better
+        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)this.getHandle())
+                .moonrise$getViewDistanceHolder().setTickViewDistance(simulationDistance);
     }
 
     @Override
     public int getSendViewDistance() {
-        return Bukkit.getViewDistance();
+        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getSendViewDistance(this.getHandle());
     }
 
     @Override
     public void setSendViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        // Paper - rewrite chunk system - TODO do this better
+        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)this.getHandle())
+                .moonrise$getViewDistanceHolder().setSendViewDistance(viewDistance);
     }
 
     // Paper start - entity effect API

@@ -48,6 +48,8 @@ public final class PaperCommand extends Command {
         commands.put(Set.of("dumpitem"), new DumpItemCommand());
         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
         commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
+        commands.put(Set.of("fixlight"), new io.papermc.paper.command.subcommands.FixLightCommand()); // Paper - rewrite chunk system
+        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new io.papermc.paper.command.subcommands.ChunkDebugCommand()); // Paper - rewrite chunk system
 
         return commands.entrySet().stream()
             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))

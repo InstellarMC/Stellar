@@ -35,7 +35,7 @@
      public Vec3i getSize() {
          return this.size;
      }
-@@ -219,12 +_,18 @@
+@@ -219,12 +_,30 @@
          return transform(p_74565_, p_74564_.getMirror(), p_74564_.getRotation(), p_74564_.getRotationPivot());
      }
  
@@ -49,8 +49,20 @@
          if (this.palettes.isEmpty()) {
              return false;
          } else {
-+            p_230329_ = StructureTemplateMixinFix.init(p_230329_);
-+
++            // p_230329_ = StructureTemplateMixinFix.init(p_230329_); // Stellar
++            // CraftBukkit start
++            // We only want the TransformerGeneratorAccess at certain locations because in here are many "block update" calls that shouldn't be transformed
++            ServerLevelAccessor wrappedAccess = p_230329_;
++            org.bukkit.craftbukkit.util.CraftStructureTransformer structureTransformer = null;
++            if (wrappedAccess instanceof org.bukkit.craftbukkit.util.TransformerGeneratorAccess transformerAccess) {
++                p_230329_ = transformerAccess.getHandle();
++                structureTransformer = transformerAccess.getStructureTransformer();
++                // The structureTransformer is not needed if we can not transform blocks therefore we can save a little bit of performance doing this
++                if (structureTransformer != null && !structureTransformer.canTransformBlocks()) {
++                    structureTransformer = null;
++                }
++            }
++            // CraftBukkit end
              List<StructureTemplate.StructureBlockInfo> list = p_230332_.getRandomPalette(this.palettes, p_230330_).blocks();
              if ((!list.isEmpty() || !p_230332_.isIgnoreEntities() && !this.entityInfoList.isEmpty())
                  && this.size.getX() >= 1
@@ -63,21 +75,44 @@
                  )) {
                      BlockPos blockpos = structuretemplate$structureblockinfo.pos;
                      if (boundingbox == null || boundingbox.isInside(blockpos)) {
-@@ -254,6 +_,8 @@
+@@ -250,10 +_,30 @@
+                         BlockState blockstate = structuretemplate$structureblockinfo.state.mirror(p_230332_.getMirror()).rotate(p_230332_.getRotation());
+                         if (structuretemplate$structureblockinfo.nbt != null) {
+                             BlockEntity blockentity = p_230329_.getBlockEntity(blockpos);
++                            // Paper start - Fix NBT pieces overriding a block entity during worldgen deadlock
++                            if (!(p_230329_ instanceof net.minecraft.world.level.WorldGenLevel)) {
+                             Clearable.tryClear(blockentity);
++                            }
++                            // Paper end - Fix NBT pieces overriding a block entity during worldgen deadlock
                              p_230329_.setBlock(blockpos, Blocks.BARRIER.defaultBlockState(), 20);
                          }
++                        // CraftBukkit start
++                        if (structureTransformer != null) {
++                            org.bukkit.craftbukkit.block.CraftBlockState craftBlockState = (org.bukkit.craftbukkit.block.CraftBlockState) org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(p_230329_, blockpos, blockstate, null);
++                            if (structuretemplate$structureblockinfo.nbt != null && craftBlockState instanceof org.bukkit.craftbukkit.block.CraftBlockEntityState<?> entityState) {
++                                entityState.loadData(structuretemplate$structureblockinfo.nbt);
++                                if (craftBlockState instanceof org.bukkit.craftbukkit.block.CraftLootable<?> craftLootable) {
++                                    craftLootable.setSeed(p_230333_.nextLong());
++                                }
++                            }
++                            craftBlockState = structureTransformer.transformCraftState(craftBlockState);
++                            blockstate = craftBlockState.getHandle();
++                            structuretemplate$structureblockinfo = new StructureTemplate.StructureBlockInfo(blockpos, blockstate, (craftBlockState instanceof org.bukkit.craftbukkit.block.CraftBlockEntityState<?> craftBlockEntityState ? craftBlockEntityState.getSnapshotNBT() : null));
++                        }
++                        // CraftBukkit end
  
-+                        structuretemplate$structureblockinfo = StructureTemplateMixinFix.transformBlock(p_230329_, structuretemplate$structureblockinfo, blockpos, blockstate, p_230333_);
-+                        blockstate = StructureTemplateMixinFix.getBlockStateAtomicReference();
++                        // structuretemplate$structureblockinfo = StructureTemplateMixinFix.transformBlock(p_230329_, structuretemplate$structureblockinfo, blockpos, blockstate, p_230333_);
++                        // blockstate = StructureTemplateMixinFix.getBlockStateAtomicReference();
                          if (p_230329_.setBlock(blockpos, blockstate, p_230334_)) {
                              i = Math.min(i, blockpos.getX());
                              j = Math.min(j, blockpos.getY());
-@@ -265,7 +_,7 @@
+@@ -265,7 +_,8 @@
                              if (structuretemplate$structureblockinfo.nbt != null) {
                                  BlockEntity blockentity1 = p_230329_.getBlockEntity(blockpos);
                                  if (blockentity1 != null) {
 -                                    if (blockentity1 instanceof RandomizableContainer) {
-+                                    if (StructureTemplateMixinFix.structureTransformer() && blockentity1 instanceof RandomizableContainer) {
++//                                    if (StructureTemplateMixinFix.structureTransformer() && blockentity1 instanceof RandomizableContainer) {
++                                    if (structureTransformer == null && blockentity1 instanceof RandomizableContainer) { // CraftBukkit - only process if don't have a transformer access (Was already set above) - SPIGOT-7520: Use structureTransformer as check, so that it is the same as above
                                          structuretemplate$structureblockinfo.nbt.putLong("LootTableSeed", p_230333_.nextLong());
                                      }
  

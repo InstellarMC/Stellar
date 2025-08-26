@@ -274,7 +274,7 @@
                      if (itemstack.is(ItemTags.FISHES)) {
                          player.awardStat(Stats.FISH_CAUGHT, 1);
                      }
-@@ -476,10 +_,29 @@
+@@ -476,10 +_,28 @@
              }
  
              if (this.onGround()) {
@@ -298,8 +298,8 @@
 +            }
 +            // CraftBukkit end
  
-+            this.setRemoved$cause(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-             this.discard();
+-            this.discard();
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 +            if (event != null) return event.getRodDamage();
              return i;
          } else {

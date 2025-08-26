@@ -452,7 +452,7 @@
 +                        }
 +                    }
 +                    // Paper end - Fix villager boat exploit
-+                    p_215620_.setRemovedCB(Entity.RemovalReason.UNLOADED_WITH_PLAYER, org.bukkit.event.entity.EntityRemoveEvent.Cause.PLAYER_QUIT);
++                    p_215620_.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER, org.bukkit.event.entity.EntityRemoveEvent.Cause.PLAYER_QUIT);
 +                }); // CraftBukkit - add Bukkit remove cause
              }
          }

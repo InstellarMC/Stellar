@@ -34,7 +34,7 @@ public record ServerBuildInfoImpl(
     private static final String ATTRIBUTE_GIT_BRANCH = "Git-Branch";
     private static final String ATTRIBUTE_GIT_COMMIT = "Git-Commit";
 
-    private static final String BRAND_PAPER_NAME = "Youer";
+    private static final String BRAND_PAPER_NAME = "Stellar"; // Stellar
     private static final String BRAND_PUFFERFISH_NAME = "Pufferfish"; // Purpur
     private static final String BRAND_PURPUR_NAME = "Purpur"; // Purpur
 

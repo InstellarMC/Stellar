@@ -8,16 +8,13 @@
  import java.util.concurrent.CompletableFuture;
  import net.minecraft.nbt.CompoundTag;
  import net.minecraft.server.level.ChunkTaskPriorityQueueSorter;
-@@ -151,7 +_,7 @@
-             EnumSet.of(Heightmap.Types.MOTION_BLOCKING, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Heightmap.Types.OCEAN_FLOOR, Heightmap.Types.WORLD_SURFACE)
-         );
-         WorldGenRegion worldgenregion = new WorldGenRegion(serverlevel, p_347674_, p_347560_, p_332040_);
--        p_330280_.generator().applyBiomeDecoration(worldgenregion, p_332040_, serverlevel.structureManager().forWorldGenRegion(worldgenregion));
-+        p_330280_.generator().applyBiomeDecorationCB(worldgenregion, p_332040_, serverlevel.structureManager().forWorldGenRegion(worldgenregion));
-         Blender.generateBorderTicks(worldgenregion, p_332040_);
-         return CompletableFuture.completedFuture(p_332040_);
-     }
-@@ -201,10 +_,21 @@
+@@ -196,15 +_,26 @@
+                 if (protochunk instanceof ImposterProtoChunk) {
+                     levelchunk = ((ImposterProtoChunk)protochunk).getWrapped();
+                 } else {
+-                    levelchunk = new LevelChunk(serverlevel, protochunk, p_347400_ -> postLoadProtoChunk(serverlevel, protochunk.getEntities()));
++                    levelchunk = new LevelChunk(serverlevel, protochunk, p_347400_ -> postLoadProtoChunk(serverlevel, protochunk.getEntities(), protochunk.getPos())); // Paper - rewrite chunk system
+                     generationchunkholder.replaceProtoChunk(new ImposterProtoChunk(levelchunk, false));
                  }
  
                  levelchunk.setFullStatus(generationchunkholder::getFullStatus);
@@ -44,7 +41,7 @@
      }
  
 -    private static void postLoadProtoChunk(ServerLevel p_347492_, List<CompoundTag> p_347609_) {
-+    public static void postLoadProtoChunk(ServerLevel p_347492_, List<CompoundTag> p_347609_) {
++    public static void postLoadProtoChunk(ServerLevel p_347492_, List<CompoundTag> p_347609_, ChunkPos pos) { // Paper - public, add ChunkPos param
          if (!p_347609_.isEmpty()) {
 -            p_347492_.addWorldGenChunkEntities(EntityType.loadEntitiesRecursive(p_347609_, p_347492_));
 +            // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
@@ -60,7 +57,7 @@
 +                    needsRemoval = true;
 +                }
 +                return !needsRemoval;
-+            }));
++            }), pos); // Paper - rewrite chunk system
 +            // CraftBukkit end
          }
      }

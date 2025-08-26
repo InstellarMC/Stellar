@@ -263,7 +263,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
             return ichunkaccess1;
         };
 
-        return future == null ? CompletableFuture.supplyAsync(() -> function.apply(chunk), net.minecraft.Util.backgroundExecutor()) : future.thenApply(function);
+        return future == null ? CompletableFuture.supplyAsync(() -> function.apply(chunk), Runnable::run) : future.thenApply(function); // Paper - rewrite chunk system
     }
 
     @Override
@@ -285,18 +285,18 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public WeightedRandomList<MobSpawnSettings.SpawnerData> getMobsAt(Holder<net.minecraft.world.level.biome.Biome> biome, StructureManager accessor, MobCategory group, BlockPos pos) {
+public WeightedRandomList<MobSpawnSettings.SpawnerData> getMobsAt(Holder<net.minecraft.world.level.biome.Biome> biome, StructureManager accessor, MobCategory group, BlockPos pos) {
         return this.delegate.getMobsAt(biome, accessor, group, pos);
     }
 
     @Override
-    public void applyBiomeDecorationCB(WorldGenLevel world, ChunkAccess chunk, StructureManager structureAccessor) {
+    public void applyBiomeDecoration(WorldGenLevel world, ChunkAccess chunk, StructureManager structureAccessor) {
         WorldgenRandom random = CustomChunkGenerator.getSeededRandom();
         int x = chunk.getPos().x;
         int z = chunk.getPos().z;
 
         random.setSeed(Mth.getSeed(x, "should-decoration".hashCode(), z) ^ world.getSeed());
-        super.applyBiomeDecorationCB(world, chunk, structureAccessor, this.generator.shouldGenerateDecorations(this.world.getWorld(), new RandomSourceWrapper.RandomWrapper(random), x, z));
+        super.applyBiomeDecoration(world, chunk, structureAccessor, this.generator.shouldGenerateDecorations(this.world.getWorld(), new RandomSourceWrapper.RandomWrapper(random), x, z));
     }
 
     @Override

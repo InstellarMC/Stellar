@@ -8,11 +8,12 @@
  
  public enum DragonRespawnAnimation {
      START {
-@@ -101,6 +_,7 @@
+@@ -101,7 +_,7 @@
                  for (EndCrystal endcrystal : p_64046_) {
                      endcrystal.setBeamTarget(null);
                      p_64044_.explode(endcrystal, endcrystal.getX(), endcrystal.getY(), endcrystal.getZ(), 6.0F, Level.ExplosionInteraction.NONE);
-+                    endcrystal.setRemoved$cause(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
-                     endcrystal.discard();
+-                    endcrystal.discard();
++                    endcrystal.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
                  }
              } else if (p_64047_ >= 80) {
+                 p_64044_.levelEvent(3001, new BlockPos(0, 128, 0), 0);
