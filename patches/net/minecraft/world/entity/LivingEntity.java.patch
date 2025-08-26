@@ -1613,7 +1613,7 @@
          if (!this.swinging || this.swingTime >= this.getCurrentSwingDuration() / 2 || this.swingTime < 0) {
              this.swingTime = -1;
              this.swinging = true;
-@@ -1859,13 +_,15 @@
+@@ -1859,16 +_,19 @@
  
      private void swapHandItems() {
          ItemStack itemstack = this.getItemBySlot(EquipmentSlot.OFFHAND);
@@ -1632,6 +1632,10 @@
      }
  
      protected void updateSwingTime() {
++        if (!this.swinging && this.swingTime == 0) return; // Stellar - Perf: skip ticking
+         int i = this.getCurrentSwingDuration();
+         if (this.swinging) {
+             this.swingTime++;
 @@ -1956,6 +_,12 @@
  
      public abstract ItemStack getItemBySlot(EquipmentSlot p_21127_);
