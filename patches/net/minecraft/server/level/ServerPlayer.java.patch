@@ -267,7 +267,7 @@
  
      public ServerPlayer(MinecraftServer p_254143_, ServerLevel p_254435_, GameProfile p_253651_, ClientInformation p_301997_) {
          super(p_254435_, p_254435_.getSharedSpawnPos(), p_254435_.getSharedSpawnAngle(), p_253651_);
-@@ -284,10 +_,92 @@
+@@ -284,10 +_,69 @@
          this.server = p_254143_;
          this.stats = p_254143_.getPlayerList().getPlayerStats(this);
          this.advancements = p_254143_.getPlayerList().getPlayerAdvancements(this);
@@ -337,29 +337,6 @@
 +        return blockposition;
 +    }
 +    // CraftBukkit end
-+
-+    // CraftBukkit start - World fallback code, either respawn location or global spawn
-+    public void spawnIn(Level world) {
-+        this.setLevel(world);
-+        if (world == null) {
-+            this.unsetRemoved();
-+            Vec3 position = null;
-+            if (this.respawnDimension != null) {
-+                world = this.server.getLevel(this.respawnDimension);
-+                if (world != null && this.getRespawnPosition() != null) {
-+                    position = ServerPlayer.findRespawnAndUseSpawnBlock((ServerLevel) world, this.getRespawnPosition(), this.getRespawnAngle(), false, false).map(RespawnPosAngle::position).orElse(null);
-+                }
-+            }
-+            if (world == null || position == null) {
-+                world = ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle();
-+                position = Vec3.atCenterOf(world.getSharedSpawnPos());
-+            }
-+            this.setLevel(world);
-+            this.setPosRaw(position.x(), position.y(), position.z()); // Paper - don't register to chunks yet
-+        }
-+        this.gameMode.setLevel((ServerLevel) world);
-+    }
-+    // CraftBukkit end
  
      @Override
      public BlockPos adjustSpawnLocation(ServerLevel p_352206_, BlockPos p_352202_) {
@@ -412,7 +389,7 @@
 +                }
 +            }
 +        }
-+        if (persistVehicle && entity != null && entity1 != this && entity1.hasExactlyOnePlayerPassenger()) {
++        if (persistVehicle && entity != null && entity1 != this && entity1.hasExactlyOnePlayerPassenger() && !entity.isRemoved()) { // Paper - Ensure valid vehicle status
 +            // CraftBukkit end
              CompoundTag compoundtag1 = new CompoundTag();
              CompoundTag compoundtag2 = new CompoundTag();
@@ -425,17 +402,42 @@
  
          p_9197_.putBoolean("spawn_extra_particles_on_fall", this.spawnExtraParticlesOnFall);
          if (this.raidOmenPosition != null) {
-@@ -430,6 +_,10 @@
+@@ -430,7 +_,34 @@
                  .resultOrPartial(LOGGER::error)
                  .ifPresent(p_337549_ -> p_9197_.put("raid_omen_position", p_337549_));
          }
+-    }
 +
 +        p_9197_.putBoolean("Purpur.RamBar", this.ramBar); // Purpur
 +        p_9197_.putBoolean("Purpur.TPSBar", this.tpsBar); // Purpur
 +        p_9197_.putBoolean("Purpur.CompassBar", this.compassBar); // Purpur
-     }
++    }
++
++    // CraftBukkit start - World fallback code, either respawn location or global spawn
++    public void spawnIn(Level world) {
++        this.setLevel(world);
++        if (world == null) {
++            this.unsetRemoved();
++            Vec3 position = null;
++            if (this.respawnDimension != null) {
++                world = this.server.getLevel(this.respawnDimension);
++                if (world != null && this.getRespawnPosition() != null) {
++                    position = ServerPlayer.findRespawnAndUseSpawnBlock((ServerLevel) world, this.getRespawnPosition(), this.getRespawnAngle(), false, false).map(RespawnPosAngle::position).orElse(null);
++                }
++            }
++            if (world == null || position == null) {
++                world = ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle();
++                position = Vec3.atCenterOf(world.getSharedSpawnPos());
++            }
++            this.setLevel(world);
++            this.setPosRaw(position.x(), position.y(), position.z()); // Paper - don't register to chunks yet
++        }
++        this.gameMode.setLevel((ServerLevel) world);
++    }
++    // CraftBukkit end
  
      public void setExperiencePoints(int p_8986_) {
+         float f = (float)this.getXpNeededForNextLevel();
 @@ -489,6 +_,11 @@
  
      @Override
@@ -448,7 +450,7 @@
          this.gameMode.tick();
          this.wardenSpawnTracker.tick();
          this.spawnInvulnerableTime--;
-@@ -496,8 +_,14 @@
+@@ -496,9 +_,16 @@
              this.invulnerableTime--;
          }
  
@@ -463,8 +465,10 @@
 +        if (!this.level().isClientSide && this.containerMenu != this.inventoryMenu && (this.isImmobile() || !this.containerMenu.stillValid(this))) { // Paper - Prevent opening inventories when frozen
 +            InventoryOwner.setClose$Reason(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper - Inventory close reason
              this.closeContainer();
++            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper - Inventory close reason
              this.containerMenu = this.inventoryMenu;
          }
+ 
 @@ -524,6 +_,15 @@
          this.trackEnteredOrExitedLavaOnVehicle();
          this.updatePlayerAttributes();
@@ -603,6 +607,36 @@
  
          this.getScoreboard().forAllObjectives(ObjectiveCriteria.DEATH_COUNT, this, ScoreAccess::increment);
          LivingEntity livingentity = this.getKillCredit();
+@@ -755,15 +_,15 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_9037_, float p_9038_) {
+-        if (this.isInvulnerableTo(p_9037_)) {
++    public boolean hurt(DamageSource source, float amount) {
++        if (this.isInvulnerableTo(source)) {
+             return false;
+         } else {
+-            boolean flag = this.server.isDedicatedServer() && this.isPvpAllowed() && p_9037_.is(DamageTypeTags.IS_FALL);
+-            if (!flag && this.spawnInvulnerableTime > 0 && !p_9037_.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
++            boolean flag = this.server.isDedicatedServer() && this.isPvpAllowed() && source.is(DamageTypeTags.IS_FALL);
++            if (!flag && this.spawnInvulnerableTime > 0 && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+                 return false;
+             } else {
+-                Entity entity = p_9037_.getEntity();
++                Entity entity = source.getEntity();
+                 if (entity instanceof Player player && !this.canHarmPlayer(player)) {
+                     return false;
+                 }
+@@ -772,7 +_,7 @@
+                     return false;
+                 }
+ 
+-                return super.hurt(p_9037_, p_9038_);
++                return super.hurt(source, amount);
+             }
+         }
+     }
 @@ -783,30 +_,68 @@
      }
  
@@ -1004,20 +1038,38 @@
      }
  
      @Override
-@@ -1140,9 +_,16 @@
-     }
+@@ -1135,14 +_,34 @@
  
      @Override
-+    public void closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
-+        InventoryOwner.setClose$Reason(reason);
-+        closeContainer();
+     public void closeContainer() {
++        // Paper start - Inventory close reason
++        this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNKNOWN);
 +    }
-+
 +    @Override
++    public void closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleInventoryCloseEvent(this, reason); // CraftBukkit
++        // Paper end - Inventory close reason
+         this.connection.send(new ClientboundContainerClosePacket(this.containerMenu.containerId));
+         this.doCloseContainer();
+     }
++    // Paper start - special close for unloaded inventory
++    @Override
++    public void closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        // copied from above
++        CraftEventFactory.handleInventoryCloseEvent(this, reason); // CraftBukkit
++        // Paper end
++        // copied from below
++        this.connection.send(new ClientboundContainerClosePacket(this.containerMenu.containerId));
++        this.containerMenu = this.inventoryMenu;
++        // do not run close logic
++    }
++    // Paper end - special close for unloaded inventory
+ 
+     @Override
      public void doCloseContainer() {
          this.containerMenu.removed(this);
          this.inventoryMenu.transferState(this.containerMenu);
-+        NeoForge.EVENT_BUS.post(new PlayerContainerEvent.Close(this, this.containerMenu));
++        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.PlayerContainerEvent.Close(this, this.containerMenu)); // Neo
          this.containerMenu = this.inventoryMenu;
      }
  

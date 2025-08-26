@@ -10,6 +10,38 @@
              this.gameEvent(GameEvent.ENTITY_PLACE);
              this.scuteTime = this.pickNextScuteDropTime();
          }
+@@ -274,24 +_,24 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_321611_, float p_321629_) {
++    public boolean hurt(DamageSource source, float amount) {
+         if (this.isScared()) {
+-            p_321629_ = (p_321629_ - 1.0F) / 2.0F;
++            amount = (amount - 1.0F) / 2.0F;
+         }
+ 
+-        return super.hurt(p_321611_, p_321629_);
++        return super.hurt(source, amount);
+     }
+ 
+     @Override
+-    protected void actuallyHurt(DamageSource p_316204_, float p_316801_) {
+-        super.actuallyHurt(p_316204_, p_316801_);
++    protected void actuallyHurt(DamageSource source, float amount) {
++        super.actuallyHurt(source, amount);
+         if (!this.isNoAi() && !this.isDeadOrDying()) {
+-            if (p_316204_.getEntity() instanceof LivingEntity) {
++            if (source.getEntity() instanceof LivingEntity) {
+                 this.getBrain().setMemoryWithExpiry(MemoryModuleType.DANGER_DETECTED_RECENTLY, true, 80L);
+                 if (this.canStayRolledUp()) {
+                     this.rollUp();
+                 }
+-            } else if (p_316204_.is(DamageTypeTags.PANIC_ENVIRONMENTAL_CAUSES)) {
++            } else if (source.is(DamageTypeTags.PANIC_ENVIRONMENTAL_CAUSES)) {
+                 this.rollOut();
+             }
+         }
 @@ -300,7 +_,7 @@
      @Override
      public InteractionResult mobInteract(Player p_316559_, InteractionHand p_316119_) {

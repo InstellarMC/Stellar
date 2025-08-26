@@ -123,6 +123,44 @@
      @Override
      protected void registerGoals() {
          this.goalSelector.addGoal(1, new FloatGoal(this));
+@@ -348,15 +_,15 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_30386_, float p_30387_) {
+-        if (this.isInvulnerableTo(p_30386_)) {
++    public boolean hurt(DamageSource source, float amount) {
++        if (this.isInvulnerableTo(source)) {
+             return false;
+         } else {
+             if (!this.level().isClientSide) {
+                 this.setOrderedToSit(false);
+             }
+ 
+-            return super.hurt(p_30386_, p_30387_);
++            return super.hurt(source, amount);
+         }
+     }
+ 
+@@ -366,14 +_,14 @@
+     }
+ 
+     @Override
+-    protected void actuallyHurt(DamageSource p_331935_, float p_330695_) {
+-        if (!this.canArmorAbsorb(p_331935_)) {
+-            super.actuallyHurt(p_331935_, p_330695_);
++    protected void actuallyHurt(DamageSource source, float amount) {
++        if (!this.canArmorAbsorb(source)) {
++            super.actuallyHurt(source, amount);
+         } else {
+             ItemStack itemstack = this.getBodyArmorItem();
+             int i = itemstack.getDamageValue();
+             int j = itemstack.getMaxDamage();
+-            itemstack.hurtAndBreak(Mth.ceil(p_330695_), this, EquipmentSlot.BODY);
++            itemstack.hurtAndBreak(Mth.ceil(amount), this, EquipmentSlot.BODY);
+             if (Crackiness.WOLF_ARMOR.byDamage(i, j) != Crackiness.WOLF_ARMOR.byDamage(this.getBodyArmorItem())) {
+                 this.playSound(SoundEvents.WOLF_ARMOR_CRACK);
+                 if (this.level() instanceof ServerLevel serverlevel) {
 @@ -401,7 +_,7 @@
      protected void applyTamingSideEffects() {
          if (this.isTame()) {

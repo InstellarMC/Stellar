@@ -91,3 +91,22 @@
          super.customServerAiStep();
          BlockPos blockpos = this.blockPosition();
          BlockPos blockpos1 = blockpos.above();
+@@ -193,15 +_,15 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_27424_, float p_27425_) {
+-        if (this.isInvulnerableTo(p_27424_)) {
++    public boolean hurt(DamageSource source, float amount) {
++        if (this.isInvulnerableTo(source)) {
+             return false;
+         } else {
+             if (!this.level().isClientSide && this.isResting()) {
+                 this.setResting(false);
+             }
+ 
+-            return super.hurt(p_27424_, p_27425_);
++            return super.hurt(source, amount);
+         }
+     }
+ 

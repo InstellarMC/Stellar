@@ -369,15 +369,17 @@
          }
  
          return flag;
-@@ -1434,6 +_,8 @@
-         if (flag) {
-             float f1 = this.getKnockback(p_21372_, damagesource);
-             if (f1 > 0.0F && p_21372_ instanceof LivingEntity livingentity) {
-+                livingentity.knockback$attacker = this;
-+                livingentity.knockback$cause = io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK; // CraftBukkit // Paper - knockback events
+@@ -1437,7 +_,9 @@
                  livingentity.knockback(
                      (double)(f1 * 0.5F),
                      (double)Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)),
+-                    (double)(-Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)))
++                    (double)(-Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))),
++                    this,
++                    io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK // CraftBukkit // Paper - knockback events
+                 );
+                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.6, 1.0, 0.6));
+             }
 @@ -1456,28 +_,29 @@
      protected void playAttackSound() {
      }

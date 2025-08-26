@@ -310,7 +310,7 @@ public class CommonHooks {
 
     /**
      * Creates and posts an {@link LivingDamageEvent.Pre}. This is invoked in
-     * {@link LivingEntity#actuallyHurt(DamageSource, float)} and {@link Player#actuallyHurt(DamageSource, float)}
+     * {@link LivingEntity#hurt(DamageSource, float)} and {@link Player#hurt(DamageSource, float)}
      * and requires access to the internal field {@link LivingEntity#damageContainers} as a parameter.
      *
      * @param entity    the entity to receive damage

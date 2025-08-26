@@ -107,7 +107,7 @@
      protected int lerpSteps;
      protected double lerpX;
      protected double lerpY;
-@@ -251,13 +_,37 @@
+@@ -251,13 +_,38 @@
      private float swimAmount;
      private float swimAmountO;
      protected Brain<?> brain;
@@ -122,7 +122,7 @@
 +     * the stack before the method's return.
 +    **/
 +    @Nullable
-+    protected java.util.Stack<net.neoforged.neoforge.common.damagesource.DamageContainer> damageContainers = new java.util.Stack<>();
++    protected java.util.Stack<net.neoforged.neoforge.common.damagesource.DamageContainer> damageContainers = new java.util.Stack<>(); // Neo
 +
 +    // CraftBukkit start
 +    public int expToDrop;
@@ -130,6 +130,7 @@
 +    public boolean collides = true;
 +    public Set<UUID> collidableExemptions = new HashSet<>();
 +    public boolean bukkitPickUpLoot;
++    public boolean silentDeath = false; // Paper - mark entity as dying silently for cancellable death event
 +    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
 +    public CraftLivingEntity getBukkitLivingEntity() { return (CraftLivingEntity) super.getBukkitEntity(); } // Paper
 +    protected boolean shouldBurnInDay = false; public boolean shouldBurnInDay() { return this.shouldBurnInDay; } public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; } // Purpur - API for any mob to burn daylight
@@ -715,157 +716,295 @@
          this.entityData.set(DATA_HEALTH_ID, Mth.clamp(p_21154_, 0.0F, this.getMaxHealth()));
      }
  
-@@ -1085,57 +_,90 @@
+@@ -1080,76 +_,138 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_21016_, float p_21017_) {
+-        if (this.isInvulnerableTo(p_21016_)) {
++    public boolean hurt(DamageSource source, float amount) {
++        if (this.isInvulnerableTo(source)) {
              return false;
          } else if (this.level().isClientSide) {
              return false;
 -        } else if (this.isDeadOrDying()) {
 +        } else if (this.isRemoved() || this.dead || this.isDeadOrDying()) { // CraftBukkit - Don't allow entities that got set to dead/killed elsewhere to get damaged and die
              return false;
-         } else if (p_21016_.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
+-        } else if (p_21016_.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
++        } else if (source.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
              return false;
          } else {
-+            this.damageContainers.push(new net.neoforged.neoforge.common.damagesource.DamageContainer(p_21016_, p_21017_));
-+            if (net.neoforged.neoforge.common.CommonHooks.onEntityIncomingDamage(this, this.damageContainers.peek())) return false;
++            this.damageContainers.push(new net.neoforged.neoforge.common.damagesource.DamageContainer(source, amount)); // Neo
++            if (net.neoforged.neoforge.common.CommonHooks.onEntityIncomingDamage(this, this.damageContainers.peek())) return false; // Neo
              if (this.isSleeping() && !this.level().isClientSide) {
                  this.stopSleeping();
              }
  
++            // Purpur start
++            if (source.getEntity() instanceof net.minecraft.world.entity.player.Player player && source.getEntity().level().purpurConfig.creativeOnePunch && !source.is(DamageTypeTags.IS_PROJECTILE)) {
++                if (player.isCreative()) {
++                    org.apache.commons.lang3.mutable.MutableDouble attackDamage = new org.apache.commons.lang3.mutable.MutableDouble();
++                    player.getMainHandItem().forEachModifier(EquipmentSlot.MAINHAND, (attributeHolder, attributeModifier) -> {
++                        if (attributeModifier.operation() == AttributeModifier.Operation.ADD_VALUE) {
++                            attackDamage.addAndGet(attributeModifier.amount());
++                        }
++                    });
++
++                    if (attackDamage.doubleValue() == 0.0D) {
++                        // One punch!
++                        // amount = 9999F; // Stellar
++                        this.damageContainers.peek().setNewDamage(Integer.MAX_VALUE); // Neo // Stellar - respect neo
++                    }
++                }
++            }
++            // Purpur end
++
              this.noActionTime = 0;
-+            p_21017_ = this.damageContainers.peek().getNewDamage(); //Neo: enforce damage container as source of truth for damage amount
-             float f = p_21017_;
+-            float f = p_21017_;
++            amount = this.damageContainers.peek().getNewDamage(); // Neo: enforce damage container as source of truth for damage amount
++            float f = amount;
              boolean flag = false;
              float f1 = 0.0F;
 -            if (p_21017_ > 0.0F && this.isDamageSourceBlocked(p_21016_)) {
 -                this.hurtCurrentlyUsedShield(p_21017_);
 -                f1 = p_21017_;
 -                p_21017_ = 0.0F;
+-                if (!p_21016_.is(DamageTypeTags.IS_PROJECTILE) && p_21016_.getDirectEntity() instanceof LivingEntity livingentity) {
 +            net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent ev;
-+            if (p_21017_ > 0.0F && (ev = net.neoforged.neoforge.common.CommonHooks.onDamageBlock(this, this.damageContainers.peek(), this.isDamageSourceBlocked(p_21016_))).getBlocked()) {
-+                this.damageContainers.peek().setBlockedDamage(ev);
++            if (Integer.MAX_VALUE > amount && amount > 0.0F && (ev = net.neoforged.neoforge.common.CommonHooks.onDamageBlock(this, this.damageContainers.peek(), this.isDamageSourceBlocked(source))).getBlocked()) { // Neo // Stellar - respect Purpur's one-punch
++                this.damageContainers.peek().setBlockedDamage(ev); // Neo
 +                if(ev.shieldDamage() > 0) {
 +                    this.hurtCurrentlyUsedShield(ev.shieldDamage());
 +                }
 +                f1 = ev.getBlockedDamage();
-+                p_21017_ = ev.getDamageContainer().getNewDamage();
-                 if (!p_21016_.is(DamageTypeTags.IS_PROJECTILE) && p_21016_.getDirectEntity() instanceof LivingEntity livingentity) {
++                amount = ev.getDamageContainer().getNewDamage();
++                if (!source.is(DamageTypeTags.IS_PROJECTILE) && source.getDirectEntity() instanceof LivingEntity livingentity) {
                      this.blockUsingShield(livingentity);
                  }
  
 -                flag = true;
-+                flag = p_21017_ <= 0;
-             }
- 
+-            }
+-
 -            if (p_21016_.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
-+            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) for get f
-+            if (false && p_21016_.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
-                 p_21017_ *= 5.0F;
-             }
- 
+-                p_21017_ *= 5.0F;
+-            }
+-
 -            if (p_21016_.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
-+            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) for get f
-+            if (false && p_21016_.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
-                 this.hurtHelmet(p_21016_, p_21017_);
-                 p_21017_ *= 0.75F;
-             }
- 
-+            // CraftBukkit start
-+            org.bukkit.event.entity.EntityDamageEvent event = BukkitDamageHooks.handleEntityDamage(this, p_21016_, f);
-+            f = 0;
-+            f += (float) event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BASE);
-+            f += (float) event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING);
-+            f += (float) event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.FREEZING);
-+            f += (float) event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.HARD_HAT);
-+            // CraftBukkit end
+-                this.hurtHelmet(p_21016_, p_21017_);
+-                p_21017_ *= 0.75F;
+-            }
++                flag = amount <= 0;
++            }
 +
-+            this.damageContainers.peek().setNewDamage(p_21017_); //update container with vanilla changes
++            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) for get f
++            if (false && source.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
++                amount *= 5.0F;
++            }
++
++            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) for get f
++            if (false && source.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
++                this.hurtHelmet(source, amount);
++                amount *= 0.75F;
++            }
++
++            this.damageContainers.peek().setNewDamage(amount); // Neo: update container with vanilla changes
++
++            // CraftBukkit start
++            org.bukkit.event.entity.EntityDamageEvent event; // Paper - move this into the actual invuln check....
++            // CraftBukkit end
+ 
              this.walkAnimation.setSpeed(1.5F);
              boolean flag1 = true;
 -            if ((float)this.invulnerableTime > 10.0F && !p_21016_.is(DamageTypeTags.BYPASSES_COOLDOWN)) {
-+            if ((float) this.invulnerableTime > (float) this.invulnerableDuration / 2.0F && !p_21016_.is(DamageTypeTags.BYPASSES_COOLDOWN)) { // CraftBukkit - restore use of maxNoDamageTicks
-                 if (p_21017_ <= this.lastHurt) {
-+                    this.damageContainers.pop();
-                     return false;
-                 }
- 
-+                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.INVULNERABILITY, this.lastHurt);
+-                if (p_21017_ <= this.lastHurt) {
+-                    return false;
+-                }
+-
+-                this.actuallyHurt(p_21016_, p_21017_ - this.lastHurt);
+-                this.lastHurt = p_21017_;
++            if ((float) this.invulnerableTime > (float) this.invulnerableDuration / 2.0F && !source.is(DamageTypeTags.BYPASSES_COOLDOWN)) { // CraftBukkit - restore use of maxNoDamageTicks
++                if (amount <= this.lastHurt) {
++                    this.damageContainers.pop(); // Neo
++                    return false;
++                }
++
++                amount = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek()); // Neo // Stellar
++                // Paper start - only call damage event when actuallyHurt will be called - move call logic down
++                event = this.handleEntityDamage(source, amount);
++                amount = computeAmountFromEntityDamageEvent(event);
++                // Paper end - only call damage event when actuallyHurt will be called - move call logic down
++                // this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.INVULNERABILITY, amount); // Neo // Stellar - this.lastHurt -> amount
++                // amount = this.damageContainers.peek().getNewDamage(); // Neo // Stellar - update local with container value
++
 +                // CraftBukkit start
-+                this.entityDamageEvent = event;
-                 this.actuallyHurt(p_21016_, p_21017_ - this.lastHurt);
-+                if (!actuallyHurtCB$return.get()) {
++                if (!this.actuallyHurt(source, amount - this.lastHurt, event)) {
 +                    return false;
 +                }
 +                // CraftBukkit end
-                 this.lastHurt = p_21017_;
++                if (this instanceof ServerPlayer && (event.getDamage() == 0 || amount == 0) && this.damageContainers.peek().getOriginalDamage() == 0) return false; // Neo // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event. // Stellar
++                this.lastHurt = amount;
                  flag1 = false;
              } else {
-+                // CraftBukkit start
-+                this.entityDamageEvent = event;
-+                if (!this.actuallyHurtCB(p_21016_, (float) event.getFinalDamage())) {
-+                    return false;
-+                }
-                 this.lastHurt = p_21017_;
+-                this.lastHurt = p_21017_;
 -                this.invulnerableTime = 20;
 -                this.actuallyHurt(p_21016_, p_21017_);
++                amount = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek()); // Neo // Stellar
++                // Paper start - only call damage event when actuallyHurt will be called - move call logic down
++                event = this.handleEntityDamage(source, amount);
++                amount = computeAmountFromEntityDamageEvent(event);
++                // Paper end - only call damage event when actuallyHurt will be called - move call logic down
++                // this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.INVULNERABILITY, amount); // Neo // Stellar - this.lastHurt -> amount
++                // amount = this.damageContainers.peek().getNewDamage(); // Neo // Stellar - update local with container value
++
++                // CraftBukkit start
++                if (!this.actuallyHurt(source, (float) event.getFinalDamage(), event)) {
++                    return false;
++                }
++                if (this instanceof ServerPlayer && (event.getDamage() == 0 || amount == 0) && this.damageContainers.peek().getOriginalDamage() == 0) return false; // Neo // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event. // Stellar
++                this.lastHurt = amount;
 +                this.invulnerableTime = this.invulnerableDuration; // CraftBukkit - restore use of maxNoDamageTicks
 +                // CraftBukkit end
                  this.hurtDuration = 10;
                  this.hurtTime = this.hurtDuration;
              }
  
-+            p_21017_ = this.damageContainers.peek().getNewDamage(); //update local with container value
-             Entity entity = p_21016_.getEntity();
+-            Entity entity = p_21016_.getEntity();
++            amount = this.damageContainers.peek().getNewDamage(); // Neo: update local with container value
++            Entity entity = source.getEntity();
              if (entity != null) {
                  if (entity instanceof LivingEntity livingentity1
-@@ -1147,9 +_,9 @@
+-                    && !p_21016_.is(DamageTypeTags.NO_ANGER)
+-                    && (!p_21016_.is(DamageTypes.WIND_CHARGE) || !this.getType().is(EntityTypeTags.NO_ANGER_FROM_WIND_CHARGE))) {
++                    && !source.is(DamageTypeTags.NO_ANGER)
++                    && (!source.is(DamageTypes.WIND_CHARGE) || !this.getType().is(EntityTypeTags.NO_ANGER_FROM_WIND_CHARGE))) {
+                     this.setLastHurtByMob(livingentity1);
+                 }
+ 
                  if (entity instanceof Player player1) {
-                     this.lastHurtByPlayerTime = 100;
+-                    this.lastHurtByPlayerTime = 100;
++                    this.lastHurtByPlayerTime = this.level().purpurConfig.mobLastHurtByPlayerTime; // Purpur
                      this.lastHurtByPlayer = player1;
 -                } else if (entity instanceof Wolf wolf && wolf.isTame()) {
-+                } else if (entity instanceof TamableAnimal tamableAnimal && tamableAnimal.isTame()) {
-                     this.lastHurtByPlayerTime = 100;
+-                    this.lastHurtByPlayerTime = 100;
 -                    if (wolf.getOwner() instanceof Player player) {
++                } else if (entity instanceof TamableAnimal tamableAnimal && tamableAnimal.isTame()) {
++                    this.lastHurtByPlayerTime = this.level().purpurConfig.mobLastHurtByPlayerTime; // Purpur
 +                    if (tamableAnimal.getOwner() instanceof Player player) {
                          this.lastHurtByPlayer = player;
                      } else {
                          this.lastHurtByPlayer = null;
-@@ -1164,7 +_,7 @@
-                     this.level().broadcastDamageEvent(this, p_21016_);
+@@ -1161,26 +_,33 @@
+                 if (flag) {
+                     this.level().broadcastEntityEvent(this, (byte)29);
+                 } else {
+-                    this.level().broadcastDamageEvent(this, p_21016_);
++                    this.level().broadcastDamageEvent(this, source);
                  }
  
 -                if (!p_21016_.is(DamageTypeTags.NO_IMPACT) && (!flag || p_21017_ > 0.0F)) {
-+                if (!p_21016_.is(DamageTypeTags.NO_IMPACT) && !flag) { // CraftBukkit - Prevent marking hurt if the damage is blocked
++                if (!source.is(DamageTypeTags.NO_IMPACT) && !flag) { // CraftBukkit - Prevent marking hurt if the damage is blocked
                      this.markHurt();
                  }
  
-@@ -1179,7 +_,8 @@
-                         d0 = p_21016_.getSourcePosition().x() - this.getX();
-                         d1 = p_21016_.getSourcePosition().z() - this.getZ();
-                     }
+-                if (!p_21016_.is(DamageTypeTags.NO_KNOCKBACK)) {
++                if (!source.is(DamageTypeTags.NO_KNOCKBACK)) {
+                     double d0 = 0.0;
+                     double d1 = 0.0;
+-                    if (p_21016_.getDirectEntity() instanceof Projectile projectile) {
+-                        DoubleDoubleImmutablePair doubledoubleimmutablepair = projectile.calculateHorizontalHurtKnockbackDirection(this, p_21016_);
++                    if (source.getDirectEntity() instanceof Projectile projectile) {
++                        DoubleDoubleImmutablePair doubledoubleimmutablepair = projectile.calculateHorizontalHurtKnockbackDirection(this, source);
+                         d0 = -doubledoubleimmutablepair.leftDouble();
+                         d1 = -doubledoubleimmutablepair.rightDouble();
+-                    } else if (p_21016_.getSourcePosition() != null) {
+-                        d0 = p_21016_.getSourcePosition().x() - this.getX();
+-                        d1 = p_21016_.getSourcePosition().z() - this.getZ();
+-                    }
 -
-+                    this.knockback$attacker = entity;
-+                    this.knockback$cause = (entity == null ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK);
-                     this.knockback(0.4F, d0, d1);
+-                    this.knockback(0.4F, d0, d1);
++                    } else if (source.getSourcePosition() != null) {
++                        d0 = source.getSourcePosition().x() - this.getX();
++                        d1 = source.getSourcePosition().z() - this.getZ();
++                    }
++                    // Paper start - Check distance in entity interactions; see for loop in knockback method
++                    if (Math.abs(d0) > 200) {
++                        d0 = Math.random() - Math.random();
++                    }
++                    if (Math.abs(d1) > 200) {
++                        d1 = Math.random() - Math.random();
++                    }
++                    // Paper end - Check distance in entity interactions
++                    this.knockback(0.4F, d0, d1, entity, entity == null ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events
                      if (!flag) {
                          this.indicateDamage(d0, d1);
-@@ -1199,7 +_,7 @@
-                 this.playHurtSound(p_21016_);
+                     }
+@@ -1188,48 +_,62 @@
+             }
+ 
+             if (this.isDeadOrDying()) {
+-                if (!this.checkTotemDeathProtection(p_21016_)) {
+-                    if (flag1) {
+-                        this.makeSound(this.getDeathSound());
+-                    }
++                if (!this.checkTotemDeathProtection(source)) {
++                    // Paper start - moved into CraftEventFactory event caller for cancellable death event
++                    this.silentDeath = !flag1; // mark entity as dying silently
++                    // Paper end
+ 
+-                    this.die(p_21016_);
++                    this.die(source);
++                    this.silentDeath = false; // Paper - cancellable death event - reset to default
+                 }
+             } else if (flag1) {
+-                this.playHurtSound(p_21016_);
++                this.playHurtSound(source);
              }
  
 -            boolean flag2 = !flag || p_21017_ > 0.0F;
 +            boolean flag2 = !flag; // CraftBukkit - Ensure to return false if damage is blocked
              if (flag2) {
-                 this.lastDamageSource = p_21016_;
+-                this.lastDamageSource = p_21016_;
++                this.lastDamageSource = source;
                  this.lastDamageStamp = this.level().getGameTime();
-@@ -1220,6 +_,7 @@
-                 CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer)entity, this, p_21016_, f, p_21017_, flag);
+ 
+                 for (MobEffectInstance mobeffectinstance : this.getActiveEffects()) {
+-                    mobeffectinstance.onMobHurt(this, p_21016_, p_21017_);
++                    mobeffectinstance.onMobHurt(this, source, amount);
+                 }
              }
  
-+            this.damageContainers.pop();
+             if (this instanceof ServerPlayer) {
+-                CriteriaTriggers.ENTITY_HURT_PLAYER.trigger((ServerPlayer)this, p_21016_, f, p_21017_, flag);
++                CriteriaTriggers.ENTITY_HURT_PLAYER.trigger((ServerPlayer)this, source, f, amount, flag);
+                 if (f1 > 0.0F && f1 < 3.4028235E37F) {
+                     ((ServerPlayer)this).awardStat(Stats.DAMAGE_BLOCKED_BY_SHIELD, Math.round(f1 * 10.0F));
+                 }
+             }
+ 
+             if (entity instanceof ServerPlayer) {
+-                CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer)entity, this, p_21016_, f, p_21017_, flag);
++                CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer)entity, this, source, f, amount, flag);
+             }
+ 
++            this.damageContainers.pop(); // Neo
              return flag2;
          }
      }
-@@ -1229,7 +_,7 @@
+ 
++    // Paper start - only call damage event when actuallyHurt will be called - move out amount computation logic
++    private float computeAmountFromEntityDamageEvent(final org.bukkit.event.entity.EntityDamageEvent event) {
++        // Taken from hurt()'s craftbukkit diff.
++        float amount = 0;
++        amount += (float) event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BASE);
++        amount += (float) event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING);
++        amount += (float) event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.FREEZING);
++        amount += (float) event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.HARD_HAT);
++        return amount;
++    }
++    // Paper end - only call damage event when actuallyHurt will be called - move out amount computation logic
++
+     protected void blockUsingShield(LivingEntity p_21200_) {
+         p_21200_.blockedByShield(this);
      }
  
      protected void blockedByShield(LivingEntity p_21246_) {
@@ -1021,47 +1160,66 @@
          }
      }
  
-@@ -1439,7 +_,14 @@
+@@ -1439,19 +_,47 @@
          loottable.getRandomItems(lootparams, this.getLootTableSeed(), this::spawnAtLocation);
      }
  
+-    public void knockback(double p_147241_, double p_147242_, double p_147243_) {
+-        p_147241_ *= 1.0 - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
+-        if (!(p_147241_ <= 0.0)) {
 +    public io.papermc.paper.event.entity.EntityKnockbackEvent.Cause knockback$cause = io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.UNKNOWN;
 +    public Entity knockback$attacker = null;
-     public void knockback(double p_147241_, double p_147242_, double p_147243_) {
-+        net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent event = net.neoforged.neoforge.common.CommonHooks.onLivingKnockBack(this, (float) p_147241_, p_147242_, p_147243_);
-+        if(event.isCanceled()) return;
-+        p_147241_ = event.getStrength();
-+        p_147242_ = event.getRatioX();
-+        p_147243_ = event.getRatioZ();
-         p_147241_ *= 1.0 - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
-         if (!(p_147241_ <= 0.0)) {
-             this.hasImpulse = true;
-@@ -1451,8 +_,24 @@
-             }
- 
-             Vec3 vec31 = new Vec3(p_147242_, 0.0, p_147243_).normalize().scale(p_147241_);
--            this.setDeltaMovement(vec3.x / 2.0 - vec31.x, this.onGround() ? Math.min(0.4, vec3.y / 2.0 + p_147241_) : vec3.y, vec3.z / 2.0 - vec31.z);
++    public void knockback(double strength, double ratioX, double ratioZ) {
++        // CraftBukkit start - EntityKnockbackEvent
++        this.knockback(strength, ratioX, ratioZ, null, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.UNKNOWN); // Paper - knockback events
++    }
++
++    public void knockback(double strength, double ratioX, double ratioZ, @org.jspecify.annotations.Nullable Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause cause) { // Paper - knockback events) {
++        // Neo start
++        net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent eventNeo = net.neoforged.neoforge.common.CommonHooks.onLivingKnockBack(this, (float) strength, ratioX, ratioZ);
++        if (eventNeo.isCanceled()) {
++            return;
++        }
++        strength = eventNeo.getStrength();
++        ratioX = eventNeo.getRatioX();
++        ratioZ = eventNeo.getRatioZ();
++        // Neo end
++
++        strength *= 1.0 - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
++        if (true || !(strength <= 0.0)) { // CraftBukkit - Call event when force is 0
++            // this.hasImpulse = true; // CraftBukkit - Move down
++            Vec3 vec3d = this.getDeltaMovement();
++
++            while (ratioX * ratioX + ratioZ * ratioZ < 1.0E-5F) {
++                ratioX = (Math.random() - Math.random()) * 0.01;
++                ratioZ = (Math.random() - Math.random()) * 0.01;
++            }
++
++            Vec3 vec3d1 = new Vec3(ratioX, 0.0, ratioZ).normalize().scale(strength);
++
 +            // Paper start - knockback events
-+            Vec3 finalVelocity = new Vec3(vec3.x / 2.0D - vec31.x, this.onGround() ? Math.min(0.4D, vec3.y / 2.0D + p_147241_) : vec3.y, vec3.z / 2.0D - vec31.z);
-+            Vec3 diff = finalVelocity.subtract(vec3);
-+            io.papermc.paper.event.entity.EntityKnockbackEvent eventCB = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) this.getBukkitEntity(), knockback$attacker, knockback$attacker, knockback$cause, p_147241_, diff);
++            Vec3 finalVelocity = new Vec3(vec3d.x / 2.0D - vec3d1.x, this.onGround() ? Math.min(0.4D, vec3d.y / 2.0D + strength) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
++            Vec3 diff = finalVelocity.subtract(vec3d);
++            io.papermc.paper.event.entity.EntityKnockbackEvent eventCB = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) this.getBukkitEntity(), attacker, attacker, cause, strength, diff);
 +            // Paper end - knockback events
 +            if (eventCB.isCancelled()) {
 +                return;
 +            }
-+            this.hasImpulse = true;
-+            this.setDeltaMovement(vec3.add(eventCB.getKnockback().getX(), eventCB.getKnockback().getY(), eventCB.getKnockback().getZ())); // Paper - knockback events
+             this.hasImpulse = true;
+-            Vec3 vec3 = this.getDeltaMovement();
+-
+-            while (p_147242_ * p_147242_ + p_147243_ * p_147243_ < 1.0E-5F) {
+-                p_147242_ = (Math.random() - Math.random()) * 0.01;
+-                p_147243_ = (Math.random() - Math.random()) * 0.01;
+-            }
+-
+-            Vec3 vec31 = new Vec3(p_147242_, 0.0, p_147243_).normalize().scale(p_147241_);
+-            this.setDeltaMovement(vec3.x / 2.0 - vec31.x, this.onGround() ? Math.min(0.4, vec3.y / 2.0 + p_147241_) : vec3.y, vec3.z / 2.0 - vec31.z);
++            this.setDeltaMovement(vec3d.add(eventCB.getKnockback().getX(), eventCB.getKnockback().getY(), eventCB.getKnockback().getZ())); // Paper - knockback events
 +            // CraftBukkit end
          }
-+    }
-+
-+    public void knockback(double p_147241_, double p_147242_, double p_147243_, Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause cause) {
-+        this.knockback$attacker = attacker;
-+        this.knockback$cause = cause;
-+        knockback(p_147241_, p_147242_, p_147243_);
      }
  
-     public void indicateDamage(double p_270514_, double p_270826_) {
 @@ -1511,6 +_,28 @@
          return p_21202_.getEatingSound();
      }
@@ -1208,7 +1366,7 @@
                  }
  
                  return p_21194_;
-@@ -1677,22 +_,166 @@
+@@ -1677,24 +_,196 @@
          }
      }
  
@@ -1227,38 +1385,101 @@
 -                this.getCombatTracker().recordDamage(p_21240_, f1);
 -                this.setHealth(this.getHealth() - f1);
 -                this.setAbsorptionAmount(this.getAbsorptionAmount() - f1);
-+    protected org.bukkit.event.entity.EntityDamageEvent entityDamageEvent = null;
-+    protected boolean actuallyHurtCB(final DamageSource damagesource, float f) { //
++    // CraftBukkit start
++    private org.bukkit.event.entity.EntityDamageEvent handleEntityDamage(final DamageSource damagesource, float f) {
++        float originalDamage = f;
 +
-+        org.bukkit.event.entity.EntityDamageEvent event;
-+        if(entityDamageEvent != null) {
-+            event = entityDamageEvent;
-+            entityDamageEvent = null;
-+        } else {
-+            event = BukkitDamageHooks.handleEntityDamage(this, damagesource, f);
-+        }
++        com.google.common.base.Function<Double, Double> freezing = new com.google.common.base.Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                if (damagesource.is(DamageTypeTags.IS_FREEZING) && LivingEntity.this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
++                    return -(f - (f * 5.0F));
++                }
++                return -0.0;
++            }
++        };
++        float freezingModifier = freezing.apply((double) f).floatValue();
++        f += freezingModifier;
 +
-+        if(event.isCancelled()){
-+            return false;
-+        }
++        com.google.common.base.Function<Double, Double> hardHat = new com.google.common.base.Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !LivingEntity.this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
++                    return -(f - (f * 0.75F));
++                }
++                return -0.0;
++            }
++        };
++        float hardHatModifier = hardHat.apply((double) f).floatValue();
++        f += hardHatModifier;
 +
-+        if (!this.isInvulnerableTo(damagesource)) {
++        com.google.common.base.Function<Double, Double> blocking = new com.google.common.base.Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                return -((LivingEntity.this.isDamageSourceBlocked(damagesource)) ? f : 0.0);
++            }
++        };
++        float blockingModifier = blocking.apply((double) f).floatValue();
++        f += blockingModifier;
++
++        com.google.common.base.Function<Double, Double> armor = new com.google.common.base.Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                return -(f - LivingEntity.this.getDamageAfterArmorAbsorb(damagesource, f.floatValue()));
++            }
++        };
++        float armorModifier = armor.apply((double) f).floatValue();
++        f += armorModifier;
++
++        com.google.common.base.Function<Double, Double> resistance = new com.google.common.base.Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                if (!damagesource.is(DamageTypeTags.BYPASSES_EFFECTS) && LivingEntity.this.hasEffect(MobEffects.DAMAGE_RESISTANCE) && !damagesource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
++                    int i = (LivingEntity.this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
++                    int j = 25 - i;
++                    float f1 = f.floatValue() * (float) j;
++                    return -(f - (f1 / 25.0F));
++                }
++                return -0.0;
++            }
++        };
++        float resistanceModifier = resistance.apply((double) f).floatValue();
++        f += resistanceModifier;
++
++        com.google.common.base.Function<Double, Double> magic = new com.google.common.base.Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                return -(f - LivingEntity.this.getDamageAfterMagicAbsorb(damagesource, f.floatValue()));
++            }
++        };
++        float magicModifier = magic.apply((double) f).floatValue();
++        f += magicModifier;
++
++        com.google.common.base.Function<Double, Double> absorption = new com.google.common.base.Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                return -(Math.max(f - Math.max(f - LivingEntity.this.getAbsorptionAmount(), 0.0F), 0.0F));
++            }
++        };
++        float absorptionModifier = absorption.apply((double) f).floatValue();
++
++        return org.bukkit.craftbukkit.event.CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, freezingModifier, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, freezing, hardHat, blocking, armor, resistance, magic, absorption);
++    }
++
++    protected boolean actuallyHurt(DamageSource source, float amount, org.bukkit.event.entity.EntityDamageEvent event) { // CraftBukkit - void -> boolean
++        if (!this.isInvulnerableTo(source)) {
 +            if (event.isCancelled()) {
 +                return false;
 +            }
 +
-+            if (damagesource.getEntity() instanceof Player) {
++            if (source.getEntity() instanceof Player player) {
 +                // Paper start - PlayerAttackEntityCooldownResetEvent
-+                //((net.minecraft.world.entity.player.Player) damagesource.getEntity()).resetAttackStrengthTicker(); // Moved from EntityHuman in order to make the cooldown reset get called after the damage event is fired
-+                if (damagesource.getEntity() instanceof ServerPlayer) {
-+                    ServerPlayer player = (ServerPlayer) damagesource.getEntity();
-+                    if (new io.papermc.paper.event.player.PlayerAttackEntityCooldownResetEvent(player.getBukkitEntity(), this.getBukkitEntity(), player.getAttackStrengthScale(0F)).callEvent()) {
-+                        player.resetAttackStrengthTicker();
-+                    }
++                if (source.getEntity() instanceof ServerPlayer serverplayer && new com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent(serverplayer.getBukkitEntity(), this.getBukkitEntity(), serverplayer.getAttackStrengthScale(0F)).callEvent()) {
++                    serverplayer.resetAttackStrengthTicker();
++                    // Paper end - PlayerAttackEntityCooldownResetEvent
 +                } else {
-+                    ((net.minecraft.world.entity.player.Player) damagesource.getEntity()).resetAttackStrengthTicker();
++                    player.resetAttackStrengthTicker();
 +                }
-+                // Paper end - PlayerAttackEntityCooldownResetEvent
 +            }
 +
 +            // Resistance
@@ -1267,29 +1488,29 @@
 +                if (f3 > 0.0F && f3 < 3.4028235E37F) {
 +                    if (this instanceof ServerPlayer) {
 +                        ((ServerPlayer) this).awardStat(Stats.DAMAGE_RESISTED, Math.round(f3 * 10.0F));
-+                    } else if (damagesource.getEntity() instanceof ServerPlayer) {
-+                        ((ServerPlayer) damagesource.getEntity()).awardStat(Stats.DAMAGE_DEALT_RESISTED, Math.round(f3 * 10.0F));
++                    } else if (source.getEntity() instanceof ServerPlayer) {
++                        ((ServerPlayer) source.getEntity()).awardStat(Stats.DAMAGE_DEALT_RESISTED, Math.round(f3 * 10.0F));
 +                    }
 +                }
 +            }
 +
 +            // Apply damage to helmet
-+            if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
-+                this.hurtHelmet(damagesource, f);
++            if (source.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
++                this.hurtHelmet(source, amount);
 +            }
 +
 +            // Apply damage to armor
-+            if (!damagesource.is(DamageTypeTags.BYPASSES_ARMOR)) {
++            if (!source.is(DamageTypeTags.BYPASSES_ARMOR)) {
 +                float armorDamage = (float) (event.getDamage() + event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING) + event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.HARD_HAT));
-+                this.hurtArmor(damagesource, armorDamage);
++                this.hurtArmor(source, armorDamage);
 +            }
 +
 +            // Apply blocking code // PAIL: steal from above
 +            if (event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING) < 0) {
 +                this.hurtCurrentlyUsedShield((float) -event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING));
-+                Entity entity = damagesource.getDirectEntity();
++                Entity entity = source.getDirectEntity();
 +
-+                if (!damagesource.is(DamageTypeTags.IS_PROJECTILE) && entity instanceof LivingEntity) { // Paper - Fix shield disable inconsistency
++                if (!source.is(DamageTypeTags.IS_PROJECTILE) && entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
 +                    this.blockUsingShield((LivingEntity) entity);
 +                }
 +            }
@@ -1300,36 +1521,33 @@
 +            this.setAbsorptionAmount(Math.max(this.getAbsorptionAmount() - absorptionModifier, 0.0F));
 +            float f2 = absorptionModifier;
 +
-+            if (f2 > 0.0F && f2 < 3.4028235E37F && this instanceof Player) {
-+                ((Player) this).awardStat(Stats.DAMAGE_ABSORBED, Math.round(f2 * 10.0F));
++            if (f2 > 0.0F && f2 < 3.4028235E37F) {
++                if (this instanceof ServerPlayer serverplayer) {
++                    serverplayer.awardStat(Stats.DAMAGE_ABSORBED, Math.round(f2 * 10.0F));
++                }
++
++                if (source.getEntity() instanceof ServerPlayer serverplayer) {
++                    serverplayer.awardStat(Stats.DAMAGE_DEALT_ABSORBED, Math.round(f2 * 10.0F));
++                }
 +            }
 +            // CraftBukkit end
 +
-+            if (f2 > 0.0F && f2 < 3.4028235E37F) {
-+                Entity entity = damagesource.getEntity();
-+
-+                if (entity instanceof ServerPlayer) {
-+                    ServerPlayer entityplayer = (ServerPlayer) entity;
-+
-+                    entityplayer.awardStat(Stats.DAMAGE_DEALT_ABSORBED, Math.round(f2 * 10.0F));
-+                }
-+            }
-+
++            net.neoforged.neoforge.common.CommonHooks.onLivingDamagePost(this, this.damageContainers.peek()); // Neo
 +            // CraftBukkit start
-+            if (f > 0 || !human) {
++            if (amount > 0 || !human) {
 +                if (human) {
-+                    // PAIL: Be sure to drag all this code from the Player subclass each update.
-+                    ((Player) this).causeFoodExhaustion(damagesource.getFoodExhaustion(), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
-+                    if (f < 3.4028235E37F) {
-+                        ((Player) this).awardStat(Stats.DAMAGE_TAKEN, Math.round(f * 10.0F));
++                    // PAIL: Be sure to drag all this code from the EntityHuman subclass each update.
++                    ((net.minecraft.world.entity.player.Player) this).causeFoodExhaustion(source.getFoodExhaustion(), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
++                    if (amount < 3.4028235E37F) {
++                        ((net.minecraft.world.entity.player.Player) this).awardStat(Stats.DAMAGE_TAKEN, Math.round(amount * 10.0F));
 +                    }
 +                }
 +                // CraftBukkit end
-+                this.getCombatTracker().recordDamage(damagesource, f);
-+                this.setHealth(this.getHealth() - f);
++                this.getCombatTracker().recordDamage(source, amount);
++                this.setHealth(this.getHealth() - amount);
 +                // CraftBukkit start
 +                if (!human) {
-+                    this.setAbsorptionAmount(this.getAbsorptionAmount() - f);
++                    this.setAbsorptionAmount(this.getAbsorptionAmount() - amount);
 +                }
                  this.gameEvent(GameEvent.ENTITY_DAMAGE);
 +
@@ -1338,58 +1556,28 @@
 +                // Duplicate triggers if blocking
 +                if (event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING) < 0) {
 +                    if (this instanceof ServerPlayer) {
-+                        CriteriaTriggers.ENTITY_HURT_PLAYER.trigger((ServerPlayer) this, damagesource, f, originalDamage, true);
++                        CriteriaTriggers.ENTITY_HURT_PLAYER.trigger((ServerPlayer) this, source, originalDamage, amount, true); // Paper - fix taken/dealt param order
 +                        f2 = (float) -event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING);
 +                        if (f2 > 0.0F && f2 < 3.4028235E37F) {
 +                            ((ServerPlayer) this).awardStat(Stats.DAMAGE_BLOCKED_BY_SHIELD, Math.round(originalDamage * 10.0F));
 +                        }
 +                    }
 +
-+                    if (damagesource.getEntity() instanceof ServerPlayer) {
-+                        CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer) damagesource.getEntity(), this, damagesource, f, originalDamage, true);
++                    if (source.getEntity() instanceof ServerPlayer) {
++                        CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer) source.getEntity(), this, source, originalDamage, amount, true); // Paper - fix taken/dealt param order
 +                    }
 +
-+                    return true;
++                    return !io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.skipVanillaDamageTickWhenShieldBlocked; // Paper - this should always return true, however expose an unsupported setting to flip this to false to enable "shield stunning".
 +                } else {
-+                    return originalDamage > 0;
++                    return true; // Paper - return false ONLY if event was cancelled
 +                }
 +                // CraftBukkit end
-+            }
-+        }
-+        return false; // CraftBukkit
-+    }
-+
-+    protected boolean useCBHurt = true;
-+    protected java.util.concurrent.atomic.AtomicBoolean actuallyHurtCB$return = new java.util.concurrent.atomic.AtomicBoolean(false);
-+
-+    protected void actuallyHurt(DamageSource p_21240_, float p_21241_) {
-+        if(useCBHurt){
-+            actuallyHurtCB$return.set(actuallyHurtCB(p_21240_, p_21241_));
-+            return;
-+        } else {
-+            if (!this.isInvulnerableTo(p_21240_)) {
-+                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ARMOR, this.damageContainers.peek().getNewDamage() - this.getDamageAfterArmorAbsorb(p_21240_, this.damageContainers.peek().getNewDamage()));
-+                this.getDamageAfterMagicAbsorb(p_21240_, this.damageContainers.peek().getNewDamage());
-+                float damage = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek());
-+                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION, Math.min(this.getAbsorptionAmount(), damage));
-+                float absorbed = Math.min(damage, this.damageContainers.peek().getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION));
-+                this.setAbsorptionAmount(Math.max(0, this.getAbsorptionAmount() - absorbed));
-+                float f1 = this.damageContainers.peek().getNewDamage();
-+                float f = absorbed;
-+                if (f > 0.0F && f < 3.4028235E37F && p_21240_.getEntity() instanceof ServerPlayer serverplayer) {
-+                    serverplayer.awardStat(Stats.DAMAGE_DEALT_ABSORBED, Math.round(f * 10.0F));
-+                }
-+
-+                if (f1 != 0.0F) {
-+                    this.getCombatTracker().recordDamage(p_21240_, f1);
-+                    this.setHealth(this.getHealth() - f1);
-+                    this.gameEvent(GameEvent.ENTITY_DAMAGE);
-+                    this.onDamageTaken(this.damageContainers.peek());
-+                }
-+                net.neoforged.neoforge.common.CommonHooks.onLivingDamagePost(this, this.damageContainers.peek());
              }
          }
++        return true; // CraftBukkit // Paper - return false ONLY if event was cancelled
      }
+ 
+     public CombatTracker getCombatTracker() {
 @@ -1722,10 +_,25 @@
          return this.entityData.get(DATA_ARROW_COUNT_ID);
      }

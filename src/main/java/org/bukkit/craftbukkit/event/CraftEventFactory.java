@@ -1558,12 +1558,19 @@ public class CraftEventFactory {
         return event;
     }
 
+    // Paper start
+    /**
+     * Incase plugins hooked into this or Spigot adds a new inventory close event. Prefer to pass a reason
+     * @param human
+     */
+    @Deprecated
     public static void handleInventoryCloseEvent(net.minecraft.world.entity.player.Player human) {
         handleInventoryCloseEvent(human, org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNKNOWN);
     }
 
     public static void handleInventoryCloseEvent(net.minecraft.world.entity.player.Player human, org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
         // Paper end
+        // Stellar start - respect modified inventory
         human.inventoryMenu.containerOwner = human;
         human.containerMenu.containerOwner = human;
         InventoryView view = human.containerMenu.getBukkitView();
@@ -1572,6 +1579,7 @@ public class CraftEventFactory {
             inventory.getType().setMods(true);
             view = new CraftInventoryView(human.getBukkitEntity(), inventory, human.containerMenu);
         }
+        // Stellar end - respect modified inventory
         InventoryCloseEvent event = new InventoryCloseEvent(view, reason); // Paper
         human.level().getCraftServer().getPluginManager().callEvent(event);
         human.containerMenu.transferTo(human.inventoryMenu, human.getBukkitEntity());

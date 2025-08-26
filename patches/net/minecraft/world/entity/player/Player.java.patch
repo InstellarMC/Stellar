@@ -265,7 +265,7 @@
          if (this.canPlayerFitWithinBlocksAndEntitiesWhen(Pose.SWIMMING)) {
              Pose pose;
              if (this.isFallFlying()) {
-@@ -481,6 +_,13 @@
+@@ -481,6 +_,18 @@
          }
      }
  
@@ -275,6 +275,11 @@
 +        this.containerMenu = this.inventoryMenu;
 +    }
 +    // Paper end - Inventory close reason
++    // Paper start - special close for unloaded inventory
++    public void closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        this.containerMenu = this.inventoryMenu;
++    }
++    // Paper end - special close for unloaded inventory
 +
      public void closeContainer() {
          this.containerMenu = this.inventoryMenu;
@@ -306,6 +311,15 @@
              }
  
              if (this.foodData.getSaturationLevel() < 20.0F && this.tickCount % 20 == 0) {
+@@ -551,7 +_,7 @@
+             List<Entity> list1 = Lists.newArrayList();
+ 
+             for (Entity entity : list) {
+-                if (entity.getType() == EntityType.EXPERIENCE_ORB) {
++                if (entity.getType() == EntityType.EXPERIENCE_ORB && entity.level().purpurConfig.playerExpPickupDelay >= 0) { // Purpur
+                     list1.add(entity);
+                 } else if (!entity.isRemoved()) {
+                     this.touch(entity);
 @@ -566,6 +_,7 @@
          this.playShoulderEntityAmbientSound(this.getShoulderEntityLeft());
          this.playShoulderEntityAmbientSound(this.getShoulderEntityRight());
@@ -414,17 +428,64 @@
      @Override
      public void readAdditionalSaveData(CompoundTag p_36215_) {
          super.readAdditionalSaveData(p_36215_);
-@@ -872,7 +_,9 @@
-                     this.removeEntitiesOnShoulder();
+@@ -858,35 +_,45 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_36154_, float p_36155_) {
+-        if (this.isInvulnerableTo(p_36154_)) {
++    public boolean hurt(DamageSource source, float amount) {
++        if (this.isInvulnerableTo(source)) {
+             return false;
+-        } else if (this.abilities.invulnerable && !p_36154_.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
++        } else if (this.abilities.invulnerable && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+             return false;
+         } else {
+             this.noActionTime = 0;
+             if (this.isDeadOrDying()) {
+                 return false;
+             } else {
+-                if (!this.level().isClientSide) {
+-                    this.removeEntitiesOnShoulder();
+-                }
+-
+-                if (p_36154_.scalesWithDifficulty()) {
++                // if (!this.level().isClientSide) { // Stellar
++                    // this.removeEntitiesOnShoulder(); // CraftBukkit - moved down
++                // } // Stellar
++
++                amount = Math.max(0.0F, source.type().scaling().getScalingFunction().scaleDamage(source, this, amount, this.level().getDifficulty()));
++
++                if (false && source.scalesWithDifficulty()) {
+                     if (this.level().getDifficulty() == Difficulty.PEACEFUL) {
+-                        p_36155_ = 0.0F;
++                        amount = 0.0F;
+                     }
+ 
+                     if (this.level().getDifficulty() == Difficulty.EASY) {
+-                        p_36155_ = Math.min(p_36155_ / 2.0F + 1.0F, p_36155_);
++                        amount = Math.min(amount / 2.0F + 1.0F, amount);
+                     }
+ 
+                     if (this.level().getDifficulty() == Difficulty.HARD) {
+-                        p_36155_ = p_36155_ * 3.0F / 2.0F;
++                        amount = amount * 3.0F / 2.0F;
+                     }
                  }
  
--                if (p_36154_.scalesWithDifficulty()) {
-+                p_36155_ = Math.max(0.0F, p_36154_.type().scaling().getScalingFunction().scaleDamage(p_36154_, this, p_36155_, this.level().getDifficulty()));
-+
-+                if (false && p_36154_.scalesWithDifficulty()) {
-                     if (this.level().getDifficulty() == Difficulty.PEACEFUL) {
-                         p_36155_ = 0.0F;
-                     }
+-                return p_36155_ == 0.0F ? false : super.hurt(p_36154_, p_36155_);
++                // CraftBukkit start - Don't filter out 0 damage // Stellar start - respect neo
++                if (amount != 0.0F && super.hurt(source, amount)) {
++                    if (!this.level().isClientSide) {
++                        this.removeEntitiesOnShoulder();
++                    }
++                    return true;
++                }
++                return false;
++                // CraftBukkit end // Stellar end - respect neo
+             }
+         }
+     }
 @@ -895,6 +_,7 @@
      protected void blockUsingShield(LivingEntity p_36295_) {
          super.blockUsingShield(p_36295_);
@@ -492,18 +553,13 @@
                  if (this.useItem.isEmpty()) {
                      if (interactionhand == InteractionHand.MAIN_HAND) {
                          this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-@@ -949,27 +_,42 @@
+@@ -949,27 +_,37 @@
          }
      }
  
 +    // CraftBukkit start
-+    protected boolean actuallyHurtCB(DamageSource p_36312_, float p_36313_, org.bukkit.event.entity.EntityDamageEvent event) {
-+        this.entityDamageEvent = event;
-+        return super.actuallyHurtCB(p_36312_, p_36313_);
-+    }
-+
      @Override
-     protected void actuallyHurt(DamageSource p_36312_, float p_36313_) {
+-    protected void actuallyHurt(DamageSource p_36312_, float p_36313_) {
 -        if (!this.isInvulnerableTo(p_36312_)) {
 -            p_36313_ = this.getDamageAfterArmorAbsorb(p_36312_, p_36313_);
 -            p_36313_ = this.getDamageAfterMagicAbsorb(p_36312_, p_36313_);
@@ -523,12 +579,13 @@
 -                }
 -
 -                this.gameEvent(GameEvent.ENTITY_DAMAGE);
-+        if(useCBHurt) {
-+            actuallyHurtCB$return.set(super.actuallyHurtCB(p_36312_, p_36313_));
++    protected boolean actuallyHurt(DamageSource source, float amount, org.bukkit.event.entity.EntityDamageEvent event) { // CraftBukkit: void -> boolean
++        if (true) {
++            return super.actuallyHurt(source, amount, event);
 +        } else {
-+            if (!this.isInvulnerableTo(p_36312_)) {
-+                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ARMOR, this.damageContainers.peek().getNewDamage() - this.getDamageAfterArmorAbsorb(p_36312_, this.damageContainers.peek().getNewDamage()));
-+                this.getDamageAfterMagicAbsorb(p_36312_, this.damageContainers.peek().getNewDamage());
++            if (!this.isInvulnerableTo(source)) {
++                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ARMOR, this.damageContainers.peek().getNewDamage() - this.getDamageAfterArmorAbsorb(source, this.damageContainers.peek().getNewDamage()));
++                this.getDamageAfterMagicAbsorb(source, this.damageContainers.peek().getNewDamage());
 +                float damage = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek());
 +                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION, Math.min(this.getAbsorptionAmount(), damage));
 +                float absorbed = Math.min(damage, this.damageContainers.peek().getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION));
@@ -540,8 +597,8 @@
 +                }
 +
 +                if (f1 != 0.0F) {
-+                    this.causeFoodExhaustion(p_36312_.getFoodExhaustion(), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
-+                    this.getCombatTracker().recordDamage(p_36312_, f1);
++                    this.causeFoodExhaustion(source.getFoodExhaustion(), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
++                    this.getCombatTracker().recordDamage(source, f1);
 +                    this.setHealth(this.getHealth() - f1);
 +                    if (f1 < 3.4028235E37F) {
 +                        this.awardStat(Stats.DAMAGE_TAKEN, Math.round(f1 * 10.0F));
@@ -670,16 +727,14 @@
  
                      float f6 = 0.0F;
                      if (p_36347_ instanceof LivingEntity livingentity) {
-@@ -1195,12 +_,15 @@
-                         float f4 = this.getKnockback(p_36347_, damagesource) + (flag ? 1.0F : 0.0F);
-                         if (f4 > 0.0F) {
-                             if (p_36347_ instanceof LivingEntity livingentity1) {
-+                                livingentity1.knockback$attacker = this;
-+                                livingentity1.knockback$cause = io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK; // Paper - knockback events
+@@ -1198,9 +_,12 @@
                                  livingentity1.knockback(
                                      (double)(f4 * 0.5F),
                                      (double)Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)),
-                                     (double)(-Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)))
+-                                    (double)(-Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)))
++                                    (double)(-Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))),
++                                    this,
++                                    io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK // Paper - knockback events
                                  );
                              } else {
 +                                p_36347_.pushingEntity = this; // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
@@ -717,12 +772,13 @@
 +                                        continue;
 +                                    }
 +                                    // CraftBukkit end
-+                                    livingentity2.knockback$attacker = this;
-+                                    livingentity2.knockback$cause = io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SWEEP_ATTACK; // CraftBukkit // Paper - knockback events
                                      livingentity2.knockback(
                                          0.4F,
                                          (double)Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)),
-                                         (double)(-Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)))
+-                                        (double)(-Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)))
++                                        (double)(-Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))),
++                                        this,
++                                        io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SWEEP_ATTACK // CraftBukkit // Paper - knockback events
                                      );
 -                                    livingentity2.hurt(damagesource, f5);
 +                                    // livingentity2.hurt(damagesource, f5); // CraftBukkit - moved up

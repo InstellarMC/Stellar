@@ -64,6 +64,24 @@
          }
      }
  
+@@ -362,13 +_,13 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_34694_, float p_34695_) {
+-        boolean flag = super.hurt(p_34694_, p_34695_);
++    public boolean hurt(DamageSource source, float amount) {
++        boolean flag = super.hurt(source, amount);
+         if (this.level().isClientSide) {
+             return false;
+         } else {
+-            if (flag && p_34694_.getEntity() instanceof LivingEntity) {
+-                PiglinAi.wasHurtBy(this, (LivingEntity)p_34694_.getEntity());
++            if (flag && source.getEntity() instanceof LivingEntity) {
++                PiglinAi.wasHurtBy(this, (LivingEntity)source.getEntity());
+             }
+ 
+             return flag;
 @@ -390,7 +_,7 @@
      }
  

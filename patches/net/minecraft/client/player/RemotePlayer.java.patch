@@ -1,14 +1,17 @@
 --- a/net/minecraft/client/player/RemotePlayer.java
 +++ b/net/minecraft/client/player/RemotePlayer.java
-@@ -37,6 +_,11 @@
+@@ -32,8 +_,13 @@
      }
  
      @Override
-+    public void resetLastActionTime() {
-+
+-    public boolean hurt(DamageSource p_108772_, float p_108773_) {
++    public boolean hurt(DamageSource source, float amount) {
+         return true;
 +    }
 +
 +    @Override
-     public void tick() {
-         super.tick();
-         this.calculateEntityAnimation(false);
++    public void resetLastActionTime() {
++
+     }
+ 
+     @Override

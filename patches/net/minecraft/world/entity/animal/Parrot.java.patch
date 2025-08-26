@@ -63,13 +63,19 @@
      }
  
      @Override
-@@ -389,11 +_,14 @@
-         if (this.isInvulnerableTo(p_29378_)) {
+@@ -385,15 +_,18 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_29378_, float p_29379_) {
+-        if (this.isInvulnerableTo(p_29378_)) {
++    public boolean hurt(DamageSource source, float amount) {
++        if (this.isInvulnerableTo(source)) {
              return false;
          } else {
 -            if (!this.level().isClientSide) {
 +            // CraftBukkit start
-+            boolean result = super.hurt(p_29378_, p_29379_);
++            boolean result = super.hurt(source, amount);
 +            if (!this.level().isClientSide && result) {
 +                // CraftBukkit end
                  this.setOrderedToSit(false);

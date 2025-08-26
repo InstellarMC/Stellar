@@ -24,6 +24,32 @@
      }
  
      public Axolotl.Variant getVariant() {
+@@ -310,20 +_,20 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_149115_, float p_149116_) {
++    public boolean hurt(DamageSource source, float amount) {
+         float f = this.getHealth();
+         if (!this.level().isClientSide
+             && !this.isNoAi()
+             && this.level().random.nextInt(3) == 0
+-            && ((float)this.level().random.nextInt(3) < p_149116_ || f / this.getMaxHealth() < 0.5F)
+-            && p_149116_ < f
++            && ((float)this.level().random.nextInt(3) < amount || f / this.getMaxHealth() < 0.5F)
++            && amount < f
+             && this.isInWater()
+-            && (p_149115_.getEntity() != null || p_149115_.getDirectEntity() != null)
++            && (source.getEntity() != null || source.getDirectEntity() != null)
+             && !this.isPlayingDead()) {
+             this.brain.setMemory(MemoryModuleType.PLAY_DEAD_TICKS, 200);
+         }
+ 
+-        return super.hurt(p_149115_, p_149116_);
++        return super.hurt(source, amount);
+     }
+ 
+     @Override
 @@ -404,7 +_,7 @@
          if (mobeffectinstance == null || mobeffectinstance.endsWithin(2399)) {
              int i = mobeffectinstance != null ? mobeffectinstance.getDuration() : 0;

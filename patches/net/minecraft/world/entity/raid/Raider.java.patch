@@ -9,6 +9,21 @@
              this.getCurrentRaid().setLeader(this.getWave(), this);
              this.setPatrolLeader(true);
          } else {
+@@ -249,12 +_,12 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_37849_, float p_37850_) {
++    public boolean hurt(DamageSource source, float amount) {
+         if (this.hasActiveRaid()) {
+             this.getCurrentRaid().updateBossbar();
+         }
+ 
+-        return super.hurt(p_37849_, p_37850_);
++        return super.hurt(source, amount);
+     }
+ 
+     @Nullable
 @@ -295,6 +_,7 @@
              for (Raider raider : this.mob
                  .level()

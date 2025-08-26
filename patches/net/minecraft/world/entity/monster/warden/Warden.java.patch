@@ -25,3 +25,22 @@
              WardenAi.setDigCooldown(this);
              boolean flag = !(this.getTarget() instanceof Player);
              int i = this.angerManagement.increaseAnger(p_219388_, p_219389_);
+@@ -511,14 +_,14 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_219381_, float p_219382_) {
+-        boolean flag = super.hurt(p_219381_, p_219382_);
++    public boolean hurt(DamageSource source, float amount) {
++        boolean flag = super.hurt(source, amount);
+         if (!this.level().isClientSide && !this.isNoAi() && !this.isDiggingOrEmerging()) {
+-            Entity entity = p_219381_.getEntity();
++            Entity entity = source.getEntity();
+             this.increaseAngerAt(entity, AngerLevel.ANGRY.getMinimumAnger() + 20, false);
+             if (this.brain.getMemory(MemoryModuleType.ATTACK_TARGET).isEmpty()
+                 && entity instanceof LivingEntity livingentity
+-                && (p_219381_.isDirect() || this.closerThan(livingentity, 5.0))) {
++                && (source.isDirect() || this.closerThan(livingentity, 5.0))) {
+                 this.setAttackTarget(livingentity);
+             }
+         }

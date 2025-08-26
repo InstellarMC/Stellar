@@ -8,6 +8,18 @@
      }
  
      public boolean isDashing() {
+@@ -451,9 +_,9 @@
+     }
+ 
+     @Override
+-    protected void actuallyHurt(DamageSource p_250410_, float p_251451_) {
++    protected void actuallyHurt(DamageSource source, float amount) {
+         this.standUpInstantly();
+-        super.actuallyHurt(p_250410_, p_251451_);
++        super.actuallyHurt(source, amount);
+     }
+ 
+     @Override
 @@ -556,7 +_,7 @@
      }
  

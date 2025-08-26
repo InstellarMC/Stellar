@@ -36,6 +36,21 @@
              this.onItemPickup(p_29121_);
              ItemStack itemstack = p_29121_.getItem();
              this.setItemSlot(EquipmentSlot.MAINHAND, itemstack);
+@@ -559,12 +_,12 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_29097_, float p_29098_) {
++    public boolean hurt(DamageSource source, float amount) {
+         if (!this.level().isClientSide) {
+             this.sit(false);
+         }
+ 
+-        return super.hurt(p_29097_, p_29098_);
++        return super.hurt(source, amount);
+     }
+ 
+     @Nullable
 @@ -883,6 +_,7 @@
          @Override
          protected void alertOther(Mob p_29295_, LivingEntity p_29296_) {

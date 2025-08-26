@@ -15,25 +15,20 @@
  
      protected Animal(EntityType<? extends Animal> p_27557_, Level p_27558_) {
          super(p_27557_, p_27558_);
-@@ -68,10 +_,20 @@
-         }
+@@ -69,9 +_,15 @@
      }
  
-+    // CraftBukkit start
-+    public boolean actuallyHurt(DamageSource damagesource, float f, org.bukkit.event.entity.EntityDamageEvent event) {
-+        this.entityDamageEvent = event;
-+        return super.actuallyHurtCB(damagesource, f);
-+    }
-+
      @Override
 -    protected void actuallyHurt(DamageSource p_341676_, float p_341648_) {
-+    protected void actuallyHurt(DamageSource damagesource, float f) {
-+        boolean damageResult = super.actuallyHurtCB(damagesource, f);
++    // CraftBukkit start - void -> boolean
++    public boolean actuallyHurt(DamageSource source, float amount, org.bukkit.event.entity.EntityDamageEvent event) {
++        boolean damageResult = super.actuallyHurt(source, amount, event);
 +        if (!damageResult) {
-+            return;
++            return false;
 +        }
          this.resetLove();
 -        super.actuallyHurt(p_341676_, p_341648_);
++        return true;
 +        // CraftBukkit end
      }
  

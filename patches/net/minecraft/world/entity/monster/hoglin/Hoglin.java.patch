@@ -1,5 +1,23 @@
 --- a/net/minecraft/world/entity/monster/hoglin/Hoglin.java
 +++ b/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+@@ -125,13 +_,13 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_34503_, float p_34504_) {
+-        boolean flag = super.hurt(p_34503_, p_34504_);
++    public boolean hurt(DamageSource source, float amount) {
++        boolean flag = super.hurt(source, amount);
+         if (this.level().isClientSide) {
+             return false;
+         } else {
+-            if (flag && p_34503_.getEntity() instanceof LivingEntity) {
+-                HoglinAi.wasHurtBy(this, (LivingEntity)p_34503_.getEntity());
++            if (flag && source.getEntity() instanceof LivingEntity) {
++                HoglinAi.wasHurtBy(this, (LivingEntity)source.getEntity());
+             }
+ 
+             return flag;
 @@ -161,7 +_,7 @@
          HoglinAi.updateActivity(this);
          if (this.isConverting()) {

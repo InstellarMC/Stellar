@@ -8,6 +8,26 @@
  
  public class Silverfish extends Monster {
      @Nullable
+@@ -80,15 +_,15 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_33527_, float p_33528_) {
+-        if (this.isInvulnerableTo(p_33527_)) {
++    public boolean hurt(DamageSource source, float amount) {
++        if (this.isInvulnerableTo(source)) {
+             return false;
+         } else {
+-            if ((p_33527_.getEntity() != null || p_33527_.is(DamageTypeTags.ALWAYS_TRIGGERS_SILVERFISH)) && this.friendsGoal != null) {
++            if ((source.getEntity() != null || source.is(DamageTypeTags.ALWAYS_TRIGGERS_SILVERFISH)) && this.friendsGoal != null) {
+                 this.friendsGoal.notifyHurt();
+             }
+ 
+-            return super.hurt(p_33527_, p_33528_);
++            return super.hurt(source, amount);
+         }
+     }
+ 
 @@ -116,7 +_,7 @@
              Player player = p_219078_.getNearestPlayer(
                  (double)p_219080_.getX() + 0.5, (double)p_219080_.getY() + 0.5, (double)p_219080_.getZ() + 0.5, 5.0, true

@@ -136,7 +136,7 @@
          this.convertToZombieType(EntityType.DROWNED);
          if (!this.isSilent()) {
              this.level().levelEvent(null, 1040, this.blockPosition(), 0);
-@@ -266,16 +_,28 @@
+@@ -266,28 +_,40 @@
      }
  
      protected void convertToZombieType(EntityType<? extends Zombie> p_34311_) {
@@ -168,7 +168,23 @@
 +    // Paper end - Add more Zombie API
  
      @Override
-     public boolean hurt(DamageSource p_34288_, float p_34289_) {
+-    public boolean hurt(DamageSource p_34288_, float p_34289_) {
+-        if (!super.hurt(p_34288_, p_34289_)) {
++    public boolean hurt(DamageSource source, float amount) {
++        if (!super.hurt(source, amount)) {
+             return false;
+         } else if (!(this.level() instanceof ServerLevel)) {
+             return false;
+         } else {
+             ServerLevel serverlevel = (ServerLevel)this.level();
+             LivingEntity livingentity = this.getTarget();
+-            if (livingentity == null && p_34288_.getEntity() instanceof LivingEntity) {
+-                livingentity = (LivingEntity)p_34288_.getEntity();
++            if (livingentity == null && source.getEntity() instanceof LivingEntity) {
++                livingentity = (LivingEntity)source.getEntity();
+             }
+ 
+             if (livingentity != null
 @@ -308,13 +_,14 @@
                      if (SpawnPlacements.isSpawnPositionOk(entitytype, this.level(), blockpos)
                          && SpawnPlacements.checkSpawnRules(entitytype, serverlevel, MobSpawnType.REINFORCEMENT, blockpos, this.level().random)) {

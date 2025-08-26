@@ -148,6 +148,46 @@
      public static boolean canDestroy(BlockState p_31492_) {
          return !p_31492_.isAir() && !p_31492_.is(BlockTags.WITHER_IMMUNE);
      }
+@@ -452,22 +_,22 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_31461_, float p_31462_) {
+-        if (this.isInvulnerableTo(p_31461_)) {
+-            return false;
+-        } else if (p_31461_.is(DamageTypeTags.WITHER_IMMUNE_TO) || p_31461_.getEntity() instanceof WitherBoss) {
+-            return false;
+-        } else if (this.getInvulnerableTicks() > 0 && !p_31461_.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
++    public boolean hurt(DamageSource source, float amount) {
++        if (this.isInvulnerableTo(source)) {
++            return false;
++        } else if (source.is(DamageTypeTags.WITHER_IMMUNE_TO) || source.getEntity() instanceof WitherBoss) {
++            return false;
++        } else if (this.getInvulnerableTicks() > 0 && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+             return false;
+         } else {
+             if (this.isPowered()) {
+-                Entity entity = p_31461_.getDirectEntity();
++                Entity entity = source.getDirectEntity();
+                 if (entity instanceof AbstractArrow || entity instanceof WindCharge) {
+                     return false;
+                 }
+             }
+ 
+-            Entity entity1 = p_31461_.getEntity();
++            Entity entity1 = source.getEntity();
+             if (entity1 != null && entity1.getType().is(EntityTypeTags.WITHER_FRIENDS)) {
+                 return false;
+             } else {
+@@ -479,7 +_,7 @@
+                     this.idleHeadUpdates[i] = this.idleHeadUpdates[i] + 3;
+                 }
+ 
+-                return super.hurt(p_31461_, p_31462_);
++                return super.hurt(source, amount);
+             }
+         }
+     }
 @@ -495,8 +_,9 @@
  
      @Override

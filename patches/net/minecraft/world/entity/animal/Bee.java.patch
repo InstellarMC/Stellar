@@ -80,13 +80,19 @@
          this.setFlag(2, p_27930_);
      }
  
-@@ -627,20 +_,33 @@
-         if (this.isInvulnerableTo(p_27762_)) {
+@@ -623,24 +_,37 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_27762_, float p_27763_) {
+-        if (this.isInvulnerableTo(p_27762_)) {
++    public boolean hurt(DamageSource source, float amount) {
++        if (this.isInvulnerableTo(source)) {
              return false;
          } else {
 -            if (!this.level().isClientSide) {
 +            // CraftBukkit start - Only stop pollinating if entity was damaged
-+            boolean result = super.hurt(p_27762_, p_27763_);
++            boolean result = super.hurt(source, amount);
 +            if (result && !this.level().isClientSide) {
 +                // CraftBukkit end
                  this.beePollinateGoal.stopPollinating();

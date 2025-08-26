@@ -182,6 +182,17 @@
          if (flag1) {
              BlockPos blockpos1 = new BlockPos(i + this.random.nextInt(l - i + 1), j + this.random.nextInt(i1 - j + 1), k + this.random.nextInt(j1 - k + 1));
              this.level().levelEvent(2008, blockpos1, 0);
+@@ -528,8 +_,8 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_31113_, float p_31114_) {
+-        return !this.level().isClientSide ? this.hurt(this.body, p_31113_, p_31114_) : false;
++    public boolean hurt(DamageSource source, float amount) {
++        return !this.level().isClientSide ? this.hurt(this.body, source, amount) : false;
+     }
+ 
+     protected boolean reallyHurt(DamageSource p_31162_, float p_31163_) {
 @@ -538,7 +_,7 @@
  
      @Override

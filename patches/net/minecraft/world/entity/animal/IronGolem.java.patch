@@ -46,6 +46,18 @@
          this.readPersistentAngerSaveData(this.level(), p_28857_);
      }
  
+@@ -205,9 +_,9 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_28848_, float p_28849_) {
++    public boolean hurt(DamageSource source, float amount) {
+         Crackiness.Level crackiness$level = this.getCrackiness();
+-        boolean flag = super.hurt(p_28848_, p_28849_);
++        boolean flag = super.hurt(source, amount);
+         if (flag && this.getCrackiness() != crackiness$level) {
+             this.playSound(SoundEvents.IRON_GOLEM_DAMAGE, 1.0F, 1.0F);
+         }
 @@ -308,7 +_,7 @@
          BlockPos blockpos = this.blockPosition();
          BlockPos blockpos1 = blockpos.below();

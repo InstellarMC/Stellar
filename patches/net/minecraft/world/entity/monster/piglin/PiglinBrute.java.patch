@@ -1,0 +1,20 @@
+--- a/net/minecraft/world/entity/monster/piglin/PiglinBrute.java
++++ b/net/minecraft/world/entity/monster/piglin/PiglinBrute.java
+@@ -120,13 +_,13 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_35055_, float p_35056_) {
+-        boolean flag = super.hurt(p_35055_, p_35056_);
++    public boolean hurt(DamageSource source, float amount) {
++        boolean flag = super.hurt(source, amount);
+         if (this.level().isClientSide) {
+             return false;
+         } else {
+-            if (flag && p_35055_.getEntity() instanceof LivingEntity) {
+-                PiglinBruteAi.wasHurtBy(this, (LivingEntity)p_35055_.getEntity());
++            if (flag && source.getEntity() instanceof LivingEntity) {
++                PiglinBruteAi.wasHurtBy(this, (LivingEntity)source.getEntity());
+             }
+ 
+             return flag;

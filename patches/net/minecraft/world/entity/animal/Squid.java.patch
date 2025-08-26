@@ -9,3 +9,14 @@
          this.tentacleSpeed = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
      }
  
+@@ -159,8 +_,8 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_29963_, float p_29964_) {
+-        if (super.hurt(p_29963_, p_29964_) && this.getLastHurtByMob() != null) {
++    public boolean hurt(DamageSource source, float amount) {
++        if (super.hurt(source, amount) && this.getLastHurtByMob() != null) {
+             if (!this.level().isClientSide) {
+                 this.spawnInk();
+             }

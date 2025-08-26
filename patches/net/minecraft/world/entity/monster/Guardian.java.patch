@@ -17,3 +17,31 @@
          this.goalSelector.addGoal(5, movetowardsrestrictiongoal);
          this.goalSelector.addGoal(7, this.randomStrollGoal);
          this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
+@@ -318,14 +_,14 @@
+     }
+ 
+     @Override
+-    public boolean hurt(DamageSource p_32820_, float p_32821_) {
++    public boolean hurt(DamageSource source, float amount) {
+         if (this.level().isClientSide) {
+             return false;
+         } else {
+             if (!this.isMoving()
+-                && !p_32820_.is(DamageTypeTags.AVOIDS_GUARDIAN_THORNS)
+-                && !p_32820_.is(DamageTypes.THORNS)
+-                && p_32820_.getDirectEntity() instanceof LivingEntity livingentity) {
++                && !source.is(DamageTypeTags.AVOIDS_GUARDIAN_THORNS)
++                && !source.is(DamageTypes.THORNS)
++                && source.getDirectEntity() instanceof LivingEntity livingentity) {
+                 livingentity.hurt(this.damageSources().thorns(this), 2.0F);
+             }
+ 
+@@ -333,7 +_,7 @@
+                 this.randomStrollGoal.trigger();
+             }
+ 
+-            return super.hurt(p_32820_, p_32821_);
++            return super.hurt(source, amount);
+         }
+     }
+ 
