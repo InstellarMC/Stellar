@@ -41,3 +41,17 @@
          return this.container.stillValid(p_307229_);
      }
  
+@@ -129,11 +_,11 @@
+     }
+ 
+     @Override
+-    public void slotChanged(AbstractContainerMenu p_307332_, int p_307437_, ItemStack p_307233_) {
++    public void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack stack) {
+         this.refreshRecipeResult();
+     }
+ 
+     @Override
+-    public void dataChanged(AbstractContainerMenu p_307424_, int p_307646_, int p_307221_) {
++    public void dataChanged(AbstractContainerMenu handler, int property, int value) {
+     }
+ }

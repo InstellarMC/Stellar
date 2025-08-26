@@ -1,0 +1,15 @@
+--- a/net/minecraft/client/gui/screens/inventory/SmithingScreen.java
++++ b/net/minecraft/client/gui/screens/inventory/SmithingScreen.java
+@@ -105,9 +_,9 @@
+     }
+ 
+     @Override
+-    public void slotChanged(AbstractContainerMenu p_267217_, int p_266842_, ItemStack p_267208_) {
+-        if (p_266842_ == 3) {
+-            this.updateArmorStandPreview(p_267208_);
++    public void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack stack) {
++        if (slotId == 3) {
++            this.updateArmorStandPreview(stack);
+         }
+     }
+ 

@@ -151,7 +151,7 @@
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -221,11 +_,11 @@
+@@ -221,53 +_,84 @@
      private boolean textFilteringEnabled;
      private boolean allowsListing;
      private boolean spawnExtraParticlesOnFall;
@@ -163,9 +163,52 @@
 -    private final ContainerSynchronizer containerSynchronizer = new ContainerSynchronizer() {
 +    public final ContainerSynchronizer containerSynchronizer = new ContainerSynchronizer() {
          @Override
-         public void sendInitialData(AbstractContainerMenu p_143448_, NonNullList<ItemStack> p_143449_, ItemStack p_143450_, int[] p_143451_) {
+-        public void sendInitialData(AbstractContainerMenu p_143448_, NonNullList<ItemStack> p_143449_, ItemStack p_143450_, int[] p_143451_) {
++        public void sendInitialData(AbstractContainerMenu handler, NonNullList<ItemStack> stacks, ItemStack cursorStack, int[] properties) {
              ServerPlayer.this.connection
-@@ -252,6 +_,10 @@
+-                .send(new ClientboundContainerSetContentPacket(p_143448_.containerId, p_143448_.incrementStateId(), p_143449_, p_143450_));
++                .send(new ClientboundContainerSetContentPacket(handler.containerId, handler.incrementStateId(), stacks, cursorStack));
+ 
+-            for (int i = 0; i < p_143451_.length; i++) {
+-                this.broadcastDataValue(p_143448_, i, p_143451_[i]);
++            for (int i = 0; i < properties.length; i++) {
++                this.broadcastDataValue(handler, i, properties[i]);
+             }
+         }
+ 
+-        @Override
+-        public void sendSlotChange(AbstractContainerMenu p_143441_, int p_143442_, ItemStack p_143443_) {
+-            ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(p_143441_.containerId, p_143441_.incrementStateId(), p_143442_, p_143443_));
+-        }
+-
+-        @Override
+-        public void sendCarriedChange(AbstractContainerMenu p_143445_, ItemStack p_143446_) {
+-            ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(-1, p_143445_.incrementStateId(), -1, p_143446_));
+-        }
+-
+-        @Override
+-        public void sendDataChange(AbstractContainerMenu p_143437_, int p_143438_, int p_143439_) {
+-            this.broadcastDataValue(p_143437_, p_143438_, p_143439_);
++        // Paper start - Sync offhand slot in menus
++        @Override
++        public void sendOffHandSlotChange() {
++            ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(ServerPlayer.this.inventoryMenu.containerId, ServerPlayer.this.inventoryMenu.incrementStateId(), net.minecraft.world.inventory.InventoryMenu.SHIELD_SLOT, ServerPlayer.this.inventoryMenu.getSlot(net.minecraft.world.inventory.InventoryMenu.SHIELD_SLOT).getItem().copy()));
++        }
++        // Paper end - Sync offhand slot in menus
++
++        @Override
++        public void sendSlotChange(AbstractContainerMenu handler, int slot, ItemStack stack) {
++            ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(handler.containerId, handler.incrementStateId(), slot, stack));
++        }
++
++        @Override
++        public void sendCarriedChange(AbstractContainerMenu handler, ItemStack stack) {
++            ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(-1, handler.incrementStateId(), -1, stack));
++        }
++
++        @Override
++        public void sendDataChange(AbstractContainerMenu handler, int property, int value) {
++            this.broadcastDataValue(handler, property, value);
          }
  
          private void broadcastDataValue(AbstractContainerMenu p_143455_, int p_143456_, int p_143457_) {
@@ -176,10 +219,28 @@
              ServerPlayer.this.connection.send(new ClientboundContainerSetDataPacket(p_143455_.containerId, p_143456_, p_143457_));
          }
      };
-@@ -266,6 +_,26 @@
-             }
-         }
- 
+     private final ContainerListener containerListener = new ContainerListener() {
+         @Override
+-        public void slotChanged(AbstractContainerMenu p_143466_, int p_143467_, ItemStack p_143468_) {
+-            Slot slot = p_143466_.getSlot(p_143467_);
+-            if (!(slot instanceof ResultSlot)) {
+-                if (slot.container == ServerPlayer.this.getInventory()) {
+-                    CriteriaTriggers.INVENTORY_CHANGED.trigger(ServerPlayer.this, ServerPlayer.this.getInventory(), p_143468_);
+-                }
+-            }
+-        }
+-
+-        @Override
+-        public void dataChanged(AbstractContainerMenu p_143462_, int p_143463_, int p_143464_) {
++        public void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack stack) {
++            Slot slot = handler.getSlot(slotId);
++            if (!(slot instanceof ResultSlot)) {
++                if (slot.container == ServerPlayer.this.getInventory()) {
++                    CriteriaTriggers.INVENTORY_CHANGED.trigger(ServerPlayer.this, ServerPlayer.this.getInventory(), stack);
++                }
++            }
++        }
++
 +        // Paper start - Add PlayerInventorySlotChangeEvent
 +        @Override
 +        public void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack oldStack, ItemStack stack) {
@@ -200,9 +261,11 @@
 +        }
 +        // Paper end - Add PlayerInventorySlotChangeEvent
 +
-         @Override
-         public void dataChanged(AbstractContainerMenu p_143462_, int p_143463_, int p_143464_) {
++        @Override
++        public void dataChanged(AbstractContainerMenu handler, int property, int value) {
          }
+     };
+     @Nullable
 @@ -276,6 +_,63 @@
      public final Object object;
      private int containerCounter;

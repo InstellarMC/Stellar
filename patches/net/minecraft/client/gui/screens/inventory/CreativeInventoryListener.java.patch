@@ -1,0 +1,17 @@
+--- a/net/minecraft/client/gui/screens/inventory/CreativeInventoryListener.java
++++ b/net/minecraft/client/gui/screens/inventory/CreativeInventoryListener.java
+@@ -16,11 +_,11 @@
+     }
+ 
+     @Override
+-    public void slotChanged(AbstractContainerMenu p_98498_, int p_98499_, ItemStack p_98500_) {
+-        this.minecraft.gameMode.handleCreativeModeItemAdd(p_98500_, p_98499_);
++    public void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack stack) {
++        this.minecraft.gameMode.handleCreativeModeItemAdd(stack, slotId);
+     }
+ 
+     @Override
+-    public void dataChanged(AbstractContainerMenu p_169732_, int p_169733_, int p_169734_) {
++    public void dataChanged(AbstractContainerMenu handler, int property, int value) {
+     }
+ }
