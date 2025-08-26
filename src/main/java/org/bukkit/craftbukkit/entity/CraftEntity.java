@@ -974,7 +974,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public String getAsString() {
         CompoundTag tag = new CompoundTag();
-        if (!this.getHandle().saveAsPassengerCB(tag, false)) {
+        if (!this.getHandle().saveAsPassenger(tag, false)) {
             return null;
         }
 
@@ -1007,7 +1007,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     private Entity copy(Level level) {
         CompoundTag compoundTag = new CompoundTag();
-        this.getHandle().saveAsPassengerCB(compoundTag, false);
+        this.getHandle().saveAsPassenger(compoundTag, false);
 
         return net.minecraft.world.entity.EntityType.loadEntityRecursive(compoundTag, level, java.util.function.Function.identity());
     }
