@@ -40,17 +40,11 @@
  import net.minecraft.world.level.block.HoneyBlock;
  import net.minecraft.world.level.block.Mirror;
  import net.minecraft.world.level.block.Portal;
-@@ -126,9 +_,31 @@
+@@ -126,9 +_,25 @@
  import net.minecraft.world.scores.PlayerTeam;
  import net.minecraft.world.scores.ScoreHolder;
  import net.minecraft.world.scores.Team;
-+import org.bukkit.Bukkit;
-+import org.bukkit.Location;
 +import org.bukkit.command.CommandSender;
-+import org.bukkit.craftbukkit.CraftServer;
-+import org.bukkit.craftbukkit.CraftWorld;
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.craftbukkit.entity.CraftEntity;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.event.CraftPortalEvent;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -112,14 +106,14 @@
 +        return tag.contains("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
 +    }
 +
-+    private CraftEntity bukkitEntity;
++    private org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity;
 +
-+    public CraftEntity getBukkitEntity() {
++    public org.bukkit.craftbukkit.entity.CraftEntity getBukkitEntity() {
 +        if (this.bukkitEntity == null) {
 +            // Paper start - Folia schedulers
 +            synchronized (this) {
 +                if (this.bukkitEntity == null) {
-+                    return this.bukkitEntity = CraftEntity.getEntity(this.level.getCraftServer(), this);
++                    return this.bukkitEntity = org.bukkit.craftbukkit.entity.CraftEntity.getEntity(this.level.getCraftServer(), this);
 +                }
 +            }
 +            // Paper end - Folia schedulers
@@ -128,12 +122,12 @@
 +    }
 +
 +    // Paper start
-+    public CraftEntity getBukkitEntityRaw() {
++    public org.bukkit.craftbukkit.entity.CraftEntity getBukkitEntityRaw() {
 +        return this.bukkitEntity;
 +    }
 +    // Paper end
 +
-+    public void setBukkitEntity(CraftEntity bukkitEntity) {
++    public void setBukkitEntity(org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity) {
 +        this.bukkitEntity = bukkitEntity;
 +    }
 +
@@ -195,7 +189,7 @@
 +    public boolean fixedPose = false; // Paper - Expand Pose API
 +    public @Nullable Boolean immuneToFire = null; // Purpur - Fire immune API
 +
-+    public void setOrigin(@javax.annotation.Nonnull Location location) {
++    public void setOrigin(@javax.annotation.Nonnull org.bukkit.Location location) {
 +        this.origin = location.toVector();
 +        this.originWorld = location.getWorld().getUID();
 +    }
@@ -437,9 +431,9 @@
 +    // CraftBukkit end
 +
 +    // CraftBukkit start
-+    public CraftPortalEvent callPortalEvent(Entity entity, Location exit, PlayerTeleportEvent.TeleportCause cause, int searchRadius, int creationRadius) {
++    public CraftPortalEvent callPortalEvent(Entity entity, org.bukkit.Location exit, PlayerTeleportEvent.TeleportCause cause, int searchRadius, int creationRadius) {
 +        org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
-+        Location enter = bukkitEntity.getLocation();
++        org.bukkit.Location enter = bukkitEntity.getLocation();
 +
 +        // Paper start
 +        final org.bukkit.PortalType portalType = switch (cause) {
@@ -589,7 +583,7 @@
 +            // CraftBukkit start - Fallen in lava TODO: this event spams!
 +            if (this instanceof LivingEntity && remainingFireTicks <= 0) {
 +                // not on fire yet
-+                org.bukkit.block.Block damager = (lastLavaContact == null) ? null : CraftBlock.at(level, lastLavaContact);
++                org.bukkit.block.Block damager = (lastLavaContact == null) ? null : org.bukkit.craftbukkit.block.CraftBlock.at(level, lastLavaContact);
 +                org.bukkit.entity.Entity damagee = this.getBukkitEntity();
 +                org.bukkit.event.entity.EntityCombustEvent combustEvent = new org.bukkit.event.entity.EntityCombustByBlockEvent(damager, damagee, 15);
 +                this.level.getCraftServer().getPluginManager().callEvent(combustEvent);
@@ -1924,7 +1918,7 @@
 +            // Paper end - Call EntityDropItemEvent
 +            // CraftBukkit start
 +            EntityDropItemEvent event = new EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
-+            Bukkit.getPluginManager().callEvent(event);
++            org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +            if (event.isCancelled()) {
 +                return null;
 +            }
@@ -2189,7 +2183,7 @@
 +                    VehicleEnterEvent event = new VehicleEnterEvent((Vehicle) entity.getBukkitEntity(), this.getBukkitEntity());
 +                    // Suppress during worldgen
 +                    if (this.valid) {
-+                        Bukkit.getPluginManager().callEvent(event);
++                        org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +                    }
 +                    if (event.isCancelled()) {
 +                        return false;
@@ -2199,7 +2193,7 @@
 +                EntityMountEvent event = new EntityMountEvent(this.getBukkitEntity(), entity.getBukkitEntity());
 +                // Suppress during worldgen
 +                if (this.valid) {
-+                    Bukkit.getPluginManager().callEvent(event);
++                    org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +                }
 +                if (event.isCancelled()) {
 +                    return false;
@@ -2311,7 +2305,7 @@
          } else {
 -            if (this.passengers.size() == 1 && this.passengers.get(0) == p_20352_) {
 +            // CraftBukkit start
-+            CraftEntity craft = (CraftEntity) entity.getBukkitEntity().getVehicle();
++            org.bukkit.craftbukkit.entity.CraftEntity craft = (org.bukkit.craftbukkit.entity.CraftEntity) entity.getBukkitEntity().getVehicle();
 +            Entity orig = craft == null ? null : craft.getHandle();
 +            if (this.getBukkitEntity() instanceof Vehicle && entity.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity) {
 +                VehicleExitEvent event = new VehicleExitEvent(
@@ -2320,9 +2314,9 @@
 +                );
 +                // Suppress during worldgen
 +                if (this.valid) {
-+                    Bukkit.getPluginManager().callEvent(event);
++                    org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +                }
-+                CraftEntity craftn = (CraftEntity) entity.getBukkitEntity().getVehicle();
++                org.bukkit.craftbukkit.entity.CraftEntity craftn = (org.bukkit.craftbukkit.entity.CraftEntity) entity.getBukkitEntity().getVehicle();
 +                Entity n = craftn == null ? null : craftn.getHandle();
 +                if (event.isCancelled() || n != orig) {
 +                    return;
@@ -2332,7 +2326,7 @@
 +            EntityDismountEvent event = new EntityDismountEvent(entity.getBukkitEntity(), this.getBukkitEntity(), !suppressCancellation); // Paper - Force entity dismount during teleportation
 +            // Suppress during worldgen
 +            if (this.valid) {
-+                Bukkit.getPluginManager().callEvent(event);
++                org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +            }
 +            if (event.isCancelled()) {
 +                return;
@@ -2903,7 +2897,7 @@
 +
 +    public void restoreFrom(Entity original) {
 +        // Paper start - Forward CraftEntity in teleport command
-+        CraftEntity bukkitEntity = original.bukkitEntity;
++        org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity = original.bukkitEntity;
 +        if (bukkitEntity != null) {
 +            bukkitEntity.setHandle(this);
 +            this.bukkitEntity = bukkitEntity;
@@ -2932,7 +2926,7 @@
          if (this.level() instanceof ServerLevel serverlevel && !this.isRemoved()) {
 -            ServerLevel serverlevel1 = p_350951_.newLevel();
 +            // CraftBukkit start
-+            Location to = new Location(teleportTarget.newLevel().getWorld(), teleportTarget.pos().x, teleportTarget.pos().y, teleportTarget.pos().z, teleportTarget.yRot(), this.getXRot()); // Paper - use getXRot (doesn't respect DimensionTransition pitch)
++            org.bukkit.Location to = new org.bukkit.Location(teleportTarget.newLevel().getWorld(), teleportTarget.pos().x, teleportTarget.pos().y, teleportTarget.pos().z, teleportTarget.yRot(), this.getXRot()); // Paper - use getXRot (doesn't respect DimensionTransition pitch)
 +            // Paper start - gateway-specific teleport event
 +            final EntityTeleportEvent teleEvent;
 +            if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) net.minecraft.world.level.block.Blocks.END_GATEWAY)) && this.level.getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
@@ -2948,7 +2942,7 @@
 +            to = teleEvent.getTo();
 +            // Paper start - Call EntityPortalExitEvent
 +            if (this.portalProcess != null) { // if in a portal
-+                CraftEntity bukkitEntity = this.getBukkitEntity();
++                org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity = this.getBukkitEntity();
 +                Vec3 velocity = teleportTarget.speed();
 +                org.bukkit.event.entity.EntityPortalExitEvent event = new org.bukkit.event.entity.EntityPortalExitEvent(
 +                    bukkitEntity,
@@ -2961,7 +2955,7 @@
 +                    to = event.getTo().clone();
 +                    velocity = org.bukkit.craftbukkit.util.CraftVector.toNMS(event.getAfter());
 +                }
-+                teleportTarget = new DimensionTransition(((CraftWorld) to.getWorld()).getHandle(), CraftLocation.toVec3D(to), velocity, to.getYaw(), to.getPitch(), teleportTarget.missingRespawnBlock(), teleportTarget.postDimensionTransition(), teleportTarget.cause());
++                teleportTarget = new DimensionTransition(((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle(), CraftLocation.toVec3D(to), velocity, to.getYaw(), to.getPitch(), teleportTarget.missingRespawnBlock(), teleportTarget.postDimensionTransition(), teleportTarget.cause());
 +            }
 +            if (this.isRemoved()) {
 +                return null;
@@ -3014,7 +3008,7 @@
              }
  
              serverlevel.getProfiler().pop();
-@@ -2587,25 +_,51 @@
+@@ -2587,38 +_,64 @@
          return null;
      }
  
@@ -3039,6 +3033,10 @@
 -
 -    public boolean canUsePortal(boolean p_352898_) {
 -        return (p_352898_ || !this.isPassenger()) && this.isAlive();
+-    }
+-
+-    public boolean canChangeDimensions(Level p_352904_, Level p_352909_) {
+-        return true;
 +        this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION, null); // CraftBukkit - add Bukkit remove cause
 +        if (this instanceof Leashable leashable && leashable.isLeashed()) { // Paper - only call if it is leashed
 +            // Paper start - Expand EntityUnleashEvent
@@ -3054,9 +3052,9 @@
 +    }
 +
 +    // CraftBukkit start
-+    public CraftPortalEvent callPortalEvent(Entity entity, Location exit, PlayerTeleportEvent.TeleportCause cause, int searchRadius, int creationRadius) {
++    public CraftPortalEvent callPortalEvent(Entity entity, org.bukkit.Location exit, PlayerTeleportEvent.TeleportCause cause, int searchRadius, int creationRadius) {
 +        org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
-+        Location enter = bukkitEntity.getLocation();
++        org.bukkit.Location enter = bukkitEntity.getLocation();
 +
 +        // Paper start
 +        final org.bukkit.PortalType portalType = switch (cause) {
@@ -3077,9 +3075,36 @@
 +
 +    public boolean canUsePortal(boolean allowVehicles) {
 +        return (allowVehicles || !this.isPassenger()) && this.isAlive() && (this.level.purpurConfig.entitiesCanUsePortals || this instanceof ServerPlayer); // Purpur - Entities can use portals
++    }
++
++    public boolean canChangeDimensions(Level from, Level to) {
++        return this.isAlive() && this.valid; // Paper - Fix item duplication and teleport issues
      }
  
-     public boolean canChangeDimensions(Level p_352904_, Level p_352909_) {
+     public float getBlockExplosionResistance(
+-        Explosion p_19992_, BlockGetter p_19993_, BlockPos p_19994_, BlockState p_19995_, FluidState p_19996_, float p_19997_
++        Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, FluidState fluidState, float max
+     ) {
+-        return p_19997_;
++        return max;
+     }
+ 
+-    public boolean shouldBlockExplode(Explosion p_19987_, BlockGetter p_19988_, BlockPos p_19989_, BlockState p_19990_, float p_19991_) {
++    public boolean shouldBlockExplode(Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, float explosionPower) {
+         return true;
+     }
+ 
+@@ -2648,8 +_,8 @@
+         return this.isOnFire() && !this.isSpectator();
+     }
+ 
+-    public void setUUID(UUID p_20085_) {
+-        this.uuid = p_20085_;
++    public void setUUID(UUID uuid) {
++        this.uuid = uuid;
+         this.stringUUID = this.uuid.toString();
+     }
+ 
 @@ -2667,6 +_,7 @@
          return this.stringUUID;
      }
@@ -3088,70 +3113,259 @@
      public boolean isPushedByFluid() {
          return true;
      }
-@@ -2708,6 +_,12 @@
+@@ -2675,18 +_,18 @@
+         return viewScale;
+     }
+ 
+-    public static void setViewScale(double p_20104_) {
+-        viewScale = p_20104_;
++    public static void setViewScale(double value) {
++        viewScale = value;
+     }
+ 
+     @Override
+     public Component getDisplayName() {
+         return PlayerTeam.formatNameForTeam(this.getTeam(), this.getName())
+-            .withStyle(p_185975_ -> p_185975_.withHoverEvent(this.createHoverEvent()).withInsertion(this.getStringUUID()));
++            .withStyle(style -> style.withHoverEvent(this.createHoverEvent()).withInsertion(this.getStringUUID()));
+     }
+ 
+-    public void setCustomName(@Nullable Component p_20053_) {
+-        this.entityData.set(DATA_CUSTOM_NAME, Optional.ofNullable(p_20053_));
++    public void setCustomName(@Nullable Component name) {
++        this.entityData.set(DATA_CUSTOM_NAME, Optional.ofNullable(name));
+     }
+ 
+     @Nullable
+@@ -2700,60 +_,70 @@
+         return this.entityData.get(DATA_CUSTOM_NAME).isPresent();
+     }
+ 
+-    public void setCustomNameVisible(boolean p_20341_) {
+-        this.entityData.set(DATA_CUSTOM_NAME_VISIBLE, p_20341_);
++    public void setCustomNameVisible(boolean visible) {
++        this.entityData.set(DATA_CUSTOM_NAME_VISIBLE, visible);
+     }
+ 
+     public boolean isCustomNameVisible() {
          return this.entityData.get(DATA_CUSTOM_NAME_VISIBLE);
      }
  
+-    public boolean teleportTo(
+-        ServerLevel p_265257_, double p_265407_, double p_265727_, double p_265410_, Set<RelativeMovement> p_265083_, float p_265573_, float p_265094_
+-    ) {
+-        float f = Mth.clamp(p_265094_, -90.0F, 90.0F);
+-        if (p_265257_ == this.level()) {
+-            this.moveTo(p_265407_, p_265727_, p_265410_, p_265573_, f);
 +    // CraftBukkit start
 +    public boolean teleportTo(ServerLevel worldserver, double d0, double d1, double d2, Set<RelativeMovement> set, float f, float f1, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
 +        return this.teleportTo(worldserver, d0, d1, d2, set, f, f1);
 +    }
 +    // CraftBukkit end
 +
-     public boolean teleportTo(
-         ServerLevel p_265257_, double p_265407_, double p_265727_, double p_265410_, Set<RelativeMovement> p_265083_, float p_265573_, float p_265094_
-     ) {
-@@ -2727,7 +_,11 @@
-             entity.moveTo(p_265407_, p_265727_, p_265410_, p_265573_, f);
-             entity.setYHeadRot(p_265573_);
-             this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION);
++    public boolean teleportTo(ServerLevel world, double destX, double destY, double destZ, Set<RelativeMovement> flags, float yaw, float pitch) {
++        float f = Mth.clamp(pitch, -90.0F, 90.0F);
++
++        if (world == this.level()) {
++            this.moveTo(destX, destY, destZ, yaw, f);
+             this.teleportPassengers();
+-            this.setYHeadRot(p_265573_);
++            this.setYHeadRot(yaw);
+         } else {
+             this.unRide();
+-            Entity entity = this.getType().create(p_265257_);
++            Entity entity = this.getType().create(world);
++
+             if (entity == null) {
+                 return false;
+             }
+ 
+             entity.restoreFrom(this);
+-            entity.moveTo(p_265407_, p_265727_, p_265410_, p_265573_, f);
+-            entity.setYHeadRot(p_265573_);
+-            this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION);
 -            p_265257_.addDuringTeleport(entity);
++            entity.moveTo(destX, destY, destZ, yaw, f);
++            entity.setYHeadRot(yaw);
++            this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION, null); // CraftBukkit - add Bukkit remove cause
 +            // CraftBukkit start - Don't spawn the new entity if the current entity isn't spawned
 +            if (inWorld) {
-+                p_265257_.addDuringTeleport(entity);
++                world.addDuringTeleport(entity);
 +            }
 +            // CraftBukkit end
          }
  
          return true;
-@@ -2783,6 +_,8 @@
+     }
+ 
+-    public void dismountTo(double p_146825_, double p_146826_, double p_146827_) {
+-        this.teleportTo(p_146825_, p_146826_, p_146827_);
++    public void dismountTo(double destX, double destY, double destZ) {
++        this.teleportTo(destX, destY, destZ);
+     }
+ 
+-    public void teleportTo(double p_19887_, double p_19888_, double p_19889_) {
++    public void teleportTo(double destX, double destY, double destZ) {
+         if (this.level() instanceof ServerLevel) {
+-            this.moveTo(p_19887_, p_19888_, p_19889_, this.getYRot(), this.getXRot());
++            this.moveTo(destX, destY, destZ, this.getYRot(), this.getXRot());
+             this.teleportPassengers();
+         }
+     }
+ 
+     private void teleportPassengers() {
+-        this.getSelfAndPassengers().forEach(p_185977_ -> {
+-            for (Entity entity : p_185977_.passengers) {
+-                p_185977_.positionRider(entity, Entity::moveTo);
++        this.getSelfAndPassengers().forEach(entity -> {
++            for (Entity rider : entity.passengers) {
++                entity.positionRider(rider, Entity::moveTo);
+             }
+         });
+     }
+ 
+-    public void teleportRelative(double p_249341_, double p_252229_, double p_252038_) {
+-        this.teleportTo(this.getX() + p_249341_, this.getY() + p_252229_, this.getZ() + p_252038_);
++    public void teleportRelative(double offsetX, double offsetY, double offsetZ) {
++        this.teleportTo(this.getX() + offsetX, this.getY() + offsetY, this.getZ() + offsetZ);
+     }
+ 
+     public boolean shouldShowName() {
+@@ -2761,12 +_,12 @@
+     }
+ 
+     @Override
+-    public void onSyncedDataUpdated(List<SynchedEntityData.DataValue<?>> p_270372_) {
++    public void onSyncedDataUpdated(List<SynchedEntityData.DataValue<?>> entries) {
+     }
+ 
+     @Override
+-    public void onSyncedDataUpdated(EntityDataAccessor<?> p_20059_) {
+-        if (DATA_POSE.equals(p_20059_)) {
++    public void onSyncedDataUpdated(EntityDataAccessor<?> data) {
++        if (DATA_POSE.equals(data)) {
+             this.refreshDimensions();
+         }
+     }
+@@ -2775,6 +_,7 @@
+     protected void fixupDimensions() {
+         Pose pose = this.getPose();
+         EntityDimensions entitydimensions = this.getDimensions(pose);
++
+         this.dimensions = entitydimensions;
+         this.eyeHeight = entitydimensions.eyeHeight();
+     }
+@@ -2783,10 +_,14 @@
          EntityDimensions entitydimensions = this.dimensions;
          Pose pose = this.getPose();
          EntityDimensions entitydimensions1 = this.getDimensions(pose);
-+        net.neoforged.neoforge.event.entity.EntityEvent.Size sizeEvent = net.neoforged.neoforge.event.EventHooks.getEntitySizeForge(this, pose, entitydimensions, entitydimensions1);
++
++        net.neoforged.neoforge.event.entity.EntityEvent.Size sizeEvent = net.neoforged.neoforge.event.EventHooks.getEntitySizeForge(this, pose, entitydimensions, entitydimensions1); // Neo
 +        entitydimensions1 = sizeEvent.getNewSize();
          this.dimensions = entitydimensions1;
          this.eyeHeight = entitydimensions1.eyeHeight();
          this.reapplyPosition();
-@@ -2849,7 +_,26 @@
+         boolean flag = (double)entitydimensions1.width() <= 4.0 && (double)entitydimensions1.height() <= 4.0;
++
+         if (!this.level.isClientSide
+             && !this.firstTick
+             && !this.noPhysics
+@@ -2797,24 +_,26 @@
+         }
      }
  
-     public final void setBoundingBox(AABB p_20012_) {
+-    public boolean fudgePositionAfterSizeChange(EntityDimensions p_347526_) {
++    public boolean fudgePositionAfterSizeChange(EntityDimensions previous) {
+         EntityDimensions entitydimensions = this.getDimensions(this.getPose());
+-        Vec3 vec3 = this.position().add(0.0, (double)p_347526_.height() / 2.0, 0.0);
+-        double d0 = (double)Math.max(0.0F, entitydimensions.width() - p_347526_.width()) + 1.0E-6;
+-        double d1 = (double)Math.max(0.0F, entitydimensions.height() - p_347526_.height()) + 1.0E-6;
+-        VoxelShape voxelshape = Shapes.create(AABB.ofSize(vec3, d0, d1, d0));
++        Vec3 vec3d = this.position().add(0.0, (double)previous.height() / 2.0, 0.0);
++        double d0 = (double)Math.max(0.0F, entitydimensions.width() - previous.width()) + 1.0E-6;
++        double d1 = (double)Math.max(0.0F, entitydimensions.height() - previous.height()) + 1.0E-6;
++        VoxelShape voxelshape = Shapes.create(AABB.ofSize(vec3d, d0, d1, d0));
+         Optional<Vec3> optional = this.level
+-            .findFreePosition(this, voxelshape, vec3, (double)entitydimensions.width(), (double)entitydimensions.height(), (double)entitydimensions.width());
++            .findFreePosition(this, voxelshape, vec3d, (double)entitydimensions.width(), (double)entitydimensions.height(), (double)entitydimensions.width());
++
+         if (optional.isPresent()) {
+             this.setPos(optional.get().add(0.0, (double)(-entitydimensions.height()) / 2.0, 0.0));
+             return true;
+         } else {
+-            if (entitydimensions.width() > p_347526_.width() && entitydimensions.height() > p_347526_.height()) {
+-                VoxelShape voxelshape1 = Shapes.create(AABB.ofSize(vec3, d0, 1.0E-6, d0));
++            if (entitydimensions.width() > previous.width() && entitydimensions.height() > previous.height()) {
++                VoxelShape voxelshape1 = Shapes.create(AABB.ofSize(vec3d, d0, 1.0E-6, d0));
+                 Optional<Vec3> optional1 = this.level
+-                    .findFreePosition(this, voxelshape1, vec3, (double)entitydimensions.width(), (double)p_347526_.height(), (double)entitydimensions.width());
++                    .findFreePosition(this, voxelshape1, vec3d, (double)entitydimensions.width(), (double)previous.height(), (double)entitydimensions.width());
++
+                 if (optional1.isPresent()) {
+-                    this.setPos(optional1.get().add(0.0, (double)(-p_347526_.height()) / 2.0 + 1.0E-6, 0.0));
++                    this.setPos(optional1.get().add(0.0, (double)(-previous.height()) / 2.0 + 1.0E-6, 0.0));
+                     return true;
+                 }
+             }
+@@ -2835,7 +_,7 @@
+         return new HoverEvent(HoverEvent.Action.SHOW_ENTITY, new HoverEvent.EntityTooltipInfo(this.getType(), this.getUUID(), this.getName()));
+     }
+ 
+-    public boolean broadcastToPlayer(ServerPlayer p_19937_) {
++    public boolean broadcastToPlayer(ServerPlayer spectator) {
+         return true;
+     }
+ 
+@@ -2848,19 +_,38 @@
+         return this.getBoundingBox();
+     }
+ 
+-    public final void setBoundingBox(AABB p_20012_) {
 -        this.bb = p_20012_;
++    public final void setBoundingBox(AABB boundingBox) {
 +        // CraftBukkit start - block invalid bounding boxes
-+        double minX = p_20012_.minX,
-+                minY = p_20012_.minY,
-+                minZ = p_20012_.minZ,
-+                maxX = p_20012_.maxX,
-+                maxY = p_20012_.maxY,
-+                maxZ = p_20012_.maxZ;
-+        double len = p_20012_.maxX - p_20012_.minX;
++        double minX = boundingBox.minX,
++                minY = boundingBox.minY,
++                minZ = boundingBox.minZ,
++                maxX = boundingBox.maxX,
++                maxY = boundingBox.maxY,
++                maxZ = boundingBox.maxZ;
++        double len = boundingBox.maxX - boundingBox.minX;
 +        if (len < 0) maxX = minX;
 +        if (len > 64) maxX = minX + 64.0;
 +
-+        len = p_20012_.maxY - p_20012_.minY;
++        len = boundingBox.maxY - boundingBox.minY;
 +        if (len < 0) maxY = minY;
 +        if (len > 64) maxY = minY + 64.0;
 +
-+        len = p_20012_.maxZ - p_20012_.minZ;
++        len = boundingBox.maxZ - boundingBox.minZ;
 +        if (len < 0) maxZ = minZ;
 +        if (len > 64) maxZ = minZ + 64.0;
 +        this.bb = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
 +        // CraftBukkit end
      }
  
-     public final float getEyeHeight(Pose p_20237_) {
-@@ -2872,6 +_,20 @@
+-    public final float getEyeHeight(Pose p_20237_) {
+-        return this.getDimensions(p_20237_).eyeHeight();
++    public final float getEyeHeight(Pose pose) {
++        return this.getDimensions(pose).eyeHeight();
+     }
+ 
+     public final float getEyeHeight() {
+         return this.eyeHeight;
+     }
+ 
+-    public Vec3 getLeashOffset(float p_249286_) {
++    public Vec3 getLeashOffset(float tickDelta) {
+         return this.getLeashOffset();
+     }
+ 
+@@ -2868,12 +_,26 @@
+         return new Vec3(0.0, (double)this.getEyeHeight(), (double)(this.getBbWidth() * 0.4F));
+     }
+ 
+-    public SlotAccess getSlot(int p_146919_) {
++    public SlotAccess getSlot(int mappedIndex) {
          return SlotAccess.NULL;
      }
  
@@ -3170,24 +3384,110 @@
 +    // Purpur end
 +
      @Override
-     public void sendSystemMessage(Component p_216998_) {
-     }
-@@ -2896,8 +_,14 @@
-     public void startSeenByPlayer(ServerPlayer p_20119_) {
+-    public void sendSystemMessage(Component p_216998_) {
++    public void sendSystemMessage(Component message) {
      }
  
+     public Level getCommandSenderWorld() {
+@@ -2885,23 +_,30 @@
+         return this.level().getServer();
+     }
+ 
+-    public InteractionResult interactAt(Player p_19980_, Vec3 p_19981_, InteractionHand p_19982_) {
++    public InteractionResult interactAt(Player player, Vec3 hitPos, InteractionHand hand) {
+         return InteractionResult.PASS;
+     }
+ 
+-    public boolean ignoreExplosion(Explosion p_312868_) {
++    public boolean ignoreExplosion(Explosion explosion) {
+         return false;
+     }
+ 
+-    public void startSeenByPlayer(ServerPlayer p_20119_) {
+-    }
+-
+-    public void stopSeenByPlayer(ServerPlayer p_20174_) {
+-    }
+-
+-    public float rotate(Rotation p_20004_) {
++    public void startSeenByPlayer(ServerPlayer player) {
++    }
++
 +    // Paper start - entity tracking events
-     public void stopSeenByPlayer(ServerPlayer p_20174_) {
++    public void stopSeenByPlayer(ServerPlayer player) {
 +        // Since this event cannot be cancelled, we should call it here to catch all "un-tracks"
 +        if (io.papermc.paper.event.player.PlayerUntrackEntityEvent.getHandlerList().getRegisteredListeners().length > 0) {
-+            new io.papermc.paper.event.player.PlayerUntrackEntityEvent(p_20174_.getBukkitEntity(), this.getBukkitEntity()).callEvent();
++            new io.papermc.paper.event.player.PlayerUntrackEntityEvent(player.getBukkitEntity(), this.getBukkitEntity()).callEvent();
 +        }
-     }
++    }
 +    // Paper end - entity tracking events
- 
-     public float rotate(Rotation p_20004_) {
++
++    public float rotate(Rotation rotation) {
          float f = Mth.wrapDegrees(this.getYRot());
-@@ -2980,7 +_,17 @@
+-        switch (p_20004_) {
++
++        switch (rotation) {
+             case CLOCKWISE_180:
+                 return f + 180.0F;
+             case COUNTERCLOCKWISE_90:
+@@ -2913,9 +_,10 @@
+         }
+     }
+ 
+-    public float mirror(Mirror p_20003_) {
++    public float mirror(Mirror mirror) {
+         float f = Mth.wrapDegrees(this.getYRot());
+-        switch (p_20003_) {
++
++        switch (mirror) {
+             case FRONT_BACK:
+                 return -f;
+             case LEFT_RIGHT:
+@@ -2929,7 +_,7 @@
+         return false;
+     }
+ 
+-    public ProjectileDeflection deflection(Projectile p_319824_) {
++    public ProjectileDeflection deflection(Projectile projectile) {
+         return this.getType().is(EntityTypeTags.DEFLECTS_PROJECTILES) ? ProjectileDeflection.REVERSE : ProjectileDeflection.NONE;
+     }
+ 
+@@ -2951,13 +_,13 @@
+         return this.passengers.isEmpty() ? null : this.passengers.get(0);
+     }
+ 
+-    public boolean hasPassenger(Entity p_20364_) {
+-        return this.passengers.contains(p_20364_);
++    public boolean hasPassenger(Entity passenger) {
++        return this.passengers.contains(passenger);
+     }
+ 
+-    public boolean hasPassenger(Predicate<Entity> p_146863_) {
++    public boolean hasPassenger(Predicate<Entity> predicate) {
+         for (Entity entity : this.passengers) {
+-            if (p_146863_.test(entity)) {
++            if (predicate.test(entity)) {
+                 return true;
+             }
+         }
+@@ -2966,28 +_,48 @@
+     }
+ 
+     private Stream<Entity> getIndirectPassengersStream() {
++        if (this.passengers.isEmpty()) { return Stream.of(); } // Paper - Optimize indirect passenger iteration
+         return this.passengers.stream().flatMap(Entity::getSelfAndPassengers);
+     }
+ 
+     @Override
+     public Stream<Entity> getSelfAndPassengers() {
++        if (this.passengers.isEmpty()) { return Stream.of(this); } // Paper - Optimize indirect passenger iteration
+         return Stream.concat(Stream.of(this), this.getIndirectPassengersStream());
+     }
+ 
+     @Override
+     public Stream<Entity> getPassengersAndSelf() {
++        if (this.passengers.isEmpty()) { return Stream.of(this); } // Paper - Optimize indirect passenger iteration
+         return Stream.concat(this.passengers.stream().flatMap(Entity::getPassengersAndSelf), Stream.of(this));
      }
  
      public Iterable<Entity> getIndirectPassengers() {
@@ -3203,18 +3503,123 @@
 +
 +        return ret;
 +        // Paper end - optimise entity tracker
++    }
++    private Iterable<Entity> getIndirectPassengers_old() {
++        // Paper end - Optimize indirect passenger iteration
++        return () -> {
++            return this.getIndirectPassengersStream().iterator();
++        };
      }
  
      public int countPlayerPassengers() {
-@@ -3110,9 +_,17 @@
-         return Mth.lerp(p_352259_, this.yRotO, this.yRot);
+-        return (int)this.getIndirectPassengersStream().filter(p_185943_ -> p_185943_ instanceof Player).count();
++        return (int)this.getIndirectPassengersStream().filter(entity -> entity instanceof Player).count();
      }
  
+     public boolean hasExactlyOnePlayerPassenger() {
++        if (this.passengers.isEmpty()) { return false; } // Paper - Optimize indirect passenger iteration
+         return this.countPlayerPassengers() == 1;
+     }
+ 
+@@ -3001,16 +_,16 @@
+         return entity;
+     }
+ 
+-    public boolean isPassengerOfSameVehicle(Entity p_20366_) {
+-        return this.getRootVehicle() == p_20366_.getRootVehicle();
++    public boolean isPassengerOfSameVehicle(Entity passenger) {
++        return this.getRootVehicle() == passenger.getRootVehicle();
+     }
+ 
+-    public boolean hasIndirectPassenger(Entity p_20368_) {
+-        if (!p_20368_.isPassenger()) {
++    public boolean hasIndirectPassenger(Entity entity) {
++        if (!entity.isPassenger()) {
+             return false;
+         } else {
+-            Entity entity = p_20368_.getVehicle();
+-            return entity == this ? true : this.hasIndirectPassenger(entity);
++            Entity vehicle = entity.getVehicle();
++            return vehicle == this ? true : this.hasIndirectPassenger(vehicle);
+         }
+     }
+ 
+@@ -3022,15 +_,16 @@
+         return !this.level().isClientSide;
+     }
+ 
+-    protected static Vec3 getCollisionHorizontalEscapeVector(double p_19904_, double p_19905_, float p_19906_) {
+-        double d0 = (p_19904_ + p_19905_ + 1.0E-5F) / 2.0;
+-        float f = -Mth.sin(p_19906_ * (float) (Math.PI / 180.0));
+-        float f1 = Mth.cos(p_19906_ * (float) (Math.PI / 180.0));
++    protected static Vec3 getCollisionHorizontalEscapeVector(double vehicleWidth, double passengerWidth, float passengerYaw) {
++        double d0 = (vehicleWidth + passengerWidth + 1.0E-5F) / 2.0;
++        float f = -Mth.sin(passengerYaw * (float) (Math.PI / 180.0));
++        float f1 = Mth.cos(passengerYaw * (float) (Math.PI / 180.0));
+         float f2 = Math.max(Math.abs(f), Math.abs(f1));
++
+         return new Vec3((double)f * d0 / (double)f2, 0.0, (double)f1 * d0 / (double)f2);
+     }
+ 
+-    public Vec3 getDismountLocationForPassenger(LivingEntity p_20123_) {
++    public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
+         return new Vec3(this.getX(), this.getBoundingBox().maxY, this.getZ());
+     }
+ 
+@@ -3074,8 +_,8 @@
+         return 0;
+     }
+ 
+-    public boolean hasPermissions(int p_20311_) {
+-        return this.getPermissionLevel() >= p_20311_;
++    public boolean hasPermissions(int permissionLevel) {
++        return this.getPermissionLevel() >= permissionLevel;
+     }
+ 
+     @Override
+@@ -3093,12 +_,13 @@
+         return true;
+     }
+ 
+-    public void lookAt(EntityAnchorArgument.Anchor p_20033_, Vec3 p_20034_) {
+-        Vec3 vec3 = p_20033_.apply(this);
+-        double d0 = p_20034_.x - vec3.x;
+-        double d1 = p_20034_.y - vec3.y;
+-        double d2 = p_20034_.z - vec3.z;
++    public void lookAt(EntityAnchorArgument.Anchor anchorPoint, Vec3 target) {
++        Vec3 vec3d1 = anchorPoint.apply(this);
++        double d0 = target.x - vec3d1.x;
++        double d1 = target.y - vec3d1.y;
++        double d2 = target.z - vec3d1.z;
+         double d3 = Math.sqrt(d0 * d0 + d2 * d2);
++
+         this.setXRot(Mth.wrapDegrees((float)(-(Mth.atan2(d1, d3) * 180.0F / (float)Math.PI))));
+         this.setYRot(Mth.wrapDegrees((float)(Mth.atan2(d2, d0) * 180.0F / (float)Math.PI) - 90.0F));
+         this.setYHeadRot(this.getYRot());
+@@ -3106,13 +_,27 @@
+         this.yRotO = this.getYRot();
+     }
+ 
+-    public float getPreciseBodyRotation(float p_352259_) {
+-        return Mth.lerp(p_352259_, this.yRotO, this.yRot);
+-    }
+-
+-    public boolean updateFluidHeightAndDoFluidPushing(TagKey<Fluid> p_204032_, double p_204033_) {
++    public float getPreciseBodyRotation(float delta) {
++        return Mth.lerp(delta, this.yRotO, this.yRot);
++    }
++
++    // Purpur start
++    public AABB getAxisForFluidCheck() {
++        return this.getBoundingBox().deflate(0.001D);
++    }
++    // Purpur end
++
 +    @Deprecated // Forge: Use no parameter version instead, only for vanilla Tags
-     public boolean updateFluidHeightAndDoFluidPushing(TagKey<Fluid> p_204032_, double p_204033_) {
++    public boolean updateFluidHeightAndDoFluidPushing(TagKey<Fluid> tag, double speed) {
 +        this.updateFluidHeightAndDoFluidPushing();
-+        if(p_204032_ == FluidTags.WATER) return this.isInFluidType(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
-+        else if (p_204032_ == FluidTags.LAVA) return this.isInFluidType(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value());
++        if(tag == FluidTags.WATER) return this.isInFluidType(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
++        else if (tag == FluidTags.LAVA) return this.isInFluidType(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value());
 +        else return false;
 +    }
 +
@@ -3310,21 +3715,122 @@
          }
      }
  
-@@ -3186,7 +_,10 @@
+@@ -3183,11 +_,15 @@
+         int j = Mth.ceil(aabb.maxX);
+         int k = Mth.floor(aabb.minZ);
+         int l = Mth.ceil(aabb.maxZ);
++
          return !this.level().hasChunksAt(i, k, j, l);
      }
  
+-    public double getFluidHeight(TagKey<Fluid> p_204037_) {
+-        return this.fluidHeight.getDouble(p_204037_);
 +    @Deprecated // Forge: Use getFluidTypeHeight instead
-     public double getFluidHeight(TagKey<Fluid> p_204037_) {
-+        if (p_204037_ == FluidTags.WATER) return getFluidTypeHeight(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
-+        else if (p_204037_ == FluidTags.LAVA) return getFluidTypeHeight(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value());
-         return this.fluidHeight.getDouble(p_204037_);
++    public double getFluidHeight(TagKey<Fluid> fluid) {
++        if (fluid == FluidTags.WATER) return getFluidTypeHeight(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
++        else if (fluid == FluidTags.LAVA) return getFluidTypeHeight(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value());
++        return this.fluidHeight.getDouble(fluid);
      }
  
-@@ -3307,12 +_,56 @@
-         return this.getZ((2.0 * this.random.nextDouble() - 1.0) * p_20263_);
+     public double getFluidJumpThreshold() {
+@@ -3202,11 +_,11 @@
+         return this.dimensions.height();
      }
  
+-    public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity p_352110_) {
+-        return new ClientboundAddEntityPacket(this, p_352110_);
++    public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity entityTrackerEntry) {
++        return new ClientboundAddEntityPacket(this, entityTrackerEntry);
+     }
+ 
+-    public EntityDimensions getDimensions(Pose p_19975_) {
++    public EntityDimensions getDimensions(Pose pose) {
+         return this.type.getDimensions();
+     }
+ 
+@@ -3243,16 +_,18 @@
+         return this.deltaMovement;
+     }
+ 
+-    public void setDeltaMovement(Vec3 p_20257_) {
+-        this.deltaMovement = p_20257_;
+-    }
+-
+-    public void addDeltaMovement(Vec3 p_250128_) {
+-        this.setDeltaMovement(this.getDeltaMovement().add(p_250128_));
+-    }
+-
+-    public void setDeltaMovement(double p_20335_, double p_20336_, double p_20337_) {
+-        this.setDeltaMovement(new Vec3(p_20335_, p_20336_, p_20337_));
++    public void setDeltaMovement(Vec3 p_20velocity57_) {
++        synchronized (this.posLock) { // Paper
++        this.deltaMovement = p_20velocity57_;
++        } // Paper
++    }
++
++    public void addDeltaMovement(Vec3 velocity) {
++        this.setDeltaMovement(this.getDeltaMovement().add(velocity));
++    }
++
++    public void setDeltaMovement(double x, double y, double z) {
++        this.setDeltaMovement(new Vec3(x, y, z));
+     }
+ 
+     public final int getBlockX() {
+@@ -3263,12 +_,12 @@
+         return this.position.x;
+     }
+ 
+-    public double getX(double p_20166_) {
+-        return this.position.x + (double)this.getBbWidth() * p_20166_;
++    public double getX(double widthScale) {
++        return this.position.x + (double)this.getBbWidth() * widthScale;
+     }
+ 
+-    public double getRandomX(double p_20209_) {
+-        return this.getX((2.0 * this.random.nextDouble() - 1.0) * p_20209_);
++    public double getRandomX(double widthScale) {
++        return this.getX((2.0 * this.random.nextDouble() - 1.0) * widthScale);
+     }
+ 
+     public final int getBlockY() {
+@@ -3279,8 +_,8 @@
+         return this.position.y;
+     }
+ 
+-    public double getY(double p_20228_) {
+-        return this.position.y + (double)this.getBbHeight() * p_20228_;
++    public double getY(double heightScale) {
++        return this.position.y + (double)this.getBbHeight() * heightScale;
+     }
+ 
+     public double getRandomY() {
+@@ -3299,20 +_,64 @@
+         return this.position.z;
+     }
+ 
+-    public double getZ(double p_20247_) {
+-        return this.position.z + (double)this.getBbWidth() * p_20247_;
+-    }
+-
+-    public double getRandomZ(double p_20263_) {
+-        return this.getZ((2.0 * this.random.nextDouble() - 1.0) * p_20263_);
+-    }
+-
+-    public final void setPosRaw(double p_20344_, double p_20345_, double p_20346_) {
+-        if (this.position.x != p_20344_ || this.position.y != p_20345_ || this.position.z != p_20346_) {
+-            this.position = new Vec3(p_20344_, p_20345_, p_20346_);
+-            int i = Mth.floor(p_20344_);
+-            int j = Mth.floor(p_20345_);
+-            int k = Mth.floor(p_20346_);
++    public double getZ(double widthScale) {
++        return this.position.z + (double)this.getBbWidth() * widthScale;
++    }
++
++    public double getRandomZ(double widthScale) {
++        return this.getZ((2.0 * this.random.nextDouble() - 1.0) * widthScale);
++    }
++
 +    // Paper start - Block invalid positions and bounding box
 +    public static boolean checkPosition(Entity entity, double newX, double newY, double newZ) {
 +        if (Double.isFinite(newX) && Double.isFinite(newY) && Double.isFinite(newZ)) {
@@ -3340,13 +3846,8 @@
 +        LOGGER.error("New entity position is invalid! Tried to set invalid position ({},{},{}) for entity {} located at {}, entity info: {}", newX, newY, newZ, entity.getClass().getName(), entity.position, entityInfo, new Throwable());
 +        return false;
 +    }
-     public final void setPosRaw(double p_20344_, double p_20345_, double p_20346_) {
--        if (this.position.x != p_20344_ || this.position.y != p_20345_ || this.position.z != p_20346_) {
--            this.position = new Vec3(p_20344_, p_20345_, p_20346_);
--            int i = Mth.floor(p_20344_);
--            int j = Mth.floor(p_20345_);
--            int k = Mth.floor(p_20346_);
-+        this.setPosRaw(p_20344_, p_20345_, p_20346_, false);
++    public final void setPosRaw(double x, double y, double z) {
++        this.setPosRaw(x, y, z, false);
 +    }
 +    public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
 +        // Paper start - rewrite chunk system
@@ -3383,7 +3884,7 @@
              if (i != this.blockPosition.getX() || j != this.blockPosition.getY() || k != this.blockPosition.getZ()) {
                  this.blockPosition = new BlockPos(i, j, k);
                  this.inBlockState = null;
-@@ -3323,6 +_,13 @@
+@@ -3323,26 +_,34 @@
  
              this.levelCallback.onMove();
          }
@@ -3397,23 +3898,97 @@
      }
  
      public void checkDespawn() {
-@@ -3410,24 +_,72 @@
-         return this.removalReason;
      }
  
-+    // Youer start
-+    /* Stellar start - place method to match CraftBukkit
-+    private final AtomicReference<EntityRemoveEvent.Cause> setRemoved$cause = new AtomicReference<>();
+-    public Vec3 getRopeHoldPosition(float p_20347_) {
+-        return this.getPosition(p_20347_).add(0.0, (double)this.eyeHeight * 0.7, 0.0);
++    public Vec3 getRopeHoldPosition(float delta) {
++        return this.getPosition(delta).add(0.0, (double)this.eyeHeight * 0.7, 0.0);
+     }
+ 
+-    public void recreateFromPacket(ClientboundAddEntityPacket p_146866_) {
+-        int i = p_146866_.getId();
+-        double d0 = p_146866_.getX();
+-        double d1 = p_146866_.getY();
+-        double d2 = p_146866_.getZ();
++    public void recreateFromPacket(ClientboundAddEntityPacket packet) {
++        int i = packet.getId();
++        double d0 = packet.getX();
++        double d1 = packet.getY();
++        double d2 = packet.getZ();
 +
-+    public void setRemoved$cause(EntityRemoveEvent.Cause cause) {
-+        this.setRemoved$cause.set(cause);
-+    }
-+    */// Stellar end - place method to match CraftBukkit
-+
+         this.syncPacketPositionCodec(d0, d1, d2);
+         this.moveTo(d0, d1, d2);
+-        this.setXRot(p_146866_.getXRot());
+-        this.setYRot(p_146866_.getYRot());
++        this.setXRot(packet.getXRot());
++        this.setYRot(packet.getYRot());
+         this.setId(i);
+-        this.setUUID(p_146866_.getUUID());
++        this.setUUID(packet.getUUID());
+     }
+ 
+     @Nullable
+@@ -3350,8 +_,8 @@
+         return null;
+     }
+ 
+-    public void setIsInPowderSnow(boolean p_146925_) {
+-        this.isInPowderSnow = p_146925_;
++    public void setIsInPowderSnow(boolean inPowderSnow) {
++        this.isInPowderSnow = inPowderSnow;
+     }
+ 
+     public boolean canFreeze() {
+@@ -3370,11 +_,11 @@
+         return this.getYRot();
+     }
+ 
+-    public void setYRot(float p_146923_) {
+-        if (!Float.isFinite(p_146923_)) {
+-            Util.logAndPauseIfInIde("Invalid entity rotation: " + p_146923_ + ", discarding.");
++    public void setYRot(float yaw) {
++        if (!Float.isFinite(yaw)) {
++            Util.logAndPauseIfInIde("Invalid entity rotation: " + yaw + ", discarding.");
+         } else {
+-            this.yRot = p_146923_;
++            this.yRot = yaw;
+         }
+     }
+ 
+@@ -3382,11 +_,11 @@
+         return this.xRot;
+     }
+ 
+-    public void setXRot(float p_146927_) {
+-        if (!Float.isFinite(p_146927_)) {
+-            Util.logAndPauseIfInIde("Invalid entity rotation: " + p_146927_ + ", discarding.");
++    public void setXRot(float pitch) {
++        if (!Float.isFinite(pitch)) {
++            Util.logAndPauseIfInIde("Invalid entity rotation: " + pitch + ", discarding.");
+         } else {
+-            this.xRot = p_146927_;
++            this.xRot = pitch;
+         }
+     }
+ 
+@@ -3398,7 +_,7 @@
+         return 0.0F;
+     }
+ 
+-    public void onExplosionHit(@Nullable Entity p_326352_) {
++    public void onExplosionHit(@Nullable Entity entity) {
+     }
+ 
+     public final boolean isRemoved() {
+@@ -3411,26 +_,56 @@
+     }
+ 
      @Override
-     public final void setRemoved(Entity.RemovalReason p_146876_) {
+-    public final void setRemoved(Entity.RemovalReason p_146876_) {
++    public final void setRemoved(Entity.RemovalReason reason) {
 +        // CraftBukkit start - add Bukkit remove cause
-+        this.setRemoved(p_146876_, null);
++        this.setRemoved(reason, null);
 +    }
 +
 +    @Override
@@ -3435,9 +4010,9 @@
              this.stopRiding();
          }
  
-+        if (this.removalReason != Entity.RemovalReason.UNLOADED_TO_CHUNK) // Paper - rewrite chunk system
-         this.getPassengers().forEach(Entity::stopRiding);
+-        this.getPassengers().forEach(Entity::stopRiding);
 -        this.levelCallback.onRemove(p_146876_);
++        if (this.removalReason != Entity.RemovalReason.UNLOADED_TO_CHUNK) { this.getPassengers().forEach(Entity::stopRiding); } // Paper - rewrite chunk system
 +        this.levelCallback.onRemove(entity_removalreason);
 +        // Paper start - Folia schedulers
 +        if (!(this instanceof ServerPlayer) && entity_removalreason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
@@ -3446,14 +4021,6 @@
 +        }
 +        // Paper end - Folia schedulers
      }
-+
-+    /* Stellar start - place method to match CraftBukkit
-+    @Override
-+    public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
-+        this.setRemoved$cause.set(cause);
-+        this.setRemoved(entity_removalreason);
-+    }*/// Stellar end - place method to match CraftBukkit
-+    // Youer end
  
      public void unsetRemoved() {
          this.removalReason = null;
@@ -3470,8 +4037,13 @@
 +    // Paper end - Folia schedulers
 +
      @Override
-     public void setLevelCallback(EntityInLevelCallback p_146849_) {
-         this.levelCallback = p_146849_;
+-    public void setLevelCallback(EntityInLevelCallback p_146849_) {
+-        this.levelCallback = p_146849_;
++    public void setLevelCallback(EntityInLevelCallback changeListener) {
++        this.levelCallback = changeListener;
+     }
+ 
+     @Override
 @@ -3438,7 +_,7 @@
          if (this.removalReason != null && !this.removalReason.shouldSave()) {
              return false;
@@ -3481,10 +4053,15 @@
          }
      }
  
-@@ -3451,11 +_,138 @@
-         return true;
+@@ -3447,16 +_,143 @@
+         return false;
      }
  
+-    public boolean mayInteract(Level p_146843_, BlockPos p_146844_) {
++    public boolean mayInteract(Level world, BlockPos pos) {
+         return true;
++    }
++
 +    /**
 +     * Neo: Short-lived holder of dropped item entities. Used mainly for Neo hooks and event logic.
 +     * <p>
@@ -3610,21 +4187,104 @@
 +    @Nullable
 +    public final <T> T getCapability(net.neoforged.neoforge.capabilities.EntityCapability<T, @org.jetbrains.annotations.Nullable Void> capability) {
 +        return capability.getCapability(this, null);
-+    }
-+
+     }
+ 
      public Level level() {
          return this.level;
      }
  
 -    protected void setLevel(Level p_285201_) {
-+    public void setLevel(Level p_285201_) {
-         this.level = p_285201_;
+-        this.level = p_285201_;
++    public void setLevel(Level world) {
++        this.level = world;
      }
  
-@@ -3550,4 +_,54 @@
-             return this.save;
+     public DamageSources damageSources() {
+@@ -3467,13 +_,14 @@
+         return this.level().registryAccess();
+     }
+ 
+-    protected void lerpPositionAndRotationStep(int p_294824_, double p_296038_, double p_294518_, double p_294658_, double p_294681_, double p_295540_) {
+-        double d0 = 1.0 / (double)p_294824_;
+-        double d1 = Mth.lerp(d0, this.getX(), p_296038_);
+-        double d2 = Mth.lerp(d0, this.getY(), p_294518_);
+-        double d3 = Mth.lerp(d0, this.getZ(), p_294658_);
+-        float f = (float)Mth.rotLerp(d0, (double)this.getYRot(), p_294681_);
+-        float f1 = (float)Mth.lerp(d0, (double)this.getXRot(), p_295540_);
++    protected void lerpPositionAndRotationStep(int step, double x, double y, double z, double yaw, double pitch) {
++        double d0 = 1.0 / (double)step;
++        double d1 = Mth.lerp(d0, this.getX(), x);
++        double d2 = Mth.lerp(d0, this.getY(), y);
++        double d3 = Mth.lerp(d0, this.getZ(), z);
++        float f = (float)Mth.rotLerp(d0, (double)this.getYRot(), yaw);
++        float f1 = (float)Mth.lerp(d0, (double)this.getXRot(), pitch);
++
+         this.setPos(d1, d2, d3);
+         this.setRot(f, f1);
+     }
+@@ -3495,9 +_,28 @@
+         return null;
+     }
+ 
+-    @FunctionalInterface
+-    public interface MoveFunction {
+-        void accept(Entity p_20373_, double p_20374_, double p_20375_, double p_20376_);
++    public static enum RemovalReason {
++        KILLED(true, false),
++        DISCARDED(true, false),
++        UNLOADED_TO_CHUNK(false, true),
++        UNLOADED_WITH_PLAYER(false, false),
++        CHANGED_DIMENSION(false, false);
++
++        private final boolean destroy;
++        private final boolean save;
++
++        private RemovalReason(boolean p_146963_, boolean p_146964_) {
++            this.destroy = p_146963_;
++            this.save = p_146964_;
++        }
++
++        public boolean shouldDestroy() {
++            return this.destroy;
++        }
++
++        public boolean shouldSave() {
++            return this.save;
++        }
+     }
+ 
+     public static enum MovementEmission {
+@@ -3527,27 +_,58 @@
          }
      }
+ 
+-    public static enum RemovalReason {
+-        KILLED(true, false),
+-        DISCARDED(true, false),
+-        UNLOADED_TO_CHUNK(false, true),
+-        UNLOADED_WITH_PLAYER(false, false),
+-        CHANGED_DIMENSION(false, false);
+-
+-        private final boolean destroy;
+-        private final boolean save;
+-
+-        private RemovalReason(boolean p_146963_, boolean p_146964_) {
+-            this.destroy = p_146963_;
+-            this.save = p_146964_;
+-        }
+-
+-        public boolean shouldDestroy() {
+-            return this.destroy;
+-        }
+-
+-        public boolean shouldSave() {
+-            return this.save;
+-        }
+-    }
++    @FunctionalInterface
++    public interface MoveFunction {
++        void accept(Entity entity, double x, double y, double z);
++    }
 +
 +    // Paper start - Expose entity id counter
 +    public static int nextEntityId() {
