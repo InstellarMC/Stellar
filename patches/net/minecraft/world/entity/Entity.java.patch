@@ -101,12 +101,13 @@
      private float eyeHeight;
      public boolean isInPowderSnow;
      public boolean wasInPowderSnow;
-@@ -243,6 +_,228 @@
+@@ -243,6 +_,229 @@
      public boolean hasVisualFire;
      @Nullable
      private BlockState inBlockState = null;
 +    // CraftBukkit start
 +    private static final int CURRENT_LEVEL = 2;
++    public boolean preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported; keep initial motion on first setPositionRotation
 +    static boolean isLevelAtLeast(CompoundTag tag, int level) {
 +        return tag.contains("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
 +    }
@@ -1010,7 +1011,7 @@
      }
  
      public void moveRelative(float p_19921_, Vec3 p_19922_) {
-@@ -1407,30 +_,32 @@
+@@ -1407,30 +_,39 @@
          this.yo = p_20250_;
          this.zo = d1;
          this.setPos(d0, p_20250_, d1);
@@ -1056,6 +1057,13 @@
 +    }
 +
 +    public void moveTo(double x, double y, double z, float yaw, float pitch) {
++        // Paper start - Fix Entity Teleportation and cancel velocity if teleported
++        if (!preserveMotion) {
++            this.deltaMovement = Vec3.ZERO;
++        } else {
++            this.preserveMotion = false;
++        }
++        // Paper end - Fix Entity Teleportation and cancel velocity if teleported
 +        this.setPosRaw(x, y, z);
 +        this.setYRot(yaw);
 +        this.setXRot(pitch);
