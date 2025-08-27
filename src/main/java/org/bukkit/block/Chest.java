@@ -1,8 +1,7 @@
 package org.bukkit.block;
 
-import io.papermc.paper.loottable.LootableBlockInventory;
+import com.destroystokyo.paper.lootable.LootableBlockInventory;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.loot.Lootable;
 import org.jetbrains.annotations.NotNull;
 
 /**

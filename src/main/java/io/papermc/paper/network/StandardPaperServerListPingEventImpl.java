@@ -2,7 +2,7 @@ package io.papermc.paper.network;
 
 import com.mojang.authlib.GameProfile;
 import io.papermc.paper.adventure.AdventureComponent;
-import io.papermc.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

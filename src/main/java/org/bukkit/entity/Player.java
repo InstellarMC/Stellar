@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import org.bukkit.BanEntry;
+import com.destroystokyo.paper.ClientOption;import com.destroystokyo.paper.Title;import com.destroystokyo.paper.network.NetworkClient;import com.destroystokyo.paper.profile.PlayerProfile;import org.bukkit.BanEntry;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
 import org.bukkit.GameMode;
@@ -48,7 +48,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -57,7 +56,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a player, connected or not
  */
-public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, io.papermc.paper.network.NetworkClient { // Paper
+public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, NetworkClient { // Paper
 
     // Paper start
     @Override
@@ -353,7 +352,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     (updated) previous ban
      */
     @Nullable
-    public <E extends BanEntry<? super io.papermc.paper.profile.PlayerProfile>> E ban(@Nullable String reason, @Nullable Date expires, @Nullable String source, boolean kickPlayer); // Paper - fix ban list API
+    public <E extends BanEntry<? super PlayerProfile>> E ban(@Nullable String reason, @Nullable Date expires, @Nullable String source, boolean kickPlayer); // Paper - fix ban list API
 
     /**
      * Adds this user to the {@link ProfileBanList}. If a previous ban exists, this will
@@ -369,7 +368,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     (updated) previous ban
      */
     @Nullable
-    public <E extends BanEntry<? super io.papermc.paper.profile.PlayerProfile>> E ban(@Nullable String reason, @Nullable Instant expires, @Nullable String source, boolean kickPlayer); // Paper - fix ban list API
+    public <E extends BanEntry<? super PlayerProfile>> E ban(@Nullable String reason, @Nullable Instant expires, @Nullable String source, boolean kickPlayer); // Paper - fix ban list API
 
     /**
      * Adds this user to the {@link ProfileBanList}. If a previous ban exists, this will
@@ -385,7 +384,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     (updated) previous ban
      */
     @Nullable
-    public <E extends BanEntry<? super io.papermc.paper.profile.PlayerProfile>> E ban(@Nullable String reason, @Nullable Duration duration, @Nullable String source, boolean kickPlayer); // Paper - fix ban list API
+    public <E extends BanEntry<? super PlayerProfile>> E ban(@Nullable String reason, @Nullable Duration duration, @Nullable String source, boolean kickPlayer); // Paper - fix ban list API
 
     /**
      * Adds this user's current IP address to the {@link IpBanList}. If a previous ban exists, this will
@@ -1642,14 +1641,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Show the title to the player, overriding any previously displayed title.
      *
-     * <p>This method overrides any previous title, use {@link #updateTitle(io.papermc.paper.Title)} to change the existing one.</p>
+     * <p>This method overrides any previous title, use {@link #updateTitle( Title )} to change the existing one.</p>
      *
      * @param title the title to send
      * @throws NullPointerException if the title is null
      * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
      */
     @Deprecated
-    void sendTitle(@NotNull io.papermc.paper.Title title);
+    void sendTitle(@NotNull Title title);
 
     /**
      * Show the title to the player, overriding any previously displayed title.
@@ -1661,7 +1660,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
      */
     @Deprecated
-    void updateTitle(@NotNull io.papermc.paper.Title title);
+    void updateTitle(@NotNull Title title);
 
     /**
      * Hide any title that is currently visible to the player
@@ -3497,7 +3496,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * @return the client option value of the player
      */
-    <T> @NotNull T getClientOption(io.papermc.paper.@NotNull ClientOption<T> option);
+    <T> @NotNull T getClientOption(@NotNull ClientOption<T> option);
     // Paper end - client option API
 
     // Spigot start
@@ -3761,7 +3760,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return The players profile object
      */
     @NotNull
-    io.papermc.paper.profile.PlayerProfile getPlayerProfile();
+    PlayerProfile getPlayerProfile();
 
     /**
      * Changes the PlayerProfile for this player. This will cause this player
@@ -3772,7 +3771,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param profile The new profile to use
      */
-    void setPlayerProfile(io.papermc.paper.profile.@NotNull PlayerProfile profile);
+    void setPlayerProfile(@NotNull PlayerProfile profile);
     // Paper end - Player Profile API
 
     // Paper start - attack cooldown API

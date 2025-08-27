@@ -62,28 +62,6 @@
      protected void registerGoals() {
      }
  
-@@ -198,6 +_,21 @@
-         return this.lookControl;
-     }
- 
-+    // Paper start
-+    int INACTIVE_TICK_DISABLE_COUNTER = 0;
-+    @Override
-+    public void inactiveTick() {
-+        super.inactiveTick();
-+        boolean isThrottled = ((ServerLevel) this.level()).paperConfig().entities.behavior.throttleInactiveMobGoalSelector && INACTIVE_TICK_DISABLE_COUNTER++ % 20 != 0; // throttle inactive goal selector ticking
-+        if (this.goalSelector.inactiveTick() && !isThrottled) {
-+            this.goalSelector.tick();
-+        }
-+        if (this.targetSelector.inactiveTick()) {
-+            this.targetSelector.tick();
-+        }
-+    }
-+    // Paper end
-+
-     public MoveControl getMoveControl() {
-         return this.getControlledVehicle() instanceof Mob mob ? mob.getMoveControl() : this.moveControl;
-     }
 @@ -236,8 +_,30 @@
          return this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
      }
@@ -116,7 +94,26 @@
      }
  
      @Override
-@@ -346,6 +_,12 @@
+@@ -340,12 +_,31 @@
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public void inactiveTick() {
++        super.inactiveTick();
++        if (this.goalSelector.inactiveTick()) {
++            this.goalSelector.tick();
++        }
++        if (this.targetSelector.inactiveTick()) {
++            this.targetSelector.tick();
++        }
++    }
++    // Paper end
++
+     @Override
+     public void tick() {
+         super.tick();
          if (!this.level().isClientSide && this.tickCount % 5 == 0) {
              this.updateControlFlags();
          }
@@ -249,35 +246,30 @@
          return itemattributemodifiers.compute(this.getAttributeBaseValue(Attributes.ATTACK_DAMAGE), EquipmentSlot.MAINHAND);
      }
  
-@@ -701,23 +_,34 @@
+@@ -701,23 +_,30 @@
  
      @Override
      public void checkDespawn() {
-+        if (!this.level().stellarConfig().unsupportedSettings.disableNeoforgeCheckMobDespawn) // Stellar - Config option to disable neoforge hook
 +        if (net.neoforged.neoforge.event.EventHooks.checkMobDespawn(this)) return;
          if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
 -            this.discard();
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
 -            Entity entity = this.level().getNearestPlayer(this, -1.0);
--            if (entity != null) {
++            Entity entity = this.level().findNearbyPlayer(this, -1.0D, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper - Affects Spawning API
+             if (entity != null) {
 -                double d0 = entity.distanceToSqr(this);
 -                int i = this.getType().getCategory().getDespawnDistance();
 -                int j = i * i;
 -                if (d0 > (double)j && this.removeWhenFarAway(d0)) {
 -                    this.discard();
-+            // Paper start - Optimise mob despawning
-+            final io.papermc.paper.util.kdtree.Kd3Tree despawnEligiblePlayers = ((ServerLevel) this.level()).getDespawnEligiblePlayers();
-+            if (despawnEligiblePlayers != null && !despawnEligiblePlayers.isEmpty()) {
-+                final var nearest = despawnEligiblePlayers.nearest(this.position());
-+                // Paper end - Optimise mob despawning
 +                // Paper start - Configurable despawn distances
 +                final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
 +                final io.papermc.paper.configuration.type.DespawnRange.Shape shape = this.level().paperConfig().entities.spawning.despawnRangeShape;
-+                final double dy = Math.abs(nearest.y() - this.getY()); // Paper - Optimise mob despawning
++                final double dy = Math.abs(entity.getY() - this.getY());
 +                final double dySqr = Math.pow(dy, 2);
-+                final double dxSqr = Math.pow(nearest.x() - this.getX(), 2); // Paper - Optimise mob despawning
-+                final double dzSqr = Math.pow(nearest.z() - this.getZ(), 2); // Paper - Optimise mob despawning
++                final double dxSqr = Math.pow(entity.getX() - this.getX(), 2);
++                final double dzSqr = Math.pow(entity.getZ() - this.getZ(), 2);
 +                final double distanceSquared = dxSqr + dzSqr + dySqr;
 +                // Despawn if hard/soft limit is exceeded
 +                if (despawnRangePair.hard().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy) && this.removeWhenFarAway(distanceSquared)) {

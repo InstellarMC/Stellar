@@ -1,6 +1,6 @@
 package org.bukkit;
 
-import com.google.common.collect.Multimap;
+import com.destroystokyo.paper.util.VersionFetcher;import com.google.common.collect.Multimap;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -296,8 +296,8 @@ public interface UnsafeValues {
     /**
      * Called once by the version command on first use, then cached.
      */
-    default io.papermc.paper.util.VersionFetcher getVersionFetcher() {
-        return new io.papermc.paper.util.VersionFetcher.DummyVersionFetcher();
+    default VersionFetcher getVersionFetcher() {
+        return new VersionFetcher.DummyVersionFetcher();
     }
 
 }

@@ -1,8 +1,7 @@
 package org.bukkit.block;
 
-import io.papermc.paper.loottable.LootableBlockInventory;
+import com.destroystokyo.paper.lootable.LootableBlockInventory;
 import org.bukkit.Nameable;
-import org.bukkit.loot.Lootable;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.jetbrains.annotations.Nullable;
 

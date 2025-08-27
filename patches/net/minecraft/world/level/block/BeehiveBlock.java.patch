@@ -1,30 +1,5 @@
 --- a/net/minecraft/world/level/block/BeehiveBlock.java
 +++ b/net/minecraft/world/level/block/BeehiveBlock.java
-@@ -83,16 +_,16 @@
-     }
- 
-     @Override
--    public void playerDestroy(Level p_49584_, Player p_49585_, BlockPos p_49586_, BlockState p_49587_, @Nullable BlockEntity p_49588_, ItemStack p_49589_) {
--        super.playerDestroy(p_49584_, p_49585_, p_49586_, p_49587_, p_49588_, p_49589_);
--        if (!p_49584_.isClientSide && p_49588_ instanceof BeehiveBlockEntity beehiveblockentity) {
--            if (!EnchantmentHelper.hasTag(p_49589_, EnchantmentTags.PREVENTS_BEE_SPAWNS_WHEN_MINING)) {
--                beehiveblockentity.emptyAllLivingFromHive(p_49585_, p_49587_, BeehiveBlockEntity.BeeReleaseStatus.EMERGENCY);
--                p_49584_.updateNeighbourForOutputSignal(p_49586_, this);
--                this.angerNearbyBees(p_49584_, p_49586_);
-+    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
-+        super.playerDestroy(world, player, pos, state, blockEntity, tool);
-+        if (!world.isClientSide && blockEntity instanceof BeehiveBlockEntity beehiveblockentity) {
-+            if (!EnchantmentHelper.hasTag(tool, EnchantmentTags.PREVENTS_BEE_SPAWNS_WHEN_MINING)) {
-+                beehiveblockentity.emptyAllLivingFromHive(player, state, BeehiveBlockEntity.BeeReleaseStatus.EMERGENCY);
-+                world.updateNeighbourForOutputSignal(pos, this);
-+                this.angerNearbyBees(world, pos);
-             }
- 
--            CriteriaTriggers.BEE_NEST_DESTROYED.trigger((ServerPlayer)p_49585_, p_49587_, p_49589_, beehiveblockentity.getOccupantCount());
-+            CriteriaTriggers.BEE_NEST_DESTROYED.trigger((ServerPlayer) player, state, tool, beehiveblockentity.getOccupantCount());
-         }
-     }
- 
 @@ -108,14 +_,17 @@
              for (Bee bee : list) {
                  if (bee.getTarget() == null) {

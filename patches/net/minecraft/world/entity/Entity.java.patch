@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -4,6 +_,9 @@
+@@ -4,8 +_,11 @@
  import com.google.common.collect.Lists;
  import com.google.common.collect.Sets;
  import com.google.common.collect.ImmutableList.Builder;
@@ -8,8 +8,21 @@
 +import com.mohistmc.youer.plugins.ban.bans.BanEntity;
 +import com.mohistmc.youer.util.LambdaFix;
  import com.mojang.logging.LogUtils;
- import it.unimi.dsi.fastutil.floats.FloatArraySet;
+-import it.unimi.dsi.fastutil.floats.FloatArraySet;
++import io.papermc.paper.entity.activation.ActivationRange;import it.unimi.dsi.fastutil.floats.FloatArraySet;
  import it.unimi.dsi.fastutil.floats.FloatArrays;
+ import it.unimi.dsi.fastutil.floats.FloatSet;
+ import it.unimi.dsi.fastutil.objects.Object2DoubleArrayMap;
+@@ -19,7 +_,9 @@
+ import java.util.Optional;
+ import java.util.Set;
+ import java.util.UUID;
++import java.util.concurrent.atomic.AtomicBoolean;
+ import java.util.concurrent.atomic.AtomicInteger;
++import java.util.concurrent.atomic.AtomicReference;
+ import java.util.function.BiConsumer;
+ import java.util.function.Predicate;
+ import java.util.stream.Stream;
 @@ -48,10 +_,10 @@
  import net.minecraft.network.chat.Component;
  import net.minecraft.network.chat.HoverEvent;
@@ -30,7 +43,7 @@
  import net.minecraft.world.level.block.HoneyBlock;
  import net.minecraft.world.level.block.Mirror;
  import net.minecraft.world.level.block.Portal;
-@@ -126,9 +_,31 @@
+@@ -126,9 +_,30 @@
  import net.minecraft.world.scores.PlayerTeam;
  import net.minecraft.world.scores.ScoreHolder;
  import net.minecraft.world.scores.Team;
@@ -55,7 +68,6 @@
 +import org.bukkit.event.player.PlayerTeleportEvent;
 +import org.bukkit.event.vehicle.VehicleExitEvent;
  import org.slf4j.Logger;
-+import org.spigotmc.ActivationRange;
 +import org.spigotmc.AsyncCatcher;
  
 -public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, CommandSource, ScoreHolder, net.neoforged.neoforge.common.extensions.IEntityExtension {
@@ -91,7 +103,7 @@
      private float eyeHeight;
      public boolean isInPowderSnow;
      public boolean wasInPowderSnow;
-@@ -243,6 +_,235 @@
+@@ -243,6 +_,236 @@
      public boolean hasVisualFire;
      @Nullable
      private BlockState inBlockState = null;
@@ -175,6 +187,7 @@
 +    public long activatedTick = Integer.MIN_VALUE;
 +    public boolean isTemporarilyActive;
 +    public long activatedImmunityTick = Integer.MIN_VALUE;
++
 +    public void inactiveTick() {
 +    }
 +    // Paper end - EAR 2
@@ -333,7 +346,7 @@
          this.chunkPosition = ChunkPos.ZERO;
 +        // Paper start - EAR 2
 +        if (level != null) {
-+            this.defaultActivationState = io.papermc.paper.entity.activation.ActivationRange.initializeEntityActivationState(this, level.spigotConfig);
++            this.defaultActivationState = ActivationRange.initializeEntityActivationState(this, level.spigotConfig);
 +        } else {
 +            this.defaultActivationState = false;
 +        }
@@ -942,7 +955,7 @@
          return this.getInBlockState().is(Blocks.BUBBLE_COLUMN);
      }
  
-@@ -1241,23 +_,30 @@
+@@ -1241,20 +_,23 @@
  
      public void updateSwimming() {
          if (this.isSwimming()) {
@@ -971,13 +984,6 @@
      }
  
      void updateInWaterStateAndDoWaterCurrentPushing() {
-+        // Stellar start - reduce boat isInWater checks
-+        final var boatIsInWaterCheckTicks = this.level().stellarConfig().unsupportedSettings.boatIsInWaterCheckTicks.or(1);
-+        if (boatIsInWaterCheckTicks == 1 || this.tickCount % boatIsInWaterCheckTicks == 0)
-+        // Stellar end - reduce boat isInWater checks
-         if (this.getVehicle() instanceof Boat boat && !boat.isUnderWater()) {
-             this.wasTouchingWater = false;
-             return;
 @@ -1279,6 +_,7 @@
      private void updateFluidOnEyes() {
          this.wasEyeInWater = this.isEyeInFluid(FluidTags.WATER);
@@ -1127,25 +1133,26 @@
      }
  
 -    public boolean saveAsPassenger(CompoundTag p_20087_) {
-+    public boolean saveAsPassenger(CompoundTag tag) {
++    public boolean saveAsPassenger(CompoundTag nbt) {
 +        // CraftBukkit start - allow excluding certain data when saving
-+        return saveAsPassenger(tag, true);
++        return this.saveAsPassenger(nbt, true);
 +    }
 +
-+    public boolean saveAsPassenger(CompoundTag tag, boolean includeAll) {
++    public boolean saveAsPassenger(CompoundTag nbt, boolean includeAll) {
 +        // CraftBukkit end
          if (this.removalReason != null && !this.removalReason.shouldSave()) {
              return false;
          } else {
              String s = this.getEncodeId();
 -            if (s == null) {
++
 +            if (!this.persist || s == null) { // CraftBukkit - persist flag
                  return false;
              } else {
 -                p_20087_.putString("id", s);
 -                this.saveWithoutId(p_20087_);
-+                tag.putString("id", s);
-+                this.saveWithoutId(tag, includeAll); // CraftBukkit - pass on includeAll
++                nbt.putString("id", s);
++                this.saveWithoutId(nbt, includeAll); // CraftBukkit - pass on includeAll
                  return true;
              }
          }
@@ -1166,12 +1173,12 @@
      }
  
 -    public CompoundTag saveWithoutId(CompoundTag p_20241_) {
-+    public CompoundTag saveWithoutId(CompoundTag tag) {
++    public CompoundTag saveWithoutId(CompoundTag nbt) {
 +        // CraftBukkit start - allow excluding certain data when saving
-+        return saveWithoutId(tag, true);
++        return this.saveWithoutId(nbt, true);
 +    }
 +
-+    public CompoundTag saveWithoutId(CompoundTag tag, boolean includeAll) {
++    public CompoundTag saveWithoutId(CompoundTag nbt, boolean includeAll) {
 +        // CraftBukkit end
          try {
 -            if (this.vehicle != null) {
@@ -1181,12 +1188,11 @@
 +            // CraftBukkit start - selectively save position
 +            if (includeAll) {
 +                if (this.vehicle != null) {
-+                    tag.put("Pos", this.newDoubleList(this.vehicle.getX(), this.getY(), this.vehicle.getZ()));
++                    nbt.put("Pos", this.newDoubleList(this.vehicle.getX(), this.getY(), this.vehicle.getZ()));
 +                } else {
-+                    tag.put("Pos", this.newDoubleList(this.getX(), this.getY(), this.getZ()));
++                    nbt.put("Pos", this.newDoubleList(this.getX(), this.getY(), this.getZ()));
 +                }
              }
-+            // CraftBukkit end
  
              Vec3 vec3 = this.getDeltaMovement();
 -            p_20241_.put("Motion", this.newDoubleList(vec3.x, vec3.y, vec3.z));
@@ -1199,7 +1205,7 @@
 -            p_20241_.putInt("PortalCooldown", this.portalCooldown);
 -            p_20241_.putUUID("UUID", this.getUUID());
 +            this.setDeltaMovement(io.papermc.paper.util.MCUtil.sanitizeNanInf(this.deltaMovement, 0D)); // Stellar - remove NaN values before usage in saving
-+            tag.put("Motion", this.newDoubleList(vec3.x, vec3.y, vec3.z));
++            nbt.put("Motion", this.newDoubleList(vec3.x, vec3.y, vec3.z));
 +            // CraftBukkit start - Checking for NaN pitch/yaw and resetting to zero
 +            // TODO: make sure this is the best way to address this.
 +            if (Float.isNaN(this.yRot)) {
@@ -1210,102 +1216,97 @@
 +                this.xRot = 0;
 +            }
 +            // CraftBukkit end
-+            tag.put("Rotation", this.newFloatList(this.getYRot(), this.getXRot()));
-+            tag.putFloat("FallDistance", this.fallDistance);
-+            tag.putShort("Fire", (short)this.remainingFireTicks);
-+            tag.putShort("Air", (short)this.getAirSupply());
-+            tag.putBoolean("OnGround", this.onGround());
-+            tag.putBoolean("Invulnerable", this.invulnerable);
-+            tag.putInt("PortalCooldown", this.portalCooldown);
++            nbt.put("Rotation", this.newFloatList(this.getYRot(), this.getXRot()));
++            nbt.putFloat("FallDistance", this.fallDistance);
++            nbt.putShort("Fire", (short)this.remainingFireTicks);
++            nbt.putShort("Air", (short)this.getAirSupply());
++            nbt.putBoolean("OnGround", this.onGround());
++            nbt.putBoolean("Invulnerable", this.invulnerable);
++            nbt.putInt("PortalCooldown", this.portalCooldown);
 +            // CraftBukkit start - selectively save uuid and world
 +            if (includeAll) {
-+                tag.putUUID("UUID", this.getUUID());
++                nbt.putUUID("UUID", this.getUUID());
 +                // PAIL: Check above UUID reads 1.8 properly, ie: UUIDMost / UUIDLeast
-+                tag.putLong("WorldUUIDLeast", ((net.minecraft.server.level.ServerLevel) this.level).getWorld().getUID().getLeastSignificantBits());
-+                tag.putLong("WorldUUIDMost", ((net.minecraft.server.level.ServerLevel) this.level).getWorld().getUID().getMostSignificantBits());
++                nbt.putLong("WorldUUIDLeast", ((net.minecraft.server.level.ServerLevel) this.level).getWorld().getUID().getLeastSignificantBits());
++                nbt.putLong("WorldUUIDMost", ((net.minecraft.server.level.ServerLevel) this.level).getWorld().getUID().getMostSignificantBits());
 +            }
 +
-+            tag.putInt("Bukkit.updateLevel", CURRENT_LEVEL);
++            nbt.putInt("Bukkit.updateLevel", CURRENT_LEVEL);
 +
 +            if (!this.persist) {
-+                tag.putBoolean("Bukkit.persist", this.persist);
++                nbt.putBoolean("Bukkit.persist", this.persist);
 +            }
 +
 +            if (!this.visibleByDefault) {
-+                tag.putBoolean("Bukkit.visibleByDefault", this.visibleByDefault);
++                nbt.putBoolean("Bukkit.visibleByDefault", this.visibleByDefault);
 +            }
 +
 +            if (this.persistentInvisibility) {
-+                tag.putBoolean("Bukkit.invisible", this.persistentInvisibility);
++                nbt.putBoolean("Bukkit.invisible", this.persistentInvisibility);
 +            }
 +
 +            // SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
 +            if (maxAirTicks != getDefaultMaxAirSupply()) {
-+                tag.putInt("Bukkit.MaxAirSupply", getMaxAirSupply());
++                nbt.putInt("Bukkit.MaxAirSupply", getMaxAirSupply());
 +            }
-+            tag.putInt("Spigot.ticksLived", this.tickCount);
++            nbt.putInt("Spigot.ticksLived", this.tickCount);
 +            // CraftBukkit end
              Component component = this.getCustomName();
              if (component != null) {
 -                p_20241_.putString("CustomName", Component.Serializer.toJson(component, this.registryAccess()));
-+                tag.putString("CustomName", Component.Serializer.toJson(component, this.registryAccess()));
++                nbt.putString("CustomName", Component.Serializer.toJson(component, this.registryAccess()));
              }
  
              if (this.isCustomNameVisible()) {
 -                p_20241_.putBoolean("CustomNameVisible", this.isCustomNameVisible());
-+                tag.putBoolean("CustomNameVisible", this.isCustomNameVisible());
++                nbt.putBoolean("CustomNameVisible", this.isCustomNameVisible());
              }
  
              if (this.isSilent()) {
 -                p_20241_.putBoolean("Silent", this.isSilent());
-+                tag.putBoolean("Silent", this.isSilent());
++                nbt.putBoolean("Silent", this.isSilent());
              }
  
              if (this.isNoGravity()) {
 -                p_20241_.putBoolean("NoGravity", this.isNoGravity());
-+                tag.putBoolean("NoGravity", this.isNoGravity());
++                nbt.putBoolean("NoGravity", this.isNoGravity());
              }
  
              if (this.hasGlowingTag) {
 -                p_20241_.putBoolean("Glowing", true);
-+                tag.putBoolean("Glowing", true);
++                nbt.putBoolean("Glowing", true);
              }
  
              int i = this.getTicksFrozen();
              if (i > 0) {
 -                p_20241_.putInt("TicksFrozen", this.getTicksFrozen());
-+                tag.putInt("TicksFrozen", this.getTicksFrozen());
++                nbt.putInt("TicksFrozen", this.getTicksFrozen());
              }
  
              if (this.hasVisualFire) {
 -                p_20241_.putBoolean("HasVisualFire", this.hasVisualFire);
-+                tag.putBoolean("HasVisualFire", this.hasVisualFire);
++                nbt.putBoolean("HasVisualFire", this.hasVisualFire);
              }
  
              if (!this.tags.isEmpty()) {
-@@ -1701,26 +_,56 @@
+@@ -1701,10 +_,14 @@
                      listtag.add(StringTag.valueOf(s));
                  }
  
 -                p_20241_.put("Tags", listtag);
-+                tag.put("Tags", listtag);
++                nbt.put("Tags", listtag);
              }
  
 -            this.addAdditionalSaveData(p_20241_);
 +            CompoundTag attachments = serializeAttachments(registryAccess());
-+            if (attachments != null) tag.put(ATTACHMENTS_NBT_KEY, attachments);
-+            if (persistentData != null) tag.put("NeoForgeData", persistentData.copy());
++            if (attachments != null) nbt.put(ATTACHMENTS_NBT_KEY, attachments);
++            if (persistentData != null) nbt.put("NeoForgeData", persistentData.copy());
 +
-+            this.addAdditionalSaveData(tag, includeAll); // CraftBukkit - pass on includeAll
++            this.addAdditionalSaveData(nbt);
              if (this.isVehicle()) {
                  ListTag listtag1 = new ListTag();
  
-                 for (Entity entity : this.getPassengers()) {
-                     CompoundTag compoundtag = new CompoundTag();
--                    if (entity.saveAsPassenger(compoundtag)) {
-+                    if (entity.saveAsPassenger(compoundtag, includeAll)) { // CraftBukkit - pass on includeAll
-                         listtag1.add(compoundtag);
-                     }
+@@ -1716,11 +_,37 @@
                  }
  
                  if (!listtag1.isEmpty()) {
@@ -1314,37 +1315,37 @@
 -            }
 -
 -            return p_20241_;
-+                    tag.put("Passengers", listtag1);
++                    nbt.put("Passengers", listtag1);
 +                }
 +            }
 +
 +            // Save entity's from mob spawner status
 +            if (spawnedViaMobSpawner) {
-+                tag.putBoolean("Paper.FromMobSpawner", true);
++                nbt.putBoolean("Paper.FromMobSpawner", true);
 +            }
 +            // Paper end
 +            // Paper start
 +            if (this.origin != null) {
 +                UUID originWorld = this.originWorld != null ? this.originWorld : this.level != null ? this.level.getWorld().getUID() : null;
 +                if (originWorld != null) {
-+                    tag.putUUID("Paper.OriginWorld", originWorld);
++                    nbt.putUUID("Paper.OriginWorld", originWorld);
 +                }
-+                tag.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
++                nbt.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
 +            }
 +
 +            if (spawnReason != null) {
-+                tag.putString("Paper.SpawnReason", spawnReason.name());
++                nbt.putString("Paper.SpawnReason", spawnReason.name());
 +            }
 +            if (freezeLocked) {
-+                tag.putBoolean("Paper.FreezeLock", true);
++                nbt.putBoolean("Paper.FreezeLock", true);
 +            }
 +            // Paper end
 +            // Purpur start
 +            if (immuneToFire != null) {
-+                tag.putBoolean("Purpur.FireImmune", immuneToFire);
++                nbt.putBoolean("Purpur.FireImmune", immuneToFire);
 +            }
 +            // Purpur end
-+            return tag;
++            return nbt;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
              CrashReportCategory crashreportcategory = crashreport.addCategory("Entity being saved");
@@ -2219,8 +2220,19 @@
      }
  
      public void checkDespawn() {
-@@ -3412,22 +_,53 @@
+@@ -3410,24 +_,72 @@
+         return this.removalReason;
+     }
  
++    // Youer start
++    /* Stellar start - place method to match CraftBukkit
++    private final AtomicReference<EntityRemoveEvent.Cause> setRemoved$cause = new AtomicReference<>();
++
++    public void setRemoved$cause(EntityRemoveEvent.Cause cause) {
++        this.setRemoved$cause.set(cause);
++    }
++    */// Stellar end - place method to match CraftBukkit
++
      @Override
      public final void setRemoved(Entity.RemovalReason p_146876_) {
 +        // CraftBukkit start - add Bukkit remove cause
@@ -2257,6 +2269,14 @@
 +        }
 +        // Paper end - Folia schedulers
      }
++
++    /* Stellar start - place method to match CraftBukkit
++    @Override
++    public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++        this.setRemoved$cause.set(cause);
++        this.setRemoved(entity_removalreason);
++    }*/// Stellar end - place method to match CraftBukkit
++    // Youer end
  
      public void unsetRemoved() {
          this.removalReason = null;

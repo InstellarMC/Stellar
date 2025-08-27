@@ -30,6 +30,7 @@ public final class GlobalConfiguration extends ConfigurationPart {
     }
 
     public Items items;
+
     public class Items extends ConfigurationPart {
 
         @Comment("Configurates interval in ticks at which the Map item update task runs.")
@@ -39,8 +40,16 @@ public final class GlobalConfiguration extends ConfigurationPart {
     }
 
     public Performance performance;
-    public static class Performance extends ConfigurationPart {
+
+    public class Performance extends ConfigurationPart {
 
         public boolean asyncPlayerJoin = false;
+    }
+
+    public Verbosity verbosity;
+
+    public class Verbosity extends ConfigurationPart {
+
+        public boolean offlineMode = false;
     }
 }

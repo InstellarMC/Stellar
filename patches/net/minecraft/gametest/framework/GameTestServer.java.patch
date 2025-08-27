@@ -16,7 +16,7 @@
  import org.slf4j.Logger;
  
  public class GameTestServer extends MinecraftServer {
-@@ -151,13 +_,15 @@
+@@ -151,19 +_,21 @@
      public boolean initServer() {
          this.setPlayerList(new PlayerList(this, this.registries(), this.playerDataStorage, 1) {
          });
@@ -33,6 +33,14 @@
          return true;
      }
  
+     @Override
+-    public void tickServer(BooleanSupplier p_177619_) {
+-        super.tickServer(p_177619_);
++    public void tickServer(BooleanSupplier shouldKeepTicking) {
++        super.tickServer(shouldKeepTicking);
+         ServerLevel serverlevel = this.overworld();
+         if (!this.haveTestsStarted()) {
+             this.startTests(serverlevel);
 @@ -301,5 +_,10 @@
      @Override
      public boolean isSingleplayerOwner(GameProfile p_177617_) {

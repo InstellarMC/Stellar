@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.authlib.properties.Property;
-import io.papermc.paper.profile.SharedPlayerProfile;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
@@ -49,7 +48,7 @@ public final class CraftPlayerTextures implements PlayerTextures {
         }
     }
 
-    private final SharedPlayerProfile profile;
+    private final com.destroystokyo.paper.profile.SharedPlayerProfile profile; // Paper
 
     // The textures data is loaded lazily:
     private boolean loaded = false;
@@ -68,7 +67,7 @@ public final class CraftPlayerTextures implements PlayerTextures {
     // GameProfiles (even if these modifications are later reverted).
     private boolean dirty = false;
 
-    public CraftPlayerTextures(@Nonnull SharedPlayerProfile profile) {
+    public CraftPlayerTextures(@Nonnull com.destroystokyo.paper.profile.SharedPlayerProfile profile) {
         this.profile = profile;
     }
 

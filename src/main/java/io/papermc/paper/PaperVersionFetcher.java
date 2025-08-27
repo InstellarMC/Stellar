@@ -1,6 +1,6 @@
 package io.papermc.paper;
 
-import io.papermc.paper.util.VersionFetcher;
+import com.destroystokyo.paper.util.VersionFetcher;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.checkerframework.checker.nullness.qual.NonNull;

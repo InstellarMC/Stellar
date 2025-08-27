@@ -1,9 +1,8 @@
 package org.bukkit.entity.minecart;
 
-import io.papermc.paper.loottable.LootableEntityInventory;
+import com.destroystokyo.paper.lootable.LootableEntityInventory;
 import org.bukkit.entity.Minecart;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.loot.Lootable;
 
 /**
  * Represents a Minecart with a Hopper inside it

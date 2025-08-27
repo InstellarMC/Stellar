@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
-import com.google.common.base.Preconditions;
+import com.destroystokyo.paper.Namespaced;import com.destroystokyo.paper.NamespacedTag;import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -19,7 +19,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
@@ -2203,50 +2202,50 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     @Override
-    public Set<io.papermc.paper.Namespaced> getDestroyableKeys() {
+    public Set<Namespaced> getDestroyableKeys() {
         return !this.hasDestroyableKeys() ? Collections.emptySet() : convertToLegacyNamespaced(this.canBreakPredicates);
     }
 
     @Override
-    public void setDestroyableKeys(final Collection<io.papermc.paper.Namespaced> canDestroy) {
+    public void setDestroyableKeys(final Collection<Namespaced> canDestroy) {
         Preconditions.checkArgument(canDestroy != null, "Cannot replace with null collection!");
         Preconditions.checkArgument(ofAcceptableType(canDestroy), "Can only use NamespacedKey or NamespacedTag objects!");
         this.canBreakPredicates = convertFromLegacyNamespaced(canDestroy);
     }
 
     @Override
-    public Set<io.papermc.paper.Namespaced> getPlaceableKeys() {
+    public Set<Namespaced> getPlaceableKeys() {
         return !this.hasPlaceableKeys() ? Collections.emptySet() : convertToLegacyNamespaced(this.canPlaceOnPredicates);
     }
 
     @Override
-    public void setPlaceableKeys(final Collection<io.papermc.paper.Namespaced> canPlaceOn) {
+    public void setPlaceableKeys(final Collection<Namespaced> canPlaceOn) {
         Preconditions.checkArgument(canPlaceOn != null, "Cannot replace with null collection!");
         Preconditions.checkArgument(ofAcceptableType(canPlaceOn), "Can only use NamespacedKey or NamespacedTag objects!");
         this.canPlaceOnPredicates = convertFromLegacyNamespaced(canPlaceOn);
     }
 
-    private static List<net.minecraft.advancements.critereon.BlockPredicate> convertFromLegacyNamespaced(final Collection<io.papermc.paper.Namespaced> namespaceds) {
+    private static List<net.minecraft.advancements.critereon.BlockPredicate> convertFromLegacyNamespaced(final Collection<Namespaced> namespaceds) {
         final List<net.minecraft.advancements.critereon.BlockPredicate> predicates = new ArrayList<>();
-        for (final io.papermc.paper.Namespaced namespaced : namespaceds) {
+        for (final Namespaced namespaced : namespaceds) {
             if (namespaced instanceof final org.bukkit.NamespacedKey key) {
                 predicates.add(net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(CraftBlockType.bukkitToMinecraft(Objects.requireNonNull(org.bukkit.Registry.MATERIAL.get(key)))).build());
-            } else if (namespaced instanceof final io.papermc.paper.NamespacedTag tag) {
+            } else if (namespaced instanceof final NamespacedTag tag) {
                 predicates.add(net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(net.minecraft.tags.TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(tag.getNamespace(), tag.getKey()))).build());
             }
         }
         return predicates;
     }
 
-    private static Set<io.papermc.paper.Namespaced> convertToLegacyNamespaced(final Collection<net.minecraft.advancements.critereon.BlockPredicate> predicates) {
-        final Set<io.papermc.paper.Namespaced> namespaceds = Sets.newHashSet();
+    private static Set<Namespaced> convertToLegacyNamespaced(final Collection<net.minecraft.advancements.critereon.BlockPredicate> predicates) {
+        final Set<Namespaced> namespaceds = Sets.newHashSet();
         for (final net.minecraft.advancements.critereon.BlockPredicate predicate : predicates) {
             if (predicate.blocks().isEmpty()) {
                 continue;
             }
             final net.minecraft.core.HolderSet<net.minecraft.world.level.block.Block> holders = predicate.blocks().get();
             if (holders instanceof final net.minecraft.core.HolderSet.Named<net.minecraft.world.level.block.Block> named) {
-                namespaceds.add(new io.papermc.paper.NamespacedTag(named.key().location().getNamespace(), named.key().location().getPath()));
+                namespaceds.add(new NamespacedTag(named.key().location().getNamespace(), named.key().location().getPath()));
             } else {
                 holders.forEach(h -> {
                     h.unwrapKey().ifPresent(key -> {
@@ -2269,9 +2268,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     // not a fan of this
-    private static boolean ofAcceptableType(final Collection<io.papermc.paper.Namespaced> namespacedResources) {
-        for (io.papermc.paper.Namespaced resource : namespacedResources) {
-            if (!(resource instanceof org.bukkit.NamespacedKey || resource instanceof io.papermc.paper.NamespacedTag)) {
+    private static boolean ofAcceptableType(final Collection<Namespaced> namespacedResources) {
+        for (Namespaced resource : namespacedResources) {
+            if (!(resource instanceof org.bukkit.NamespacedKey || resource instanceof NamespacedTag)) {
                 return false;
             }
         }

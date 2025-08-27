@@ -30,6 +30,24 @@
          return true;
      }
  
+@@ -86,7 +_,7 @@
+     }
+ 
+     @Override
+-    public void tickServer(BooleanSupplier p_120049_) {
++    public void tickServer(BooleanSupplier shouldKeepTicking) {
+         boolean flag = this.paused;
+         this.paused = Minecraft.getInstance().isPaused();
+         ProfilerFiller profilerfiller = this.getProfiler();
+@@ -105,7 +_,7 @@
+                 this.forceTimeSynchronization();
+             }
+ 
+-            super.tickServer(p_120049_);
++            super.tickServer(shouldKeepTicking);
+             int i = Math.max(2, this.minecraft.options.renderDistance().get());
+             if (i != this.getPlayerList().getViewDistance()) {
+                 LOGGER.info("Changing view distance to {}, from {}", i, this.getPlayerList().getViewDistance());
 @@ -147,6 +_,11 @@
      }
  

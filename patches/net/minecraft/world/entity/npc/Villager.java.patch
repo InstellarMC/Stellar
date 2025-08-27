@@ -85,7 +85,7 @@
      @Override
      public Brain<Villager> getBrain() {
          return (Brain<Villager>)super.getBrain();
-@@ -268,9 +_,34 @@
+@@ -268,9 +_,33 @@
          return this.assignProfessionWhenSpawned;
      }
  
@@ -114,7 +114,6 @@
 +        this.customServerAiStep(false);
 +    }
 +    protected void customServerAiStep(final boolean inactive) {
-+        // Paper end - EAR 2
          this.level().getProfiler().push("villagerBrain");
 +        if (!inactive) // Paper - EAR 2
          this.getBrain().tick((ServerLevel)this.level(), this);

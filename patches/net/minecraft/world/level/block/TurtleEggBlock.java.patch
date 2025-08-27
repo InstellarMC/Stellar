@@ -75,19 +75,6 @@
                      }
                  }
              }
-@@ -136,9 +_,9 @@
-     }
- 
-     @Override
--    public void playerDestroy(Level p_57771_, Player p_57772_, BlockPos p_57773_, BlockState p_57774_, @Nullable BlockEntity p_57775_, ItemStack p_57776_) {
--        super.playerDestroy(p_57771_, p_57772_, p_57773_, p_57774_, p_57775_, p_57776_);
--        this.decreaseEggs(p_57771_, p_57773_, p_57774_);
-+    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
-+        super.playerDestroy(world, player, pos, state, blockEntity, tool);
-+        this.decreaseEggs(world, pos, state);
-     }
- 
-     @Override
 @@ -171,7 +_,7 @@
          if (p_57769_ instanceof Turtle || p_57769_ instanceof Bat) {
              return false;

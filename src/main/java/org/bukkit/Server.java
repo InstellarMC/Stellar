@@ -2295,11 +2295,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return A PlayerProfile object
      */
     @NotNull
-    io.papermc.paper.profile.PlayerProfile createProfile(@NotNull UUID uuid);
+    com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull UUID uuid);
 
     /**
      * Creates a PlayerProfile for the specified name, with UUID as null.
-     *
+     * <p>
      * If a player with the passed name exists on the server at the time of creation, the returned player profile will
      * be populated with the properties of said player (including their uuid and name).
      * <p>
@@ -2313,8 +2313,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @throws IllegalArgumentException if the name is longer than 16 characters
      * @throws IllegalArgumentException if the name contains invalid characters
      */
-    @NotNull
-    io.papermc.paper.profile.PlayerProfile createProfile(@NotNull String name);
+    com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull String name);
 
     /**
      * Creates a PlayerProfile for the specified name/uuid
@@ -2338,11 +2337,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @throws IllegalArgumentException if the name contains invalid characters
      */
     @NotNull
-    io.papermc.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name);
+    com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name);
 
     /**
      * Creates an exact PlayerProfile for the specified name/uuid
-     *
+     * <p>
      * Both UUID and Name can not be null at same time. One must be supplied.
      * If a player with the passed uuid or name exists on the server at the time of creation, the returned player
      * profile will be populated with the properties of said player.
@@ -2357,8 +2356,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @throws IllegalArgumentException if the name is longer than 16 characters
      * @throws IllegalArgumentException if the name contains invalid characters
      */
-    @NotNull
-    io.papermc.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name);
+    com.destroystokyo.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name);
 
 
     /**

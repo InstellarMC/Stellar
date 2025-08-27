@@ -16,14 +16,7 @@
              return blockstate.is(this) && blockstate.getValue(HALF) == DoubleBlockHalf.LOWER;
          }
      }
-@@ -101,11 +_,16 @@
-     }
- 
-     @Override
--    public void playerDestroy(Level p_52865_, Player p_52866_, BlockPos p_52867_, BlockState p_52868_, @Nullable BlockEntity p_52869_, ItemStack p_52870_) {
--        super.playerDestroy(p_52865_, p_52866_, p_52867_, Blocks.AIR.defaultBlockState(), p_52869_, p_52870_);
-+    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
-+        super.playerDestroy(world, player, pos, Blocks.AIR.defaultBlockState(), blockEntity, tool);
+@@ -106,6 +_,11 @@
      }
  
      protected static void preventDropFromBottomPart(Level p_52904_, BlockPos p_52905_, BlockState p_52906_, Player p_52907_) {

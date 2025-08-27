@@ -1,12 +1,12 @@
 package org.bukkit.craftbukkit.entity;
 
-import com.google.common.base.Preconditions;
+import com.destroystokyo.paper.ClientOption;import com.destroystokyo.paper.Title;import com.destroystokyo.paper.profile.PlayerProfile;import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.BaseEncoding;
 import com.mohistmc.youer.YouerConfig;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
-import io.papermc.paper.profile.CraftPlayerProfile;
+import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,7 +25,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -186,7 +184,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 
@@ -508,7 +505,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public void sendTitle(io.papermc.paper.Title title) {
+    public void sendTitle(Title title) {
         Preconditions.checkNotNull(title, "Title is null");
         setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
         setSubtitle(title.getSubtitle() == null ? new BaseComponent[0] : title.getSubtitle());
@@ -516,7 +513,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public void updateTitle(io.papermc.paper.Title title) {
+    public void updateTitle(Title title) {
         Preconditions.checkNotNull(title, "Title is null");
         setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
         if (title.getSubtitle() != null) {
@@ -678,22 +675,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public <T> T getClientOption(io.papermc.paper.ClientOption<T> type) {
-        if (io.papermc.paper.ClientOption.SKIN_PARTS == type) {
+    public <T> T getClientOption(ClientOption<T> type) {
+        if (ClientOption.SKIN_PARTS == type) {
             return type.getType().cast(new io.papermc.paper.PaperSkinParts(getHandle().getEntityData().get(net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMISATION)));
-        } else if (io.papermc.paper.ClientOption.CHAT_COLORS_ENABLED == type) {
+        } else if (ClientOption.CHAT_COLORS_ENABLED == type) {
             return type.getType().cast(getHandle().canChatInColor());
-        } else if (io.papermc.paper.ClientOption.CHAT_VISIBILITY == type) {
-            return type.getType().cast(getHandle().getChatVisibility() == null ? io.papermc.paper.ClientOption.ChatVisibility.UNKNOWN : io.papermc.paper.ClientOption.ChatVisibility.valueOf(getHandle().getChatVisibility().name()));
-        } else if (io.papermc.paper.ClientOption.LOCALE == type) {
+        } else if (ClientOption.CHAT_VISIBILITY == type) {
+            return type.getType().cast(getHandle().getChatVisibility() == null ? ClientOption.ChatVisibility.UNKNOWN : ClientOption.ChatVisibility.valueOf(getHandle().getChatVisibility().name()));
+        } else if (ClientOption.LOCALE == type) {
             return type.getType().cast(getLocale());
-        } else if (io.papermc.paper.ClientOption.MAIN_HAND == type) {
+        } else if (ClientOption.MAIN_HAND == type) {
             return type.getType().cast(getMainHand());
-        } else if (io.papermc.paper.ClientOption.VIEW_DISTANCE == type) {
+        } else if (ClientOption.VIEW_DISTANCE == type) {
             return type.getType().cast(getClientViewDistance());
-        } else if (io.papermc.paper.ClientOption.ALLOW_SERVER_LISTINGS == type) {
+        } else if (ClientOption.ALLOW_SERVER_LISTINGS == type) {
             return type.getType().cast(getHandle().allowsListing());
-        } else if (io.papermc.paper.ClientOption.TEXT_FILTERING_ENABLED == type) {
+        } else if (ClientOption.TEXT_FILTERING_ENABLED == type) {
             return type.getType().cast(getHandle().isTextFilteringEnabled());
         }
         throw new RuntimeException("Unknown settings type");
@@ -1771,23 +1768,23 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public BanEntry<io.papermc.paper.profile.PlayerProfile> ban(String reason, Date expires, String source) { // Paper - fix ban list API
+    public BanEntry<PlayerProfile> ban(String reason, Date expires, String source) { // Paper - fix ban list API
         return this.ban(reason, expires, source, true);
     }
 
     @Override
-    public BanEntry<io.papermc.paper.profile.PlayerProfile> ban(String reason, Instant expires, String source) { // Paper - fix ban list API
+    public BanEntry<PlayerProfile> ban(String reason, Instant expires, String source) { // Paper - fix ban list API
         return this.ban(reason, expires != null ? Date.from(expires) : null, source);
     }
 
     @Override
-    public BanEntry<io.papermc.paper.profile.PlayerProfile> ban(String reason, Duration duration, String source) { // Paper - fix ban list API
+    public BanEntry<PlayerProfile> ban(String reason, Duration duration, String source) { // Paper - fix ban list API
         return this.ban(reason, duration != null ? Instant.now().plus(duration) : null, source);
     }
 
     @Override
-    public BanEntry<io.papermc.paper.profile.PlayerProfile> ban(String reason, Date expires, String source, boolean kickPlayer) { // Paper - fix ban list API
-        BanEntry<io.papermc.paper.profile.PlayerProfile> banEntry = ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source); // Paper - fix ban list API
+    public BanEntry<PlayerProfile> ban(String reason, Date expires, String source, boolean kickPlayer) { // Paper - fix ban list API
+        BanEntry<PlayerProfile> banEntry = ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source); // Paper - fix ban list API
         if (kickPlayer) {
             this.kickPlayer(reason);
         }
@@ -1795,12 +1792,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public BanEntry<io.papermc.paper.profile.PlayerProfile> ban(String reason, Instant instant, String source, boolean kickPlayer) { // Paper - fix ban list API
+    public BanEntry<PlayerProfile> ban(String reason, Instant instant, String source, boolean kickPlayer) { // Paper - fix ban list API
         return this.ban(reason, instant != null ? Date.from(instant) : null, source, kickPlayer);
     }
 
     @Override
-    public BanEntry<io.papermc.paper.profile.PlayerProfile> ban(String reason, Duration duration, String source, boolean kickPlayer) { // Paper - fix ban list API
+    public BanEntry<PlayerProfile> ban(String reason, Duration duration, String source, boolean kickPlayer) { // Paper - fix ban list API
         return this.ban(reason, duration != null ? Instant.now().plus(duration) : null, source, kickPlayer);
     }
 
@@ -2092,7 +2089,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     // Paper start
-    public io.papermc.paper.profile.PlayerProfile getPlayerProfile() {
+    public PlayerProfile getPlayerProfile() {
         return new CraftPlayerProfile(this).clone();
     }
 
@@ -2202,7 +2199,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     // Paper start
     @Override
-    public void setPlayerProfile(io.papermc.paper.profile.PlayerProfile profile) {
+    public void setPlayerProfile(PlayerProfile profile) {
         ServerPlayer self = this.getHandle();
         GameProfile gameProfile = CraftPlayerProfile.asAuthlibCopy(profile);
         if (!self.sentListPacket) {

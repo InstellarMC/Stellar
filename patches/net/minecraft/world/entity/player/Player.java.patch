@@ -553,7 +553,7 @@
                  if (this.useItem.isEmpty()) {
                      if (interactionhand == InteractionHand.MAIN_HAND) {
                          this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-@@ -949,27 +_,37 @@
+@@ -949,29 +_,40 @@
          }
      }
  
@@ -586,7 +586,7 @@
 +            if (!this.isInvulnerableTo(source)) {
 +                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ARMOR, this.damageContainers.peek().getNewDamage() - this.getDamageAfterArmorAbsorb(source, this.damageContainers.peek().getNewDamage()));
 +                this.getDamageAfterMagicAbsorb(source, this.damageContainers.peek().getNewDamage());
-+                float damage = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek());
++                float damage = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek());  // Neo
 +                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION, Math.min(this.getAbsorptionAmount(), damage));
 +                float absorbed = Math.min(damage, this.damageContainers.peek().getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION));
 +                this.setAbsorptionAmount(Math.max(0, this.getAbsorptionAmount() - absorbed));
@@ -607,10 +607,13 @@
 +                    this.gameEvent(GameEvent.ENTITY_DAMAGE);
 +                    this.onDamageTaken(this.damageContainers.peek());
 +                }
-+                net.neoforged.neoforge.common.CommonHooks.onLivingDamagePost(this, this.damageContainers.peek());
++                net.neoforged.neoforge.common.CommonHooks.onLivingDamagePost(this, this.damageContainers.peek()); // Neo
              }
          }
++        return false; // CraftBukkit
      }
+ 
+     public boolean isTextFilteringEnabled() {
 @@ -1014,6 +_,8 @@
  
              return InteractionResult.PASS;

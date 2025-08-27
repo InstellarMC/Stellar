@@ -1,5 +1,6 @@
 package io.papermc.paper.network;
 
+import com.destroystokyo.paper.network.StatusClient;
 import io.papermc.paper.event.server.PaperServerListPingEvent;
 import javax.annotation.Nullable;
 import net.minecraft.server.MinecraftServer;

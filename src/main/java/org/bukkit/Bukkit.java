@@ -2602,7 +2602,7 @@ public final class Bukkit {
      * @return A PlayerProfile object
      */
     @NotNull
-    public static io.papermc.paper.profile.PlayerProfile createProfile(@NotNull UUID uuid) {
+    public static com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull UUID uuid) {
         return server.createProfile(uuid);
     }
 
@@ -2623,7 +2623,7 @@ public final class Bukkit {
      * @throws IllegalArgumentException if the name contains invalid characters
      */
     @NotNull
-    public static io.papermc.paper.profile.PlayerProfile createProfile(@NotNull String name) {
+    public static com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull String name) {
         return server.createProfile(name);
     }
 
@@ -2649,7 +2649,7 @@ public final class Bukkit {
      * @throws IllegalArgumentException if the name contains invalid characters
      */
     @NotNull
-    public static io.papermc.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name) {
+    public static com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name) {
         return server.createProfile(uuid, name);
     }
 
@@ -2671,7 +2671,7 @@ public final class Bukkit {
      * @throws IllegalArgumentException if the name contains invalid characters
      */
     @NotNull
-    public static io.papermc.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name) {
+    public static com.destroystokyo.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name) {
         return server.createProfileExact(uuid, name);
     }
     // Paper end

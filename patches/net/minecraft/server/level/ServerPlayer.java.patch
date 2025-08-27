@@ -3,7 +3,7 @@
 @@ -1,16 +_,26 @@
  package net.minecraft.server.level;
  
-+import com.mohistmc.youer.bukkit.inventory.InventoryOwner;
++import com.destroystokyo.paper.ClientOption;import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent;import com.mohistmc.youer.bukkit.inventory.InventoryOwner;
 +import com.mohistmc.youer.plugins.KeepInventory;
  import com.google.common.net.InetAddresses;
  import com.mojang.authlib.GameProfile;
@@ -95,7 +95,7 @@
  import net.minecraft.world.level.block.HorizontalDirectionalBlock;
  import net.minecraft.world.level.block.RespawnAnchorBlock;
  import net.minecraft.world.level.block.entity.BlockEntity;
-@@ -158,12 +_,43 @@
+@@ -158,12 +_,42 @@
  import net.minecraft.world.scores.PlayerTeam;
  import net.minecraft.world.scores.ScoreAccess;
  import net.minecraft.world.scores.ScoreHolder;
@@ -128,7 +128,6 @@
 +import org.bukkit.event.player.PlayerLocaleChangeEvent;
 +import org.bukkit.event.player.PlayerRespawnEvent;
 +import org.bukkit.event.player.PlayerSpawnChangeEvent;
-+import org.bukkit.event.player.PlayerTeleportEvent;
 +import org.bukkit.event.player.PlayerToggleSneakEvent;
 +import org.bukkit.inventory.MainHand;
  import org.slf4j.Logger;
@@ -150,7 +149,7 @@
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -221,53 +_,84 @@
+@@ -221,11 +_,11 @@
      private boolean textFilteringEnabled;
      private boolean allowsListing;
      private boolean spawnExtraParticlesOnFall;
@@ -162,52 +161,9 @@
 -    private final ContainerSynchronizer containerSynchronizer = new ContainerSynchronizer() {
 +    public final ContainerSynchronizer containerSynchronizer = new ContainerSynchronizer() {
          @Override
--        public void sendInitialData(AbstractContainerMenu p_143448_, NonNullList<ItemStack> p_143449_, ItemStack p_143450_, int[] p_143451_) {
-+        public void sendInitialData(AbstractContainerMenu handler, NonNullList<ItemStack> stacks, ItemStack cursorStack, int[] properties) {
+         public void sendInitialData(AbstractContainerMenu p_143448_, NonNullList<ItemStack> p_143449_, ItemStack p_143450_, int[] p_143451_) {
              ServerPlayer.this.connection
--                .send(new ClientboundContainerSetContentPacket(p_143448_.containerId, p_143448_.incrementStateId(), p_143449_, p_143450_));
-+                .send(new ClientboundContainerSetContentPacket(handler.containerId, handler.incrementStateId(), stacks, cursorStack));
- 
--            for (int i = 0; i < p_143451_.length; i++) {
--                this.broadcastDataValue(p_143448_, i, p_143451_[i]);
-+            for (int i = 0; i < properties.length; i++) {
-+                this.broadcastDataValue(handler, i, properties[i]);
-             }
-         }
- 
--        @Override
--        public void sendSlotChange(AbstractContainerMenu p_143441_, int p_143442_, ItemStack p_143443_) {
--            ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(p_143441_.containerId, p_143441_.incrementStateId(), p_143442_, p_143443_));
--        }
--
--        @Override
--        public void sendCarriedChange(AbstractContainerMenu p_143445_, ItemStack p_143446_) {
--            ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(-1, p_143445_.incrementStateId(), -1, p_143446_));
--        }
--
--        @Override
--        public void sendDataChange(AbstractContainerMenu p_143437_, int p_143438_, int p_143439_) {
--            this.broadcastDataValue(p_143437_, p_143438_, p_143439_);
-+        // Paper start - Sync offhand slot in menus
-+        @Override
-+        public void sendOffHandSlotChange() {
-+            ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(ServerPlayer.this.inventoryMenu.containerId, ServerPlayer.this.inventoryMenu.incrementStateId(), net.minecraft.world.inventory.InventoryMenu.SHIELD_SLOT, ServerPlayer.this.inventoryMenu.getSlot(net.minecraft.world.inventory.InventoryMenu.SHIELD_SLOT).getItem().copy()));
-+        }
-+        // Paper end - Sync offhand slot in menus
-+
-+        @Override
-+        public void sendSlotChange(AbstractContainerMenu handler, int slot, ItemStack stack) {
-+            ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(handler.containerId, handler.incrementStateId(), slot, stack));
-+        }
-+
-+        @Override
-+        public void sendCarriedChange(AbstractContainerMenu handler, ItemStack stack) {
-+            ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(-1, handler.incrementStateId(), -1, stack));
-+        }
-+
-+        @Override
-+        public void sendDataChange(AbstractContainerMenu handler, int property, int value) {
-+            this.broadcastDataValue(handler, property, value);
+@@ -252,6 +_,10 @@
          }
  
          private void broadcastDataValue(AbstractContainerMenu p_143455_, int p_143456_, int p_143457_) {
@@ -218,28 +174,10 @@
              ServerPlayer.this.connection.send(new ClientboundContainerSetDataPacket(p_143455_.containerId, p_143456_, p_143457_));
          }
      };
-     private final ContainerListener containerListener = new ContainerListener() {
-         @Override
--        public void slotChanged(AbstractContainerMenu p_143466_, int p_143467_, ItemStack p_143468_) {
--            Slot slot = p_143466_.getSlot(p_143467_);
--            if (!(slot instanceof ResultSlot)) {
--                if (slot.container == ServerPlayer.this.getInventory()) {
--                    CriteriaTriggers.INVENTORY_CHANGED.trigger(ServerPlayer.this, ServerPlayer.this.getInventory(), p_143468_);
--                }
--            }
--        }
--
--        @Override
--        public void dataChanged(AbstractContainerMenu p_143462_, int p_143463_, int p_143464_) {
-+        public void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack stack) {
-+            Slot slot = handler.getSlot(slotId);
-+            if (!(slot instanceof ResultSlot)) {
-+                if (slot.container == ServerPlayer.this.getInventory()) {
-+                    CriteriaTriggers.INVENTORY_CHANGED.trigger(ServerPlayer.this, ServerPlayer.this.getInventory(), stack);
-+                }
-+            }
-+        }
-+
+@@ -266,6 +_,26 @@
+             }
+         }
+ 
 +        // Paper start - Add PlayerInventorySlotChangeEvent
 +        @Override
 +        public void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack oldStack, ItemStack stack) {
@@ -260,11 +198,9 @@
 +        }
 +        // Paper end - Add PlayerInventorySlotChangeEvent
 +
-+        @Override
-+        public void dataChanged(AbstractContainerMenu handler, int property, int value) {
+         @Override
+         public void dataChanged(AbstractContainerMenu p_143462_, int p_143463_, int p_143464_) {
          }
-     };
-     @Nullable
 @@ -276,6 +_,63 @@
      public final Object object;
      private int containerCounter;
@@ -1408,16 +1344,16 @@
      }
  
 +    // Paper start - Client option API
-+    private java.util.Map<io.papermc.paper.ClientOption<?>, ?> getClientOptionMap(String locale, int viewDistance, io.papermc.paper.ClientOption.ChatVisibility chatVisibility, boolean chatColors, io.papermc.paper.PaperSkinParts skinParts, org.bukkit.inventory.MainHand mainHand, boolean allowsServerListing, boolean textFilteringEnabled) {
-+        java.util.Map<io.papermc.paper.ClientOption<?>, Object> map = new java.util.HashMap<>();
-+        map.put(io.papermc.paper.ClientOption.LOCALE, locale);
-+        map.put(io.papermc.paper.ClientOption.VIEW_DISTANCE, viewDistance);
-+        map.put(io.papermc.paper.ClientOption.CHAT_VISIBILITY, chatVisibility);
-+        map.put(io.papermc.paper.ClientOption.CHAT_COLORS_ENABLED, chatColors);
-+        map.put(io.papermc.paper.ClientOption.SKIN_PARTS, skinParts);
-+        map.put(io.papermc.paper.ClientOption.MAIN_HAND, mainHand);
-+        map.put(io.papermc.paper.ClientOption.ALLOW_SERVER_LISTINGS, allowsServerListing);
-+        map.put(io.papermc.paper.ClientOption.TEXT_FILTERING_ENABLED, textFilteringEnabled);
++    private java.util.Map<ClientOption<?>, ?> getClientOptionMap(String locale, int viewDistance, ClientOption.ChatVisibility chatVisibility, boolean chatColors, io.papermc.paper.PaperSkinParts skinParts, org.bukkit.inventory.MainHand mainHand, boolean allowsServerListing, boolean textFilteringEnabled) {
++        java.util.Map<ClientOption<?>, Object> map = new java.util.HashMap<>();
++        map.put(ClientOption.LOCALE, locale);
++        map.put(ClientOption.VIEW_DISTANCE, viewDistance);
++        map.put(ClientOption.CHAT_VISIBILITY, chatVisibility);
++        map.put(ClientOption.CHAT_COLORS_ENABLED, chatColors);
++        map.put(ClientOption.SKIN_PARTS, skinParts);
++        map.put(ClientOption.MAIN_HAND, mainHand);
++        map.put(ClientOption.ALLOW_SERVER_LISTINGS, allowsServerListing);
++        map.put(ClientOption.TEXT_FILTERING_ENABLED, textFilteringEnabled);
 +        return map;
 +    }
 +    // Paper end
@@ -1432,7 +1368,7 @@
 -        this.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte)p_301998_.modelCustomisation());
 -        this.getEntityData().set(DATA_PLAYER_MAIN_HAND, (byte)p_301998_.mainHand().getId());
 -    }
-+        new io.papermc.paper.event.player.PlayerClientOptionsChangeEvent(getBukkitEntity(), getClientOptionMap(p_301998_.language(), p_301998_.viewDistance(), io.papermc.paper.ClientOption.ChatVisibility.valueOf(p_301998_.chatVisibility().name()), p_301998_.chatColors(), new io.papermc.paper.PaperSkinParts(p_301998_.modelCustomisation()), p_301998_.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT, p_301998_.allowsListing(), p_301998_.textFilteringEnabled())).callEvent(); // Paper - settings event
++        new io.papermc.paper.event.player.PlayerClientOptionsChangeEvent(getBukkitEntity(), getClientOptionMap(p_301998_.language(), p_301998_.viewDistance(), ClientOption.ChatVisibility.valueOf(p_301998_.chatVisibility().name()), p_301998_.chatColors(), new io.papermc.paper.PaperSkinParts(p_301998_.modelCustomisation()), p_301998_.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT, p_301998_.allowsListing(), p_301998_.textFilteringEnabled())).callEvent(); // Paper - settings event
 +        // CraftBukkit start
 +        if (getMainArm() != p_301998_.mainHand()) {
 +            PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(getBukkitEntity(), getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
@@ -1611,75 +1547,66 @@
      }
  
      @Nullable
-@@ -1709,23 +_,59 @@
+@@ -1709,11 +_,44 @@
          );
      }
  
--    public void setRespawnPosition(ResourceKey<Level> p_9159_, @Nullable BlockPos p_9160_, float p_9161_, boolean p_9162_, boolean p_9163_) {
--        if (p_9160_ != null) {
++    // Youer start
++    private final AtomicReference<PlayerSpawnChangeEvent.Cause> setRespawnPosition$cause = new AtomicReference<>(PlayerSpawnChangeEvent.Cause.UNKNOWN);
++
++    public void setRespawnPosition$cause(PlayerSpawnChangeEvent.Cause cause) {
++        this.setRespawnPosition$cause.set(cause);
++    }
++
+     public void setRespawnPosition(ResourceKey<Level> p_9159_, @Nullable BlockPos p_9160_, float p_9161_, boolean p_9162_, boolean p_9163_) {
++        if (EventHooks.onPlayerSpawnSet(this, p_9160_ == null ? Level.OVERWORLD : p_9159_, p_9160_, p_9162_)) return;
++        Location spawnLoc = null;
++        boolean willNotify = false;
+         if (p_9160_ != null) {
 -            boolean flag = p_9160_.equals(this.respawnPosition) && p_9159_.equals(this.respawnDimension);
 -            if (p_9163_ && !flag) {
 -                this.sendSystemMessage(Component.translatable("block.minecraft.set_spawn"));
-+    @Deprecated // Paper - Add PlayerSetSpawnEvent
-+    public void setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage) {
-+        // Paper start - Add PlayerSetSpawnEvent
-+        this.setRespawnPosition(dimension, pos, angle, forced, sendMessage, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.UNKNOWN);
-+    }
-+    @Deprecated
-+    public boolean setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage, PlayerSpawnChangeEvent.Cause cause) {
-+        return this.setRespawnPosition(dimension, pos, angle, forced, sendMessage, cause == PlayerSpawnChangeEvent.Cause.RESET ?
-+                com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN : com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.valueOf(cause.name()));
-+    }
-+    public boolean setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause cause) {
-+        if (EventHooks.onPlayerSpawnSet(this, pos == null ? Level.OVERWORLD : dimension, pos, forced)) return false; // Neo // Stellar - return type(boolean)
-+        Location spawnLoc = null;
-+        boolean willNotify = false;
-+        if (pos != null) {
-+            boolean flag2 = pos.equals(this.respawnPosition) && dimension.equals(this.respawnDimension);
-+            spawnLoc = io.papermc.paper.util.MCUtil.toLocation(this.getServer().getLevel(dimension), pos);
-+            spawnLoc.setYaw(angle);
-+            willNotify = sendMessage && !flag2;
++            boolean flag2 = p_9160_.equals(this.respawnPosition) && p_9159_.equals(this.respawnDimension);
++            spawnLoc = io.papermc.paper.util.MCUtil.toLocation(this.getServer().getLevel(p_9159_), p_9160_);
++            spawnLoc.setYaw(p_9161_);
++            willNotify = p_9163_ && !flag2;
 +        }
-+
-+        PlayerSpawnChangeEvent dumbEvent = new PlayerSpawnChangeEvent(this.getBukkitEntity(), spawnLoc, forced,
-+                cause == com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN ? PlayerSpawnChangeEvent.Cause.RESET : PlayerSpawnChangeEvent.Cause.valueOf(cause.name()));
++        PlayerSpawnChangeEvent.Cause cause = setRespawnPosition$cause.getAndSet(PlayerSpawnChangeEvent.Cause.UNKNOWN);
++        PlayerSetSpawnEvent.Cause causePaper = cause == PlayerSpawnChangeEvent.Cause.RESET ?
++                PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN : PlayerSetSpawnEvent.Cause.valueOf(cause.name());
++        PlayerSpawnChangeEvent dumbEvent = new PlayerSpawnChangeEvent(this.getBukkitEntity(), spawnLoc, p_9162_,
++                causePaper == io.papermc.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN ? PlayerSpawnChangeEvent.Cause.RESET : PlayerSpawnChangeEvent.Cause.valueOf(cause.name()));
 +        dumbEvent.callEvent();
 +
-+        com.destroystokyo.paper.event.player.PlayerSetSpawnEvent event = new com.destroystokyo.paper.event.player.PlayerSetSpawnEvent(this.getBukkitEntity(), cause, dumbEvent.getNewSpawn(), dumbEvent.isForced(), willNotify, willNotify ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null);
++        PlayerSetSpawnEvent event = new PlayerSetSpawnEvent(this.getBukkitEntity(), causePaper, dumbEvent.getNewSpawn(), dumbEvent.isForced(), willNotify, willNotify ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null);
 +        event.setCancelled(dumbEvent.isCancelled());
 +        if (!event.callEvent()) {
-+            return false;
++            return;
 +        }
 +        if (event.getLocation() != null) {
-+            dimension = event.getLocation().getWorld() != null ? ((CraftWorld) event.getLocation().getWorld()).getHandle().dimension() : dimension;
-+            pos = io.papermc.paper.util.MCUtil.toBlockPosition(event.getLocation());
-+            angle = event.getLocation().getYaw();
-+            forced = event.isForced();
++            p_9159_ = event.getLocation().getWorld() != null ? ((CraftWorld) event.getLocation().getWorld()).getHandle().dimension() : p_9159_;
++            p_9160_ = io.papermc.paper.util.MCUtil.toBlockPosition(event.getLocation());
++            p_9161_ = event.getLocation().getYaw();
++            p_9162_ = event.isForced();
 +            // Paper end - Add PlayerSetSpawnEvent
 +
 +            if (event.willNotifyPlayer() && event.getNotification() != null) { // Paper - Add PlayerSetSpawnEvent
 +                this.sendSystemMessage(PaperAdventure.asVanilla(event.getNotification())); // Paper - Add PlayerSetSpawnEvent
              }
  
--            this.respawnPosition = p_9160_;
--            this.respawnDimension = p_9159_;
--            this.respawnAngle = p_9161_;
--            this.respawnForced = p_9162_;
-+            this.respawnPosition = pos;
-+            this.respawnDimension = dimension;
-+            this.respawnAngle = angle;
-+            this.respawnForced = forced;
-         } else {
-             this.respawnPosition = null;
-             this.respawnDimension = Level.OVERWORLD;
-             this.respawnAngle = 0.0F;
+             this.respawnPosition = p_9160_;
+@@ -1727,6 +_,11 @@
              this.respawnForced = false;
          }
-+
-+        return true; // Paper - Add PlayerSetSpawnEvent
      }
++    public void setRespawnPosition(ResourceKey<Level> p_9159_, @Nullable BlockPos p_9160_, float p_9161_, boolean p_9162_, boolean p_9163_, PlayerSpawnChangeEvent.Cause cause) {
++        setRespawnPosition$cause(cause);
++        setRespawnPosition(p_9159_, p_9160_, p_9161_, p_9162_, p_9163_);
++    }
++    // Youer end
  
      public SectionPos getLastSectionPos() {
+         return this.lastSectionPos;
 @@ -1767,6 +_,8 @@
          if (itementity == null) {
              return null;
