@@ -111,10 +111,11 @@
  import net.minecraft.world.level.storage.ServerLevelData;
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.Vec3;
-@@ -164,9 +_,25 @@
+@@ -164,9 +_,26 @@
  import net.minecraft.world.phys.shapes.Shapes;
  import net.minecraft.world.phys.shapes.VoxelShape;
  import net.minecraft.world.ticks.LevelTicks;
++import net.neoforged.neoforge.server.timings.TimeTracker;
 +import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.CraftWorld;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -669,16 +670,19 @@
          if (flag1) {
              this.resetEmptyTime();
          }
-@@ -392,7 +_,7 @@
+@@ -392,16 +_,17 @@
                  this.dragonFight.tick();
                  profilerfiller.pop();
              }
 -
 +            org.spigotmc.ActivationRange.activateEntities(this); // Spigot
              this.entityTickList.forEach(p_308566_ -> {
++                p_308566_.activatedPriorityReset = false; // Pufferfish - DAB
                  if (!p_308566_.isRemoved()) {
-                     if (this.shouldDiscardEntity(p_308566_)) {
-@@ -401,7 +_,7 @@
+-                    if (this.shouldDiscardEntity(p_308566_)) {
++                    if (false && this.shouldDiscardEntity(p_308566_)) { // CraftBukkit - We prevent spawning in general, so this butchering is not needed
+                         p_308566_.discard();
+                     } else if (!tickratemanager.isEntityFrozen(p_308566_)) {
                          profilerfiller.push("checkDespawn");
                          p_308566_.checkDespawn();
                          profilerfiller.pop();
@@ -687,23 +691,32 @@
                              Entity entity = p_308566_.getVehicle();
                              if (entity != null) {
                                  if (!entity.isRemoved() && entity.hasPassenger(p_308566_)) {
-@@ -412,7 +_,10 @@
+@@ -412,7 +_,23 @@
                              }
  
                              profilerfiller.push("tick");
 -                            this.guardEntityTick(this::tickNonPassenger, p_308566_);
 +                            if (!p_308566_.isRemoved() && !(p_308566_ instanceof net.neoforged.neoforge.entity.PartEntity)) {
-+                                this.guardEntityTick(this::tickNonPassenger, p_308566_);
++                                // Pufferfish start - copied from this.guardEntityTick // Stellar start - neo
++                                try {
++                                    TimeTracker.ENTITY_UPDATE.trackStart(p_308566_);
++                                    this.tickNonPassenger(p_308566_);
++                                } catch (Throwable throwable) { // Pufferfish - diff on change ServerLevel.tick
++                                    if (throwable instanceof ThreadDeath) throw throwable; // Paper
++                                    // Paper start - Prevent block entity and entity crashes
++                                    final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
++                                    MinecraftServer.LOGGER.error(msg, throwable);
++                                    getCraftServer().getPluginManager().callEvent(new io.papermc.paper.event.server.ServerExceptionEvent(new io.papermc.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
++                                    entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Pufferfish - diff on change ServerLevel.tick
++                                    // Paper end - Prevent block entity and entity crashes
++                                }
++                                // Pufferfish end // Stellar end - neo
 +                            }
 +                            this.moonrise$midTickTasks(); // Paper - rewrite chunk system
                              profilerfiller.pop();
                          }
                      }
-@@ -420,16 +_,20 @@
-             });
-             profilerfiller.pop();
-             this.tickBlockEntities();
-+            spigotConfig.currentPrimedTnt = 0; // Spigot // Mohist move form Level#tickBlockEntities
+@@ -423,13 +_,16 @@
          }
  
          profilerfiller.push("entityManagement");
@@ -713,10 +726,11 @@
      }
  
      @Override
-     public boolean shouldTickBlocksAt(long p_184059_) {
+-    public boolean shouldTickBlocksAt(long p_184059_) {
 -        return this.chunkSource.chunkMap.getDistanceManager().inBlockTickingRange(p_184059_);
++    public boolean shouldTickBlocksAt(long chunkPos) {
 +        // Paper start - rewrite chunk system
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = this.moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(p_184059_);
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = this.moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(chunkPos);
 +        return holder != null && holder.isTickingReady();
 +        // Paper end - rewrite chunk system
      }
@@ -731,10 +745,11 @@
              }
          }
      }
-@@ -464,6 +_,63 @@
+@@ -464,27 +_,92 @@
          this.players.stream().filter(LivingEntity::isSleeping).collect(Collectors.toList()).forEach(p_184116_ -> p_184116_.stopSleepInBed(false, false));
      }
  
+-    public void tickChunk(LevelChunk p_8715_, int p_8716_) {
 +    // Paper start - optimise random ticking
 +    private void optimiseRandomTick(final LevelChunk chunk, final int tickSpeed) {
 +        final LevelChunkSection[] sections = chunk.getSections();
@@ -792,10 +807,10 @@
 +    }
 +    // Paper end - optimise random ticking
 +
-     public void tickChunk(LevelChunk p_8715_, int p_8716_) {
++    public void tickChunk(LevelChunk p_8715_, int randomTickSpeed) {
          ChunkPos chunkpos = p_8715_.getPos();
          boolean flag = this.isRaining();
-@@ -471,12 +_,12 @@
+         int i = chunkpos.getMinBlockX();
          int j = chunkpos.getMinBlockZ();
          ProfilerFiller profilerfiller = this.getProfiler();
          profilerfiller.push("thunder");
@@ -806,30 +821,35 @@
                  DifficultyInstance difficultyinstance = this.getCurrentDifficultyAt(blockpos);
                  boolean flag1 = this.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)
 -                    && this.random.nextDouble() < (double)difficultyinstance.getEffectiveDifficulty() * 0.01
-+                    && this.random.nextDouble() < (double)difficultyinstance.getEffectiveDifficulty() * this.paperConfig().entities.spawning.skeletonHorseThunderSpawnChance.or(0.01D)
++                    && this.random.nextDouble() < (double)difficultyinstance.getEffectiveDifficulty() * this.paperConfig().entities.spawning.skeletonHorseThunderSpawnChance.or(0.01D) // Paper - Configurable spawn chances for skeleton horses
                      && !this.getBlockState(blockpos.below()).is(Blocks.LIGHTNING_ROD);
                  if (flag1) {
-                     SkeletonHorse skeletonhorse = EntityType.SKELETON_HORSE.create(this);
-@@ -484,6 +_,7 @@
-                         skeletonhorse.setTrap(true);
+-                    SkeletonHorse skeletonhorse = EntityType.SKELETON_HORSE.create(this);
++                    // Purpur start
++                    net.minecraft.world.entity.animal.horse.AbstractHorse skeletonhorse;
++                    if (purpurConfig.zombieHorseSpawnChance > 0D && random.nextDouble() <= purpurConfig.zombieHorseSpawnChance) {
++                        skeletonhorse = EntityType.ZOMBIE_HORSE.create(this);
++                    } else {
++                        skeletonhorse = EntityType.SKELETON_HORSE.create(this);
++                        if (skeletonhorse != null) ((SkeletonHorse) skeletonhorse).setTrap(true);
++                    }
++                    // Purpur end
+                     if (skeletonhorse != null) {
+-                        skeletonhorse.setTrap(true);
++                        // skeletonhorse.setTrap(true); // Purpur - moved up
                          skeletonhorse.setAge(0);
                          skeletonhorse.setPos((double)blockpos.getX(), (double)blockpos.getY(), (double)blockpos.getZ());
-+                        skeletonhorse.spawnReason(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
-                         this.addFreshEntity(skeletonhorse);
+-                        this.addFreshEntity(skeletonhorse);
++                        this.addFreshEntity(skeletonhorse, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // CraftBukkit
                      }
                  }
-@@ -492,45 +_,33 @@
+ 
+@@ -492,45 +_,26 @@
                  if (lightningbolt != null) {
                      lightningbolt.moveTo(Vec3.atBottomCenterOf(blockpos));
                      lightningbolt.setVisualOnly(flag1);
-+                    // Youer start - fix mixin
-+                    LightningStrikeEvent lightning = CraftEventFactory.callLightningStrikeEvent((org.bukkit.entity.LightningStrike) lightningbolt.getBukkitEntity(), org.bukkit.event.weather.LightningStrikeEvent.Cause.WEATHER);
-+
-+                    if (lightning.isCancelled()) {
-+                        return;
-+                    }
-                     this.addFreshEntity(lightningbolt);
-+                    // Youer end
+-                    this.addFreshEntity(lightningbolt);
++                    this.strikeLightning(lightningbolt, org.bukkit.event.weather.LightningStrikeEvent.Cause.WEATHER); // CraftBukkit
                  }
              }
          }
@@ -838,7 +858,7 @@
  
 -        for (int i1 = 0; i1 < p_8716_; i1++) {
 +        if (!this.paperConfig().environment.disableIceAndSnow) { // Paper - Option to disable ice and snow
-+            for (int i1 = 0; i1 < p_8716_; i1++) {
++            for (int i1 = 0; i1 < randomTickSpeed; i1++) {
              if (this.random.nextInt(48) == 0) {
                  this.tickPrecipitation(this.getBlockRandomPos(i, 0, j, 15));
              }
@@ -846,7 +866,7 @@
 +        } // Paper - Option to disable ice and snow
  
          profilerfiller.popPush("tickBlocks");
-         if (p_8716_ > 0) {
+-        if (p_8716_ > 0) {
 -            LevelChunkSection[] alevelchunksection = p_8715_.getSections();
 -
 -            for (int j1 = 0; j1 < alevelchunksection.length; j1++) {
@@ -871,9 +891,10 @@
 -                        profilerfiller.pop();
 -                    }
 -                }
++        if (randomTickSpeed > 0) {
 +            final var batches = this.stellarConfig().chunks.randomTickBatching.or(1);
 +            if (batches == 1 || this.random.nextInt(batches) == 0) {
-+            this.optimiseRandomTick(p_8715_, p_8716_ * batches); // Paper - optimise random ticking // Stellar - random tick batching
++            this.optimiseRandomTick(p_8715_, randomTickSpeed * batches); // Paper - optimise random ticking // Stellar - random tick batching
              }
          }
  
@@ -946,43 +967,36 @@
          Optional<BlockPos> optional = this.getPoiManager()
              .findClosest(
                  p_215059_ -> p_215059_.is(PoiTypes.LIGHTNING_ROD),
-@@ -582,7 +_,10 @@
+@@ -582,19 +_,26 @@
          return optional.map(p_184053_ -> p_184053_.above(1));
      }
  
 -    protected BlockPos findLightningTargetAround(BlockPos p_143289_) {
-+    public AtomicBoolean findLightningTargetAround$returnNullWhenNoTarget = new AtomicBoolean(false);
-+
-+    public BlockPos findLightningTargetAround(BlockPos p_143289_) {
+-        BlockPos blockpos = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, p_143289_);
++    protected BlockPos findLightningTargetAround(BlockPos pos) {
++        // Paper start - Add methods to find targets for lightning strikes
++        return this.findLightningTargetAround(pos, false);
++    }
++    public BlockPos findLightningTargetAround(BlockPos pos, boolean returnNullWhenNoTarget) {
 +        // Paper end - Add methods to find targets for lightning strikes
-         BlockPos blockpos = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, p_143289_);
++        // Paper end - Add methods to find targets for lightning strikes
++        BlockPos blockpos = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
          Optional<BlockPos> optional = this.findLightningRod(blockpos);
          if (optional.isPresent()) {
-@@ -590,11 +_,12 @@
+             return optional.get();
          } else {
              AABB aabb = AABB.encapsulatingFullBlocks(blockpos, new BlockPos(blockpos.atY(this.getMaxBuildHeight()))).inflate(3.0);
              List<LivingEntity> list = this.getEntitiesOfClass(
 -                LivingEntity.class, aabb, p_352698_ -> p_352698_ != null && p_352698_.isAlive() && this.canSeeSky(p_352698_.blockPosition())
-+                    LivingEntity.class, aabb, p_352698_ -> p_352698_ != null && p_352698_.isAlive() && this.canSeeSky(p_352698_.blockPosition())
++                    LivingEntity.class, aabb, livingentity -> livingentity != null && livingentity.isAlive() && this.canSeeSky(livingentity.blockPosition()) && !entityliving.isSpectator()
              );
              if (!list.isEmpty()) {
                  return list.get(this.random.nextInt(list.size())).blockPosition();
              } else {
-+                if (findLightningTargetAround$returnNullWhenNoTarget.getAndSet(false)) return null; // Paper - Add methods to find targets for lightning strikes
++                if (returnNullWhenNoTarget) return null; // Paper - Add methods to find targets for lightning strikes
                  if (blockpos.getY() == this.getMinBuildHeight() - 1) {
                      blockpos = blockpos.above(2);
                  }
-@@ -603,6 +_,10 @@
-             }
-         }
-     }
-+    public BlockPos findLightningTargetAround(BlockPos p_143289_, boolean returnNullWhenNoTarget) {
-+        findLightningTargetAround$returnNullWhenNoTarget.set(returnNullWhenNoTarget);
-+        return findLightningTargetAround(p_143289_);
-+    }
- 
-     public boolean isHandlingTick() {
-         return this.handlingTick;
 @@ -714,15 +_,19 @@
                  .broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel), this.dimension());
          }

@@ -91,7 +91,7 @@
      private float eyeHeight;
      public boolean isInPowderSnow;
      public boolean wasInPowderSnow;
-@@ -243,6 +_,229 @@
+@@ -243,6 +_,232 @@
      public boolean hasVisualFire;
      @Nullable
      private BlockState inBlockState = null;
@@ -183,6 +183,9 @@
 +    private UUID originWorld;
 +    public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
 +    public boolean fixedPose = false; // Paper - Expand Pose API
++    public boolean activatedPriorityReset = false; // Pufferfish - DAB
++    public int activatedPriority = gg.pufferfish.pufferfish.PufferfishConfig.maximumActivationPrio; // Pufferfish - DAB (golf score)
++    public final BlockPos.MutableBlockPos cachedBlockPos = new BlockPos.MutableBlockPos(); // Pufferfish - reduce entity allocations
 +    public @Nullable Boolean immuneToFire = null; // Purpur - Fire immune API
 +
 +    public void setOrigin(@javax.annotation.Nonnull Location location) {

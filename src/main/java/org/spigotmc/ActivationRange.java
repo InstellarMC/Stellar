@@ -1,6 +1,7 @@
 package org.spigotmc;
 
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.LightningBolt;
@@ -27,6 +28,7 @@ import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 public class ActivationRange
 {
@@ -116,10 +118,25 @@ public class ActivationRange
         final int raiderActivationRange = world.spigotConfig.raiderActivationRange;
         final int animalActivationRange = world.spigotConfig.animalActivationRange;
         final int monsterActivationRange = world.spigotConfig.monsterActivationRange;
+        // Paper start
+        final int waterActivationRange = world.spigotConfig.waterActivationRange;
+        final int flyingActivationRange = world.spigotConfig.flyingMonsterActivationRange;
+        final int villagerActivationRange = world.spigotConfig.villagerActivationRange;
+        world.wakeupInactiveRemainingAnimals = Math.min(world.wakeupInactiveRemainingAnimals + 1, world.spigotConfig.wakeUpInactiveAnimals);
+        world.wakeupInactiveRemainingVillagers = Math.min(world.wakeupInactiveRemainingVillagers + 1, world.spigotConfig.wakeUpInactiveVillagers);
+        world.wakeupInactiveRemainingMonsters = Math.min(world.wakeupInactiveRemainingMonsters + 1, world.spigotConfig.wakeUpInactiveMonsters);
+        world.wakeupInactiveRemainingFlying = Math.min(world.wakeupInactiveRemainingFlying + 1, world.spigotConfig.wakeUpInactiveFlying);
+        final ServerChunkCache chunkProvider = (ServerChunkCache) world.getChunkSource();
+        // Paper end
 
         int maxRange = Math.max( monsterActivationRange, animalActivationRange );
         maxRange = Math.max( maxRange, raiderActivationRange );
         maxRange = Math.max( maxRange, miscActivationRange );
+        // Paper start
+        maxRange = Math.max( maxRange, flyingActivationRange );
+        maxRange = Math.max( maxRange, waterActivationRange );
+        maxRange = Math.max( maxRange, villagerActivationRange );
+        // Paper end
         maxRange = Math.min( ( world.spigotConfig.simulationDistance << 4 ) - 8, maxRange );
 
         for ( Player player : world.players() )
@@ -130,11 +147,51 @@ public class ActivationRange
                 continue;
             }
 
-            ActivationRange.maxBB = player.getBoundingBox().inflate( maxRange, 256, maxRange );
-            ActivationType.MISC.boundingBox = player.getBoundingBox().inflate( miscActivationRange, 256, miscActivationRange );
-            ActivationType.RAIDER.boundingBox = player.getBoundingBox().inflate( raiderActivationRange, 256, raiderActivationRange );
-            ActivationType.ANIMAL.boundingBox = player.getBoundingBox().inflate( animalActivationRange, 256, animalActivationRange );
-            ActivationType.MONSTER.boundingBox = player.getBoundingBox().inflate( monsterActivationRange, 256, monsterActivationRange );
+            if (!player.level().purpurConfig.idleTimeoutTickNearbyEntities && player.isAfk()) continue; // Purpur
+
+            // Paper start
+            int worldHeight = world.getHeight();
+            ActivationRange.maxBB = player.getBoundingBox().inflate( maxRange, worldHeight, maxRange );
+            ActivationType.MISC.boundingBox = player.getBoundingBox().inflate( miscActivationRange, worldHeight, miscActivationRange );
+            ActivationType.RAIDER.boundingBox = player.getBoundingBox().inflate( raiderActivationRange, worldHeight, raiderActivationRange );
+            ActivationType.ANIMAL.boundingBox = player.getBoundingBox().inflate( animalActivationRange, worldHeight, animalActivationRange );
+            ActivationType.MONSTER.boundingBox = player.getBoundingBox().inflate( monsterActivationRange, worldHeight, monsterActivationRange );
+            ActivationType.WATER.boundingBox = player.getBoundingBox().inflate( waterActivationRange, worldHeight, waterActivationRange );
+            ActivationType.FLYING_MONSTER.boundingBox = player.getBoundingBox().inflate( flyingActivationRange, worldHeight, flyingActivationRange );
+            ActivationType.VILLAGER.boundingBox = player.getBoundingBox().inflate( villagerActivationRange, worldHeight, villagerActivationRange );
+            // Paper end
+
+            // Paper start
+            java.util.List<Entity> entities = world.getEntities((Entity)null, ActivationRange.maxBB, null);
+            boolean tickMarkers = world.paperConfig().entities.markers.tick; // Paper - Configurable marker ticking
+            for (Entity entity : entities) {
+                // Paper start - Configurable marker ticking
+                if (!tickMarkers && entity instanceof net.minecraft.world.entity.Marker) {
+                    continue;
+                }
+                // Paper end - Configurable marker ticking
+                ActivationRange.activateEntity(entity);
+
+                // Pufferfish start
+                if (gg.pufferfish.pufferfish.PufferfishConfig.dearEnabled && entity.getType().dabEnabled) {
+                    if (!entity.activatedPriorityReset) {
+                        entity.activatedPriorityReset = true;
+                        entity.activatedPriority = gg.pufferfish.pufferfish.PufferfishConfig.maximumActivationPrio;
+                    }
+                    Vec3 playerVec = player.position();
+                    Vec3 entityVec = entity.position();
+                    double diffX = playerVec.x - entityVec.x, diffY = playerVec.y - entityVec.y, diffZ = playerVec.z - entityVec.z;
+                    int squaredDistance = (int) (diffX * diffX + diffY * diffY + diffZ * diffZ);
+                    entity.activatedPriority = squaredDistance > gg.pufferfish.pufferfish.PufferfishConfig.startDistanceSquared ?
+                            Math.max(1, Math.min(squaredDistance >> gg.pufferfish.pufferfish.PufferfishConfig.activationDistanceMod, entity.activatedPriority)) :
+                            1;
+                } else {
+                    entity.activatedPriority = 1;
+                }
+                // Pufferfish end
+
+            }
+            // Paper end
 
             try {
                 world.getEntities().get(maxBB, ActivationRange::activateEntity);

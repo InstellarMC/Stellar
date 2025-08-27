@@ -104,15 +104,17 @@
      protected final NeighborUpdater neighborUpdater;
      private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
      private boolean tickingBlockEntities;
-@@ -114,6 +_,584 @@
+@@ -114,6 +_,592 @@
      private final RegistryAccess registryAccess;
      private final DamageSources damageSources;
      private long subTickCount;
++    // Neo start
 +    public boolean restoringBlockSnapshots = false;
 +    public boolean captureBlockSnapshots = false;
 +    public ArrayList<BlockSnapshot> capturedBlockSnapshots = new ArrayList<>();
 +    private final ArrayList<BlockEntity> freshBlockEntities = new ArrayList<>();
 +    private final ArrayList<BlockEntity> pendingFreshBlockEntities = new ArrayList<>();
++    // Neo end
 +
 +    // CraftBukkit start Added the following
 +    public CraftWorld world;
@@ -128,6 +130,12 @@
 +    public Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper - Retain block place order when capturing blockstates
 +    public List<ItemEntity> captureDrops;
 +    public final Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new Object2LongOpenHashMap<>();
++    // Paper start
++    public int wakeupInactiveRemainingAnimals;
++    public int wakeupInactiveRemainingFlying;
++    public int wakeupInactiveRemainingMonsters;
++    public int wakeupInactiveRemainingVillagers;
++    // Paper end
 +    public boolean populating;
 +    public SpigotWorldConfig spigotConfig; // Spigot
 +    public String name;
@@ -1104,7 +1112,7 @@
      }
  
      @Override
-@@ -489,10 +_,32 @@
+@@ -489,10 +_,34 @@
          (this.tickingBlockEntities ? this.pendingBlockEntityTickers : this.blockEntityTickers).add(p_151526_);
      }
  
@@ -1119,11 +1127,12 @@
      protected void tickBlockEntities() {
          ProfilerFiller profilerfiller = this.getProfiler();
          profilerfiller.push("blockEntities");
+         this.tickingBlockEntities = true;
++        // Neo start
 +        if (!this.pendingFreshBlockEntities.isEmpty()) {
 +            this.freshBlockEntities.addAll(this.pendingFreshBlockEntities);
 +            this.pendingFreshBlockEntities.clear();
 +        }
-         this.tickingBlockEntities = true;
 +        if (!this.freshBlockEntities.isEmpty()) {
 +            this.freshBlockEntities.forEach(blockEntity -> {
 +                // Only call onLoad() on BEs which have been fully added to the level, prevents crashes with BEs that
@@ -1134,20 +1143,24 @@
 +            });
 +            this.freshBlockEntities.clear();
 +        }
++        // Neo end
          if (!this.pendingBlockEntityTickers.isEmpty()) {
              this.blockEntityTickers.addAll(this.pendingBlockEntityTickers);
              this.pendingBlockEntityTickers.clear();
-@@ -501,29 +_,80 @@
+@@ -501,29 +_,83 @@
          Iterator<TickingBlockEntity> iterator = this.blockEntityTickers.iterator();
          boolean flag = this.tickRateManager().runsNormally();
  
 +        int tickedEntities = 0; // Paper - rewrite chunk system
 +
++        var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
++        toRemove.add(null); // Paper - Fix MC-117075
          while (iterator.hasNext()) {
              TickingBlockEntity tickingblockentity = iterator.next();
              if (tickingblockentity.isRemoved()) {
-                 iterator.remove();
+-                iterator.remove();
 -            } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
++                toRemove.add(tickingblockentity); // Paper - Fix MC-117075; use removeAll
 +            } else if (flag && this.shouldTickBlocksAt0(tickingblockentity.getPos())) { // Stellar - lithium(block_entity_ticking/chunk_ticking)
                  tickingblockentity.tick();
 +                // Paper start - execute chunk tasks during tick
@@ -1157,13 +1170,15 @@
 +                // Paper end - execute chunk tasks during tick
              }
          }
-+
-+        this.cachedLastTickableChunk = Long.MIN_VALUE; // Stellar - lithium(block_entity_ticking/chunk_ticking): invalidate cache
++        this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075; use removeAll
  
++        this.cachedLastTickableChunk = Long.MIN_VALUE; // Stellar - lithium(block_entity_ticking/chunk_ticking): invalidate cache
          this.tickingBlockEntities = false;
++        this.spigotConfig.currentPrimedTnt = 0; // Spigot
          profilerfiller.pop();
      }
  
+-    public <T extends Entity> void guardEntityTick(Consumer<T> p_46654_, T p_46655_) {
 +    // Stellar start - lithium(block_entity_ticking/chunk_ticking)
 +    // Speed up checking whether a chunk ticks block entities during block entity ticking
 +    private long cachedLastTickableChunk;
@@ -1186,23 +1201,25 @@
 +    }
 +    // Stellar end - lithium(block_entity_ticking/chunk_ticking)
 +
-     public <T extends Entity> void guardEntityTick(Consumer<T> p_46654_, T p_46655_) {
++    public <T extends Entity> void guardEntityTick(Consumer<T> tickConsumer, T entity) {
          try {
-+            TimeTracker.ENTITY_UPDATE.trackStart(p_46655_);
-             p_46654_.accept(p_46655_);
-         } catch (Throwable throwable) {
+-            p_46654_.accept(p_46655_);
+-        } catch (Throwable throwable) {
 -            CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking entity");
 -            CrashReportCategory crashreportcategory = crashreport.addCategory("Entity being ticked");
 -            p_46655_.fillCrashReportCategory(crashreportcategory);
 -            throw new ReportedException(crashreport);
 -        }
 -    }
++            TimeTracker.ENTITY_UPDATE.trackStart(entity);
++            tickConsumer.accept(entity);
++        } catch (Throwable throwable) { // Pufferfish - diff on change ServerLevel.tick
 +            if (throwable instanceof ThreadDeath) throw throwable; // Paper
 +            // Paper start - Prevent block entity and entity crashes
-+            final String msg = String.format("Entity threw exception at %s:%s,%s,%s", p_46655_.level().getWorld().getName(), p_46655_.getX(), p_46655_.getY(), p_46655_.getZ());
++            final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
 +            MinecraftServer.LOGGER.error(msg, throwable);
 +            getCraftServer().getPluginManager().callEvent(new io.papermc.paper.event.server.ServerExceptionEvent(new io.papermc.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
-+            p_46655_.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
++            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Pufferfish - diff on change ServerLevel.tick
 +            // Paper end - Prevent block entity and entity crashes
 +        }
 +        this.moonrise$midTickTasks(); // Paper - rewrite chunk system // Pufferfish - diff on change ServerLevel.tick
