@@ -960,7 +960,7 @@
 +
          this.awaitingTeleportTime = this.tickCount;
 -        this.player.absMoveTo(p_9781_, p_9782_, p_9783_, p_9784_, p_9785_);
-+        this.player.absMoveTo(x, y, z, yaw, pitch); // Paper - Fix Entity Teleportation and cancel velocity if teleported
++        this.player.moveTo(x, y, z, yaw, pitch); // Paper - Fix Entity Teleportation and cancel velocity if teleported
          this.player
              .connection
 -            .send(new ClientboundPlayerPositionPacket(p_9781_ - d0, p_9782_ - d1, p_9783_ - d2, p_9784_ - f, p_9785_ - f1, p_9786_, this.awaitingTeleport));
@@ -1025,12 +1025,42 @@
                      this.player.drop(false);
                  }
  
-@@ -1060,7 +_,7 @@
+@@ -1055,12 +_,38 @@
+             case START_DESTROY_BLOCK:
+             case ABORT_DESTROY_BLOCK:
+             case STOP_DESTROY_BLOCK:
++                // Paper start - Don't allow digging into unloaded chunks
++                if (this.player.level().getChunkIfLoadedImmediately(blockpos.getX() >> 4, blockpos.getZ() >> 4) == null) {
++                    this.player.connection.ackBlockChangesUpTo(p_9889_.getSequence());
++                    return;
++                }
++                // Paper end - Don't allow digging into unloaded chunks
++                // Paper start - Send block entities after destroy prediction
++                this.player.gameMode.capturedBlockEntity = false;
++                this.player.gameMode.captureSentBlockEntities = true;
++                // Paper end - Send block entities after destroy prediction
+                 this.player
+                     .gameMode
                      .handleBlockBreakAction(
                          blockpos, serverboundplayeractionpacket$action, p_9889_.getDirection(), this.player.level().getMaxBuildHeight(), p_9889_.getSequence()
                      );
--                this.player.connection.ackBlockChangesUpTo(p_9889_.getSequence());
-+                this.player.connection.ackBlockChangesUpTo =p_9889_.getSequence();
+                 this.player.connection.ackBlockChangesUpTo(p_9889_.getSequence());
++                // Paper start - Send block entities after destroy prediction
++                this.player.gameMode.captureSentBlockEntities = false;
++                // If a block entity was modified speedup the block change ack to avoid the block entity
++                // being overriden.
++                if (this.player.gameMode.capturedBlockEntity) {
++                    // manually tick
++                    this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
++                    this.player.connection.ackBlockChangesUpTo = -1;
++
++                    this.player.gameMode.capturedBlockEntity = false;
++                    BlockEntity tileentity = this.player.level().getBlockEntity(blockpos);
++                    if (tileentity != null) {
++                        this.player.connection.send(tileentity.getUpdatePacket());
++                    }
++                }
++                // Paper end - Send block entities after destroy prediction
                  return;
              default:
                  throw new IllegalArgumentException("Invalid player action");

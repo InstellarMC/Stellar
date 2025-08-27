@@ -91,7 +91,7 @@
      private float eyeHeight;
      public boolean isInPowderSnow;
      public boolean wasInPowderSnow;
-@@ -243,6 +_,232 @@
+@@ -243,6 +_,235 @@
      public boolean hasVisualFire;
      @Nullable
      private BlockState inBlockState = null;
@@ -169,12 +169,15 @@
 +    }
 +    // CraftBukkit end
 +
-+    // Spigot start
-+    public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
++    public final io.papermc.paper.entity.activation.ActivationType activationType = io.papermc.paper.entity.activation.ActivationType.activationTypeFor(this); // Paper - EAR 2/tracking ranges
++    // Paper start - EAR 2
 +    public final boolean defaultActivationState;
 +    public long activatedTick = Integer.MIN_VALUE;
-+    public void inactiveTick() { }
-+    // Spigot end
++    public boolean isTemporarilyActive;
++    public long activatedImmunityTick = Integer.MIN_VALUE;
++    public void inactiveTick() {
++    }
++    // Paper end - EAR 2
 +
 +    // Paper start - Entity origin API
 +    @javax.annotation.Nullable
@@ -324,22 +327,17 @@
  
      public Entity(EntityType<?> p_19870_, Level p_19871_) {
          this.type = p_19870_;
-@@ -251,6 +_,18 @@
+@@ -251,6 +_,13 @@
          this.position = Vec3.ZERO;
          this.blockPosition = BlockPos.ZERO;
          this.chunkPosition = ChunkPos.ZERO;
-+        // Spigot start
-+        if (p_19871_ != null && p_19871_ instanceof ServerLevel) {
-+            var config = p_19871_.spigotConfig;
-+            if (config != null) {
-+                this.defaultActivationState = ActivationRange.initializeEntityActivationState(this, config);
-+            } else {
-+                this.defaultActivationState = false;
-+            }
++        // Paper start - EAR 2
++        if (level != null) {
++            this.defaultActivationState = io.papermc.paper.entity.activation.ActivationRange.initializeEntityActivationState(this, level.spigotConfig);
 +        } else {
 +            this.defaultActivationState = false;
 +        }
-+        // Spigot end
++        // Paper end - EAR 2
          SynchedEntityData.Builder synchedentitydata$builder = new SynchedEntityData.Builder(this);
          synchedentitydata$builder.define(DATA_SHARED_FLAGS_ID, (byte)0);
          synchedentitydata$builder.define(DATA_AIR_SUPPLY_ID, this.getMaxAirSupply());
@@ -636,7 +634,7 @@
      }
  
      public boolean isFree(double p_20230_, double p_20231_, double p_20232_) {
-@@ -598,7 +_,43 @@
+@@ -598,12 +_,52 @@
          return this.onGround;
      }
  
@@ -680,6 +678,29 @@
          if (this.noPhysics) {
              this.setPos(this.getX() + p_19974_.x, this.getY() + p_19974_.y, this.getZ() + p_19974_.z);
          } else {
+             this.wasOnFire = this.isOnFire();
+             if (p_19973_ == MoverType.PISTON) {
++                // Paper start - EAR 2
++                this.activatedTick = Math.max(this.activatedTick, MinecraftServer.currentTick + 20);
++                this.activatedImmunityTick = Math.max(this.activatedImmunityTick, MinecraftServer.currentTick + 20);
++                // Paper end - EAR 2
+                 p_19974_ = this.limitPistonMovement(p_19974_);
+                 if (p_19974_.equals(Vec3.ZERO)) {
+                     return;
+@@ -616,6 +_,13 @@
+                 this.stuckSpeedMultiplier = Vec3.ZERO;
+                 this.setDeltaMovement(Vec3.ZERO);
+             }
++            // Paper start - ignore movement changes while inactive.
++            if (isTemporarilyActive && !(this instanceof ItemEntity) && p_19974_ == getDeltaMovement() && p_19973_ == MoverType.SELF) {
++                setDeltaMovement(Vec3.ZERO);
++                this.level().getProfiler().pop();
++                return;
++            }
++            // Paper end
+ 
+             p_19974_ = this.maybeBackOffFromEdge(p_19974_, p_19973_);
+             Vec3 vec3 = this.collide(p_19974_);
 @@ -664,6 +_,28 @@
                      block.updateEntityAfterFallOn(this.level(), this);
                  }
@@ -921,7 +942,7 @@
          return this.getInBlockState().is(Blocks.BUBBLE_COLUMN);
      }
  
-@@ -1241,20 +_,23 @@
+@@ -1241,23 +_,30 @@
  
      public void updateSwimming() {
          if (this.isSwimming()) {
@@ -950,6 +971,13 @@
      }
  
      void updateInWaterStateAndDoWaterCurrentPushing() {
++        // Stellar start - reduce boat isInWater checks
++        final var boatIsInWaterCheckTicks = this.level().stellarConfig().unsupportedSettings.boatIsInWaterCheckTicks.or(1);
++        if (boatIsInWaterCheckTicks == 1 || this.tickCount % boatIsInWaterCheckTicks == 0)
++        // Stellar end - reduce boat isInWater checks
+         if (this.getVehicle() instanceof Boat boat && !boat.isUnderWater()) {
+             this.wasTouchingWater = false;
+             return;
 @@ -1279,6 +_,7 @@
      private void updateFluidOnEyes() {
          this.wasEyeInWater = this.isEyeInFluid(FluidTags.WATER);

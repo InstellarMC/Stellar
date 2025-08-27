@@ -70,15 +70,55 @@
      }
  
      public void animateTick(BlockState p_220827_, Level p_220828_, BlockPos p_220829_, RandomSource p_220830_) {
-@@ -281,24 +_,39 @@
+@@ -260,45 +_,61 @@
+     public void destroy(LevelAccessor p_49860_, BlockPos p_49861_, BlockState p_49862_) {
+     }
  
-     public static void dropResources(BlockState p_49951_, Level p_49952_, BlockPos p_49953_) {
-         if (p_49952_ instanceof ServerLevel) {
-+            beginCapturingDrops();
-             getDrops(p_49951_, (ServerLevel)p_49952_, p_49953_, null).forEach(p_152406_ -> popResource(p_49952_, p_49953_, p_152406_));
+-    public static List<ItemStack> getDrops(BlockState p_49870_, ServerLevel p_49871_, BlockPos p_49872_, @Nullable BlockEntity p_49873_) {
+-        LootParams.Builder lootparams$builder = new LootParams.Builder(p_49871_)
+-            .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(p_49872_))
++    public static List<ItemStack> getDrops(BlockState state, ServerLevel world, BlockPos pos, @Nullable BlockEntity blockEntity) {
++        LootParams.Builder lootparams$builder = new LootParams.Builder(world)
++            .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
+             .withParameter(LootContextParams.TOOL, ItemStack.EMPTY)
+-            .withOptionalParameter(LootContextParams.BLOCK_ENTITY, p_49873_);
+-        return p_49870_.getDrops(lootparams$builder);
+-    }
+-
+-    public static List<ItemStack> getDrops(
+-        BlockState p_49875_, ServerLevel p_49876_, BlockPos p_49877_, @Nullable BlockEntity p_49878_, @Nullable Entity p_49879_, ItemStack p_49880_
+-    ) {
+-        LootParams.Builder lootparams$builder = new LootParams.Builder(p_49876_)
+-            .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(p_49877_))
+-            .withParameter(LootContextParams.TOOL, p_49880_)
+-            .withOptionalParameter(LootContextParams.THIS_ENTITY, p_49879_)
+-            .withOptionalParameter(LootContextParams.BLOCK_ENTITY, p_49878_);
+-        return p_49875_.getDrops(lootparams$builder);
+-    }
+-
+-    public static void dropResources(BlockState p_49951_, Level p_49952_, BlockPos p_49953_) {
+-        if (p_49952_ instanceof ServerLevel) {
+-            getDrops(p_49951_, (ServerLevel)p_49952_, p_49953_, null).forEach(p_152406_ -> popResource(p_49952_, p_49953_, p_152406_));
 -            p_49951_.spawnAfterBreak((ServerLevel)p_49952_, p_49953_, ItemStack.EMPTY, true);
++            .withOptionalParameter(LootContextParams.BLOCK_ENTITY, blockEntity);
++        return state.getDrops(lootparams$builder);
++    }
++
++    public static List<ItemStack> getDrops(BlockState state, ServerLevel world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack stack) {
++        LootParams.Builder lootparams$builder = new LootParams.Builder(world)
++            .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
++            .withParameter(LootContextParams.TOOL, stack)
++            .withOptionalParameter(LootContextParams.THIS_ENTITY, entity)
++            .withOptionalParameter(LootContextParams.BLOCK_ENTITY, blockEntity);
++        return state.getDrops(lootparams$builder);
++    }
++
++    public static void dropResources(BlockState state, Level world, BlockPos pos) {
++        if (world instanceof ServerLevel) {
++            beginCapturingDrops();
++            getDrops(state, (ServerLevel)world, pos, null).forEach(p_152406_ -> popResource(world, pos, p_152406_));
 +            List<ItemEntity> captured = stopCapturingDrops();
-+            net.neoforged.neoforge.common.CommonHooks.handleBlockDrops((ServerLevel) p_49952_, p_49953_, p_49951_, null, captured, null, ItemStack.EMPTY);
++            net.neoforged.neoforge.common.CommonHooks.handleBlockDrops((ServerLevel) world, pos, state, null, captured, null, ItemStack.EMPTY);
          }
      }
  
@@ -91,7 +131,13 @@
 +            net.neoforged.neoforge.common.CommonHooks.handleBlockDrops((ServerLevel) p_49894_, p_49895_, p_49893_, p_49896_, captured, null, ItemStack.EMPTY);
          }
      }
-+
+ 
+-    public static void dropResources(
+-        BlockState p_49882_, Level p_49883_, BlockPos p_49884_, @Nullable BlockEntity p_49885_, @Nullable Entity p_49886_, ItemStack p_49887_
+-    ) {
+-        if (p_49883_ instanceof ServerLevel) {
+-            getDrops(p_49882_, (ServerLevel)p_49883_, p_49884_, p_49885_, p_49886_, p_49887_).forEach(p_49944_ -> popResource(p_49883_, p_49884_, p_49944_));
+-            p_49882_.spawnAfterBreak((ServerLevel)p_49883_, p_49884_, p_49887_, true);
 +    // Paper start - Add BlockBreakBlockEvent TODO Youer hook neoforge event
 +    public static AtomicReference<BlockPos> dropResources$paperSource = new AtomicReference<>(null);
 +    public static boolean dropResources(BlockState p_49893_, LevelAccessor p_49894_, BlockPos p_49895_, @Nullable BlockEntity p_49896_, BlockPos source) {
@@ -100,17 +146,18 @@
 +        return true;
 +    }
 +    // Paper end - Add BlockBreakBlockEvent
- 
-     public static void dropResources(
--        BlockState p_49882_, Level p_49883_, BlockPos p_49884_, @Nullable BlockEntity p_49885_, @Nullable Entity p_49886_, ItemStack p_49887_
-+            BlockState p_49882_, Level p_49883_, BlockPos p_49884_, @Nullable BlockEntity p_49885_, @Nullable Entity p_49886_, ItemStack p_49887_
-     ) {
-         if (p_49883_ instanceof ServerLevel) {
++
++    public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool) {
++        // Paper start - Properly handle xp dropping
++        dropResources(state, world, pos, blockEntity, entity, tool, true);
++    }
++    public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool, boolean dropExperience) {
++        // Paper end - Properly handle xp dropping
++        if (world instanceof ServerLevel) {
 +            beginCapturingDrops();
-             getDrops(p_49882_, (ServerLevel)p_49883_, p_49884_, p_49885_, p_49886_, p_49887_).forEach(p_49944_ -> popResource(p_49883_, p_49884_, p_49944_));
--            p_49882_.spawnAfterBreak((ServerLevel)p_49883_, p_49884_, p_49887_, true);
++            getDrops(state, (ServerLevel)world, pos, blockEntity, entity, tool).forEach(p_49944_ -> popResource(world, pos, p_49944_));
 +            List<ItemEntity> captured = stopCapturingDrops();
-+            net.neoforged.neoforge.common.CommonHooks.handleBlockDrops((ServerLevel) p_49883_, p_49884_, p_49882_, p_49885_, captured, p_49886_, p_49887_);
++            net.neoforged.neoforge.common.CommonHooks.handleBlockDrops((ServerLevel) world, pos, state, blockEntity, captured, entity, tool);
          }
      }
  
@@ -144,20 +191,32 @@
      public float getExplosionResistance() {
          return this.explosionResistance;
      }
-@@ -356,12 +_,23 @@
- 
-     public void playerDestroy(Level p_49827_, Player p_49828_, BlockPos p_49829_, BlockState p_49830_, @Nullable BlockEntity p_49831_, ItemStack p_49832_) {
-         p_49828_.awardStat(Stats.BLOCK_MINED.get(this));
--        p_49828_.causeFoodExhaustion(0.005F);
-+        // CraftBukkit start - EntityExhaustionEvent
-+        p_49828_.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED);
-+        // CraftBukkit end
-         dropResources(p_49830_, p_49827_, p_49829_, p_49831_, p_49828_, p_49832_);
+@@ -354,14 +_,31 @@
+         return this.defaultBlockState();
      }
  
+-    public void playerDestroy(Level p_49827_, Player p_49828_, BlockPos p_49829_, BlockState p_49830_, @Nullable BlockEntity p_49831_, ItemStack p_49832_) {
+-        p_49828_.awardStat(Stats.BLOCK_MINED.get(this));
+-        p_49828_.causeFoodExhaustion(0.005F);
+-        dropResources(p_49830_, p_49827_, p_49829_, p_49831_, p_49828_, p_49832_);
+-    }
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - fix drops not preventing stats/food exhaustion
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
++        // Paper start - fix drops not preventing stats/food exhaustion
++        this.playerDestroy(world, player, pos, state, blockEntity, tool, true, true);
++    }
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) {
++        // Paper end - fix drops not preventing stats/food exhaustion
++        player.awardStat(Stats.BLOCK_MINED.get(this));
++        player.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
++        if (includeDrops) { // Paper - fix drops not preventing stats/food exhaustion
++        dropResources(state, world, pos, blockEntity, player, tool, dropExp); // Paper - Properly handle xp dropping
++        } // Paper - fix drops not preventing stats/food exhaustion
++    }
++
 +    // Purpur start
 +    @Nullable protected LivingEntity placer = null;
-+
+ 
      public void setPlacedBy(Level p_49847_, BlockPos p_49848_, BlockState p_49849_, @Nullable LivingEntity p_49850_, ItemStack p_49851_) {
 -    }
 +        this.placer = p_49850_;

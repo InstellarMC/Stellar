@@ -18,6 +18,23 @@
          super.setPickupItemStack(p_331667_);
          this.updateColor();
      }
+@@ -66,6 +_,16 @@
+         p_326324_.define(ID_EFFECT_COLOR, -1);
+     }
+ 
++    // Paper start - EAR 2
++    @Override
++    public void inactiveTick() {
++        if (this.inGround) {
++            this.life++;
++        }
++        super.inactiveTick();
++    }
++    // Paper end
++
+     @Override
+     public void tick() {
+         super.tick();
 @@ -120,13 +_,14 @@
                          mobeffectinstance.isAmbient(),
                          mobeffectinstance.isVisible()

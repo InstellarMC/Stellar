@@ -89,4 +89,13 @@ public class WorldConfiguration extends ConfigurationPart {
         @Constraints.Min(1)
         public IntOr.Default xpOrbGroupsPerArea = IntOr.Default.USE_DEFAULT;
     }
+
+    public UnsupportedSettings unsupportedSettings;
+
+    public class UnsupportedSettings extends ConfigurationPart {
+
+        public boolean disableNeoforgeCheckMobDespawn = false;
+        @Constraints.Min(1)
+        public IntOr.Default boatIsInWaterCheckTicks = IntOr.Default.USE_DEFAULT;
+    }
 }

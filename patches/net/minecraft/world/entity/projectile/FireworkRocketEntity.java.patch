@@ -1,5 +1,13 @@
 --- a/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
 +++ b/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
+@@ -11,6 +_,7 @@
+ import net.minecraft.network.syncher.EntityDataAccessor;
+ import net.minecraft.network.syncher.EntityDataSerializers;
+ import net.minecraft.network.syncher.SynchedEntityData;
++import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.sounds.SoundEvents;
+ import net.minecraft.sounds.SoundSource;
+ import net.minecraft.world.damagesource.DamageSource;
 @@ -29,12 +_,13 @@
  import net.minecraft.world.phys.EntityHitResult;
  import net.minecraft.world.phys.HitResult;
@@ -23,28 +31,28 @@
  
      public FireworkRocketEntity(EntityType<? extends FireworkRocketEntity> p_37027_, Level p_37028_) {
          super(p_37027_, p_37028_);
-@@ -83,6 +_,21 @@
-         this.setOwner(p_37052_);
+@@ -100,6 +_,21 @@
+         return super.shouldRender(p_37083_, p_37084_, p_37085_) && !this.isAttachedToEntity();
      }
  
-+    // Spigot Start - copied from tick
++    // Paper start - EAR 2
 +    @Override
 +    public void inactiveTick() {
-+        this.life += 1;
-+        if (!this.level().isClientSide && this.life > this.lifetime) {
-+            // CraftBukkit start
-+            if (!CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++        this.life++;
++        if (this.life > this.lifetime) {
++            // Paper start - Call FireworkExplodeEvent
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
 +                this.explode();
 +            }
-+            // CraftBukkit end
++            // Paper end - Call FireworkExplodeEvent
 +        }
 +        super.inactiveTick();
 +    }
-+    // Spigot End
++    // Paper end - EAR 2
 +
      @Override
-     protected void defineSynchedData(SynchedEntityData.Builder p_326171_) {
-         p_326171_.define(DATA_ID_FIREWORKS_ITEM, getDefaultItem());
+     public void tick() {
+         super.tick();
 @@ -149,7 +_,7 @@
  
          HitResult hitresult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);

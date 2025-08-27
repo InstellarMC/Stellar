@@ -1744,6 +1744,21 @@
                  d2 = 0.0;
              }
  
+@@ -2315,6 +_,14 @@
+         return false;
+     }
+ 
++    // Paper start - EAR 2
++    @Override
++    public void inactiveTick() {
++        super.inactiveTick();
++        ++this.noActionTime; // Above all the floats
++    }
++    // Paper end - EAR 2
++
+     @Override
+     public void tick() {
+         super.tick();
 @@ -2444,6 +_,10 @@
          }
      }

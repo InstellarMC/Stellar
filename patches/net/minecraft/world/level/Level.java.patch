@@ -130,12 +130,12 @@
 +    public Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper - Retain block place order when capturing blockstates
 +    public List<ItemEntity> captureDrops;
 +    public final Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new Object2LongOpenHashMap<>();
-+    // Paper start
++    // Paper start - EAR 2
 +    public int wakeupInactiveRemainingAnimals;
 +    public int wakeupInactiveRemainingFlying;
 +    public int wakeupInactiveRemainingMonsters;
 +    public int wakeupInactiveRemainingVillagers;
-+    // Paper end
++    // Paper end - EAR 2
 +    public boolean populating;
 +    public SpigotWorldConfig spigotConfig; // Spigot
 +    public String name;

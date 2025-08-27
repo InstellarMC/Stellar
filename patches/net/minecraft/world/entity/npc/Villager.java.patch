@@ -85,23 +85,41 @@
      @Override
      public Brain<Villager> getBrain() {
          return (Brain<Villager>)super.getBrain();
-@@ -269,6 +_,16 @@
+@@ -268,9 +_,34 @@
+         return this.assignProfessionWhenSpawned;
      }
  
-     @Override
++    // Paper start - EAR 2
++    @Override
 +    public void inactiveTick() {
 +        // SPIGOT-3874, SPIGOT-3894, SPIGOT-3846, SPIGOT-5286 :(
-+        if (this.level().spigotConfig.tickInactiveVillagers && this.isEffectiveAi()) {
-+            this.customServerAiStep();
++        if (this.getUnhappyCounter() > 0) {
++            this.setUnhappyCounter(this.getUnhappyCounter() - 1);
 +        }
++        if (this.isEffectiveAi()) {
++            if (this.level().spigotConfig.tickInactiveVillagers) {
++                this.customServerAiStep();
++            } else {
++                this.customServerAiStep(true);
++            }
++        }
++        this.maybeDecayGossip();
 +        super.inactiveTick();
 +    }
-+    // Spigot End
++    // Paper end - EAR 2
 +
-+    @Override
+     @Override
      protected void customServerAiStep() {
++        // Paper start - EAR 2
++        this.customServerAiStep(false);
++    }
++    protected void customServerAiStep(final boolean inactive) {
++        // Paper end - EAR 2
          this.level().getProfiler().push("villagerBrain");
++        if (!inactive) // Paper - EAR 2
          this.getBrain().tick((ServerLevel)this.level(), this);
+         this.level().getProfiler().pop();
+         if (this.assignProfessionWhenSpawned) {
 @@ -285,7 +_,7 @@
                      this.increaseProfessionLevelOnUpdate = false;
                  }
@@ -110,6 +128,22 @@
 +                this.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.VILLAGER_TRADE); // CraftBukkit
              }
          }
+ 
+@@ -295,6 +_,7 @@
+             this.lastTradedPlayer = null;
+         }
+ 
++        if (!inactive) // Paper - EAR 2
+         if (!this.isNoAi() && this.random.nextInt(100) == 0) {
+             Raid raid = ((ServerLevel)this.level()).getRaidAt(this.blockPosition());
+             if (raid != null && raid.isActive() && !raid.isOver()) {
+@@ -306,6 +_,7 @@
+             this.stopTrading();
+         }
+ 
++        if (inactive) return; // Paper - EAR 2
+         super.customServerAiStep();
+     }
  
 @@ -322,7 +_,7 @@
      @Override
