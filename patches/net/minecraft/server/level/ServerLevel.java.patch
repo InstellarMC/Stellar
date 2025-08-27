@@ -154,7 +154,7 @@
      private final GameEventDispatcher gameEventDispatcher;
      public boolean noSave;
      private final SleepStatus sleepStatus;
-@@ -199,12 +_,290 @@
+@@ -199,12 +_,311 @@
      private final List<CustomSpawner> customSpawners;
      @Nullable
      private EndDragonFight dragonFight;
@@ -442,6 +442,27 @@
 +        this.lagCompensationTick = (System.nanoTime() - net.minecraft.server.MinecraftServer.SERVER_INIT) / (java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(50L));
 +    }
 +    // Paper end - lag compensation
++    // Paper start - optimise despawns
++    @Nullable
++    private io.papermc.paper.util.kdtree.Kd3Tree despawnEligiblePlayers;
++
++    private void generateEligiblePlayersForDespawning() {
++        Vec3[] nodes = new Vec3[players.size()];
++        int i = 0;
++        for (ServerPlayer player : players) {
++            if (net.minecraft.world.entity.EntitySelector.PLAYER_AFFECTS_SPAWNING.test(player)) {
++                nodes[i] = player.position();
++                i++;
++            }
++        }
++        this.despawnEligiblePlayers = new io.papermc.paper.util.kdtree.Kd3Tree(java.util.Arrays.copyOf(nodes, i));
++    }
++
++    @Nullable
++    public io.papermc.paper.util.kdtree.Kd3Tree getDespawnEligiblePlayers() {
++        return despawnEligiblePlayers;
++    }
++    // Paper end - optimise despawns
 +
      public ServerLevel(
          MinecraftServer p_214999_,
@@ -670,12 +691,13 @@
          if (flag1) {
              this.resetEmptyTime();
          }
-@@ -392,16 +_,17 @@
+@@ -392,16 +_,18 @@
                  this.dragonFight.tick();
                  profilerfiller.pop();
              }
 -
 +            org.spigotmc.ActivationRange.activateEntities(this); // Spigot
++            generateEligiblePlayersForDespawning(); // Paper
              this.entityTickList.forEach(p_308566_ -> {
 +                p_308566_.activatedPriorityReset = false; // Pufferfish - DAB
                  if (!p_308566_.isRemoved()) {

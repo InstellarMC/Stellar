@@ -27,11 +27,8 @@ import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
-import java.util.Arrays;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.OptionalDouble;
+
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import net.minecraft.Util;
@@ -198,6 +195,11 @@ public class WorldConfiguration extends ConfigurationPart {
                         new DespawnRange(IntOr.Default.USE_DEFAULT)
                     );
                 }
+            }
+
+            @PostProcess
+            public void makeDespawnRangesEnumMap() {
+                this.despawnRanges = new EnumMap<>(this.despawnRanges);
             }
 
             @PostProcess
