@@ -184,8 +184,7 @@ dependencies {
     libraries("io.netty:netty-codec-haproxy:4.1.97.Final") // Paper - Add support for proxy protocol
 
     // Spark
-    libraries("me.lucko:spark-api:0.1-20240720.200737-2")
-    libraries("me.lucko:spark-paper:1.10.133-20250413.112336-1")
+    api(jarJar("me.lucko:spark-paper:1.10.133-20250413.112336-1"))
     // Paper end
 
     // LibraryLoader start
@@ -462,7 +461,7 @@ task youerJar(type: Jar, dependsOn: [youerJar0, downloadMultipleFiles, project('
     archiveClassifier = 'server'
     archiveExtension = 'jar'
     archiveBaseName = 'stellar' // Stellar
-    archiveVersion = '1.21.1-'//  + gradleutils.gitInfo.abbreviatedId // Stellar - fix configuration cache
+    archiveVersion = '1.21.1'//  + gradleutils.gitInfo.abbreviatedId // Stellar - fix configuration cache
     destinationDirectory = file('build/libs')
 
     manifest {

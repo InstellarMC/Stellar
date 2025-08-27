@@ -977,8 +977,7 @@
              this.cancelRecordingMetrics();
          }
  
--        LOGGER.info("Stopping server");
-+        LOGGER.info(I18n.as("minecraftserver.8"));
+         LOGGER.info("Stopping server");
 +        Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
 +        this.server.spark.disable(); // Paper - spark
 +        // Purpur start
@@ -1072,7 +1071,7 @@
      }
  
      public String getLocalIp() {
-@@ -650,26 +_,112 @@
+@@ -650,26 +_,113 @@
      }
  
      public void halt(boolean p_129884_) {
@@ -1159,12 +1158,12 @@
  
      protected void runServer() {
          try {
++            long serverStartTime = Util.getNanos(); // Paper
              if (!this.initServer()) {
--                throw new IllegalStateException("Failed to initialize server");
-+                throw new IllegalStateException(I18n.as("minecraftserver.15"));
+                 throw new IllegalStateException("Failed to initialize server");
              }
  
-+            ServerLifecycleHooks.handleServerStarted(this);
++            ServerLifecycleHooks.handleServerStarted(this); // Neo
              this.nextTickTimeNanos = Util.getNanos();
              this.statusIcon = this.loadStatusIcon().orElse(null);
              this.status = this.buildServerStatus();

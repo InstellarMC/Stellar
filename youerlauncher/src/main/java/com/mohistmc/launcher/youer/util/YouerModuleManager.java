@@ -92,6 +92,36 @@ public class YouerModuleManager {
         addExtra(opens, implAddOpensMH, implAddOpensToAllUnnamedMH);
     }
 
+    private static void addReads(List<String> reads) throws Throwable {
+        MethodHandle implAddReadsMH = IMPL_LOOKUP.findVirtual(Module.class, "implAddReads", MethodType.methodType(void.class, Module.class));
+        MethodHandle implAddReadsToAllUnnamedMH = IMPL_LOOKUP.findVirtual(Module.class, "implAddReadsAllUnnamed", MethodType.methodType(void.class));
+
+        reads.forEach(read -> {
+            String[] all = read.split("=", 2);
+            if (all.length < 2) {
+                return;
+            }
+
+            String[] source = all[0].split("/", 2);
+            if (source.length < 2) {
+                return;
+            }
+            ModuleLayer.boot().findModule(source[0]).ifPresent(m -> {
+                ModuleLayer.boot().findModule(source[1]).ifPresent(tm -> {
+                    try {
+                        if ("ALL-UNNAMED".equals(tm.getName())) {
+                            implAddReadsToAllUnnamedMH.invokeWithArguments(m);
+                            return;
+                        }
+                        implAddReadsMH.invokeWithArguments(m, tm);
+                    } catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                });
+            });
+        });
+    }
+
     private static ParserData parseModuleExtra(String extra) {
         String[] all = extra.split("=", 2);
         if (all.length < 2) {
@@ -136,6 +166,8 @@ public class YouerModuleManager {
         opens.add("java.base/java.util=ALL-UNNAMED");
         opens.add("java.base/java.lang=ALL-UNNAMED");
         List<String> exports = new ArrayList<>();
+        final List<String> reads = new ArrayList<>();
+        reads.add("spark.paper=neoforge");
         for (String arg : args) {
             if (arg.startsWith("-")) {
                 if (arg.startsWith("-p ")) {
@@ -144,6 +176,8 @@ public class YouerModuleManager {
                     opens.add(arg.substring("--add-opens ".length()).trim());
                 } else if (arg.startsWith("--add-exports")) {
                     exports.add(arg.substring("--add-exports ".length()).trim());
+                } else if (arg.startsWith("--add-reads")) {
+                    reads.add(arg.substring("--add-reads ".length()).trim());
                 } else if (arg.startsWith("-D")) {
                     var split = arg.substring(2).split("=", 2);
                     System.setProperty(split[0], split[1]);
@@ -152,6 +186,7 @@ public class YouerModuleManager {
         }
         addOpens(opens);
         addExports(exports);
+        addReads(reads);
     }
 
     public static void loadModules(String modulePath) throws Throwable {

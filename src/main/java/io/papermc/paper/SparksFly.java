@@ -5,6 +5,8 @@ import io.papermc.paper.plugin.entrypoint.classloader.group.PaperPluginClassLoad
 import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
 import io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage;
 import io.papermc.paper.util.MCUtil;
+
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
@@ -31,7 +33,7 @@ public final class SparksFly {
     private static final int SPARK_YELLOW = 0xffc93a;
 
     private final Logger logger;
-    private final PaperSparkModule spark;
+    private PaperSparkModule spark; // Stellar
 
     private boolean enabled;
     private boolean disabledInConfigurationWarningLogged;
@@ -39,49 +41,107 @@ public final class SparksFly {
     public SparksFly(final Server server) {
         this.logger = Logger.getLogger(ID);
         this.logger.log(Level.INFO, "This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling");
-        this.spark = PaperSparkModule.create(Compatibility.VERSION_1_0, server, this.logger, new PaperScheduler() {
-            @Override
-            public void executeAsync(final Runnable runnable) {
-                MCUtil.scheduleAsyncTask(this.catching(runnable, "asynchronous"));
-            }
-
-            @Override
-            public void executeSync(final Runnable runnable) {
-                MCUtil.ensureMain(this.catching(runnable, "synchronous"));
-            }
-
-            private Runnable catching(final Runnable runnable, final String type) {
-                return () -> {
-                    try {
-                        runnable.run();
-                    } catch (final Throwable t) {
-                        SparksFly.this.logger.log(Level.SEVERE, "An exception was encountered while executing a " + type + " spark task", t);
-                    }
-                };
-            }
-        }, new PaperClassLookup() {
-            @Override
-            public Class<?> lookup(final String className) throws Exception {
-                final ExceptionCollector<ClassNotFoundException> exceptions = new ExceptionCollector<>();
-                try {
-                    return Class.forName(className);
-                } catch (final ClassNotFoundException e) {
-                    exceptions.add(e);
-                    for (final ConfiguredPluginClassLoader loader : ((PaperPluginClassLoaderStorage) PaperClassLoaderStorage.instance()).getGlobalGroup().getClassLoaders()) {
-                        try {
-                            final Class<?> loadedClass = loader.loadClass(className, true, false, true);
-                            if (loadedClass != null) {
-                                return loadedClass;
-                            }
-                        } catch (final ClassNotFoundException exception) {
-                            exceptions.add(exception);
-                        }
-                    }
-                    exceptions.throwIfPresent();
-                    return null;
+        // Stellar start
+        boolean flag = false;
+        try {
+            Class.forName(PaperSparkModule.class.getName(), true, this.getClass().getClassLoader()); // ensure class is loaded before we delegate to another classloader
+            final var method = PaperSparkModule.class.getMethod("create", Compatibility.class, Server.class, Logger.class, PaperScheduler.class, PaperClassLookup.class);
+            final var instance = method.invoke(null, Compatibility.VERSION_1_0, server, this.logger, new PaperScheduler() {
+                @Override
+                public void executeAsync(final Runnable runnable) {
+                    MCUtil.scheduleAsyncTask(this.catching(runnable, "asynchronous"));
                 }
+
+                @Override
+                public void executeSync(final Runnable runnable) {
+                    MCUtil.ensureMain(this.catching(runnable, "synchronous"));
+                }
+
+                private Runnable catching(final Runnable runnable, final String type) {
+                    return () -> {
+                        try {
+                            runnable.run();
+                        } catch (final Throwable t) {
+                            SparksFly.this.logger.log(Level.SEVERE, "An exception was encountered while executing a " + type + " spark task", t);
+                        }
+                    };
+                }
+            }, new PaperClassLookup() {
+                @Override
+                public Class<?> lookup(final String className) throws Exception {
+                    final ExceptionCollector<ClassNotFoundException> exceptions = new ExceptionCollector<>();
+                    try {
+                        return Class.forName(className);
+                    } catch (final ClassNotFoundException e) {
+                        exceptions.add(e);
+                        for (final ConfiguredPluginClassLoader loader : ((PaperPluginClassLoaderStorage) PaperClassLoaderStorage.instance()).getGlobalGroup().getClassLoaders()) {
+                            try {
+                                final Class<?> loadedClass = loader.loadClass(className, true, false, true);
+                                if (loadedClass != null) {
+                                    return loadedClass;
+                                }
+                            } catch (final ClassNotFoundException exception) {
+                                exceptions.add(exception);
+                            }
+                        }
+                        exceptions.throwIfPresent();
+                        return null;
+                    }
+                }
+            });
+
+            if (instance instanceof PaperSparkModule) {
+                this.spark = (PaperSparkModule) instance;
+                flag = true;
             }
-        });
+        } catch (final ClassNotFoundException | InvocationTargetException | NoSuchMethodException | IllegalAccessException ignored) {
+            flag = false;
+        }
+
+        if (!flag) {
+            this.spark = new PaperSparkModule() {
+                @Override
+                public void enable() {
+                    // no-op
+                }
+
+                @Override
+                public void disable() {
+                    // no-op
+                }
+
+                @Override
+                public Collection<String> getPermissions() {
+                    return List.of();
+                }
+
+                @Override
+                public void onServerTickStart() {
+                    // no-op
+                }
+
+                @Override
+                public void onServerTickEnd(final double duration) {
+                    // no-op
+                }
+
+                @Override
+                public void executeCommand(final CommandSender sender, final String[] args) {
+                    sender.sendMessage(Component.text("The spark profiler is not available. Please install the spark plugin from https://lucko.me/projects/spark/", TextColor.color(SPARK_YELLOW)));
+                }
+
+                @Override
+                public List<String> tabComplete(final CommandSender sender, final String[] args) {
+                    return List.of();
+                }
+
+                @Override
+                public boolean hasPermission(CommandSender commandSender) {
+                    return false;
+                }
+            };
+        }
+        // Stellar end
     }
 
     public void enableEarlyIfRequested() {
@@ -108,6 +168,8 @@ public final class SparksFly {
     }
 
     private void enable() {
+        this.enabled = false;
+        /* Stellar start - fixme
         if (!this.enabled) {
             if (GlobalConfiguration.get().spark.enabled) {
                 this.enabled = true;
@@ -119,6 +181,7 @@ public final class SparksFly {
                 }
             }
         }
+        */// Stellar end
     }
 
     public void disable() {
