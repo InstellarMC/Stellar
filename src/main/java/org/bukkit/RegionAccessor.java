@@ -36,6 +36,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param y Y-coordinate of the block
      * @param z Z-coordinate of the block
      * @return Biome at the given coordinates
+     * @see #getComputedBiome(int, int, int)
      */
     @NotNull
     Biome getBiome(int x, int y, int z);
@@ -57,6 +58,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param y Y-coordinate of the block
      * @param z Z-coordinate of the block
      * @return Biome at the given coordinates
+     * @see #getComputedBiome(int, int, int)
      */
     @NotNull
     Biome getComputedBiome(int x, int y, int z);
