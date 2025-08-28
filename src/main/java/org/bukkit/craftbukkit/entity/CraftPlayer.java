@@ -932,7 +932,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Preconditions.checkArgument(effect != null, "Effect cannot be null");
         if (data != null) {
             Preconditions.checkArgument(effect.getData() != null, "Effect.%s does not have a valid Data", effect);
-            Preconditions.checkArgument(effect.getData().isAssignableFrom(data.getClass()), "%s data cannot be used for the %s effect", data.getClass().getName(), effect);
+            Preconditions.checkArgument(effect.isApplicable(data), "%s data cannot be used for the %s effect", data.getClass().getName(), effect);
         } else {
             // Special case: the axis is optional for ELECTRIC_SPARK
             Preconditions.checkArgument(effect.getData() == null || effect == Effect.ELECTRIC_SPARK, "Wrong kind of data for the %s effect", effect);
@@ -971,7 +971,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void sendMultiBlockChange(final Map<? extends io.papermc.paper.math.Position, BlockData> blockChanges) {
         if (this.getHandle().connection == null) return;
 
-        Map<SectionPos, it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState>> sectionMap = new HashMap<>();
+        Map<SectionPos, it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState>> sectionMap = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(); // Stellar - Optimize canSee checks
 
         for (Map.Entry<? extends io.papermc.paper.math.Position, BlockData> entry : blockChanges.entrySet()) {
             BlockData blockData = entry.getValue();
@@ -1434,6 +1434,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         // Paper start - Teleport passenger API
         // Don't allow teleporting between worlds while keeping passengers
         if (ignorePassengers && entity.isVehicle() && location.getWorld() != this.getWorld()) {
+            if (!new org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent(entity.getBukkitEntity(), org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent.Reason.IS_VEHICLE, cause).callEvent()) // Purpur start
             return false;
         }
 
@@ -1455,6 +1456,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         if (entity.isVehicle() && !ignorePassengers) { // Paper - Teleport API
+            if (!new org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent(entity.getBukkitEntity(), org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent.Reason.IS_VEHICLE, cause).callEvent()) // Purpur start
             return false;
         }
 
@@ -1570,7 +1572,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             Optional<ServerPlayer.RespawnPosAngle> spawnLoc = ServerPlayer.findRespawnAndUseSpawnBlock(world, bed, this.getHandle().getRespawnAngle(), this.getHandle().isRespawnForced(), true);
             if (spawnLoc.isPresent()) {
                 ServerPlayer.RespawnPosAngle vec = spawnLoc.get();
-                return CraftLocation.toBukkit(vec.position(), world.getWorld(), this.getHandle().getRespawnAngle(), 0);
+                return CraftLocation.toBukkit(vec.position(), world.getWorld(), vec.yaw(), 0);
             }
         }
         return null;
@@ -1594,9 +1596,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void setRespawnLocation(Location location, boolean override) {
         if (location == null) {
-            this.getHandle().setRespawnPosition(null, null, 0.0F, override, false);//TODO  PlayerSpawnChangeEvent.Cause.PLUGIN
+            this.getHandle().setRespawnPosition(null, null, 0.0F, override, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLUGIN); // Paper - Add PlayerSetSpawnEvent
         } else {
-            this.getHandle().setRespawnPosition(((CraftWorld) location.getWorld()).getHandle().dimension(), CraftLocation.toBlockPosition(location), location.getYaw(), override, false); //TODO  PlayerSpawnChangeEvent.Cause.PLUGIN
+            this.getHandle().setRespawnPosition(((CraftWorld) location.getWorld()).getHandle().dimension(), CraftLocation.toBlockPosition(location), location.getYaw(), override, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLUGIN); // Paper - Add PlayerSetSpawnEvent
         }
     }
 
@@ -1768,23 +1770,23 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Date expires, String source) { // Paper - fix ban list API
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Date expires, String source) { // Paper - fix ban list API
         return this.ban(reason, expires, source, true);
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Instant expires, String source) { // Paper - fix ban list API
+    +    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Instant expires, String source) { // Paper - fix ban list API
         return this.ban(reason, expires != null ? Date.from(expires) : null, source);
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Duration duration, String source) { // Paper - fix ban list API
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Duration duration, String source) { // Paper - fix ban list API
         return this.ban(reason, duration != null ? Instant.now().plus(duration) : null, source);
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Date expires, String source, boolean kickPlayer) { // Paper - fix ban list API
-        BanEntry<PlayerProfile> banEntry = ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source); // Paper - fix ban list API
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Date expires, String source, boolean kickPlayer) { // Paper - fix ban list API
+        BanEntry<com.destroystokyo.paper.profile.PlayerProfile> banEntry = ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source); // Paper - fix ban list API
         if (kickPlayer) {
             this.kickPlayer(reason);
         }
@@ -1792,12 +1794,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Instant instant, String source, boolean kickPlayer) { // Paper - fix ban list API
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Instant instant, String source, boolean kickPlayer) { // Paper - fix ban list API
         return this.ban(reason, instant != null ? Date.from(instant) : null, source, kickPlayer);
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Duration duration, String source, boolean kickPlayer) { // Paper - fix ban list API
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Duration duration, String source, boolean kickPlayer) { // Paper - fix ban list API
         return this.ban(reason, duration != null ? Instant.now().plus(duration) : null, source, kickPlayer);
     }
 
@@ -1867,6 +1869,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (!itemstack.isEmpty() && itemstack.getItem().components().has(net.minecraft.core.component.DataComponents.MAX_DAMAGE)) {
             net.minecraft.world.entity.ExperienceOrb orb = net.minecraft.world.entity.EntityType.EXPERIENCE_ORB.create(handle.level());
             orb.value = amount;
+            orb.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM;
             orb.setPosRaw(handle.getX(), handle.getY(), handle.getZ());
 
             final int possibleDurabilityFromXp = net.minecraft.world.item.enchantment.EnchantmentHelper.modifyDurabilityToRepairFromXp(
@@ -2088,35 +2091,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
     }
 
-    // Paper start
-    public PlayerProfile getPlayerProfile() {
-        return new CraftPlayerProfile(this).clone();
-    }
-
-    private void refreshPlayer() {
-        ServerPlayer handle = this.getHandle();
-        Location loc = this.getLocation();
-
-        ServerGamePacketListenerImpl connection = handle.connection;
-
-        //Respawn the player then update their position and selected slot
-        ServerLevel worldserver = handle.serverLevel();
-        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(handle.createCommonSpawnInfo(worldserver), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA));
-        handle.onUpdateAbilities();
-        connection.internalTeleport(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), java.util.Collections.emptySet());
-        net.minecraft.server.players.PlayerList playerList = handle.server.getPlayerList();
-        playerList.sendPlayerPermissionLevel(handle, false);
-        playerList.sendLevelInfo(handle, worldserver);
-        playerList.sendAllPlayerInfo(handle);
-
-        // Resend their XP and effects because the respawn packet resets it
-        connection.send(new net.minecraft.network.protocol.game.ClientboundSetExperiencePacket(handle.experienceProgress, handle.totalExperience, handle.experienceLevel));
-        for (net.minecraft.world.effect.MobEffectInstance mobEffect : handle.getActiveEffects()) {
-            connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket(handle.getId(), mobEffect, false));
-        }
-    }
-    // Paper end
-
     @Override
     @Deprecated
     public void showPlayer(Player player) {
@@ -2199,9 +2173,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     // Paper start
     @Override
-    public void setPlayerProfile(PlayerProfile profile) {
+    public void setPlayerProfile(com.destroystokyo.paper.profile.PlayerProfile profile) {
         ServerPlayer self = this.getHandle();
-        GameProfile gameProfile = CraftPlayerProfile.asAuthlibCopy(profile);
+        GameProfile gameProfile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
         if (!self.sentListPacket) {
             self.gameProfile = gameProfile;
             return;
@@ -2242,6 +2216,35 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
     }
 
+    // Paper start
+    public PlayerProfile getPlayerProfile() {
+        return new CraftPlayerProfile(this).clone();
+    }
+
+    private void refreshPlayer() {
+        ServerPlayer handle = this.getHandle();
+        Location loc = this.getLocation();
+
+        ServerGamePacketListenerImpl connection = handle.connection;
+
+        //Respawn the player then update their position and selected slot
+        ServerLevel worldserver = handle.serverLevel();
+        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(handle.createCommonSpawnInfo(worldserver), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA));
+        handle.onUpdateAbilities();
+        connection.internalTeleport(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), java.util.Collections.emptySet());
+        net.minecraft.server.players.PlayerList playerList = handle.server.getPlayerList();
+        playerList.sendPlayerPermissionLevel(handle, false);
+        playerList.sendLevelInfo(handle, worldserver);
+        playerList.sendAllPlayerInfo(handle);
+
+        // Resend their XP and effects because the respawn packet resets it
+        connection.send(new net.minecraft.network.protocol.game.ClientboundSetExperiencePacket(handle.experienceProgress, handle.totalExperience, handle.experienceLevel));
+        for (net.minecraft.world.effect.MobEffectInstance mobEffect : handle.getActiveEffects()) {
+            connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket(handle.getId(), mobEffect, false));
+        }
+    }
+    // Paper end
+
     public void onEntityRemove(Entity entity) {
         this.invertedVisibilityEntities.remove(entity.getUUID());
     }
@@ -2253,8 +2256,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean canSee(org.bukkit.entity.Entity entity) {
-        return this.equals(entity) || entity.isVisibleByDefault() ^ this.invertedVisibilityEntities.containsKey(entity.getUniqueId()); // SPIGOT-7312: Can always see self
+        return this.equals(entity) || this.chunkMapCanSee(entity); // SPIGOT-7312: Can always see self // Stellar - Optimize canSee check
     }
+
+    // Stellar start - Optimize canSee check (The check in ChunkMap#updatePlayer already rejects if it is the same entity, so we don't need to check it twice, especially because CraftPlayer's equals check is a bit expensive)
+    public boolean chunkMapCanSee(org.bukkit.entity.Entity entity) {
+        return entity.isVisibleByDefault() ^ (!invertedVisibilityEntities.isEmpty() && this.invertedVisibilityEntities.containsKey(entity.getUniqueId()));
+     }
+    // Stellar end - Optimize canSee check
 
     public boolean canSeePlayer(UUID uuid) {
         org.bukkit.entity.Entity entity = this.getServer().getPlayer(uuid);
@@ -2447,12 +2456,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         if (this.channels.contains(channel)) {
             ResourceLocation id = ResourceLocation.parse(StandardMessenger.validateAndCorrectChannel(channel));
-            this.server.getMessenger().sendCustomPayload(source, this, id, message);
+            this.sendCustomPayload(id, message);
         }
     }
 
     private void sendCustomPayload(ResourceLocation id, byte[] message) {
-        server.getMessenger().sendCustomPayload(null, this, id, message);
+        ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(id, Unpooled.wrappedBuffer(message)));
+        this.getHandle().connection.send(packet);
     }
 
     @Override
@@ -2530,16 +2540,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().connection.send(new ClientboundResourcePackPushPacket(uuid, url, hash, force, Optional.ofNullable(prompt).map(io.papermc.paper.adventure.PaperAdventure::asVanilla)));
     }
 
-    // Paper start - more resource pack API
-    @Override
-    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus() {
-        return this.resourcePackStatus;
-    }
-    // Paper end - more resource pack API
-
     @SuppressWarnings({"unchecked", "rawtypes"})
     void sendBundle(final List<? extends net.minecraft.network.protocol.Packet<? extends net.minecraft.network.protocol.common.ClientCommonPacketListener>> packet) {
         this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundBundlePacket((List) packet));
+    }
+
+    @Override
+    public void sendResourcePacks(final net.kyori.adventure.resource.ResourcePackRequest request) {
+        if (this.getHandle().connection == null) return;
+        final List<ClientboundResourcePackPushPacket> packs = new java.util.ArrayList<>(request.packs().size());
+        if (request.replace()) {
+            this.clearResourcePacks();
+        }
+        final Component prompt = io.papermc.paper.adventure.PaperAdventure.asVanilla(request.prompt());
+        for (final java.util.Iterator<net.kyori.adventure.resource.ResourcePackInfo> iter = request.packs().iterator(); iter.hasNext();) {
+            final net.kyori.adventure.resource.ResourcePackInfo pack = iter.next();
+            packs.add(new ClientboundResourcePackPushPacket(pack.id(), pack.uri().toASCIIString(), pack.hash(), request.required(), iter.hasNext() ? Optional.empty() : Optional.ofNullable(prompt)));
+            if (request.callback() != net.kyori.adventure.resource.ResourcePackCallback.noOp()) {
+                this.getHandle().connection.packCallbacks.put(pack.id(), request.callback()); // just override if there is a previously existing callback
+            }
+        }
+        this.sendBundle(packs);
+        super.sendResourcePacks(request);
     }
 
     @Override
@@ -2554,6 +2576,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().connection.send(new ClientboundResourcePackPopPacket(Optional.empty()));
     }
     // Paper end - adventure
+
+    // Paper start - more resource pack API
+    @Override
+    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus() {
+        return this.resourcePackStatus;
+    }
+    // Paper end - more resource pack API
 
     @Override
     public void removeResourcePack(UUID id) {
@@ -2603,11 +2632,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Set<String> listening = this.server.getMessenger().getIncomingChannels();
 
         if (!listening.isEmpty()) {
-            Set<ResourceLocation> newChannels = new HashSet<>();
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
             for (String channel : listening) {
-                newChannels.add(ResourceLocation.parse(channel));
+                try {
+                    stream.write(channel.getBytes("UTF8"));
+                    stream.write((byte) 0);
+                } catch (IOException ex) {
+                    Logger.getLogger(CraftPlayer.class.getName()).log(Level.SEVERE, "Could not send Plugin Channel REGISTER to " + this.getName(), ex);
+                }
             }
-            PacketDistributor.sendToPlayer(this.getHandle(), new MinecraftRegisterPayload(newChannels));
+
+            this.sendCustomPayload(ResourceLocation.withDefaultNamespace("register"), stream.toByteArray());
         }
     }
 
@@ -2854,7 +2890,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void sendHealthUpdate() {
         FoodData foodData = this.getHandle().getFoodData();
-        this.sendHealthUpdate(this.getScaledHealth(), foodData.getFoodLevel(), foodData.getSaturationLevel());
+        // Paper start - cancellable death event
+        ClientboundSetHealthPacket packet = new ClientboundSetHealthPacket(this.getScaledHealth(), foodData.getFoodLevel(), foodData.getSaturationLevel());
+        if (this.getHandle().queueHealthUpdatePacket) {
+            this.getHandle().queuedHealthUpdatePacket = packet;
+        } else {
+            this.getHandle().connection.send(packet);
+        }
+        // Paper end
     }
 
     public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
@@ -2991,7 +3034,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(CraftParticle.createParticleParam(particle, data), force, (float) x, (float) y, (float) z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count);
+        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(CraftParticle.createParticleParam(particle, data), force, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count); // Paper - fix x/y/z precision loss
         getHandle().connection.send(packetplayoutworldparticles);
     }
 
@@ -3412,13 +3455,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
             CraftPlayer.this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(components, position == net.md_5.bungee.api.ChatMessageType.ACTION_BAR));
         }
+
+        // Paper start
+        @Override
+        public int getPing()
+        {
+            return CraftPlayer.this.getPing();
+        }
+        // Paper end
     };
 
-    public Player.Spigot spigot()
-    {
-        return this.spigot;
+    // Paper start - brand support
+    @Override
+    public String getClientBrandName() {
+        return getHandle().clientBrandName;
     }
-    // Spigot end
+    // Paper end
 
     // Paper start
     @Override
@@ -3462,29 +3514,52 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
     // Paper end
 
-    // Paper start - brand support
+    // Paper start
     @Override
-    public String getClientBrandName() {
-        return getHandle().clientBrandName;
+    public Duration getIdleDuration() {
+        return Duration.ofMillis(net.minecraft.Util.getMillis() - this.getHandle().getLastActionTime());
+    }
+
+    @Override
+    public void resetIdleDuration() {
+        this.getHandle().resetLastActionTime();
     }
     // Paper end
 
-    private boolean simplifyContainerDesyncCheck = io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.simplifyRemoteItemMatching;
-    /**
-     * Returns whether container desync checks should skip the full item comparison of remote carried and changed slots
-     * and should instead only check their type and amount.
-     * <p>
-     * This is useful if the client is not able to produce the same item stack (or as of 1.21.5, its data hashes) as the server.
-     *
-     * @return whether to simplify container desync checks
-     */
-    public boolean simplifyContainerDesyncCheck() {
-        return simplifyContainerDesyncCheck;
+    // Paper start - Add chunk view API
+    @Override
+    public Set<java.lang.Long> getSentChunkKeys() {
+        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
+        return it.unimi.dsi.fastutil.longs.LongSets.unmodifiable(
+            this.getHandle().moonrise$getChunkLoader().getSentChunksRaw().clone()
+        );
     }
 
-    public void setSimplifyContainerDesyncCheck(final boolean simplifyContainerDesyncCheck) {
-        this.simplifyContainerDesyncCheck = simplifyContainerDesyncCheck;
+    @Override
+    public Set<org.bukkit.Chunk> getSentChunks() {
+        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
+        final it.unimi.dsi.fastutil.longs.LongOpenHashSet rawChunkKeys = this.getHandle().moonrise$getChunkLoader().getSentChunksRaw();
+        final it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<org.bukkit.Chunk> chunks = new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>(rawChunkKeys.size());
+        final org.bukkit.World world = this.getWorld();
+
+        final it.unimi.dsi.fastutil.longs.LongIterator iter = this.getHandle().moonrise$getChunkLoader().getSentChunksRaw().longIterator();
+        while (iter.hasNext()) chunks.add(world.getChunkAt(iter.nextLong(), false));
+
+        return it.unimi.dsi.fastutil.objects.ObjectSets.unmodifiable(chunks);
     }
+
+    @Override
+    public boolean isChunkSent(final long chunkKey) {
+        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
+        return this.getHandle().moonrise$getChunkLoader().getSentChunksRaw().contains(chunkKey);
+    }
+    // Paper end
+
+    public Player.Spigot spigot()
+    {
+        return this.spigot;
+    }
+    // Spigot end
 
     @Override
     public int getViewDistance() {
@@ -3531,18 +3606,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundEntityEventPacket(((CraftEntity) target).getHandle(), effect.getData()));
     }
     // Paper end - entity effect API
-
-    // Paper start
-    @Override
-    public Duration getIdleDuration() {
-        return Duration.ofMillis(net.minecraft.Util.getMillis() - this.getHandle().getLastActionTime());
-    }
-
-    @Override
-    public void resetIdleDuration() {
-        this.getHandle().resetLastActionTime();
-    }
-    // Paper end
 
     // Purpur start
     @Override
@@ -3609,4 +3672,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundPlayerCombatKillPacket(getEntityId(), io.papermc.paper.adventure.PaperAdventure.asVanilla(message)));
     }
     // Purpur end
+
+    private boolean simplifyContainerDesyncCheck = io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.simplifyRemoteItemMatching;
+    /**
+     * Returns whether container desync checks should skip the full item comparison of remote carried and changed slots
+     * and should instead only check their type and amount.
+     * <p>
+     * This is useful if the client is not able to produce the same item stack (or as of 1.21.5, its data hashes) as the server.
+     *
+     * @return whether to simplify container desync checks
+     */
+    public boolean simplifyContainerDesyncCheck() {
+        return simplifyContainerDesyncCheck;
+    }
+
+    public void setSimplifyContainerDesyncCheck(final boolean simplifyContainerDesyncCheck) {
+        this.simplifyContainerDesyncCheck = simplifyContainerDesyncCheck;
+    }
 }
