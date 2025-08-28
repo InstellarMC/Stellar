@@ -47,6 +47,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.Firework;
@@ -159,7 +160,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return new Location(worldServer.getWorld(), bed.getX(), bed.getY(), bed.getZ());
     }
     // Paper end
-
     // Paper start
     @Override
     public org.bukkit.entity.FishHook getFishHook() {
@@ -169,7 +169,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return (org.bukkit.entity.FishHook) getHandle().fishing.getBukkitEntity();
     }
     // Paper end
-
     @Override
     public boolean sleep(Location location, boolean force) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
@@ -182,7 +181,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             return false;
         }
 
-        if (this.getHandle().forceSleepInBed(force).startSleepInBed(blockposition).left().isPresent()) {
+        if (this.getHandle().startSleepInBed(blockposition, force).left().isPresent()) {
             return false;
         }
 
@@ -205,7 +204,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(duration > 0, "Duration must be greater than 0");
         Preconditions.checkArgument(damage >= 0, "Damage must not be negative");
 
-        getHandle().startAutoSpinAttack(duration, damage, CraftItemStack.asNMSCopy(attackItem));
+        this.getHandle().startAutoSpinAttack(duration, damage, CraftItemStack.asNMSCopy(attackItem));
     }
 
     @Override
@@ -274,6 +273,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public void recalculatePermissions() {
         this.perm.recalculatePermissions();
+        getHandle().canPortalInstant = hasPermission("purpur.portal.instant"); // Purpur
     }
 
     @Override
@@ -316,9 +316,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public InventoryView getOpenInventory() {
-        AbstractContainerMenu container = this.getHandle().containerMenu;
-        container.containerOwner = this.getHandle();
-        return container.getBukkitView();
+        return this.getHandle().containerMenu.getBukkitView();
     }
 
     @Override
@@ -361,6 +359,158 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             return null;
         }
         this.getHandle().containerMenu.checkReachable = false;
+        return this.getHandle().containerMenu.getBukkitView();
+    }
+
+    private static void openCustomInventory(Inventory inventory, ServerPlayer player, MenuType<?> windowType) {
+        if (player.connection == null) return;
+        Preconditions.checkArgument(windowType != null, "Unknown windowType");
+        AbstractContainerMenu container = new CraftContainer(inventory, player, player.nextContainerCounter());
+
+        // Paper start - Add titleOverride to InventoryOpenEvent
+        final com.mojang.datafixers.util.Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(player, container);
+        container = result.getSecond();
+        // Paper end - Add titleOverride to InventoryOpenEvent
+        if (container == null) return;
+
+        //String title = container.getBukkitView().getTitle(); // Paper - comment
+        net.kyori.adventure.text.Component adventure$title = container.getBukkitView().title(); // Paper
+        if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(container.getBukkitView().getTitle()); // Paper
+        if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
+
+        //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
+        player.containerMenu = container;
+        player.initMenu(container);
+    }
+
+    @Override
+    public InventoryView openWorkbench(Location location, boolean force) {
+        if (location == null) {
+            location = this.getLocation();
+        }
+        if (!force) {
+            Block block = location.getBlock();
+            if (block.getType() != Material.CRAFTING_TABLE) {
+                return null;
+            }
+        }
+        this.getHandle().openMenu(Blocks.CRAFTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), CraftLocation.toBlockPosition(location)));
+        if (force) {
+            this.getHandle().containerMenu.checkReachable = false;
+        }
+        return this.getHandle().containerMenu.getBukkitView();
+    }
+
+    @Override
+    public InventoryView openEnchanting(Location location, boolean force) {
+        if (location == null) {
+            location = this.getLocation();
+        }
+        if (!force) {
+            Block block = location.getBlock();
+            if (block.getType() != Material.ENCHANTING_TABLE) {
+                return null;
+            }
+        }
+
+        // If there isn't an enchant table we can force create one, won't be very useful though.
+        BlockPos pos = CraftLocation.toBlockPosition(location);
+        // Paper start
+        MenuProvider menuProvider = Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), pos);
+        if (menuProvider == null) {
+            if (!force) {
+                return null;
+            }
+            menuProvider = new net.minecraft.world.SimpleMenuProvider((syncId, inventory, player) -> {
+                return new net.minecraft.world.inventory.EnchantmentMenu(syncId, inventory, net.minecraft.world.inventory.ContainerLevelAccess.create(this.getHandle().level(), pos));
+            }, Component.translatable("container.enchant"));
+        }
+        this.getHandle().openMenu(menuProvider);
+        // Paper end
+
+        if (force) {
+            this.getHandle().containerMenu.checkReachable = false;
+        }
+        return this.getHandle().containerMenu.getBukkitView();
+    }
+
+    @Override
+    public void openInventory(InventoryView inventory) {
+        Preconditions.checkArgument(this.equals(inventory.getPlayer()), "InventoryView must belong to the opening player");
+        if (!(this.getHandle() instanceof ServerPlayer)) return; // TODO: NPC support?
+        if (((ServerPlayer) this.getHandle()).connection == null) return;
+        if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
+            // fire INVENTORY_CLOSE if one already open
+            ((ServerPlayer) this.getHandle()).connection.handleContainerClose(new ServerboundContainerClosePacket(this.getHandle().containerMenu.containerId), org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper - Inventory close reason
+        }
+        ServerPlayer player = (ServerPlayer) this.getHandle();
+        AbstractContainerMenu container;
+        if (inventory instanceof CraftInventoryView) {
+            container = ((CraftInventoryView) inventory).getHandle();
+        } else {
+            container = new CraftContainer(inventory, this.getHandle(), player.nextContainerCounter());
+        }
+
+        // Trigger an INVENTORY_OPEN event
+        // Paper start - Add titleOverride to InventoryOpenEvent
+        final com.mojang.datafixers.util.Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(player, container);
+        container = result.getSecond();
+        // Paper end - Add titleOverride to InventoryOpenEvent
+        if (container == null) {
+            return;
+        }
+
+        // Now open the window
+        MenuType<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory());
+
+        //String title = inventory.getTitle(); // Paper - comment
+        net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
+        if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
+        if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
+        //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
+        player.containerMenu = container;
+        player.initMenu(container);
+    }
+
+    @Override
+    public InventoryView openMerchant(Villager villager, boolean force) {
+        Preconditions.checkNotNull(villager, "villager cannot be null");
+
+        return this.openMerchant((Merchant) villager, force);
+    }
+
+    @Override
+    public InventoryView openMerchant(Merchant merchant, boolean force) {
+        Preconditions.checkNotNull(merchant, "merchant cannot be null");
+
+        if (!force && merchant.isTrading()) {
+            return null;
+        } else if (merchant.isTrading()) {
+            // we're not supposed to have multiple people using the same merchant, so we have to close it.
+            merchant.getTrader().closeInventory();
+        }
+
+        net.minecraft.world.item.trading.Merchant mcMerchant;
+        Component name;
+        int level = 1; // note: using level 0 with active 'is-regular-villager'-flag allows hiding the name suffix
+        if (merchant instanceof CraftAbstractVillager) {
+            mcMerchant = ((CraftAbstractVillager) merchant).getHandle();
+            name = ((CraftAbstractVillager) merchant).getHandle().getDisplayName();
+            if (merchant instanceof CraftVillager) {
+                level = ((CraftVillager) merchant).getHandle().getVillagerData().getLevel();
+            }
+        } else if (merchant instanceof CraftMerchantCustom) {
+            mcMerchant = ((CraftMerchantCustom) merchant).getMerchant();
+            name = ((CraftMerchantCustom) merchant).getMerchant().getScoreboardDisplayName();
+        } else {
+            throw new IllegalArgumentException("Can't open merchant " + merchant.toString());
+        }
+
+        mcMerchant.setTradingPlayer(this.getHandle());
+        mcMerchant.openTradingScreen(this.getHandle(), name, level);
+
         return this.getHandle().containerMenu.getBukkitView();
     }
 
@@ -427,145 +577,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return this.getHandle().containerMenu.getBukkitView();
     }
     // Paper end
-
-    private static void openCustomInventory(Inventory inventory, ServerPlayer player, MenuType<?> windowType) {
-        if (player.connection == null) return;
-        Preconditions.checkArgument(windowType != null, "Unknown windowType");
-        AbstractContainerMenu container = new CraftContainer(inventory, player, player.nextContainerCounterInt());
-
-        // Paper start - Add titleOverride to InventoryOpenEvent
-        final com.mojang.datafixers.util.Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(player, container);
-        container = result.getSecond();
-        // Paper end - Add titleOverride to InventoryOpenEvent
-        if (container == null) return;
-
-        //String title = container.getBukkitView().getTitle(); // Paper - comment
-        net.kyori.adventure.text.Component adventure$title = container.getBukkitView().title(); // Paper
-        if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(container.getBukkitView().getTitle()); // Paper
-        if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
-
-        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
-        player.containerMenu = container;
-        player.initMenu(container);
-    }
-
-    @Override
-    public InventoryView openWorkbench(Location location, boolean force) {
-        if (location == null) {
-            location = this.getLocation();
-        }
-        if (!force) {
-            Block block = location.getBlock();
-            if (block.getType() != Material.CRAFTING_TABLE) {
-                return null;
-            }
-        }
-        this.getHandle().openMenu(Blocks.CRAFTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), CraftLocation.toBlockPosition(location)));
-        if (force) {
-            this.getHandle().containerMenu.checkReachable = false;
-        }
-        return this.getHandle().containerMenu.getBukkitView();
-    }
-
-    @Override
-    public InventoryView openEnchanting(Location location, boolean force) {
-        if (location == null) {
-            location = this.getLocation();
-        }
-        if (!force) {
-            Block block = location.getBlock();
-            if (block.getType() != Material.ENCHANTING_TABLE) {
-                return null;
-            }
-        }
-
-        // If there isn't an enchant table we can force create one, won't be very useful though.
-        BlockPos pos = CraftLocation.toBlockPosition(location);
-        this.getHandle().openMenu(Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), pos));
-
-        if (force) {
-            this.getHandle().containerMenu.checkReachable = false;
-        }
-        return this.getHandle().containerMenu.getBukkitView();
-    }
-
-    @Override
-    public void openInventory(InventoryView inventory) {
-        Preconditions.checkArgument(this.equals(inventory.getPlayer()), "InventoryView must belong to the opening player");
-        if (!(this.getHandle() instanceof ServerPlayer)) return; // TODO: NPC support?
-        if (((ServerPlayer) this.getHandle()).connection == null) return;
-        if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
-            // fire INVENTORY_CLOSE if one already open
-            ((ServerPlayer) this.getHandle()).connection.handleContainerClose(new ServerboundContainerClosePacket(this.getHandle().containerMenu.containerId), org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper - Inventory close reason
-        }
-        ServerPlayer player = (ServerPlayer) this.getHandle();
-        AbstractContainerMenu container;
-        if (inventory instanceof CraftInventoryView) {
-            container = ((CraftInventoryView) inventory).getHandle();
-        } else {
-            container = new CraftContainer(inventory, this.getHandle(), player.nextContainerCounterInt());
-        }
-
-        // Trigger an INVENTORY_OPEN event
-        // Paper start - Add titleOverride to InventoryOpenEvent
-        final com.mojang.datafixers.util.Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(player, container);
-        container = result.getSecond();
-        // Paper end - Add titleOverride to InventoryOpenEvent
-        if (container == null) {
-            return;
-        }
-
-        // Now open the window
-        MenuType<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory());
-        //String title = inventory.getTitle(); // Paper - comment
-        net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
-        if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
-        if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
-        //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
-        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
-        player.containerMenu = container;
-        player.initMenu(container);
-    }
-
-    @Override
-    public InventoryView openMerchant(Villager villager, boolean force) {
-        Preconditions.checkNotNull(villager, "villager cannot be null");
-
-        return this.openMerchant((Merchant) villager, force);
-    }
-
-    @Override
-    public InventoryView openMerchant(Merchant merchant, boolean force) {
-        Preconditions.checkNotNull(merchant, "merchant cannot be null");
-
-        if (!force && merchant.isTrading()) {
-            return null;
-        } else if (merchant.isTrading()) {
-            // we're not supposed to have multiple people using the same merchant, so we have to close it.
-            merchant.getTrader().closeInventory();
-        }
-
-        net.minecraft.world.item.trading.Merchant mcMerchant;
-        Component name;
-        int level = 1; // note: using level 0 with active 'is-regular-villager'-flag allows hiding the name suffix
-        if (merchant instanceof CraftAbstractVillager) {
-            mcMerchant = ((CraftAbstractVillager) merchant).getHandle();
-            name = ((CraftAbstractVillager) merchant).getHandle().getDisplayName();
-            if (merchant instanceof CraftVillager) {
-                level = ((CraftVillager) merchant).getHandle().getVillagerData().getLevel();
-            }
-        } else if (merchant instanceof CraftMerchantCustom) {
-            mcMerchant = ((CraftMerchantCustom) merchant).getMerchant();
-            name = ((CraftMerchantCustom) merchant).getMerchant().getScoreboardDisplayName();
-        } else {
-            throw new IllegalArgumentException("Can't open merchant " + merchant.toString());
-        }
-
-        mcMerchant.setTradingPlayer(this.getHandle());
-        mcMerchant.openTradingScreen(this.getHandle(), name, level);
-
-        return this.getHandle().containerMenu.getBukkitView();
-    }
 
     @Override
     public void closeInventory() {
@@ -665,7 +676,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
     // Paper end
 
-
     @Override
     public boolean discoverRecipe(NamespacedKey recipe) {
         return this.discoverRecipes(Arrays.asList(recipe)) != 0;
@@ -756,7 +766,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         org.bukkit.craftbukkit.block.CraftSign.openSign(sign, (CraftPlayer) this, side);
     }
     // Paper end
-
     @Override
     public boolean dropItem(boolean dropAll) {
         // Paper start - Fix HumanEntity#drop not updating the client inv
