@@ -246,6 +246,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public int getPlayerCount() {
         return world.players().size();
+    }
 
     @Override
     public BiomeProvider vanillaBiomeProvider() {
@@ -289,7 +290,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         ).isValid();
     }
     // Paper end
-    }
 
     private static final Random rand = java.util.concurrent.ThreadLocalRandom.current(); // Stellar - reduce creating random instance
 
