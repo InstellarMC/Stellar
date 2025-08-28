@@ -8,6 +8,15 @@
  import com.mojang.brigadier.exceptions.CommandSyntaxException;
  import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
  import com.mojang.brigadier.exceptions.Dynamic4CommandExceptionType;
+@@ -104,7 +_,7 @@
+         );
+     }
+ 
+-    private static int spreadPlayers(
++    static int spreadPlayers(
+         CommandSourceStack p_138703_,
+         Vec2 p_138704_,
+         float p_138705_,
 @@ -259,15 +_,22 @@
                  spreadplayerscommand$position = p_138732_[i++];
              }
