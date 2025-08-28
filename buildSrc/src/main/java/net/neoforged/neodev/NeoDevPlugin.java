@@ -73,6 +73,10 @@ public class NeoDevPlugin implements Plugin<Project> {
          * MINECRAFT SOURCES SETUP
          */
         // 1. Obtain decompiled Minecraft sources jar using NeoForm.
+        // Stellar - apply Parchment mappings
+        var parchmentFiles = List.of(
+                project.getRootProject().file("src/main/resources/META-INF/mappings/parchment.json")
+        );
         var createSourceArtifacts = configureMinecraftDecompilation(project);
         // Task must run on sync to have MC resources available for IDEA nondelegated builds.
         NeoDevFacade.runTaskOnProjectSync(project, createSourceArtifacts);
@@ -648,6 +652,11 @@ public class NeoDevPlugin implements Plugin<Project> {
             task.getSourcesArtifact().set(minecraftArtifactsDir.map(dir -> dir.file("base-sources.jar")));
             task.getResourcesArtifact().set(minecraftArtifactsDir.map(dir -> dir.file("minecraft-resources.jar")));
             task.getNeoFormArtifact().set(mcAndNeoFormVersion.map(version -> "net.neoforged:neoform:" + version + "@zip"));
+            // Stellar start
+            // task.getParchmentEnabled().set(true);
+            // task.getParchmentData().from(project.getRootProject().file("src/main/resources/META-INF/mappings/parchment.json"));
+            // task.getParchmentConflictResolutionPrefix().set("stellar_");
+            // Stellar end
         });
     }
 
