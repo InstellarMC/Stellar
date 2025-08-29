@@ -46,6 +46,39 @@
      private ChestMenu(MenuType<?> p_39224_, int p_39225_, Inventory p_39226_, int p_39227_) {
          this(p_39224_, p_39225_, p_39226_, new SimpleContainer(9 * p_39227_), p_39227_);
      }
+@@ -39,9 +_,29 @@
+         return new ChestMenu(MenuType.GENERIC_9x6, p_39267_, p_39268_, 6);
+     }
+ 
+-    public static ChestMenu threeRows(int p_39238_, Inventory p_39239_, Container p_39240_) {
+-        return new ChestMenu(MenuType.GENERIC_9x3, p_39238_, p_39239_, p_39240_, 3);
+-    }
++    // Purpur start
++    public static ChestMenu oneRow(int syncId, Inventory playerInventory, Container inventory) {
++        return new ChestMenu(MenuType.GENERIC_9x1, syncId, playerInventory, inventory, 1);
++    }
++
++    public static ChestMenu twoRows(int syncId, Inventory playerInventory, Container inventory) {
++        return new ChestMenu(MenuType.GENERIC_9x2, syncId, playerInventory, inventory, 2);
++    }
++    // Purpur end
++
++    public static ChestMenu threeRows(int syncId, Inventory playerInventory, Container inventory) {
++        return new ChestMenu(MenuType.GENERIC_9x3, syncId, playerInventory, inventory, 3);
++    }
++
++    // Purpur start
++    public static ChestMenu fourRows(int syncId, Inventory playerInventory, Container inventory) {
++        return new ChestMenu(MenuType.GENERIC_9x4, syncId, playerInventory, inventory, 4);
++    }
++
++    public static ChestMenu fiveRows(int syncId, Inventory playerInventory, Container inventory) {
++        return new ChestMenu(MenuType.GENERIC_9x5, syncId, playerInventory, inventory, 5);
++    }
++    // Purpur end
+ 
+     public static ChestMenu sixRows(int p_39247_, Inventory p_39248_, Container p_39249_) {
+         return new ChestMenu(MenuType.GENERIC_9x6, p_39247_, p_39248_, p_39249_, 6);
 @@ -55,6 +_,10 @@
          p_39232_.startOpen(p_39231_.player);
          int i = (this.containerRows - 4) * 18;

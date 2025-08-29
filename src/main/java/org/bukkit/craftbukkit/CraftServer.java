@@ -1071,13 +1071,13 @@ public final class CraftServer implements Server {
         try {
             commands.performCommandCB(results, commandLine, commandLine, true);
         } catch (CommandException ex) {
-            this.pluginManager.callEvent(new io.papermc.paper.event.server.ServerExceptionEvent(new io.papermc.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
+            this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
             //target.timings.stopTiming(); // Spigot // Paper
             throw ex;
         } catch (Throwable ex) {
             //target.timings.stopTiming(); // Spigot // Paper
             String msg = "Unhandled exception executing '" + commandLine + "' in " + target;
-            this.pluginManager.callEvent(new io.papermc.paper.event.server.ServerExceptionEvent(new io.papermc.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
+            this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
             throw new CommandException(msg, ex);
         }
         // Paper end
@@ -3313,9 +3313,9 @@ public final class CraftServer implements Server {
         return net.minecraft.server.MinecraftServer.getServer().hasStopped();
     }
 
-    private io.papermc.paper.entity.ai.MobGoals mobGoals = new io.papermc.paper.entity.ai.PaperMobGoals();
+    private com.destroystokyo.paper.entity.ai.MobGoals mobGoals = new com.destroystokyo.paper.entity.ai.PaperMobGoals();
     @Override
-    public io.papermc.paper.entity.ai.MobGoals getMobGoals() {
+    public com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
         return mobGoals;
     }
 

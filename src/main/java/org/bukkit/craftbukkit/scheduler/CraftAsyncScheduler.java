@@ -24,7 +24,6 @@
 package org.bukkit.craftbukkit.scheduler;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import io.papermc.paper.ServerSchedulerReportingWrapper;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -92,7 +91,7 @@ public class CraftAsyncScheduler extends CraftScheduler {
     private boolean executeTask(CraftTask task) {
         if (isValid(task)) {
             this.runners.put(task.getTaskId(), task);
-            this.executor.execute(new ServerSchedulerReportingWrapper(task));
+            this.executor.execute(new com.destroystokyo.paper.ServerSchedulerReportingWrapper(task));
             return true;
         }
         return false;

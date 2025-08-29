@@ -379,7 +379,7 @@
 +
 +        if (lastException != null) {
 +            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(lastException);
-+            net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk {}", pos, lastException);
++            net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk {}", p_63709_, lastException);
 +        }
 +        // Paper end - Chunk save reattempt
      }

@@ -874,7 +874,7 @@
          if (p_11227_.connection != null) {
              byte b0;
              if (p_11228_ <= 0) {
-@@ -611,11 +_,32 @@
+@@ -611,11 +_,53 @@
              p_11227_.connection.send(new ClientboundEntityEventPacket(p_11227_, b0));
          }
  
@@ -883,6 +883,27 @@
 +            p_11227_.getBukkitEntity().recalculatePermissions(); // CraftBukkit
 +            this.server.getCommands().sendCommands(p_11227_);
 +        } // Paper - Add sendOpLevel API
++
++        // Purpur start
++        if (org.purpurmc.purpur.PurpurConfig.enderChestSixRows && org.purpurmc.purpur.PurpurConfig.enderChestPermissionRows) {
++            org.bukkit.craftbukkit.entity.CraftHumanEntity bukkit = p_11227_.getBukkitEntity();
++            if (bukkit.hasPermission("purpur.enderchest.rows.six")) {
++                p_11227_.sixRowEnderchestSlotCount = 54;
++            } else if (bukkit.hasPermission("purpur.enderchest.rows.five")) {
++                p_11227_.sixRowEnderchestSlotCount = 45;
++            } else if (bukkit.hasPermission("purpur.enderchest.rows.four")) {
++                p_11227_.sixRowEnderchestSlotCount = 36;
++            } else if (bukkit.hasPermission("purpur.enderchest.rows.three")) {
++                p_11227_.sixRowEnderchestSlotCount = 27;
++            } else if (bukkit.hasPermission("purpur.enderchest.rows.two")) {
++                p_11227_.sixRowEnderchestSlotCount = 18;
++            } else if (bukkit.hasPermission("purpur.enderchest.rows.one")) {
++                p_11227_.sixRowEnderchestSlotCount = 9;
++            }
++        } else {
++            p_11227_.sixRowEnderchestSlotCount = -1;
++        }
++        //Purpur end
      }
  
      public boolean isWhiteListed(GameProfile p_11294_) {

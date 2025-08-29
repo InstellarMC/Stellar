@@ -1,14 +1,13 @@
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -3,6 +_,8 @@
+@@ -1,7 +_,6 @@
+ package net.minecraft.world.level.chunk;
+ 
  import com.google.common.collect.ImmutableList;
- import com.google.common.collect.Maps;
+-import com.google.common.collect.Maps;
  import com.mojang.logging.LogUtils;
-+import io.papermc.paper.event.server.ServerExceptionEvent;
-+import io.papermc.paper.exception.ServerInternalException;
  import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
  import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
- import java.util.Map;
 @@ -48,9 +_,10 @@
  import net.minecraft.world.level.material.Fluids;
  import net.minecraft.world.ticks.LevelChunkTicks;
@@ -21,20 +20,22 @@
      static final Logger LOGGER = LogUtils.getLogger();
      private static final TickingBlockEntity NULL_TICKER = new TickingBlockEntity() {
          @Override
-@@ -72,7 +_,7 @@
+@@ -72,9 +_,9 @@
              return "<null>";
          }
      };
 -    private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel = Maps.newHashMap();
 +    private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(); // Stellar - lithium: collections.block_entity_tickers
      public boolean loaded;
-     public final Level level;
+-    public final Level level;
++    public final ServerLevel level; // CraftBukkit - type
      @Nullable
-@@ -82,6 +_,49 @@
+     private Supplier<FullChunkStatus> fullStatus;
+     @Nullable
+@@ -82,6 +_,48 @@
      private final Int2ObjectMap<GameEventListenerRegistry> gameEventListenerRegistrySections;
      private final LevelChunkTicks<Block> blockTicks;
      private final LevelChunkTicks<Fluid> fluidTicks;
-+    public ServerLevel r; // Youer
 +	// CraftBukkit start
 +    public boolean mustNotSave;
 +    public boolean needsDecoration;
@@ -80,13 +81,12 @@
  
      public LevelChunk(Level p_187945_, ChunkPos p_187946_) {
          this(p_187945_, p_187946_, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, null, null, null);
-@@ -100,6 +_,9 @@
+@@ -99,7 +_,7 @@
+         @Nullable BlendingData p_196862_
      ) {
          super(p_196855_, p_196856_, p_196854_, p_196854_.registryAccess().registryOrThrow(Registries.BIOME), p_196859_, p_196860_, p_196862_);
-         this.level = p_196854_;
-+        if (p_196854_ != null && p_196854_ instanceof ServerLevel) {
-+            this.r = ((ServerLevel) p_196854_);
-+        }
+-        this.level = p_196854_;
++        this.level = (ServerLevel) p_196854_; // CraftBukkit - type
          this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
  
          for (Heightmap.Types heightmap$types : Heightmap.Types.values()) {
@@ -604,7 +604,7 @@
 +                        final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
 +                        LOGGER.error(msg, throwable);
 +                        blockEntity.setRemoved();
-+                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
++                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
 +                        LevelChunk.this.removeBlockEntity(blockEntity.getBlockPos());
 +                    } finally {
 +                        net.neoforged.neoforge.server.timings.TimeTracker.BLOCK_ENTITY_UPDATE.trackEnd(blockEntity);

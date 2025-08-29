@@ -1,11 +1,6 @@
 --- a/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
-@@ -1,24 +_,30 @@
- package net.minecraft.server.network;
- 
-+import io.papermc.paper.network.StandardPaperServerListPingEventImpl;
- import net.minecraft.network.Connection;
- import net.minecraft.network.DisconnectionDetails;
+@@ -5,20 +_,25 @@
  import net.minecraft.network.chat.Component;
  import net.minecraft.network.protocol.ping.ClientboundPongResponsePacket;
  import net.minecraft.network.protocol.ping.ServerboundPingRequestPacket;
@@ -39,7 +34,7 @@
 -            this.connection.send(new ClientboundStatusResponsePacket(this.status));
 +            // Paper start - Replace everything
 +            if (MinecraftServer.getServer().getStatus().version().isEmpty()) return; // Purpur - do not respond to pings before we know the protocol version
-+            StandardPaperServerListPingEventImpl.processRequest(MinecraftServer.getServer(), this.connection);
++            com.destroystokyo.paper.network.StandardPaperServerListPingEventImpl.processRequest(MinecraftServer.getServer(), this.connection);
 +            // Paper end
          }
      }

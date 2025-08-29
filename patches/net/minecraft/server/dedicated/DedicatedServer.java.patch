@@ -121,7 +121,7 @@
          LOGGER.info("Starting minecraft server version {}", SharedConstants.getCurrentVersion().getName());
          if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
              LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
-@@ -133,63 +_,178 @@
+@@ -133,65 +_,180 @@
              this.setLocalIp(dedicatedserverproperties.serverIp);
          }
  
@@ -320,8 +320,11 @@
 +            LOGGER.info("Done preparing level \"{}\" ({})", this.getLevelIdName(), s); // Paper - clarify startup log messages & add total time
 +            this.nextTickTimeNanos = Util.getNanos(); // Neo: Update server time to prevent watchdog/spaming during long load.
              if (dedicatedserverproperties.announcePlayerAchievements != null) {
-                 this.getGameRules().getRule(GameRules.RULE_ANNOUNCE_ADVANCEMENTS).set(dedicatedserverproperties.announcePlayerAchievements, this);
+-                this.getGameRules().getRule(GameRules.RULE_ANNOUNCE_ADVANCEMENTS).set(dedicatedserverproperties.announcePlayerAchievements, this);
++                this.getGameRules().getRule(GameRules.RULE_ANNOUNCE_ADVANCEMENTS).set(dedicatedserverproperties.announcePlayerAchievements, this.overworld()); // CraftBukkit - per-world
              }
+ 
+             if (dedicatedserverproperties.enableQuery) {
 @@ -204,7 +_,7 @@
                  this.rconThread = RconThread.create(this);
              }

@@ -15,7 +15,7 @@
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.item.context.UseOnContext;
  import net.minecraft.world.item.enchantment.EnchantmentHelper;
-@@ -27,6 +_,9 @@
+@@ -27,11 +_,14 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.phys.BlockHitResult;
  import net.minecraft.world.phys.Vec3;
@@ -25,6 +25,12 @@
  import org.slf4j.Logger;
  
  public class ServerPlayerGameMode {
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    protected ServerLevel level;
++    public ServerLevel level; // Paper - public
+     protected final ServerPlayer player;
+     private GameType gameModeForPlayer = GameType.DEFAULT_MODE;
+     @Nullable
 @@ -51,28 +_,45 @@
      }
  

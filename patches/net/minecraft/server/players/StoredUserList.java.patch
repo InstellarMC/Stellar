@@ -16,7 +16,7 @@
 -        this.removeExpired();
 -        return this.map.get(this.getKeyForUser(p_11389_));
 +        // Paper start - Use ConcurrentHashMap in JsonList
-+        return (V) this.map.computeIfPresent(this.getKeyForUser(key), (k, v) -> {
++        return (V) this.map.computeIfPresent(this.getKeyForUser(p_11389_), (k, v) -> {
 +            return v.hasExpired() ? null : v;
 +        });
 +        // Paper end - Use ConcurrentHashMap in JsonList

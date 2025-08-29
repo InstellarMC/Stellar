@@ -1,6 +1,6 @@
 package org.bukkit.block;
 
-import com.destroystokyo.paper.lootable.LootableBlockInventory;
+import com.destroystokyo.paper.loottable.LootableBlockInventory;
 
 /**
  * Represents a captured state of a dropper.

@@ -41,7 +41,7 @@ public final class CraftMenus {
     public record MenuTypeData<V extends InventoryView>(Class<V> viewClass, CraftMenuBuilder menuBuilder) {
     }
 
-    private static final CraftMenuBuilder STANDARD = (player, menuType) -> menuType.create(player.nextContainerCounterInt(), player.getInventory());
+    private static final CraftMenuBuilder STANDARD = (player, menuType) -> menuType.create(player.nextContainerCounter(), player.getInventory());
 
     public static <V extends InventoryView> MenuTypeData<V> getMenuTypeData(CraftMenuType<?> menuType) {
         // this isn't ideal as both dispenser and dropper are 3x3, InventoryType can't currently handle generic 3x3s with size 9
@@ -71,7 +71,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(EnchantmentView.class, (player, type) -> {
                 return new SimpleMenuProvider((syncId, inventory, human) -> {
                     return worldAccess(EnchantmentMenu::new).build(player, type);
-                }, Component.empty()).createMenu(player.nextContainerCounterInt(), player.getInventory(), player);
+                }, Component.empty()).createMenu(player.nextContainerCounter(), player.getInventory(), player);
             }));
         }
         if (menuType == MenuType.FURNACE) {

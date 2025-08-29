@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
-import ca.spottedleaf.moonrise.common.PlatformHooks;import com.destroystokyo.paper.util.VersionFetcher;
+import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
@@ -475,8 +475,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public VersionFetcher getVersionFetcher() {
-        return new io.papermc.paper.PaperVersionFetcher();
+    public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
+        return new com.destroystokyo.paper.PaperVersionFetcher();
     }
 
     @Override

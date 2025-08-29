@@ -17,7 +17,7 @@
  
  public class Explosion {
      private static final ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
-@@ -59,6 +_,251 @@
+@@ -59,6 +_,252 @@
      private final Holder<SoundEvent> explosionSound;
      private final ObjectArrayList<BlockPos> toBlow = new ObjectArrayList<>();
      private final Map<Player, Vec3> hitPlayers = Maps.newHashMap();
@@ -25,6 +25,7 @@
 +    public boolean wasCanceled = YouerConfig.explosion; // CraftBukkit - add field
 +    public float yield;
 +    // CraftBukkit end
++    public boolean excludeSourceFromDamage = true; // Paper - Allow explosions to damage source
 +
 +    // Paper start - optimise collisions
 +    private static final double[] CACHED_RAYS;
@@ -274,7 +275,7 @@
          this.level = p_46024_;
          this.source = p_46025_;
 -        this.radius = p_46029_;
-+        this.radius = (float) Math.max(p_46029_, 0.0); // CraftBukkit - clamp bad values
++        this.radius = (float) (p_46024_ == null || p_46024_.purpurConfig.explosionClampRadius ? Math.max(p_46029_, 0.0) : p_46029_); // CraftBukkit - clamp bad values // Purpur
          this.x = p_46026_;
          this.y = p_46027_;
          this.z = p_46028_;

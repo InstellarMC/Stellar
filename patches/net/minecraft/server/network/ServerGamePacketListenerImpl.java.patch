@@ -249,8 +249,8 @@
  
 +                // Paper start - Prevent moving into unloaded chunks
 +                if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (
-+                    !worldserver.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(d3, d4, d5).subtract(this.player.position()))) ||
-+                        !worldserver.areChunksLoadedForMove(entity.getBoundingBox().expandTowards(new Vec3(d3, d4, d5).subtract(entity.position())))
++                    !serverlevel.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(d3, d4, d5).subtract(this.player.position()))) ||
++                        !serverlevel.areChunksLoadedForMove(entity.getBoundingBox().expandTowards(new Vec3(d3, d4, d5).subtract(entity.position())))
 +                    )) {
 +                    this.connection.send(new ClientboundMoveVehiclePacket(entity));
 +                    return;
@@ -1815,7 +1815,7 @@
      }
  
      @Override
-@@ -1600,16 +_,16 @@
+@@ -1600,17 +_,17 @@
              case PERFORM_RESPAWN:
                  if (this.player.wonGame) {
                      this.player.wonGame = false;
@@ -1831,10 +1831,12 @@
 +                    this.player = this.server.getPlayerList().respawn(this.player, false, Entity.RemovalReason.KILLED, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason.DEATH); // CraftBukkit
                      if (this.server.isHardcore()) {
 -                        this.player.setGameMode(GameType.SPECTATOR);
+-                        this.player.level().getGameRules().getRule(GameRules.RULE_SPECTATORSGENERATECHUNKS).set(false, this.server);
 +                        this.player.setGameMode(GameType.SPECTATOR, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.HARDCORE_DEATH, null); // Paper - Expand PlayerGameModeChangeEvent
-                         this.player.level().getGameRules().getRule(GameRules.RULE_SPECTATORSGENERATECHUNKS).set(false, this.server);
++                        this.player.level().getGameRules().getRule(GameRules.RULE_SPECTATORSGENERATECHUNKS).set(false, this.player.serverLevel()); // CraftBukkit - per-world
                      }
                  }
+                 break;
 @@ -1622,15 +_,23 @@
      @Override
      public void handleContainerClose(ServerboundContainerClosePacket p_9858_) {

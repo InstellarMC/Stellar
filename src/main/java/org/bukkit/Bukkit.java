@@ -2695,12 +2695,12 @@ public final class Bukkit {
     }
 
     /**
-     * Returns the {@link io.papermc.paper.entity.ai.MobGoals} manager
+     * Returns the {@link com.destroystokyo.paper.entity.ai.MobGoals} manager
      *
      * @return the mob goals manager
      */
     @NotNull
-    public static io.papermc.paper.entity.ai.MobGoals getMobGoals() {
+    public static com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
         return server.getMobGoals();
     }
 

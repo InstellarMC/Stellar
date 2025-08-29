@@ -13,8 +13,8 @@
      @Override
      protected void entityInside(BlockState p_154263_, Level p_154264_, BlockPos p_154265_, Entity p_154266_) {
 +        // Paper start - Add EntityInsideBlockEvent
-+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) {
-+            entity.getEntityData().markDirty(net.minecraft.world.entity.Entity.DATA_TICKS_FROZEN); // prevent desync on cancelled event
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(p_154266_.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(p_154264_, p_154265_)).callEvent()) {
++            p_154266_.getEntityData().markDirty(net.minecraft.world.entity.Entity.DATA_TICKS_FROZEN); // prevent desync on cancelled event
 +            return;
 +        }
 +        // Paper end - Add EntityInsideBlockEvent

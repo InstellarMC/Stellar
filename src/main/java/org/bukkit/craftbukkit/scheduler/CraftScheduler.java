@@ -1,8 +1,6 @@
 package org.bukkit.craftbukkit.scheduler;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.event.server.ServerExceptionEvent;
-import io.papermc.paper.exception.ServerSchedulerException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -483,7 +481,7 @@ public class CraftScheduler implements BukkitScheduler {
                             logMessage,
                             throwable);
                     org.bukkit.Bukkit.getServer().getPluginManager().callEvent(
-                            new ServerExceptionEvent(new ServerSchedulerException(logMessage, throwable, task)));
+                            new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerSchedulerException(logMessage, throwable, task)));
                     // Paper end
                 } finally {
                     this.currentTask = null;

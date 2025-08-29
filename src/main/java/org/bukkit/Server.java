@@ -2374,12 +2374,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     boolean isStopping();
 
     /**
-     * Returns the {@link io.papermc.paper.entity.ai.MobGoals} manager
+     * Returns the {@link com.destroystokyo.paper.entity.ai.MobGoals} manager
      *
      * @return the mob goals manager
      */
     @NotNull
-    io.papermc.paper.entity.ai.MobGoals getMobGoals();
+    com.destroystokyo.paper.entity.ai.MobGoals getMobGoals();
 
     /**
      * @return the datapack manager

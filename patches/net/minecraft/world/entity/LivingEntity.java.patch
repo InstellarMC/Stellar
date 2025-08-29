@@ -636,27 +636,29 @@
      protected void onEffectAdded(MobEffectInstance p_147190_, @Nullable Entity p_147191_) {
          this.effectsDirty = true;
          if (!this.level().isClientSide) {
-@@ -1060,18 +_,78 @@
+@@ -1060,18 +_,68 @@
          }
      }
  
-+    // Youer start
-+    private RegainReason heal$regainReason = RegainReason.CUSTOM;
-+    public void pushHealReason(EntityRegainHealthEvent.RegainReason regainReason) {
-+        this.heal$regainReason = regainReason;
-+    }
-+    private final AtomicBoolean heal$isFastRegen = new AtomicBoolean(false);
-+    public void pushHeal$isFastRegen(boolean isFastRegen) {
-+        this.heal$isFastRegen.set(isFastRegen);
+-    public void heal(float p_21116_) {
++    // CraftBukkit start - Delegate so we can handle providing a reason for health being regained
++    public void heal(float amount) {
++        this.heal(amount, EntityRegainHealthEvent.RegainReason.CUSTOM);
 +    }
 +
-     public void heal(float p_21116_) {
-+        p_21116_ = net.neoforged.neoforge.event.EventHooks.onLivingHeal(this, p_21116_);
++    public void heal(float f, EntityRegainHealthEvent.RegainReason regainReason) {
++        // Paper start - Forward
++        heal(f, regainReason, false);
++    }
++
++    public void heal(float p_21116_, EntityRegainHealthEvent.RegainReason regainReason, boolean isFastRegen) {
++        // Paper end
++        p_21116_ = net.neoforged.neoforge.event.EventHooks.onLivingHeal(this, p_21116_); // Neo
 +        if (p_21116_ <= 0) return;
          float f = this.getHealth();
          if (f > 0.0F) {
 -            this.setHealth(f + p_21116_);
-+            org.bukkit.event.entity.EntityRegainHealthEvent event = new org.bukkit.event.entity.EntityRegainHealthEvent(this.getBukkitEntity(), p_21116_, heal$regainReason, heal$isFastRegen.getAndSet(false));
++            org.bukkit.event.entity.EntityRegainHealthEvent event = new org.bukkit.event.entity.EntityRegainHealthEvent(this.getBukkitEntity(), p_21116_, regainReason, isFastRegen);
 +            // Suppress during worldgen
 +            if (this.valid) {
 +                this.level().getCraftServer().getPluginManager().callEvent(event);
@@ -666,17 +668,6 @@
 +            }
 +            // CraftBukkit end
          }
-+    }
-+
-+    public void heal(float f, EntityRegainHealthEvent.RegainReason regainReason) {
-+        this.pushHealReason(regainReason);
-+        this.heal(f);
-+    }
-+
-+    public void heal(float f, EntityRegainHealthEvent.RegainReason regainReason, boolean isFastRegen) {
-+        this.pushHealReason(regainReason);
-+        this.pushHeal$isFastRegen(isFastRegen);
-+        this.heal(f);
      }
  
      public float getHealth() {

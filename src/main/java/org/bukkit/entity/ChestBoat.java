@@ -1,6 +1,6 @@
 package org.bukkit.entity;
 
-import com.destroystokyo.paper.lootable.LootableEntityInventory;
+import com.destroystokyo.paper.loottable.LootableEntityInventory;
 import org.bukkit.inventory.InventoryHolder;
 
 /**
