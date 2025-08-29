@@ -182,7 +182,7 @@
          int i = p_62923_.getX();
          int j = p_62923_.getY();
          int k = p_62923_.getZ();
-@@ -214,23 +_,40 @@
+@@ -214,28 +_,43 @@
          return this.getFluidState(p_62895_.getX(), p_62895_.getY(), p_62895_.getZ());
      }
  
@@ -220,19 +220,23 @@
              throw new ReportedException(crashreport);
          }
 +         */  // Paper - Perf: Optimise Chunk#getFluid
-+    }
-+
-+    public boolean setBlockState$doPlace = true;
-+
-+    // CraftBukkit start - ChunkMap#setBlockState() -> ChunkMap#setBlockState(BlockPos, IBlockData, boolean, boolean)
-+    @Nullable
-+    public BlockState setBlockStateCB(BlockPos p_62865_, BlockState p_62866_, boolean p_62867_, boolean doPlace) {
-+        setBlockState$doPlace = doPlace;
-+        return setBlockState(p_62865_, p_62866_, p_62867_);
      }
  
++    // CraftBukkit start - ChunkMap#setBlockState() -> ChunkMap#setBlockState(BlockPos, IBlockData, boolean, boolean)
      @Nullable
-@@ -262,7 +_,7 @@
+     @Override
+-    public BlockState setBlockState(BlockPos p_62865_, BlockState p_62866_, boolean p_62867_) {
++    public BlockState setBlockState(BlockPos pos, BlockState state, boolean moved) {
++        return setBlockState(pos, state, moved, true);
++    }
++
++    @Nullable
++    public BlockState setBlockState(BlockPos p_62865_, BlockState p_62866_, boolean p_62867_, boolean doPlace) {
++        // CraftBukkit end
+         int i = p_62865_.getY();
+         LevelChunkSection levelchunksection = this.getSection(this.getSectionIndex(i));
+         boolean flag = levelchunksection.hasOnlyAir();
+@@ -262,14 +_,14 @@
                  if (LightEngine.hasDifferentLightProperties(this, p_62865_, blockstate, p_62866_)) {
                      ProfilerFiller profilerfiller = this.level.getProfiler();
                      profilerfiller.push("updateSkyLightSources");
@@ -241,6 +245,14 @@
                      profilerfiller.popPush("queueCheckLight");
                      this.level.getChunkSource().getLightEngine().checkBlock(p_62865_);
                      profilerfiller.pop();
+                 }
+ 
+                 boolean flag2 = blockstate.hasBlockEntity();
+-                if (!this.level.isClientSide) {
++                if (!this.level.isClientSide&& !this.level.isBlockPlaceCancelled) { // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
+                     blockstate.onRemove(this.level, p_62865_, p_62866_, p_62867_);
+                 } else if (!blockstate.is(block) && flag2) {
+                     this.removeBlockEntity(p_62865_);
 @@ -278,7 +_,8 @@
                  if (!levelchunksection.getBlockState(j, k, l).is(block)) {
                      return null;
