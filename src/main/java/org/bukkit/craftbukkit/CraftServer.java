@@ -386,6 +386,11 @@ public final class CraftServer implements Server {
     public final boolean isOwnedByCurrentRegion(Entity entity) {
         return ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(((CraftEntity) entity).getHandleRaw());
     }
+
+    @Override
+    public final boolean isGlobalTickThread() {
+        return ca.spottedleaf.moonrise.common.util.TickThread.isTickThread();
+    }
     // Paper end - Folia reagion threading API
 
     static {

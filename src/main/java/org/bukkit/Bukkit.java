@@ -2845,6 +2845,14 @@ public final class Bukkit {
     public static boolean isOwnedByCurrentRegion(@NotNull Entity entity) {
         return server.isOwnedByCurrentRegion(entity);
     }
+
+    /**
+     * Returns whether the current thread is ticking the global region.
+     * @see io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler
+     */
+    public static boolean isGlobalTickThread() {
+        return server.isGlobalTickThread();
+    }
     // Paper end - Folia region threading API
 
     /**

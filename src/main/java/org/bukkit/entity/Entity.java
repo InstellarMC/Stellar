@@ -977,18 +977,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     @Nullable
     Location getOrigin();
 
-
-    // Paper start - Folia schedulers
-    /**
-     * Returns the task scheduler for this entity. The entity scheduler can be used to schedule tasks
-     * that are guaranteed to always execute on the tick thread that owns the entity.
-     * <p><b>If you do not need/want to make your plugin run on Folia, use {@link org.bukkit.Server#getScheduler()} instead.</b></p>
-     * @return the task scheduler for this entity.
-     * @see io.papermc.paper.threadedregions.scheduler.EntityScheduler
-     */
-    @NotNull io.papermc.paper.threadedregions.scheduler.EntityScheduler getScheduler();
-    // Paper end - Folia schedulers
-
     /**
      * Returns whether this entity was spawned from a mob spawner.
      *
@@ -1179,6 +1167,17 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     boolean wouldCollideUsing(@NotNull BoundingBox boundingBox);
     // Paper end - Collision API
+
+    // Paper start - Folia schedulers
+    /**
+     * Returns the task scheduler for this entity. The entity scheduler can be used to schedule tasks
+     * that are guaranteed to always execute on the tick thread that owns the entity.
+     * <p><b>If you do not need/want to make your plugin run on Folia, use {@link org.bukkit.Server#getScheduler()} instead.</b></p>
+     * @return the task scheduler for this entity.
+     * @see io.papermc.paper.threadedregions.scheduler.EntityScheduler
+     */
+    @NotNull io.papermc.paper.threadedregions.scheduler.EntityScheduler getScheduler();
+    // Paper end - Folia schedulers
 
     // Purpur start
     /**

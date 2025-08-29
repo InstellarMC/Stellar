@@ -2220,19 +2220,8 @@
      }
  
      public void checkDespawn() {
-@@ -3410,24 +_,72 @@
-         return this.removalReason;
-     }
+@@ -3412,22 +_,54 @@
  
-+    // Youer start
-+    /* Stellar start - place method to match CraftBukkit
-+    private final AtomicReference<EntityRemoveEvent.Cause> setRemoved$cause = new AtomicReference<>();
-+
-+    public void setRemoved$cause(EntityRemoveEvent.Cause cause) {
-+        this.setRemoved$cause.set(cause);
-+    }
-+    */// Stellar end - place method to match CraftBukkit
-+
      @Override
      public final void setRemoved(Entity.RemovalReason p_146876_) {
 +        // CraftBukkit start - add Bukkit remove cause
@@ -2248,6 +2237,7 @@
 +        }
 +        // Paper end - rewrite chunk system
 +        CraftEventFactory.callEntityRemoveEvent(this, cause);
++        // CraftBukkit end
 +        final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
          if (this.removalReason == null) {
 -            this.removalReason = p_146876_;
@@ -2269,14 +2259,6 @@
 +        }
 +        // Paper end - Folia schedulers
      }
-+
-+    /* Stellar start - place method to match CraftBukkit
-+    @Override
-+    public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
-+        this.setRemoved$cause.set(cause);
-+        this.setRemoved(entity_removalreason);
-+    }*/// Stellar end - place method to match CraftBukkit
-+    // Youer end
  
      public void unsetRemoved() {
          this.removalReason = null;
