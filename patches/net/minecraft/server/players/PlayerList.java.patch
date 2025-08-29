@@ -554,7 +554,7 @@
 +        } else if (!this.isWhiteListed(p_11258_, event)) { // Paper - ProfileWhitelistVerifyEvent
 +            //MutableComponent ichatmutablecomponent = Component.translatable("multiplayer.disconnect.not_whitelisted");
 +            //event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage)); // Spigot // Paper - Adventure
-+        } else if (this.getIpBans().isBanned(p_11257_) && !this.getIpBans().get(p_11257_).hasExpired()) {
++        } else if (this.getIpBans().isBanned(p_11257_) && getIpBans().get(p_11257_) != null && !this.getIpBans().get(p_11257_).hasExpired()) { // Paper - fix NPE with temp ip bans
              IpBanListEntry ipbanlistentry = this.ipBans.get(p_11257_);
              MutableComponent mutablecomponent = Component.translatable("multiplayer.disconnect.banned_ip.reason", ipbanlistentry.getReason());
              if (ipbanlistentry.getExpires() != null) {
