@@ -114,7 +114,7 @@
 +        }
 +    }
 +
-+    public void placeNewPlayer(Connection p_11262_, ServerPlayer p_11263_, CommonListenerCookie p_301988_, Optional<CompoundTag> optional1) {
++    private void placeNewPlayer(Connection p_11262_, ServerPlayer p_11263_, CommonListenerCookie p_301988_, Optional<CompoundTag> optional1) {
 +        // Stellar start - async player join
 +        p_11263_.isRealPlayer = true; // Paper
 +        p_11263_.loginTime = System.currentTimeMillis(); // Paper - Replace OfflinePlayer#getLastPlayed
