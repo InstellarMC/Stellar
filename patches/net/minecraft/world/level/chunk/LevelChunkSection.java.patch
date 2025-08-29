@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/net/minecraft/world/level/chunk/LevelChunkSection.java
-@@ -13,34 +_,72 @@
+@@ -13,34 +_,73 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.level.material.FluidState;
  
@@ -17,6 +17,7 @@
 +    public short nonEmptyBlockCount; // Paper - package private // Stellar -> public
 +    public short tickingBlockCount; // Stellar -> public
 +    public short tickingFluidCount; // Stellar -> public
++    public short fluidStateCount; // Pufferfish
 +    public PalettedContainer<BlockState> states; // Paper - public
 +    // CraftBukkit start - read/write
      private PalettedContainerRO<Holder<Biome>> biomes;
@@ -88,8 +89,11 @@
              this.nonEmptyBlockCount--;
              if (blockstate.isRandomlyTicking()) {
                  this.tickingBlockCount--;
-@@ -76,7 +_,7 @@
+@@ -74,9 +_,10 @@
+ 
+         if (!fluidstate.isEmpty()) {
              this.tickingFluidCount--;
++            this.fluidStateCount--; // Pufferfish
          }
  
 -        if (!p_62995_.isAir()) {
@@ -97,10 +101,14 @@
              this.nonEmptyBlockCount++;
              if (p_62995_.isRandomlyTicking()) {
                  this.tickingBlockCount++;
-@@ -87,6 +_,22 @@
-             this.tickingFluidCount++;
-         }
+@@ -85,7 +_,24 @@
  
+         if (!fluidstate1.isEmpty()) {
+             this.tickingFluidCount++;
+-        }
++            this.fluidStateCount++; // Pufferfish
++        }
++
 +        // Paper start - block counting
 +        if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isSpecialCollidingBlock(blockstate)) {
 +            --this.specialCollidingBlocks;
@@ -116,11 +124,10 @@
 +            this.tickingBlocks.add(p_62992_, p_62993_, p_62994_, p_62995_);
 +        }
 +        // Paper end - block counting
-+
+ 
          return blockstate;
      }
- 
-@@ -107,34 +_,65 @@
+@@ -107,34 +_,66 @@
      }
  
      public void recalcBlockCounts() {
@@ -135,6 +142,14 @@
 -                    this.nonEmptyBlockCount += p_204445_;
 -                    if (p_204444_.isRandomlyTicking()) {
 -                        this.tickingBlockCount += p_204445_;
+-                    }
+-                }
+-
+-                if (!fluidstate.isEmpty()) {
+-                    this.nonEmptyBlockCount += p_204445_;
+-                    if (fluidstate.isRandomlyTicking()) {
+-                        this.tickingFluidCount += p_204445_;
+-                    }
 +        // Paper start - block counting
 +        // reset, then recalculate
 +        this.nonEmptyBlockCount = (short)0;
@@ -180,20 +195,17 @@
 +                    java.util.Objects.checkFromToIndex(0, paletteCount, raw.length);
 +                    for (int i = 0; i < paletteCount; ++i) {
 +                        this.tickingBlocks.add(raw[i], state);
-                     }
-                 }
- 
--                if (!fluidstate.isEmpty()) {
--                    this.nonEmptyBlockCount += p_204445_;
--                    if (fluidstate.isRandomlyTicking()) {
--                        this.tickingFluidCount += p_204445_;
++                    }
++                }
++
 +                final FluidState fluid = state.getFluidState();
 +
 +                if (!fluid.isEmpty()) {
 +                    //this.nonEmptyBlockCount += count; // fix vanilla bug: make non empty block count correct
 +                    if (fluid.isRandomlyTicking()) {
 +                        this.tickingFluidCount += paletteCount;
-                     }
++                    }
++                    this.fluidStateCount++; // Pufferfish
                  }
              }
          }

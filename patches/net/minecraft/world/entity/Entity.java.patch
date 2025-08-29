@@ -2029,43 +2029,149 @@
      }
  
      public int countPlayerPassengers() {
-@@ -3110,9 +_,17 @@
+@@ -3110,17 +_,38 @@
          return Mth.lerp(p_352259_, this.yRotO, this.yRot);
      }
  
 +    @Deprecated // Forge: Use no parameter version instead, only for vanilla Tags
      public boolean updateFluidHeightAndDoFluidPushing(TagKey<Fluid> p_204032_, double p_204033_) {
+-        if (this.touchingUnloadedChunk()) {
+-            return false;
 +        this.updateFluidHeightAndDoFluidPushing();
++        // Neo start
 +        if(p_204032_ == FluidTags.WATER) return this.isInFluidType(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
 +        else if (p_204032_ == FluidTags.LAVA) return this.isInFluidType(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value());
 +        else return false;
 +    }
 +
++    // Stellar start
++    static class InterimCalculation {
++        double fluidHeight = 0.0D;
++        Vec3 flowVector = Vec3.ZERO;
++        int blockCount = 0;
++    }
++    it.unimi.dsi.fastutil.objects.Object2ObjectMap<net.neoforged.neoforge.fluids.FluidType, InterimCalculation> interimCalcs = null;
++    // Stellar end
++
 +    public void updateFluidHeightAndDoFluidPushing() {
-         if (this.touchingUnloadedChunk()) {
--            return false;
++        // Neo end
++        if (false && this.touchingUnloadedChunk()) { // Pufferfish - cost of a lookup here is the same cost as below, so skip
 +            return;
          } else {
              AABB aabb = this.getBoundingBox().deflate(0.001);
-             int i = Mth.floor(aabb.minX);
-@@ -3127,25 +_,36 @@
-             Vec3 vec3 = Vec3.ZERO;
+-            int i = Mth.floor(aabb.minX);
+-            int j = Mth.ceil(aabb.maxX);
+-            int k = Mth.floor(aabb.minY);
+-            int l = Mth.ceil(aabb.maxY);
+-            int i1 = Mth.floor(aabb.minZ);
+-            int j1 = Mth.ceil(aabb.maxZ);
++            // Pufferfish start - rename // Stellar start - just copy, TODO later
++            int i = Mth.floor(aabb.minX); final int minBlockX = i;
++            int j = Mth.ceil(aabb.maxX); final int maxBlockX = j;
++            int k = Mth.floor(aabb.minY); final int minBlockY = k;
++            int l = Mth.ceil(aabb.maxY); final int maxBlockY = l;
++            int i1 = Mth.floor(aabb.minZ); final int minBlockZ = i1;
++            int j1 = Mth.ceil(aabb.maxZ); final int maxBlockZ = j1;
++            // Pufferfish end // Stellar end
+             double d0 = 0.0;
+             boolean flag = this.isPushedByFluid();
+             boolean flag1 = false;
+@@ -3128,24 +_,114 @@
              int k1 = 0;
              BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
-+            class InterimCalculation {
-+                double fluidHeight = 0.0D;
-+                Vec3 flowVector = Vec3.ZERO;
-+                int blockCount = 0;
-+            }
-+            it.unimi.dsi.fastutil.objects.Object2ObjectMap<net.neoforged.neoforge.fluids.FluidType, InterimCalculation> interimCalcs = null;
  
++            // Pufferfish start - based off CollisionUtil.getCollisionsForBlocksOrWorldBorder
++            final int minSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(this.level());
++            final int maxSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMaxSection(this.level());
++            final int minBlock = minSection << 4;
++            final int maxBlock = (maxSection << 4) | 15;
++
++            // special cases:
++            if (minBlockY > maxBlock || maxBlockY < minBlock) {
++                // no point in checking
++                return false;
++            }
++
++            int minYIterate = Math.max(minBlock, minBlockY);
++            int maxYIterate = Math.min(maxBlock, maxBlockY);
++
++            int minChunkX = minBlockX >> 4;
++            int maxChunkX = maxBlockX >> 4;
++
++            int minChunkZ = minBlockZ >> 4;
++            int maxChunkZ = maxBlockZ >> 4;
++
++            for (int currChunkZ = minChunkZ; currChunkZ <= maxChunkZ; ++currChunkZ) {
++                int minZ = currChunkZ == minChunkZ ? minBlockZ & 15 : 0; // coordinate in chunk
++                int maxZ = currChunkZ == maxChunkZ ? maxBlockZ & 15 : 16; // coordinate in chunk
++
++                for (int currChunkX = minChunkX; currChunkX <= maxChunkX; ++currChunkX) {
++                    int minX = currChunkX == minChunkX ? minBlockX & 15 : 0; // coordinate in chunk
++                    int maxX = currChunkX == maxChunkX ? maxBlockX & 15 : 16; // coordinate in chunk
++
++                    net.minecraft.world.level.chunk.ChunkAccess chunk = this.level().getChunkIfLoadedImmediately(currChunkX, currChunkZ);
++                    if (chunk == null) {
++                        return false; // if we're touching an unloaded chunk then it's false
++                    }
++
++                    net.minecraft.world.level.chunk.LevelChunkSection[] sections = chunk.getSections();
++
++                    for (int currY = minYIterate; currY < maxYIterate; ++currY) {
++                        net.minecraft.world.level.chunk.LevelChunkSection section = sections[(currY >> 4) - minSection];
++
++                        if (section == null || section.hasOnlyAir() || section.fluidStateCount == 0) { // if no fluids, nothing in this section
++                            // empty
++                            // skip to next section
++                            currY = (currY & ~(15)) + 15; // increment by 15: iterator loop increments by the extra one
++                            continue;
++                        }
++
++                        net.minecraft.world.level.chunk.PalettedContainer<BlockState> blocks = section.states;
++
++                        for (int currZ = minZ; currZ < maxZ; ++currZ) {
++                            for (int currX = minX; currX < maxX; ++currX) {
++                                FluidState fluid = blocks.get(currX & 15, currY & 15, currZ & 15).getFluidState();
++
++                        net.neoforged.neoforge.fluids.FluidType fluidType = fluidstate.getFluidType(); // Neo
++                        if (!fluidType.isAir()) { // Stellar - respect neo
++                            blockposition_mutableblockposition.set((currChunkX << 4) + currX, currY, (currChunkZ << 4) + currZ);
++                            double d2 = (double) ((float) currY + fluid.getHeight(this.level(), blockposition_mutableblockposition));
++
++                            if (d2 >= axisalignedbb.minY) {
++                                flag1 = true;
++                                d1 = Math.max(d2 - axisalignedbb.minY, d1);
++                                if (interimCalcs == null) interimCalcs = new it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap<>(); // Neo
++                                if (flag) {
++                                    Vec3 vec3d1 = fluid.getFlow(this.level(), blockposition_mutableblockposition);
++
++                                    if (d1 < 0.4D) {
++                                        vec3d1 = vec3d1.scale(d1);
++                                    }
++
++                                    vec3d = vec3d.add(vec3d1);
++                                    ++k1;
++                                }
++                                // CraftBukkit start - store last lava contact location
++                                if (tag == FluidTags.LAVA) {
++                                    this.lastLavaContact = blockposition_mutableblockposition.immutable();
++                                }
++                                // CraftBukkit end
++                            }
++                        }
++                            }
++                        }
++                    }
++                }
++            }
++            // Pufferfish end
++
              for (int l1 = i; l1 < j; l1++) {
                  for (int i2 = k; i2 < l; i2++) {
                      for (int j2 = i1; j2 < j1; j2++) {
                          blockpos$mutableblockpos.set(l1, i2, j2);
                          FluidState fluidstate = this.level().getFluidState(blockpos$mutableblockpos);
 -                        if (fluidstate.is(p_204032_)) {
-+                        net.neoforged.neoforge.fluids.FluidType fluidType = fluidstate.getFluidType();
++                        net.neoforged.neoforge.fluids.FluidType fluidType = fluidstate.getFluidType(); // Neo
 +                        if (!fluidType.isAir()) {
                              double d1 = (double)((float)i2 + fluidstate.getHeight(this.level(), blockpos$mutableblockpos));
                              if (d1 >= aabb.minY) {
