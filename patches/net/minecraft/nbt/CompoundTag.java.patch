@@ -11,7 +11,8 @@
 +
          private static CompoundTag loadCompound(DataInput p_302338_, NbtAccounter p_302362_) throws IOException {
              p_302362_.accountBytes(48L);
-             Map<String, Tag> map = Maps.newHashMap();
+-            Map<String, Tag> map = Maps.newHashMap();
++            it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> map = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f); // Paper - Reduce memory footprint of CompoundTag
  
              byte b0;
 -            while ((b0 = p_302338_.readByte()) != 0) {
@@ -22,24 +23,26 @@
                  Tag tag = CompoundTag.readNamedTagData(TagTypes.getType(b0), s, p_302338_, p_302362_);
                  if (map.put(s, tag) == null) {
                      p_302362_.accountBytes(36L);
-@@ -168,6 +_,17 @@
-         this(Maps.newHashMap());
+@@ -165,7 +_,18 @@
      }
  
+     public CompoundTag() {
+-        this(Maps.newHashMap());
++        this(new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f)); // Paper - Reduce memory footprint of CompoundTag
++    }
++
 +    /**
 +     * Neo: create a compound tag that is generally suitable to hold the given amount of entries
 +     * without needing to resize the internal map.
 +     *
 +     * @param expectedEntries the expected number of entries that the compound tag will have
-+     * @see HashMap#newHashMap(int)
++     * @see it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap
 +     */
 +    public CompoundTag(int expectedEntries) {
-+        this(HashMap.newHashMap(expectedEntries));
-+    }
-+
++        this(new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(expectedEntries, 0.8f)); // Stellar - Reduce memory footprint of CompoundTag
+     }
+ 
      @Override
-     public void write(DataOutput p_128341_) throws IOException {
-         for (String s : this.tags.keySet()) {
 @@ -211,6 +_,7 @@
  
      @Nullable
@@ -48,3 +51,186 @@
          return this.tags.put(p_128366_, p_128367_);
      }
  
+@@ -452,6 +_,158 @@
+         return this.getByte(p_128472_) != 0;
+     }
+ 
++    // Stellar start
++    public Tag getOr(String key, Tag defaultValue) {
++        return this.tags.getOrDefault(key, defaultValue);
++    }
++
++    public byte getByteOr(String key, byte defaultValue) {
++        try {
++            if (this.contains(key, 99)) {
++                return ((NumericTag)this.tags.get(key)).getAsByte();
++            }
++        } catch (ClassCastException classcastexception) {
++        }
++
++        return defaultValue;
++    }
++
++    public short getShortOr(String key, short defaultValue) {
++        try {
++            if (this.contains(key, 99)) {
++                return ((NumericTag)this.tags.get(key)).getAsShort();
++            }
++        } catch (ClassCastException classcastexception) {
++        }
++
++        return defaultValue;
++    }
++
++    public int getIntOr(String key, int defaultValue) {
++        try {
++            if (this.contains(key, 99)) {
++                return ((NumericTag)this.tags.get(key)).getAsInt();
++            }
++        } catch (ClassCastException classcastexception) {
++        }
++
++        return defaultValue;
++    }
++
++    public long getLongOr(String key, long defaultValue) {
++        try {
++            if (this.contains(key, 99)) {
++                return ((NumericTag)this.tags.get(key)).getAsLong();
++            }
++        } catch (ClassCastException classcastexception) {
++        }
++
++        return defaultValue;
++    }
++
++    public float getFloatOr(String key, float defaultValue) {
++        try {
++            if (this.contains(key, 99)) {
++                return ((NumericTag)this.tags.get(key)).getAsFloat();
++            }
++        } catch (ClassCastException classcastexception) {
++        }
++
++        return defaultValue;
++    }
++
++    public double getDoubleOr(String key, double defaultValue) {
++        try {
++            if (this.contains(key, 99)) {
++                return ((NumericTag)this.tags.get(key)).getAsDouble();
++            }
++        } catch (ClassCastException classcastexception) {
++        }
++
++        return defaultValue;
++    }
++
++    public String getStringOr(String key, String defaultValue) {
++        try {
++            if (this.contains(key, 8)) {
++                return this.tags.get(key).getAsString();
++            }
++        } catch (ClassCastException classcastexception) {
++        }
++
++        return defaultValue;
++    }
++
++    public byte[] getByteArrayOr(String key, byte[] defaultValue) {
++        try {
++            if (this.contains(key, 7)) {
++                return ((ByteArrayTag)this.tags.get(key)).getAsByteArray();
++            }
++        } catch (ClassCastException classcastexception) {
++            throw new ReportedException(this.createReport(key, ByteArrayTag.TYPE, classcastexception));
++        }
++
++        return defaultValue;
++    }
++
++    public int[] getIntArrayOr(String key, int[] defaultValue) {
++        try {
++            if (this.contains(key, 11)) {
++                return ((IntArrayTag)this.tags.get(key)).getAsIntArray();
++            }
++        } catch (ClassCastException classcastexception) {
++            throw new ReportedException(this.createReport(key, IntArrayTag.TYPE, classcastexception));
++        }
++
++        return defaultValue;
++    }
++
++    public long[] getLongArrayOr(String key, long[] defaultValue) {
++        try {
++            if (this.contains(key, 12)) {
++                return ((LongArrayTag)this.tags.get(key)).getAsLongArray();
++            }
++        } catch (ClassCastException classcastexception) {
++            throw new ReportedException(this.createReport(key, LongArrayTag.TYPE, classcastexception));
++        }
++
++        return defaultValue;
++    }
++
++    public CompoundTag getCompoundOr(String key, CompoundTag defaultValue) {
++        try {
++            if (this.contains(key, 10)) {
++                return (CompoundTag)this.tags.get(key);
++            }
++        } catch (ClassCastException classcastexception) {
++            throw new ReportedException(this.createReport(key, TYPE, classcastexception));
++        }
++
++        return defaultValue;
++    }
++
++    public ListTag getListOr(String key, int type, ListTag defaultValue) {
++        try {
++            if (this.getTagType(key) == 9) {
++                ListTag listtag = (ListTag)this.tags.get(key);
++                if (!listtag.isEmpty() && listtag.getElementType() != type) {
++                    return defaultValue;
++                }
++
++                return listtag;
++            }
++        } catch (ClassCastException classcastexception) {
++            throw new ReportedException(this.createReport(key, ListTag.TYPE, classcastexception));
++        }
++
++        return defaultValue;
++    }
++
++    public boolean getBooleanOr(String key, boolean defaultValue) {
++        return this.getByteOr(key, (byte)(defaultValue ? 1 : 0)) != 0;
++    }
++    // Stellar end
++
+     public void remove(String p_128474_) {
+         this.tags.remove(p_128474_);
+     }
+@@ -475,12 +_,20 @@
+     }
+ 
+     protected CompoundTag shallowCopy() {
+-        return new CompoundTag(new HashMap<>(this.tags));
++        return new CompoundTag(new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(this.tags)); // Stellar - Reduce memory footprint of CompoundTag
+     }
+ 
+     public CompoundTag copy() {
+-        Map<String, Tag> map = Maps.newHashMap(Maps.transformValues(this.tags, Tag::copy));
+-        return new CompoundTag(map);
++        // Paper start - Reduce memory footprint of CompoundTag
++        it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> ret = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(this.tags.size(), 0.8f);
++        java.util.Iterator<java.util.Map.Entry<String, Tag>> iterator = (this.tags instanceof it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap) ? ((it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap)this.tags).object2ObjectEntrySet().fastIterator() : this.tags.entrySet().iterator();
++        while (iterator.hasNext()) {
++            Map.Entry<String, Tag> entry = iterator.next();
++            ret.put(entry.getKey(), entry.getValue().copy());
++        }
++
++        return new CompoundTag(ret);
++        // Paper end - Reduce memory footprint of CompoundTag
+     }
+ 
+     @Override
