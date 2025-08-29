@@ -65,7 +65,7 @@
  import org.slf4j.Logger;
  
  public abstract class PlayerList {
-@@ -128,15 +_,55 @@
+@@ -128,15 +_,56 @@
      private boolean allowCommandsForAllPlayers;
      private static final boolean ALLOW_LOGOUTIVATOR = false;
      private int sendAllPlayerInfoIn;
@@ -114,7 +114,8 @@
 +        }
 +    }
 +
-+    private void placeNewPlayer(Connection p_11262_, ServerPlayer p_11263_, CommonListenerCookie p_301988_, Optional<CompoundTag> optional1) {
++    @org.jetbrains.annotations.Internal
++    public void placeNewPlayer(Connection p_11262_, ServerPlayer p_11263_, CommonListenerCookie p_301988_, Optional<CompoundTag> optional1) {
 +        // Stellar start - async player join
 +        p_11263_.isRealPlayer = true; // Paper
 +        p_11263_.loginTime = System.currentTimeMillis(); // Paper - Replace OfflinePlayer#getLastPlayed

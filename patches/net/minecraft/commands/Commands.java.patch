@@ -66,6 +66,14 @@
          DefaultGameModeCommands.register(this.dispatcher);
          DifficultyCommand.register(this.dispatcher);
          EffectCommands.register(this.dispatcher, p_230944_);
+@@ -196,6 +_,7 @@
+         SetSpawnCommand.register(this.dispatcher);
+         SetWorldSpawnCommand.register(this.dispatcher);
+         SpectateCommand.register(this.dispatcher);
++        net.minecraft.server.commands.SpreadFakePlayersCommand.register(this.dispatcher); // Stellar
+         SpreadPlayersCommand.register(this.dispatcher);
+         StopSoundCommand.register(this.dispatcher);
+         SummonCommand.register(this.dispatcher, p_230944_);
 @@ -214,7 +_,7 @@
              JfrCommand.register(this.dispatcher);
          }
