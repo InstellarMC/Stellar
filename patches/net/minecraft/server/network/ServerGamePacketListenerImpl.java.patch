@@ -212,7 +212,7 @@
                  double d0 = entity.getX();
                  double d1 = entity.getY();
                  double d2 = entity.getZ();
-@@ -407,7 +_,31 @@
+@@ -407,12 +_,46 @@
                  double d8 = d5 - this.vehicleFirstGoodZ;
                  double d9 = entity.getDeltaMovement().lengthSqr();
                  double d10 = d6 * d6 + d7 * d7 + d8 * d8;
@@ -245,6 +245,21 @@
                      LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", entity.getName().getString(), this.player.getName().getString(), d6, d7, d8);
                      this.send(new ClientboundMoveVehiclePacket(entity));
                      return;
+                 }
+ 
++                // Paper start - Prevent moving into unloaded chunks
++                if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (
++                    !worldserver.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(d3, d4, d5).subtract(this.player.position()))) ||
++                        !worldserver.areChunksLoadedForMove(entity.getBoundingBox().expandTowards(new Vec3(d3, d4, d5).subtract(entity.position())))
++                    )) {
++                    this.connection.send(new ClientboundMoveVehiclePacket(entity));
++                    return;
++                }
++                // Paper end - Prevent moving into unloaded chunks
++
+                 boolean flag = serverlevel.noCollision(entity, entity.getBoundingBox().deflate(0.0625));
+                 d6 = d3 - this.vehicleLastGoodX;
+                 d7 = d4 - this.vehicleLastGoodY - 1.0E-6;
 @@ -433,23 +_,83 @@
                  d8 = d5 - entity.getZ();
                  d10 = d6 * d6 + d7 * d7 + d8 * d8;
