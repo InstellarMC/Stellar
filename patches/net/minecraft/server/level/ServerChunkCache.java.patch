@@ -87,7 +87,7 @@
  
      public ServerChunkCache(
          ServerLevel p_214982_,
-@@ -106,6 +_,66 @@
+@@ -106,6 +_,72 @@
          this.clearCache();
      }
  
@@ -105,7 +105,13 @@
 +    }
 +    // CraftBukkit end
 +    // Paper start
-+    // Paper - rewrite chunk system
++    public void addLoadedChunk(LevelChunk chunk) {
++        this.fullChunks.put(chunk.coordinateKey, chunk);
++    }
++
++    public void removeLoadedChunk(LevelChunk chunk) {
++        this.fullChunks.remove(chunk.coordinateKey);
++    }
 +
 +    @Nullable
 +    public ChunkAccess getChunkAtImmediately(int x, int z) {

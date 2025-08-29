@@ -1,0 +1,18 @@
+--- a/net/minecraft/world/level/pathfinder/Path.java
++++ b/net/minecraft/world/level/pathfinder/Path.java
+@@ -11,13 +_,14 @@
+ import net.minecraft.world.phys.Vec3;
+ 
+ public class Path {
+-    private final List<Node> nodes;
++    public final List<Node> nodes; // Stellar - public
+     @Nullable
+     private Path.DebugData debugData;
+     private int nextNodeIndex;
+     private final BlockPos target;
+     private final float distToTarget;
+     private final boolean reached;
++    public boolean hasNext() { return getNextNodeIndex() < this.nodes.size(); } // Paper - Mob Pathfinding API
+ 
+     public Path(List<Node> p_77371_, BlockPos p_77372_, boolean p_77373_) {
+         this.nodes = p_77371_;

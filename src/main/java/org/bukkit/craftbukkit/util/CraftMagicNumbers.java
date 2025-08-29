@@ -1,30 +1,27 @@
 package org.bukkit.craftbukkit.util;
 
-import com.destroystokyo.paper.util.VersionFetcher;
+import ca.spottedleaf.moonrise.common.PlatformHooks;import com.destroystokyo.paper.util.VersionFetcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
-import com.mohistmc.youer.util.I18n;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.serialization.Dynamic;
+import com.mojang.logging.LogUtils;import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
-import net.minecraft.SharedConstants;
+import net.kyori.adventure.text.Component;import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.CompoundTag;import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
@@ -71,7 +68,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.potion.PotionType;
+import org.bukkit.potion.PotionType;import org.slf4j.Logger;
 
 @SuppressWarnings("deprecation")
 public final class CraftMagicNumbers implements UnsafeValues {
@@ -568,135 +565,57 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public byte[] serializeEntity(org.bukkit.entity.Entity entity, boolean compress, EntitySerializationFlag... serializationFlags) {
-        CompoundTag compound = serializeEntityToCompound(entity, serializationFlags);
-        return writeCompoundToBytes(compound, compress);
-    }
-
-    @Override
-    public void serializeEntityToNbt(org.bukkit.entity.Entity entity, java.io.OutputStream outputStream, EntitySerializationFlag... serializationFlags) throws IOException {
-        Preconditions.checkNotNull(outputStream, "outputStream cannot be null");
-
-        CompoundTag compound = serializeEntityToCompound(entity, serializationFlags);
-        writeCompoundToStream(compound, outputStream);
-    }
-
-    private CompoundTag serializeEntityToCompound(org.bukkit.entity.Entity entity, EntitySerializationFlag... serializationFlags) {
+    public byte[] serializeEntity(org.bukkit.entity.Entity entity) {
         Preconditions.checkNotNull(entity, "null cannot be serialized");
-        Preconditions.checkArgument(entity instanceof CraftEntity, "Only CraftEntities can be serialized");
+        Preconditions.checkArgument(entity instanceof org.bukkit.craftbukkit.entity.CraftEntity, "only CraftEntities can be serialized");
 
-        Set<EntitySerializationFlag> flags = Set.of(serializationFlags);
-        final boolean serializePassangers = flags.contains(EntitySerializationFlag.PASSENGERS);
-        final boolean forceSerialization = flags.contains(EntitySerializationFlag.FORCE);
-        final boolean allowPlayerSerialization = flags.contains(EntitySerializationFlag.PLAYER);
-        final boolean allowMiscSerialization = flags.contains(EntitySerializationFlag.MISC);
-        final boolean includeNonSaveable = allowPlayerSerialization || allowMiscSerialization;
-
-        net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
-        (serializePassangers ? nmsEntity.getSelfAndPassengers() : Stream.of(nmsEntity)).forEach(e -> {
-            // Ensure force flag is not needed
-            Preconditions.checkArgument(
-                (e.getBukkitEntity().isValid() && e.getBukkitEntity().isPersistent()) || forceSerialization,
-                "Cannot serialize invalid or non-persistent entity %s(%s) without the FORCE flag",
-                e.getType().toShortString(),
-                e.getStringUUID()
-            );
-
-            if (e instanceof Player) {
-                // Ensure player flag is not needed
-                Preconditions.checkArgument(
-                    allowPlayerSerialization,
-                    "Cannot serialize player(%s) without the PLAYER flag",
-                    e.getStringUUID()
-                );
-            } else {
-                // Ensure misc flag is not needed
-                Preconditions.checkArgument(
-                    nmsEntity.getType().canSerialize() || allowMiscSerialization,
-                    "Cannot serialize misc non-saveable entity %s(%s) without the MISC flag",
-                    e.getType().toShortString(),
-                    e.getStringUUID()
-                );
-            }
-        });
-
-        try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
-            () -> "serialiseEntity@" + entity.getUniqueId(), LOGGER
-        )) {
-            final TagValueOutput output = TagValueOutput.createWithContext(problemReporter, nmsEntity.registryAccess());
-            if (serializePassangers) {
-                if (!nmsEntity.saveAsPassenger(output, true, includeNonSaveable, forceSerialization)) {
-                    throw new IllegalArgumentException("Couldn't serialize entity");
-                }
-            } else {
-                List<net.minecraft.world.entity.Entity> pass = new ArrayList<>(nmsEntity.getPassengers());
-                nmsEntity.passengers = com.google.common.collect.ImmutableList.of();
-                boolean serialized = nmsEntity.saveAsPassenger(output, true, includeNonSaveable, forceSerialization);
-                nmsEntity.passengers = com.google.common.collect.ImmutableList.copyOf(pass);
-                if (!serialized) {
-                    throw new IllegalArgumentException("Couldn't serialize entity");
-                }
-            }
-            return output.buildResult();
-        }
+        net.minecraft.nbt.CompoundTag compound = new net.minecraft.nbt.CompoundTag();
+        ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().serializeEntity(compound);
+        return serializeNbtToBytes(compound);
     }
 
     @Override
-    public org.bukkit.entity.Entity deserializeEntity(byte[] data, World world, boolean preserveUUID, boolean preservePassengers) {
-        Preconditions.checkNotNull(data, "input cannot be null");
-        Preconditions.checkNotNull(world, "world cannot be null");
-        Preconditions.checkArgument(data.length > 0, "data cannot be empty");
+    public org.bukkit.entity.Entity deserializeEntity(byte[] data, org.bukkit.World world, boolean preserveUUID) {
+        Preconditions.checkNotNull(data, "null cannot be deserialized");
+        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
 
-        CompoundTag compound = readCompoundFromBytes(data);
-        return deserializeEntityFromCompound(compound, world, preserveUUID, preservePassengers);
-    }
-
-    @Override
-    public org.bukkit.entity.Entity deserializeEntityFromNbt(java.io.InputStream input, World world, boolean preserveUUID, boolean preservePassengers) throws IOException {
-        Preconditions.checkNotNull(input, "input cannot be null");
-        Preconditions.checkNotNull(world, "world cannot be null");
-
-        CompoundTag compound = readCompoundFromStream(input);
-        return deserializeEntityFromCompound(compound, world, preserveUUID, preservePassengers);
-    }
-
-    private org.bukkit.entity.Entity deserializeEntityFromCompound(CompoundTag compound, World world, boolean preserveUUID, boolean preservePassengers) {
-        int dataVersion = compound.getIntOr("DataVersion", 0);
-        compound = PlatformHooks.get().convertNBT(References.ENTITY, MinecraftServer.getServer().fixerUpper, compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
-        if (!preservePassengers) {
-            compound.remove("Passengers");
-        }
-        net.minecraft.world.entity.Entity nmsEntity = deserializeEntityFromConvertedCompound(compound, ((CraftWorld) world).getHandle(), preserveUUID);
-        return nmsEntity.getBukkitEntity();
-    }
-
-    private net.minecraft.world.entity.Entity deserializeEntityFromConvertedCompound(CompoundTag compound, ServerLevel world, boolean preserveUUID) {
+        net.minecraft.nbt.CompoundTag compound = deserializeNbtFromBytes(data);
+        int dataVersion = compound.getInt("DataVersion");
+        compound = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY, compound, dataVersion, this.getDataVersion());
         if (!preserveUUID) {
-            // Generate a new UUID, so we don't have to worry about deserializing the same entity twice
+            // Generate a new UUID so we don't have to worry about deserializing the same entity twice
             compound.remove("UUID");
         }
+        return net.minecraft.world.entity.EntityType.create(compound, ((org.bukkit.craftbukkit.CraftWorld) world).getHandle())
+            .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
+    }
 
-        final net.minecraft.world.entity.Entity nmsEntity;
-        try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
-            () -> "deserialiseEntity", LOGGER
-        )) {
-            nmsEntity = net.minecraft.world.entity.EntityType.create(
-                TagValueInput.create(problemReporter, world.registryAccess(), compound),
-                world,
-                net.minecraft.world.entity.EntitySpawnReason.LOAD
-            ).orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?"));
+    private byte[] serializeNbtToBytes(net.minecraft.nbt.CompoundTag compound) {
+        compound.putInt("DataVersion", getDataVersion());
+        java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
+        try {
+            net.minecraft.nbt.NbtIo.writeCompressed(
+                compound,
+                outputStream
+            );
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
+        return outputStream.toByteArray();
+    }
 
-        compound.getList("Passengers").ifPresent(passengers -> {
-            for (final Tag tag : passengers) {
-                if (!(tag instanceof final CompoundTag serializedPassenger)) {
-                    continue;
-                }
-                final net.minecraft.world.entity.Entity passengerEntity = deserializeEntityFromConvertedCompound(serializedPassenger, world, preserveUUID);
-                passengerEntity.startRiding(nmsEntity, true);
-            }
-        });
-        return nmsEntity;
+    private net.minecraft.nbt.CompoundTag deserializeNbtFromBytes(byte[] data) {
+        net.minecraft.nbt.CompoundTag compound;
+        try {
+            compound = net.minecraft.nbt.NbtIo.readCompressed(
+                new java.io.ByteArrayInputStream(data), net.minecraft.nbt.NbtAccounter.unlimitedHeap()
+            );
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        int dataVersion = compound.getInt("DataVersion");
+        Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
+        return compound;
     }
 
     private void writeCompoundToStream(CompoundTag compound, java.io.OutputStream output) throws IOException {
@@ -795,7 +714,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public List<net.kyori.adventure.text.Component> computeTooltipLines(final ItemStack itemStack, final io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final org.bukkit.entity.Player player) {
+    public List<Component> computeTooltipLines(final ItemStack itemStack, final io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final org.bukkit.entity.Player player) {
         Preconditions.checkArgument(tooltipContext != null, "tooltipContext cannot be null");
         net.minecraft.world.item.TooltipFlag.Default flag = tooltipContext.isAdvanced() ? net.minecraft.world.item.TooltipFlag.ADVANCED : net.minecraft.world.item.TooltipFlag.NORMAL;
         if (tooltipContext.isCreative()) {

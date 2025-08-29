@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/level/pathfinder/PathFinder.java
++++ b/net/minecraft/world/level/pathfinder/PathFinder.java
+@@ -21,7 +_,7 @@
+     private static final float FUDGING = 1.5F;
+     private final Node[] neighbors = new Node[32];
+     private final int maxVisitedNodes;
+-    private final NodeEvaluator nodeEvaluator;
++    public final NodeEvaluator nodeEvaluator; // Stellar - public
+     private static final boolean DEBUG = false;
+     private final BinaryHeap openSet = new BinaryHeap();
+ 
