@@ -1851,6 +1851,15 @@
          }
  
          public void onTrackingStart(Entity p_143371_) {
+@@ -1703,7 +_,7 @@
+             }
+ 
+             if (p_143371_ instanceof Mob mob) {
+-                if (ServerLevel.this.isUpdatingNavigations) {
++                if (false ServerLevel.this.isUpdatingNavigations) { // Paper - Remove unnecessary onTrackingStart during navigation warning
+                     String s = "onTrackingStart called during navigation iteration";
+                     Util.logAndPauseIfInIde(
+                         "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
 @@ -1713,16 +_,58 @@
                  ServerLevel.this.navigatingMobs.add(mob);
              }
@@ -1912,8 +1921,12 @@
              ServerLevel.this.getChunkSource().removeEntity(p_143375_);
              if (p_143375_ instanceof ServerPlayer serverplayer) {
                  ServerLevel.this.players.remove(serverplayer);
-@@ -1733,24 +_,121 @@
-                 if (ServerLevel.this.isUpdatingNavigations) {
+@@ -1730,27 +_,124 @@
+             }
+ 
+             if (p_143375_ instanceof Mob mob) {
+-                if (ServerLevel.this.isUpdatingNavigations) {
++                if (false && ServerLevel.this.isUpdatingNavigations) { // Paper - Remove unnecessary onTrackingStart during navigation warning
                      String s = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
 -                        "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
