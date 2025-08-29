@@ -27,21 +27,21 @@
  
 -    public static ByteBuf write(ByteBuf p_295539_, int p_294256_) {
 +    public static ByteBuf write(ByteBuf buf, int i) {
-++     // Paper start - Optimize VarInts
-++        // Peel the one and two byte count cases explicitly as they are the most common VarInt sizes
-++        // that the proxy will write, to improve inlining.
-++        if ((i & (0xFFFFFFFF << 7)) == 0) {
-++            buf.writeByte(i);
-++        } else if ((i & (0xFFFFFFFF << 14)) == 0) {
-++            int w = (i & 0x7F | 0x80) << 8 | (i >>> 7);
-++            buf.writeShort(w);
-++        } else {
-++            writeOld(buf, i);
-++        }
-++        return buf;
-++    }
-++    public static ByteBuf writeOld(ByteBuf p_295539_, int p_294256_) {
-++    // Paper end - Optimize VarInts
++     // Paper start - Optimize VarInts
++        // Peel the one and two byte count cases explicitly as they are the most common VarInt sizes
++        // that the proxy will write, to improve inlining.
++        if ((i & (0xFFFFFFFF << 7)) == 0) {
++            buf.writeByte(i);
++        } else if ((i & (0xFFFFFFFF << 14)) == 0) {
++            int w = (i & 0x7F | 0x80) << 8 | (i >>> 7);
++            buf.writeShort(w);
++        } else {
++            writeOld(buf, i);
++        }
++        return buf;
++    }
++    public static ByteBuf writeOld(ByteBuf p_295539_, int p_294256_) {
++    // Paper end - Optimize VarInts
          while ((p_294256_ & -128) != 0) {
              p_295539_.writeByte(p_294256_ & 127 | 128);
              p_294256_ >>>= 7;

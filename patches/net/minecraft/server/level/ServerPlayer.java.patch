@@ -201,7 +201,7 @@
          @Override
          public void dataChanged(AbstractContainerMenu p_143462_, int p_143463_, int p_143464_) {
          }
-@@ -276,6 +_,63 @@
+@@ -276,6 +_,67 @@
      public final Object object;
      private int containerCounter;
      public boolean wonGame;
@@ -225,6 +225,10 @@
 +    // Mohist end
 +    public boolean isRealPlayer; // Paper
 +    public long loginTime; // Paper - Replace OfflinePlayer#getLastPlayed
++    // Paper start - cancellable death event
++    public boolean queueHealthUpdatePacket;
++    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
++    // Paper end - cancellable death event
 +    public @Nullable String clientBrandName = null; // Paper - Brand support
 +    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
 +    public io.papermc.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
@@ -626,12 +630,21 @@
                  if (entity instanceof Player player && !this.canHarmPlayer(player)) {
                      return false;
                  }
-@@ -772,7 +_,7 @@
+@@ -772,7 +_,16 @@
                      return false;
                  }
  
 -                return super.hurt(p_9037_, p_9038_);
-+                return super.hurt(source, amount);
++                // Paper start - cancellable death events
++                this.queueHealthUpdatePacket = true;
++                boolean damaged = super.hurt(source, amount);
++                this.queueHealthUpdatePacket = false;
++                if (this.queuedHealthUpdatePacket != null) {
++                    this.connection.send(this.queuedHealthUpdatePacket);
++                    this.queuedHealthUpdatePacket = null;
++                }
++                return damaged;
++                // Paper end
              }
          }
      }

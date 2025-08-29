@@ -7,9 +7,13 @@ import com.mohistmc.youer.YouerConfig;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
+import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -32,6 +36,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.advancements.AdvancementProgress;
@@ -43,11 +49,8 @@ import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
-import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
-import net.minecraft.network.protocol.common.ClientboundServerLinksPacket;
-import net.minecraft.network.protocol.common.ClientboundStoreCookiePacket;
-import net.minecraft.network.protocol.common.ClientboundTransferPacket;
+import net.minecraft.network.protocol.common.*;
+import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.network.protocol.cookie.ClientboundCookieRequestPacket;
 import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
@@ -1775,7 +1778,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    +    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Instant expires, String source) { // Paper - fix ban list API
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Instant expires, String source) { // Paper - fix ban list API
         return this.ban(reason, expires != null ? Date.from(expires) : null, source);
     }
 
