@@ -1071,7 +1071,7 @@
      }
  
      public String getLocalIp() {
-@@ -650,26 +_,113 @@
+@@ -650,26 +_,114 @@
      }
  
      public void halt(boolean p_129884_) {
@@ -1172,6 +1172,7 @@
 +            // Spigot start
 +            // Paper start - Improved Watchdog Support
 +            LOGGER.info("Running delayed init tasks");
++            new io.papermc.paper.threadedregions.RegionizedServerInitEvent().callEvent(); // Call Folia init event
 +            this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // run all 1 tick delay tasks during init,
 +            // this is going to be the first thing the tick process does anyways, so move done and run it after
 +            // everything is init before watchdog tick.
