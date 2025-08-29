@@ -522,6 +522,14 @@
              ByteBuffer bytebuffer = ByteBuffer.allocate(l);
              this.file.read(bytebuffer, (long)(j * 4096));
              bytebuffer.flip();
+@@ -260,6 +_,7 @@
+                     return true;
+                 }
+             } catch (IOException ioexception) {
++                com.destroystokyo.paper.util.SneakyThrow.sneaky(ioexception); // Paper - Chunk save reattempt; we want the upper try/catch to retry this
+                 return false;
+             }
+         }
 @@ -318,9 +_,14 @@
      }
  

@@ -9,7 +9,7 @@
      public static final String ANVIL_EXTENSION = ".mca";
      private static final int MAX_CACHE_SIZE = 256;
      public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap<>();
-@@ -22,89 +_,378 @@
+@@ -22,89 +_,384 @@
      private final Path folder;
      private final boolean sync;
  
@@ -349,6 +349,7 @@
 +            try {
                  NbtIo.write(p_63710_, dataoutputstream);
 -            }
+-        }
 +                // Paper start - don't write garbage data to disk if writing serialization fails
 +                dataoutputstream.close(); // Only write if successful
 +            } catch (final RegionFileSizeException e) {
@@ -374,7 +375,13 @@
 +             } catch (Exception ex)  {
 +                 lastException = ex;
 +             }
-         }
++        }
++
++        if (lastException != null) {
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(lastException);
++            net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk {}", pos, lastException);
++        }
++        // Paper end - Chunk save reattempt
      }
  
      @Override
