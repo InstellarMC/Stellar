@@ -37,14 +37,14 @@ public final class SparksFly {
 
     private boolean enabled;
     private boolean disabledInConfigurationWarningLogged;
+    private static boolean flag; public static boolean isBundledNormally() { return flag; } // Stellar
 
-    public SparksFly(final Server server) {
+    public SparksFly(final Server server, final ClassLoader classLoader) {
         this.logger = Logger.getLogger(ID);
         this.logger.log(Level.INFO, "This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling");
         // Stellar start
-        boolean flag = false;
         try {
-            Class.forName(PaperSparkModule.class.getName(), true, this.getClass().getClassLoader()); // ensure class is loaded before we delegate to another classloader
+            Class.forName(PaperSparkModule.class.getName(), true, classLoader);
             final var method = PaperSparkModule.class.getMethod("create", Compatibility.class, Server.class, Logger.class, PaperScheduler.class, PaperClassLookup.class);
             final var instance = method.invoke(null, Compatibility.VERSION_1_0, server, this.logger, new PaperScheduler() {
                 @Override
@@ -142,6 +142,10 @@ public final class SparksFly {
             };
         }
         // Stellar end
+    }
+
+    public static SparksFly withClassLoader(final Server server, final ClassLoader classLoader) {
+        return new SparksFly(server, classLoader);
     }
 
     public void enableEarlyIfRequested() {

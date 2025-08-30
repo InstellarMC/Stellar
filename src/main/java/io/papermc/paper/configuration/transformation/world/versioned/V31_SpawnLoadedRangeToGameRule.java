@@ -38,9 +38,9 @@ public final class V31_SpawnLoadedRangeToGameRule implements TransformAction {
             worldSpawnNode.raw(null);
         }
         if (!keepLoaded) {
-            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0, null);
+            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0, (net.minecraft.server.level.ServerLevel) null);
         } else {
-            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(range, null);
+            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(range, (net.minecraft.server.level.ServerLevel) null);
         }
         return null;
     }

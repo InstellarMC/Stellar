@@ -117,7 +117,7 @@
  
      public ServerGamePacketListenerImpl(MinecraftServer p_9770_, Connection p_9771_, ServerPlayer p_9772_, CommonListenerCookie p_301978_) {
          super(p_9770_, p_9771_, p_301978_);
-@@ -243,8 +_,37 @@
+@@ -243,8 +_,36 @@
          p_9772_.connection = this;
          p_9772_.getTextFilter().join();
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(p_9772_.getUUID(), p_9770_::enforceSecureProfile);
@@ -125,8 +125,7 @@
 -    }
 +        this.chatMessageChain = new FutureChain(server.chatExecutor); // CraftBukkit - async chat
 +        this.tickEndEvent = new io.papermc.paper.event.packet.ClientTickEndEvent(player.getBukkitEntity()); // Paper - add client tick end event
-+        this.playerGameConnection =  new io.papermc.paper.connection.PaperPlayerGameConnection(this); // Paper
-+        setPlayer(p_9772_);
++        this.playerGameConnection = new io.papermc.paper.connection.PaperPlayerGameConnection(this); // Paper
 +    }
 +
 +    // Paper start - configuration phase API
@@ -1166,7 +1165,7 @@
          this.ackBlockChangesUpTo(p_9932_.getSequence());
          ServerLevel serverlevel = this.player.serverLevel();
          InteractionHand interactionhand = p_9932_.getHand();
-@@ -1178,22 +_,55 @@
+@@ -1178,19 +_,48 @@
  
      @Override
      public void onDisconnect(DisconnectionDetails p_350554_) {
@@ -1185,15 +1184,18 @@
 +        }
 +        // CraftBukkit end
          LOGGER.info("{} lost connection: {}", this.player.getName().getString(), p_350554_.reason().getString());
-+        removePlayerFromWorld$quitMessage = quitMessage;
-         this.removePlayerFromWorld();
+-        this.removePlayerFromWorld();
 -        super.onDisconnect(p_350554_);
-+        super.onDisconnect(p_350554_, quitMessage);
++        this.removePlayerFromWorld(quitMessage);  // Paper - Fix kick event leave message not being sent
++        super.onDisconnect(p_350554_, quitMessage);  // Paper - Fix kick event leave message not being sent
      }
-+
-+    private net.kyori.adventure.text.Component removePlayerFromWorld$quitMessage = null;
  
++    // Paper start - Fix kick event leave message not being sent
      private void removePlayerFromWorld() {
++        this.removePlayerFromWorld(null);
++    }
++    private void removePlayerFromWorld(@Nullable net.kyori.adventure.text.Component quitMessage) {
++        // Paper end - Fix kick event leave message not being sent
          this.chatMessageChain.close();
 +        // CraftBukkit start - Replace vanilla quit message handling with our own.
 +        /*
@@ -1202,27 +1204,19 @@
              .getPlayerList()
              .broadcastSystemMessage(Component.translatable("multiplayer.player.left", this.player.getDisplayName()).withStyle(ChatFormatting.YELLOW), false);
 +        */
++
          this.player.disconnect();
-+        if  (removePlayerFromWorld$quitMessage != null) {
-+            this.server.getPlayerList().remove$leaveMessage = removePlayerFromWorld$quitMessage;
-+        }
-         this.server.getPlayerList().remove(this.player);
-+        removePlayerFromWorld$quitMessage = this.server.getPlayerList().quitMessage; // Paper - pass in quitMessage to fix kick message not being used
-+        if ((removePlayerFromWorld$quitMessage != null) && !removePlayerFromWorld$quitMessage.equals(net.kyori.adventure.text.Component.empty())) {
-+            this.server.getPlayerList().broadcastSystemMessage(PaperAdventure.asVanilla(removePlayerFromWorld$quitMessage), false);
+-        this.server.getPlayerList().remove(this.player);
++        // Paper start - Adventure
++        quitMessage = quitMessage == null ? this.server.getPlayerList().remove(this.player) : this.server.getPlayerList().remove(this.player, quitMessage); // Paper - pass in quitMessage to fix kick message not being used
++        if ((quitMessage != null) && !quitMessage.equals(net.kyori.adventure.text.Component.empty())) {
++            this.server.getPlayerList().broadcastSystemMessage(PaperAdventure.asVanilla(quitMessage), false);
++            // Paper end
 +        }
 +        // CraftBukkit end
          this.player.getTextFilter().leave();
      }
  
-+    private void removePlayerFromWorld(@Nullable net.kyori.adventure.text.Component quitMessage) {
-+        removePlayerFromWorld$quitMessage = quitMessage;
-+        removePlayerFromWorld();
-+    }
-+
-     public void ackBlockChangesUpTo(int p_215202_) {
-         if (p_215202_ < 0) {
-             throw new IllegalArgumentException("Expected packet sequence nr >= 0");
 @@ -1205,7 +_,17 @@
      @Override
      public void handleSetCarriedItem(ServerboundSetCarriedItemPacket p_9909_) {

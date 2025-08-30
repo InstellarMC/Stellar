@@ -47,6 +47,7 @@ import net.minecraft.network.protocol.configuration.ServerConfigurationPacketLis
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.network.ServerCommonPacketListenerImpl;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.neoforged.fml.ModLoader;
 import net.neoforged.fml.config.ConfigTracker;
 import net.neoforged.neoforge.common.extensions.ICommonPacketListener;
@@ -703,8 +704,20 @@ public class NetworkRegistry {
                 if (mcserver.hasStopped() || listener0.processedDisconnect) {
                     return;
                 }
+
+                // Stellar start - Integrate with Paper
+                final var bridge = switch (listener0) {
+                    case ServerGamePacketListenerImpl gamePacketListener -> gamePacketListener.player.getBukkitEntity();
+                    case ServerConfigurationPacketListenerImpl commonPacketListener -> commonPacketListener.paperConnection;
+                    default -> null;
+                };
+
+                if (bridge == null) {
+                    return;
+                }
+
                 for (var channel : resourceLocations) {
-                    listener0.getCraftPlayer().addChannel(channel.toString());
+                    bridge.removeChannel(channel.toString()); // Stellar end - Integrate with Paper
                 }
             });
         }
@@ -727,8 +740,20 @@ public class NetworkRegistry {
                 if (mcserver.hasStopped() || listener0.processedDisconnect) {
                     return;
                 }
+
+                // Stellar start - Integrate with Paper
+                final var bridge = switch (listener0) {
+                    case ServerGamePacketListenerImpl gamePacketListener -> gamePacketListener.player.getBukkitEntity();
+                    case ServerConfigurationPacketListenerImpl commonPacketListener -> commonPacketListener.paperConnection;
+                    default -> null;
+                };
+
+                if (bridge == null) {
+                    return;
+                }
+
                 for (var channel : resourceLocations) {
-                    listener0.getCraftPlayer().removeChannel(channel.toString());
+                    bridge.removeChannel(channel.toString()); // Stellar end - Integrate with Paper
                 }
             });
         }
@@ -835,8 +860,20 @@ public class NetworkRegistry {
                 if (mcserver.hasStopped() || listener0.processedDisconnect) {
                     return;
                 }
+
+                // Stellar start - Integrate with Paper
+                final var bridge = switch (listener0) {
+                    case ServerGamePacketListenerImpl gamePacketListener -> gamePacketListener.player.getBukkitEntity();
+                    case ServerConfigurationPacketListenerImpl commonPacketListener -> commonPacketListener.paperConnection;
+                    default -> null;
+                };
+
+                if (bridge == null) {
+                    return;
+                }
+
                 for (var channel : setup.getChannels(ConnectionProtocol.PLAY).keySet()) {
-                    listener0.getCraftPlayer().addChannel(channel.toString());
+                    bridge.removeChannel(channel.toString()); // Stellar end - Integrate with Paper
                 }
             });
         }

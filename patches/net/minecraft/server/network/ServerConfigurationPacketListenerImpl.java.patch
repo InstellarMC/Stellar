@@ -67,7 +67,7 @@
          super.onDisconnect(p_350569_);
      }
  
-@@ -72,18 +_,42 @@
+@@ -72,18 +_,36 @@
      }
  
      public void startConfiguration() {
@@ -75,21 +75,15 @@
 +        this.send(new net.neoforged.neoforge.network.payload.MinecraftUnregisterPayload(net.neoforged.neoforge.network.registration.NetworkRegistry.getInitialServerUnregisterChannels()));
 +        this.send(new net.neoforged.neoforge.network.payload.MinecraftRegisterPayload(net.neoforged.neoforge.network.registration.NetworkRegistry.getInitialListeningChannels(this.flow())));
 +        this.send(new net.neoforged.neoforge.network.payload.ModdedNetworkQueryPayload(java.util.Map.of()));
++        this.send(new net.minecraft.network.protocol.common.ClientboundPingPacket(0));
 +
 +        new io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigureEvent(this.paperConnection).callEvent(); // Paper
-+        this.send(new net.minecraft.network.protocol.common.ClientboundPingPacket(0));
 +    }
 +
 +    // Neo: Hide vanilla's startConfiguration() in this method so we can call it in handlePong below.
 +    private void runConfiguration() {
          this.send(new ClientboundCustomPayloadPacket(new BrandPayload(this.server.getServerModName())));
          ServerLinks serverlinks = this.server.serverLinks();
-+        // CraftBukkit start
-+        CraftServerLinks wrapper = new CraftServerLinks(serverlinks);
-+        org.bukkit.event.player.PlayerLinksSendEvent event = new org.bukkit.event.player.PlayerLinksSendEvent(this.paperConnection, wrapper);
-+        player.getBukkitEntity().getServer().getPluginManager().callEvent(event);
-+        serverlinks = wrapper.getServerLinks();
-+        // CraftBukkit end
          if (!serverlinks.isEmpty()) {
 -            this.send(new ClientboundServerLinksPacket(serverlinks.untrust()));
 +            // Paper start
@@ -164,9 +158,8 @@
                  return;
              }
  
--            ServerPlayer serverplayer = playerlist.getPlayerForLogin(this.gameProfile, this.clientInformation);
+             ServerPlayer serverplayer = playerlist.getPlayerForLogin(this.gameProfile, this.clientInformation);
 -            playerlist.placeNewPlayer(this.connection, serverplayer, this.createCookie(this.clientInformation));
-+            ServerPlayer serverplayer = playerlist.getPlayerForLogin(this.gameProfile, this.clientInformation, this.player); // CraftBukkit
 +            playerlist.placeNewPlayer(this.connection, serverplayer, this.createCookie(this.clientInformation, this.connectionType));
          } catch (Exception exception) {
              LOGGER.error("Couldn't place player in world", (Throwable)exception);

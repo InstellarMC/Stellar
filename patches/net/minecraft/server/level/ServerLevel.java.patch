@@ -1354,10 +1354,22 @@
      }
  
      public <T extends Entity> List<? extends T> getEntities(EntityTypeTest<Entity, T> p_143281_, Predicate<? super T> p_143282_) {
-@@ -870,22 +_,45 @@
+@@ -870,22 +_,53 @@
          return list.isEmpty() ? null : list.get(this.random.nextInt(list.size()));
      }
  
+-    @Override
+-    public boolean addFreshEntity(Entity p_8837_) {
+-        return this.addEntity(p_8837_);
+-    }
+-
+-    public boolean addWithUUID(Entity p_8848_) {
+-        return this.addEntity(p_8848_);
+-    }
+-
+-    public void addDuringTeleport(Entity p_143335_) {
+-        if (p_143335_ instanceof ServerPlayer serverplayer) {
+-            this.addPlayer(serverplayer);
 +    // Mohist start
 +    public AtomicBoolean canaddFreshEntity = new AtomicBoolean(false);
 +
@@ -1366,43 +1378,45 @@
 +    }
 +    // Mohist end
 +
-     @Override
-     public boolean addFreshEntity(Entity p_8837_) {
--        return this.addEntity(p_8837_);
-+        boolean add = this.addEntity(p_8837_);
-+        canaddFreshEntity.set(add);
-+        return add;
++    @Override
++    public boolean addFreshEntity(Entity entity) {
++        // CraftBukkit start
++        return this.addFreshEntity(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
++    @Override
 +    public boolean addFreshEntity(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
-+        return this.addEntityByReason(entity, reason);
-     }
- 
-     public boolean addWithUUID(Entity p_8848_) {
-         return this.addEntity(p_8848_);
-     }
- 
-+    public boolean addWithUUID(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
-+        return this.addEntityByReason(entity, reason);
++        return this.addEntity(entity, reason);
++        // CraftBukkit end
 +    }
 +
-     public void addDuringTeleport(Entity p_143335_) {
--        if (p_143335_ instanceof ServerPlayer serverplayer) {
--            this.addPlayer(serverplayer);
--        } else {
--            this.addEntity(p_143335_);
--        }
--    }
++    public boolean addWithUUID(Entity entity) {
++        // CraftBukkit start
++        return this.addWithUUID(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    public boolean addWithUUID(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
++        return this.addEntity(entity, reason);
++        // CraftBukkit end
++    }
++
++    public void addDuringTeleport(Entity entity) {
++        // CraftBukkit start
 +        // SPIGOT-6415: Don't call spawn event for entities which travel trough worlds,
 +        // since it is only an implementation detail, that a new entity is created when
 +        // they are traveling between worlds.
-+        p_143335_.spawnReason(null); // Mohist
-+        this.addEntity(p_143335_);
++        this.addDuringTeleport(entity, null);
 +    }
 +
 +    public void addDuringTeleport(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
-+        this.addEntityByReason(entity, reason);
-+    }
++        // CraftBukkit end
++        if (entity instanceof ServerPlayer player) {
++            this.addPlayer(player);
+         } else {
+-            this.addEntity(p_143335_);
++            this.addEntity(entity, reason); // CraftBukkit
+         }
+     }
 +    // CraftBukkit end
  
      public void addNewPlayer(ServerPlayer p_8835_) {
@@ -1411,65 +1425,67 @@
      }
  
      private void addPlayer(ServerPlayer p_8854_) {
-+        if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.EntityJoinLevelEvent(p_8854_, this)).isCanceled()) return;
++        if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.EntityJoinLevelEvent(p_8854_, this)).isCanceled()) return; // Neo
          Entity entity = this.getEntities().get(p_8854_.getUUID());
          if (entity != null) {
              LOGGER.warn("Force-added player with duplicate UUID {}", p_8854_.getUUID());
-@@ -903,28 +_,78 @@
+@@ -903,28 +_,76 @@
              this.removePlayerImmediately((ServerPlayer)entity, Entity.RemovalReason.DISCARDED);
          }
  
 -        this.entityManager.addNewEntity(p_8854_);
-+        this.moonrise$getEntityLookup().addNewEntity(p_8854_); // Paper - rewrite chunk system
-+        p_8854_.onAddedToLevel();
-     }
- 
-     private boolean addEntity(Entity p_8873_) {
-+        p_8873_.generation = false; // Paper - Don't fire sync event during generation; Reset flag if it was added during a ServerLevel generation process
-+        // Paper start - extra debug info
-+        if (p_8873_.valid) {
-+            MinecraftServer.LOGGER.error("Attempted Double World add on {}", p_8873_, new Throwable());
-+            return true;
-+        }
-+        // Paper end - extra debug info
-         if (p_8873_.isRemoved()) {
+-    }
+-
+-    private boolean addEntity(Entity p_8873_) {
+-        if (p_8873_.isRemoved()) {
 -            LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityType.getKey(p_8873_.getType()));
 -            return false;
 -        } else {
 -            return this.entityManager.addNewEntity(p_8873_);
-+            if (false) LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityType.getKey(p_8873_.getType()));
++        this.moonrise$getEntityLookup().addNewEntity(p_8854_); // Paper - rewrite chunk system
++        p_8854_.onAddedToLevel(); // Neo
++    }
++
++    private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
++        org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
++        entity.generation = false; // Paper - Don't fire sync event during generation; Reset flag if it was added during a ServerLevel generation process
++        // Paper start - extra debug info
++        if (entity.valid) {
++            MinecraftServer.LOGGER.error("Attempted Double World add on {}", entity, new Throwable());
++            return true;
++        }
++        // Paper end - extra debug info
++        if (entity.spawnReason == null) entity.spawnReason = spawnReason; // Paper - Entity#getEntitySpawnReason
++        if (entity.isRemoved()) {
++            // LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityType.getKey(entity.getType())); // CraftBukkit
 +            return false;
 +        } else {
-+            if (p_8873_ instanceof Villager && YouerConfig.custom_no_villager) return false;
-+            if (BanEntity.check(p_8873_)) {
-+                p_8873_.discard();
++            if (entity instanceof net.minecraft.world.entity.item.ItemEntity itemEntity && itemEntity.getItem().isEmpty()) return false; // Paper - Prevent empty items from being added
++            if (entity instanceof Villager && YouerConfig.custom_no_villager) return false;
++            if (BanEntity.check(entity)) {
++                entity.discard();
 +                return false;
 +            }
-+            if (p_8873_ instanceof net.minecraft.world.entity.item.ItemEntity itemEntity && itemEntity.getItem().isEmpty()) return false; // Paper - Prevent empty items from being added
 +            // Paper start - capture all item additions to the world
-+            if (captureDrops != null && p_8873_ instanceof net.minecraft.world.entity.item.ItemEntity) {
-+                captureDrops.add((net.minecraft.world.entity.item.ItemEntity) p_8873_);
++            if (captureDrops != null && entity instanceof net.minecraft.world.entity.item.ItemEntity) {
++                captureDrops.add((net.minecraft.world.entity.item.ItemEntity) entity);
 +                return true;
 +            }
 +            // Paper end - capture all item additions to the world
-+            if (!AsyncCatcher.catchAsync() && p_8873_.spawnReason != null && !CraftEventFactory.doEntityAddEventCalling(this, p_8873_, p_8873_.spawnReason)) {
++            // SPIGOT-6415: Don't call spawn event when reason is null. For example when an entity teleports to a new world.
++            if (spawnReason != null && !CraftEventFactory.doEntityAddEventCalling(this, entity, entity.spawnReason)) {
 +                return false;
 +            }
-+            if (this.moonrise$getEntityLookup().addNewEntity(p_8873_)) { // Paper - rewrite chunk system
-+                p_8873_.onAddedToLevel();
++            // CraftBukkit end
++
++            if (this.moonrise$getEntityLookup().addNewEntity(entity)) { // Paper - rewrite chunk system
++                entity.onAddedToLevel(); // Stellar - respect neo
 +                return true;
 +            } else {
 +                return false;
 +            }
 +        }
 +    }
-+
-+    // Mohist start
-+    public boolean addEntityByReason(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
-+        entity.spawnReason(spawnReason);
-+        return addEntity(entity);
-+    }
-+    // Mohist end
 +
 +    public boolean tryAddFreshEntityWithPassengers(Entity pEntity, CreatureSpawnEvent.SpawnReason reason) {
 +        if (pEntity.getSelfAndPassengers().map(Entity::getUUID).anyMatch(this.moonrise$getEntityLookup()::hasEntity)) { // Paper - rewrite chunk system

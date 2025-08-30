@@ -202,7 +202,7 @@
          @Override
          public void dataChanged(AbstractContainerMenu p_143462_, int p_143463_, int p_143464_) {
          }
-@@ -276,6 +_,74 @@
+@@ -276,6 +_,72 @@
      public final Object object;
      private int containerCounter;
      public boolean wonGame;
@@ -238,9 +238,7 @@
 +    // CraftBukkit end
 +    public boolean isRealPlayer; // Paper
 +    public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
-+    public @Nullable String clientBrandName = null; // Paper - Brand support
 +    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
-+    public boolean purpurClient = false; // Purpur
 +    private boolean tpsBar = false; // Purpur
 +    private boolean compassBar = false; // Purpur
 +    private boolean ramBar = false; // Purpur
@@ -1834,7 +1832,7 @@
          }
  
          private static float calculateLookAtYaw(Vec3 p_348686_, BlockPos p_348467_) {
-@@ -1968,4 +_,193 @@
+@@ -1968,4 +_,192 @@
              return (float)Mth.wrapDegrees(Mth.atan2(vec3.z, vec3.x) * 180.0F / (float)Math.PI - 90.0);
          }
      }
@@ -1940,7 +1938,6 @@
 +
 +    public void reset() {
 +        float exp = 0;
-+        boolean keepInventory = this.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY);
 +
 +        if (this.keepLevel) { // CraftBukkit - SPIGOT-6687: Only use keepLevel (was pre-set with RULE_KEEPINVENTORY value in PlayerDeathEvent)
 +            exp = this.experienceProgress;
@@ -1953,7 +1950,7 @@
 +        this.setAirSupply(this.getMaxAirSupply()); // Paper - Reset players airTicks on respawn
 +        this.setRemainingFireTicks(0);
 +        this.fallDistance = 0;
-+        this.foodData = new FoodData().player(this);
++        this.foodData = new FoodData(this);
 +        this.experienceLevel = this.newLevel;
 +        this.totalExperience = this.newTotalExp;
 +        this.experienceProgress = 0;

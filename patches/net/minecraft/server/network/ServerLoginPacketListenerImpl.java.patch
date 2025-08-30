@@ -315,7 +315,7 @@
                  }
              }
  
-@@ -220,24 +_,188 @@
+@@ -220,18 +_,181 @@
                      ? ((InetSocketAddress)socketaddress).getAddress()
                      : null;
              }
@@ -343,7 +343,7 @@
 +        // Paper start - Add more fields to AsyncPlayerPreLoginEvent
 +        final InetAddress rawAddress = ((InetSocketAddress) this.connection.channel.remoteAddress()).getAddress();
 +        com.destroystokyo.paper.profile.PlayerProfile profile = com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(gameprofile); // Paper - setPlayerProfileAPI
-+        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, rawAddress, uniqueId, this.transferred, profile, this.connection.hostname);
++        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, rawAddress, uniqueId, this.transferred, profile, this.connection.hostname, this.paperLoginConnection);
 +        server.getPluginManager().callEvent(asyncEvent);
 +        profile = asyncEvent.getPlayerProfile();
 +        profile.complete(true); // Paper - setPlayerProfileAPI
@@ -502,13 +502,6 @@
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet");
          this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
          CommonListenerCookie commonlistenercookie = CommonListenerCookie.createInitial(Objects.requireNonNull(this.authenticatedProfile), this.transferred);
-         ServerConfigurationPacketListenerImpl serverconfigurationpacketlistenerimpl = new ServerConfigurationPacketListenerImpl(
-             this.server, this.connection, commonlistenercookie
-         );
-+        serverconfigurationpacketlistenerimpl.setPlayer(this.player);
-         this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, serverconfigurationpacketlistenerimpl);
-         serverconfigurationpacketlistenerimpl.startConfiguration();
-         this.state = ServerLoginPacketListenerImpl.State.ACCEPTED;
 @@ -250,8 +_,35 @@
  
      @Override

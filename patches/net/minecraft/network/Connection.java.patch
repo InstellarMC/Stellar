@@ -1,5 +1,14 @@
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
+@@ -21,7 +_,7 @@
+ import io.netty.channel.DefaultEventLoopGroup;
+ import io.netty.channel.EventLoopGroup;
+ import io.netty.channel.SimpleChannelInboundHandler;
+-import io.netty.channel.epoll.Epoll;
++import io.netty.channel.embedded.EmbeddedChannel;import io.netty.channel.epoll.Epoll;
+ import io.netty.channel.epoll.EpollEventLoopGroup;
+ import io.netty.channel.epoll.EpollSocketChannel;
+ import io.netty.channel.local.LocalChannel;
 @@ -32,7 +_,6 @@
  import io.netty.handler.flow.FlowControlHandler;
  import io.netty.handler.timeout.ReadTimeoutHandler;
@@ -353,10 +362,13 @@
              } else {
                  this.disconnectionHandled = true;
                  PacketListener packetlistener = this.getPacketListener();
-@@ -624,6 +_,26 @@
+@@ -624,6 +_,29 @@
                      );
                      packetlistener1.onDisconnect(disconnectiondetails);
                  }
++                if (this.channel() instanceof EmbeddedChannel) {
++                    return;
++                }
 +                // Paper start - Add PlayerConnectionCloseEvent
 +                final PacketListener packetListener = this.getPacketListener();
 +                if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {

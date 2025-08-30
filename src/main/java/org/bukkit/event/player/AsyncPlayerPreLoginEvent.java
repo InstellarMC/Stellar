@@ -2,7 +2,7 @@ package org.bukkit.event.player;
 
 import java.net.InetAddress;
 import java.util.UUID;
-import org.bukkit.event.Event;
+import io.papermc.paper.connection.PlayerLoginConnection;import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,15 +12,15 @@ import org.jetbrains.annotations.NotNull;
  * This event is asynchronous, and not run using main thread.
  */
 public class AsyncPlayerPreLoginEvent extends Event {
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
     private Result result;
     private net.kyori.adventure.text.Component message; // Paper
-    private final String name;
     private final InetAddress ipAddress;
     private com.destroystokyo.paper.profile.PlayerProfile profile; // Paper
     private final InetAddress rawAddress; // Paper
     private final String hostname; // Paper
     private final boolean transferred;
+    private final PlayerLoginConnection playerLoginConnection; // Paper
 
     @Deprecated
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
@@ -44,20 +44,21 @@ public class AsyncPlayerPreLoginEvent extends Event {
 
     @Deprecated(forRemoval = true)
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
-        this(name, ipAddress, rawAddress, uniqueId, transferred, profile, "");
+        this(name, ipAddress, rawAddress, uniqueId, transferred, profile, "", null);
     }
 
     @org.jetbrains.annotations.ApiStatus.Internal
-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @NotNull String hostname) {
+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @NotNull String hostname, final PlayerLoginConnection playerLoginConnection) {
         // Paper end
         super(true);
         this.result = Result.ALLOWED;
         this.message = net.kyori.adventure.text.Component.empty(); // Paper
-        this.name = name;
+        this.profile = profile;
         this.ipAddress = ipAddress;
         this.rawAddress = rawAddress; // Paper
         this.hostname = hostname; // Paper
         this.transferred = transferred;
+        this.playerLoginConnection = playerLoginConnection; // Paper
     }
 
     /**
@@ -217,7 +218,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      */
     @NotNull
     public String getName() {
-        return name;
+        return this.profile.getName();
     }
 
     /**
@@ -291,12 +292,12 @@ public class AsyncPlayerPreLoginEvent extends Event {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     /**

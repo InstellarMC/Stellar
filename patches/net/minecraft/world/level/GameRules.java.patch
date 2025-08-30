@@ -319,7 +319,7 @@
              return create(p_46251_, (p_46236_, p_46237_) -> {
              });
          }
-@@ -293,15 +_,18 @@
+@@ -293,16 +_,29 @@
          }
  
          @Override
@@ -336,11 +336,21 @@
              return this.value;
          }
  
--        public void set(boolean p_46247_, @Nullable MinecraftServer p_46248_) {
-+        public void set(boolean p_46247_, @Nullable ServerLevel p_46248_) { // CraftBukkit - per-world
++        // Stellar start - Leave Vanilla setter for mods compatibility; handle null
+         public void set(boolean p_46247_, @Nullable MinecraftServer p_46248_) {
              this.value = p_46247_;
++            this.onChanged(p_46248_.overworld());
++        }
++        public void set(boolean p_46247_, Object p_46248_) { // Stellar - Remains for stability; avoid either NPEs or confusion ambiguity
++            this.value = p_46247_;
++        }
++        // Stellar end - Leave Vanilla setter for mods compatibility; handle null
++
++        public void set(boolean p_46247_, @Nullable ServerLevel p_46248_) { // CraftBukkit - per-world
++            this.value = p_46247_;
              this.onChanged(p_46248_);
          }
+ 
 @@ -329,7 +_,7 @@
              return new GameRules.BooleanValue(this.type, this.value);
          }
@@ -383,7 +393,7 @@
              return create(p_46313_, (p_46309_, p_46310_) -> {
              });
          }
-@@ -397,15 +_,18 @@
+@@ -397,16 +_,29 @@
          }
  
          @Override
@@ -400,11 +410,21 @@
              return this.value;
          }
  
--        public void set(int p_151490_, @Nullable MinecraftServer p_151491_) {
-+        public void set(int p_151490_, @Nullable ServerLevel p_151491_) { // CraftBukkit - per-world
++        // Stellar start - Leave Vanilla setter for mods compatibility; handle null
+         public void set(int p_151490_, @Nullable MinecraftServer p_151491_) {
              this.value = p_151490_;
++            this.onChanged(p_151491_.overworld());
++        }
++        public void set(int p_151490_, Object p_151491_) { // Stellar - Remains for stability; avoid either NPEs or confusion ambiguity
++            this.value = p_151490_;
++        }
++        // Stellar end - Leave Vanilla setter for mods compatibility; handle null
++
++        public void set(int p_151490_, @Nullable ServerLevel p_151491_) { // CraftBukkit - per-world
++            this.value = p_151490_;
              this.onChanged(p_151491_);
          }
+ 
 @@ -455,13 +_,18 @@
              return new GameRules.IntegerValue(this.type, this.value);
          }
@@ -465,11 +485,20 @@
              if (p_46369_ != null) {
                  this.type.callback.accept(p_46369_, this.getSelf());
              }
-@@ -564,7 +_,7 @@
+@@ -564,7 +_,16 @@
  
          protected abstract T copy();
  
 -        public abstract void setFrom(T p_46363_, @Nullable MinecraftServer p_46364_);
++        // Stellar start - Leave Vanilla setter for mods compatibility; handle null
++        public void setFrom(T p_46361_, @Nullable MinecraftServer p_46362_) {
++            this.setFrom(p_46361_, p_46362_.overworld());
++        }
++        public void setFrom(T p_46361_, Object p_46362_) { // Stellar - Remains for stability; avoid either NPEs or confusion ambiguity
++            this.setFrom(p_46361_, (ServerLevel) null);
++        }
++        // Stellar end - Leave Vanilla setter for mods compatibility; handle null
++
 +        public abstract void setFrom(T p_46363_, @Nullable ServerLevel p_46364_); // CraftBukkit - per-world
      }
  

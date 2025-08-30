@@ -30,7 +30,7 @@
  import java.util.function.BooleanSupplier;
  import javax.annotation.Nullable;
 -import net.minecraft.DefaultUncaughtExceptionHandler;
-+import io.papermc.paper.ServerBuildInfo;import net.minecraft.DefaultUncaughtExceptionHandler;
++import io.papermc.paper.ServerBuildInfo;import me.lucko.spark.paper.api.PaperSparkModule;import net.minecraft.DefaultUncaughtExceptionHandler;
  import net.minecraft.DefaultUncaughtExceptionHandlerWithName;
  import net.minecraft.SharedConstants;
  import net.minecraft.SystemReport;
@@ -121,10 +121,11 @@
          LOGGER.info("Starting minecraft server version {}", SharedConstants.getCurrentVersion().getName());
          if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
              LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
-@@ -133,65 +_,180 @@
+@@ -133,65 +_,181 @@
              this.setLocalIp(dedicatedserverproperties.serverIp);
          }
  
++        try { Class.forName(PaperSparkModule.class.getName()); } catch (ClassNotFoundException ignored) {} // Paper - spark
 +        this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
 +        // Spigot start
 +        org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));

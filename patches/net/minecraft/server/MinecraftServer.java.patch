@@ -222,7 +222,7 @@
 +    public static final int TICK_TIME = 1000000000 / TPS;
 +    private static final int SAMPLE_INTERVAL = 20; // Paper - improve server tick loop
 +    @Deprecated(forRemoval = true) // Paper
-+    public final double[] recentTps = new double[ 3 ];
++    public final double[] recentTps = new double[ 4 ];
 +    // Spigot end
 +    public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
 +    public final dev.instellar.stellar.configuration.StellarConfigurations stellarConfigurations; // Stellar - add stellar configuration files
@@ -238,9 +238,8 @@
      public static <S extends MinecraftServer> S spin(Function<Thread, S> p_129873_) {
          AtomicReference<S> atomicreference = new AtomicReference<>();
 -        Thread thread = new Thread(() -> atomicreference.get().runServer(), "Server thread");
--        thread.setUncaughtExceptionHandler((p_177909_, p_177910_) -> LOGGER.error("Uncaught exception in server thread", p_177910_));
 +        Thread thread = new ca.spottedleaf.moonrise.common.util.TickThread(() -> atomicreference.get().runServer(), "Server thread"); // Paper - rewrite chunk system
-+        thread.setUncaughtExceptionHandler((p_177909_, p_177910_) -> LOGGER.error(I18n.as("minecraftserver.1"), p_177910_));
+         thread.setUncaughtExceptionHandler((p_177909_, p_177910_) -> LOGGER.error("Uncaught exception in server thread", p_177910_));
 +        thread.setPriority(Thread.NORM_PRIORITY+2); // Paper - Perf: Boost priority
          if (Runtime.getRuntime().availableProcessors() > 4) {
              thread.setPriority(8);
@@ -328,7 +327,7 @@
      public MinecraftServer(
          Thread p_236723_,
          LevelStorageSource.LevelStorageAccess p_236724_,
-@@ -287,14 +_,15 @@
+@@ -287,6 +_,7 @@
          ChunkProgressListenerFactory p_236730_
      ) {
          super("Server");
@@ -336,8 +335,7 @@
          this.registries = p_236726_.registries();
          this.worldData = p_236726_.worldData();
          if (!this.registries.compositeAccess().registryOrThrow(Registries.LEVEL_STEM).containsKey(LevelStem.OVERWORLD)) {
--            throw new IllegalStateException("Missing Overworld dimension data");
-+            throw new IllegalStateException(I18n.as("minecraftserver.2"));
+@@ -294,7 +_,7 @@
          } else {
              this.proxy = p_236727_;
              this.packRepository = p_236725_;
@@ -382,7 +380,7 @@
 +                    this.setupDebugLevel(this.worldData);
 +                }
 +            } catch (Throwable throwable1) {
-+                CrashReport crashreport = CrashReport.forThrowable(throwable1, I18n.as("minecraftserver.3"));
++                CrashReport crashreport = CrashReport.forThrowable(throwable1, "Exception initializing level");
 +
 +                try {
 +                    serverlevel.fillReportDetails(crashreport);
@@ -676,15 +674,6 @@
          if (!serverleveldata.isInitialized()) {
              try {
                  setInitialSpawn(serverlevel, serverleveldata, worldoptions.generateBonusChest(), flag);
-@@ -380,7 +_,7 @@
-                     this.setupDebugLevel(this.worldData);
-                 }
-             } catch (Throwable throwable1) {
--                CrashReport crashreport = CrashReport.forThrowable(throwable1, "Exception initializing level");
-+                CrashReport crashreport = CrashReport.forThrowable(throwable1, I18n.as("minecraftserver.3"));
- 
-                 try {
-                     serverlevel.fillReportDetails(crashreport);
 @@ -405,6 +_,18 @@
              if (resourcekey != LevelStem.OVERWORLD) {
                  ResourceKey<Level> resourcekey1 = ResourceKey.create(Registries.DIMENSION, resourcekey.location());
@@ -779,16 +768,14 @@
          serverleveldata.setGameType(GameType.SPECTATOR);
      }
  
--    public void prepareLevels(ChunkProgressListener p_129941_) {
--        ServerLevel serverlevel = this.overworld();
 +    public void prepareLevels(ChunkProgressListener worldloadlistener, ServerLevel serverlevel) {
 +        markWorldsDirty();
 +        if (!serverlevel.getWorld().getKeepSpawnInMemory()) {
 +            return;
 +        }
 +        this.forceTicks = true;
-         LOGGER.info("Preparing start region for dimension {}", serverlevel.dimension().location());
-         BlockPos blockpos = serverlevel.getSharedSpawnPos();
++        LOGGER.info("Preparing start region for dimension {}", serverlevel.dimension().location());
++        BlockPos blockpos = serverlevel.getSharedSpawnPos();
 +
 +        worldloadlistener.updateSpawnPos(new ChunkPos(blockpos));
 +        ServerChunkCache serverchunkcache = serverlevel.getChunkSource();
@@ -830,11 +817,11 @@
 +        // CraftBukkit end
 +    }
 +
-+    public void prepareLevels(ChunkProgressListener p_129941_) {
-+        ServerLevel serverlevel = this.overworld();
+     public void prepareLevels(ChunkProgressListener p_129941_) {
+         ServerLevel serverlevel = this.overworld();
 +        this.forceTicks = true;
-+        LOGGER.info(I18n.as("minecraftserver.4", serverlevel.dimension().location()));
-+        BlockPos blockpos = serverlevel.getSharedSpawnPos();
+         LOGGER.info("Preparing start region for dimension {}", serverlevel.dimension().location());
+         BlockPos blockpos = serverlevel.getSharedSpawnPos();
          p_129941_.updateSpawnPos(new ChunkPos(blockpos));
          ServerChunkCache serverchunkcache = serverlevel.getChunkSource();
          this.nextTickTimeNanos = Util.getNanos();
@@ -888,7 +875,7 @@
      }
  
      public GameType getDefaultGameType() {
-@@ -537,28 +_,50 @@
+@@ -537,25 +_,47 @@
      public abstract boolean shouldRconBroadcast();
  
      public boolean saveAllChunks(boolean p_129886_, boolean p_129887_, boolean p_129888_) {
@@ -902,9 +889,8 @@
  
          for (ServerLevel serverlevel : this.getAllLevels()) {
 -            if (!p_129886_) {
--                LOGGER.info("Saving chunks for level '{}'/{}", serverlevel, serverlevel.dimension().location());
 +            if (!suppressLogs) {
-+                LOGGER.info(I18n.as("minecraftserver.5", serverlevel, serverlevel.dimension().location()));
+                 LOGGER.info("Saving chunks for level '{}'/{}", serverlevel, serverlevel.dimension().location());
              }
  
 -            serverlevel.save(null, p_129887_, serverlevel.noSave && !p_129888_);
@@ -935,18 +921,14 @@
 -                LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", serverlevel1.getChunkSource().chunkMap.getStorageName());
 +                try {
 +                    NeoForge.EVENT_BUS.post(new LevelEvent.Unload(serverlevel1)); // Paper - rewrite chunk system // Stellar - support neo
-+                    LOGGER.info(I18n.as("minecraftserver.6", serverlevel1.getChunkSource().chunkMap.getStorageName()));
++                    LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", serverlevel1.getChunkSource().chunkMap.getStorageName());
 +                } catch (final Exception ex) {
-+                    LOGGER.error(I18n.as("minecraftserver.11"), (Throwable)ex);
++                    LOGGER.error("Exception closing the level", (Throwable)ex);
 +                }
              }
  
--            LOGGER.info("ThreadedAnvilChunkStorage: All dimensions are saved");
-+            LOGGER.info(I18n.as("minecraftserver.7"));
-         }
- 
-         return flag;
-@@ -582,21 +_,62 @@
+             LOGGER.info("ThreadedAnvilChunkStorage: All dimensions are saved");
+@@ -582,18 +_,59 @@
          this.stopServer();
      }
  
@@ -999,18 +981,14 @@
          this.getConnection().stop();
          this.isSaving = true;
          if (this.playerList != null) {
--            LOGGER.info("Saving players");
-+            LOGGER.info(I18n.as("minecraftserver.9"));
+             LOGGER.info("Saving players");
              this.playerList.saveAll();
-             this.playerList.removeAll();
+-            this.playerList.removeAll();
++            this.playerList.removeAll(this.isRestarting);
 +            try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
          }
  
--        LOGGER.info("Saving worlds");
-+        LOGGER.info(I18n.as("minecraftserver.10"));
- 
-         for (ServerLevel serverlevel : this.getAllLevels()) {
-             if (serverlevel != null) {
+         LOGGER.info("Saving worlds");
 @@ -604,7 +_,7 @@
              }
          }
@@ -1020,7 +998,7 @@
              this.nextTickTimeNanos = Util.getNanos() + TimeUtil.NANOSECONDS_PER_MILLISECOND;
  
              for (ServerLevel serverlevel1 : this.getAllLevels()) {
-@@ -615,17 +_,7 @@
+@@ -615,26 +_,46 @@
              this.waitUntilNextTick();
          }
  
@@ -1036,42 +1014,49 @@
 -            }
 -        }
 +        this.saveAllChunks(false, true, true, true); // Paper - rewrite chunk system
++        LOGGER.info("Closing IO threads");
  
          this.isSaving = false;
          this.resources.close();
-@@ -633,8 +_,29 @@
++        LOGGER.info("StorageSource closing");
+ 
          try {
              this.storageSource.close();
          } catch (IOException ioexception) {
--            LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), ioexception);
--        }
-+            LOGGER.error(I18n.as("minecraftserver.12", this.storageSource.getLevelId()), ioexception);
-+        }
+             LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), ioexception);
+         }
++        LOGGER.info("Stopping server");
 +        // Spigot start
 +        io.papermc.paper.util.MCUtil.asyncExecutor.shutdown(); // Paper
 +        try { io.papermc.paper.util.MCUtil.asyncExecutor.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // Paper
 +        } catch (java.lang.InterruptedException ignored) {} // Paper
 +        // Spigot start
 +        if (SpigotConfig.saveUserCacheOnStopOnly) {
-+            LOGGER.info(I18n.as("minecraftserver.13"));
++            LOGGER.info("Saving usercache.json");
 +            this.getProfileCache().save();
 +        }
 +        // Spigot end
 +        ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.deinit(); // Paper - rewrite chunk system
++        LOGGER.info("ThreadedAnvilChunkStorage: All IO threads closed");
 +        // Paper start - move final shutdown items here
 +        Util.shutdownExecutors();
++        LOGGER.info("Shutdown executors");
 +        try {
 +            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
 +        } catch (final Exception ignored) {
 +        }
++        LOGGER.info("Terminal console appender closed");
 +        io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
-+        ServerLifecycleHooks.handleServerStopped(this); // Youer
++        LOGGER.info("Loggers reset");
++        ServerLifecycleHooks.handleServerStopped(this); // Neo
++        LOGGER.info("Server stopped");
 +        this.onServerExit();
++        LOGGER.info("Server exit complete");
 +        // Paper end - Improved watchdog support
      }
  
      public String getLocalIp() {
-@@ -650,26 +_,115 @@
+@@ -650,6 +_,15 @@
      }
  
      public void halt(boolean p_129884_) {
@@ -1087,17 +1072,10 @@
          this.running = false;
          if (p_129884_) {
              try {
-                 this.serverThread.join();
-             } catch (InterruptedException interruptedexception) {
--                LOGGER.error("Error while shutting down", (Throwable)interruptedexception);
--            }
--        }
--    }
-+                LOGGER.error(I18n.as("minecraftserver.14"), (Throwable)interruptedexception);
-+            }
-+        }
-+    }
-+
+@@ -660,16 +_,96 @@
+         }
+     }
+ 
 +    // Spigot Start
 +    private static double calcTps(double avg, double exp, double tps)
 +    {
@@ -1156,7 +1134,7 @@
 +    private static final java.math.BigDecimal TPS_BASE = new java.math.BigDecimal(1E9).multiply(new java.math.BigDecimal(SAMPLE_INTERVAL));
 +    // Paper end
 +    // Spigot End
- 
++
      protected void runServer() {
          try {
 +            long serverStartTime = Util.getNanos(); // Paper
@@ -1191,13 +1169,13 @@
              while (this.running) {
                  long i;
                  if (!this.isPaused() && this.tickRateManager.isSprinting() && this.tickRateManager.checkShouldSprintThisTick()) {
-@@ -682,25 +_,60 @@
+@@ -682,25 +_,62 @@
                      if (k > OVERLOADED_THRESHOLD_NANOS + 20L * i
                          && this.nextTickTimeNanos - this.lastOverloadWarningNanos >= OVERLOADED_WARNING_INTERVAL_NANOS + 100L * i) {
                          long j = k / i;
 -                        LOGGER.warn("Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind", k / TimeUtil.NANOSECONDS_PER_MILLISECOND, j);
 +                        if (server.getWarnOnOverload()) {
-+                            LOGGER.warn(I18n.as("minecraftserver.16", k / TimeUtil.NANOSECONDS_PER_MILLISECOND, j));
++                            LOGGER.warn("Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind", k / TimeUtil.NANOSECONDS_PER_MILLISECOND, j);
 +                        }
                          this.nextTickTimeNanos += j * i;
                          this.lastOverloadWarningNanos = this.nextTickTimeNanos;
@@ -1209,14 +1187,16 @@
 +                if (++MinecraftServer.currentTick % MinecraftServer.SAMPLE_INTERVAL == 0) {
 +                    final long diff = currentTime - tickSection;
 +                    final java.math.BigDecimal currentTps = TPS_BASE.divide(new java.math.BigDecimal(diff), 30, java.math.RoundingMode.HALF_UP);
++                    tps5s.add(currentTps, diff);
 +                    tps1.add(currentTps, diff);
 +                    tps5.add(currentTps, diff);
 +                    tps15.add(currentTps, diff);
 +
 +                    // Backwards compat with bad plugins
-+                    this.recentTps[0] = tps1.getAverage();
-+                    this.recentTps[1] = tps5.getAverage();
-+                    this.recentTps[2] = tps15.getAverage();
++                    this.recentTps[0] = tps5s.getAverage();
++                    this.recentTps[1] = tps1.getAverage();
++                    this.recentTps[2] = tps5.getAverage();
++                    this.recentTps[3] = tps15.getAverage();
 +                    lagging = recentTps[0] < org.purpurmc.purpur.PurpurConfig.laggingThreshold; // Purpur
 +                    tickSection = currentTime;
 +                }
@@ -1254,42 +1234,31 @@
                  this.startMeasuringTaskExecutionTime();
                  this.waitUntilNextTick();
                  this.finishMeasuringTaskExecutionTime();
-@@ -714,30 +_,37 @@
+@@ -714,7 +_,15 @@
                  this.isReady = true;
                  JvmProfiler.INSTANCE.onServerTick(this.smoothedTickTimeMillis);
              }
 +            ServerLifecycleHooks.handleServerStopping(this);
 +            ServerLifecycleHooks.expectServerStopped(); // Forge: Has to come before MinecraftServer#onServerCrash to avoid race conditions
          } catch (Throwable throwable1) {
--            LOGGER.error("Encountered an unexpected exception", throwable1);
 +            // Paper start
 +            if (throwable1 instanceof ThreadDeath) {
 +                MinecraftServer.LOGGER.error("Main thread terminated by WatchDog due to hard crash", throwable1);
 +                return;
 +            }
 +            // Paper end
-+            LOGGER.error(I18n.as("minecraftserver.17"), throwable1);
+             LOGGER.error("Encountered an unexpected exception", throwable1);
              CrashReport crashreport = constructOrExtractCrashReport(throwable1);
              this.fillSystemReport(crashreport.getSystemReport());
-             Path path = this.getServerDirectory().resolve("crash-reports").resolve("crash-" + Util.getFilenameFormattedDateTime() + "-server.txt");
-             if (crashreport.saveToFile(path, ReportType.CRASH)) {
--                LOGGER.error("This crash report has been saved to: {}", path.toAbsolutePath());
-+                LOGGER.error(I18n.as("minecraftserver.18", path.toAbsolutePath()));
-             } else {
--                LOGGER.error("We were unable to save this crash report to disk.");
-+                LOGGER.error(I18n.as("minecraftserver.19"));
+@@ -725,6 +_,7 @@
+                 LOGGER.error("We were unable to save this crash report to disk.");
              }
  
 +            ServerLifecycleHooks.expectServerStopped(); // Forge: Has to come before MinecraftServer#onServerCrash to avoid race conditions
              this.onServerCrash(crashreport);
          } finally {
              try {
-                 this.stopped = true;
-                 this.stopServer();
-             } catch (Throwable throwable) {
--                LOGGER.error("Exception stopping the server", throwable);
-+                LOGGER.error(I18n.as("minecraftserver.20"), throwable);
-             } finally {
+@@ -736,8 +_,6 @@
                  if (this.services.profileCache() != null) {
                      this.services.profileCache().clearExecutor();
                  }
@@ -1298,15 +1267,7 @@
              }
          }
      }
-@@ -782,15 +_,27 @@
-                 crashreport.addCategory("Wrapped in").setDetailError("Wrapping exception", p_206569_);
-             }
-         } else {
--            crashreport = new CrashReport("Exception in server tick loop", p_206569_);
-+            crashreport = new CrashReport(I18n.as("minecraftserver.21"), p_206569_);
-         }
- 
-         return crashreport;
+@@ -789,8 +_,20 @@
      }
  
      private boolean haveTime() {
@@ -1637,21 +1598,6 @@
      }
  
      public KeyPair getKeyPair() {
-@@ -1181,12 +_,12 @@
-     }
- 
-     protected void initializeKeyPair() {
--        LOGGER.info("Generating keypair");
-+        LOGGER.info(I18n.as("minecraftserver.22"));
- 
-         try {
-             this.keyPair = Crypt.generateKeyPair();
-         } catch (CryptException cryptexception) {
--            throw new IllegalStateException("Failed to generate key pair", cryptexception);
-+            throw new IllegalStateException(I18n.as("minecraftserver.23"), cryptexception);
-         }
-     }
- 
 @@ -1198,13 +_,24 @@
          }
      }
@@ -1744,7 +1690,7 @@
      public void executeIfPossible(Runnable p_202482_) {
          if (this.isStopped()) {
 -            throw new RejectedExecutionException("Server already shutting down");
-+            throw new io.papermc.paper.util.ServerStopRejectedExecutionException(I18n.as("minecraftserver.24"));
++            throw new io.papermc.paper.util.ServerStopRejectedExecutionException("Server already shutting down");
          } else {
              super.executeIfPossible(p_202482_);
          }
@@ -1773,12 +1719,21 @@
                      this.resources.close();
                      this.resources = p_335203_;
                      this.packRepository.setSelected(p_129862_);
-@@ -1474,10 +_,23 @@
+@@ -1474,10 +_,31 @@
                      );
                      this.worldData.setDataConfiguration(worlddataconfiguration);
                      this.resources.managers.updateRegistryTags();
+-                    this.getPlayerList().saveAll();
 +                    this.potionBrewing = this.potionBrewing.reload(this.worldData.enabledFeatures()); // Paper - Custom Potion Mixes
-                     this.getPlayerList().saveAll();
++                    // Paper start
++                    if (Thread.currentThread() != this.serverThread) {
++                        return;
++                    }
++                    // this.getPlayerList().saveAll(); // Paper - we don't need to save everything, just advancements
++                    for (ServerPlayer player : this.getPlayerList().getPlayers()) {
++                        player.getAdvancements().save();
++                    }
++                    // Paper end
                      this.getPlayerList().reloadResources();
                      this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
                      this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);

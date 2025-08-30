@@ -484,7 +484,7 @@ public final class CraftServer implements Server {
         }
         this.potionBrewer = new io.papermc.paper.potion.PaperPotionBrewer(console); // Paper - custom potion mixes
         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
-        this.spark = new io.papermc.paper.SparksFly(this);
+        this.spark = new io.papermc.paper.SparksFly(this, getClass().getClassLoader());
     }
 
     // Youer start
@@ -1487,7 +1487,7 @@ public final class CraftServer implements Server {
 
         // If set to not keep spawn in memory (changed from default) then adjust rule accordingly
         if (creator.keepSpawnLoaded() == net.kyori.adventure.util.TriState.FALSE) { // Paper
-            worlddata.getGameRules().getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0, null);
+            worlddata.getGameRules().getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0, (ServerLevel) null); // Stellar
         }
         net.minecraft.world.level.Level.craftWorldData(creator.environment(), generator, biomeProvider);
         ServerLevel internal = new ServerLevel(this.console, this.console.executor, worldSession, worlddata, worldKey, worlddimension, this.getServer().progressListenerFactory.create(worlddata.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS)),
@@ -3176,6 +3176,7 @@ public final class CraftServer implements Server {
     @Override
     public double[] getTPS() {
         return new double[] {
+                net.minecraft.server.MinecraftServer.getServer().tps5s.getAverage(),
                 net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
                 net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
                 net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()

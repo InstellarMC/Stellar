@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/net/minecraft/server/commands/SpreadFakePlayersCommand.java
-@@ -1,0 +_,134 @@
+@@ -1,0 +_,137 @@
 +package net.minecraft.server.commands;
 +
 +import com.mojang.authlib.GameProfile;
@@ -24,7 +24,7 @@
 +import net.minecraft.server.network.CommonListenerCookie;
 +import net.neoforged.neoforge.common.util.FakePlayerFactory;
 +
-+import java.util.Optional;
++import java.net.InetSocketAddress;import java.util.Optional;
 +import java.util.UUID;
 +import java.util.function.Consumer;
 +
@@ -113,6 +113,7 @@
 +        FakePlayerFactory.unloadLevel(dimension);
 +
 +        final ReferenceArraySet<ServerPlayer> fakePlayers = new ReferenceArraySet<>();
++        try {
 +        for (int i = 0; i < amount; i++) {
 +            final var gameProfile = new GameProfile(UUID.randomUUID(), "FakePlayer" + String.format("%04d", i));
 +            final var cookie = CommonListenerCookie.createInitial(gameProfile, false);
@@ -122,6 +123,8 @@
 +            fakePlayers.add(fakePlayer);
 +
 +            ctx.getSource().getServer().getPlayerList().placeNewPlayer(connection, fakePlayer, cookie, Optional.empty());
++        }
++        } catch (final Exception ignored) {
 +        }
 +
 +        return spreadPlayers(

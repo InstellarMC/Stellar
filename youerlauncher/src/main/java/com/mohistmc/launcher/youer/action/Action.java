@@ -228,7 +228,7 @@ public class Action {
 
     protected void run(String mainClass, String... args) throws Exception {
         List<URL> classPath = installerTourls;
-        System.out.println("[Youer] Loading " + classPath);
+        System.out.println("[Stellar] Loading " + classPath);
         URLClassLoader loader = URLClassLoader.newInstance(classPath.toArray(new URL[0]));
         Class.forName(mainClass, true, loader).getDeclaredMethod("main", String[].class).invoke(null, new Object[]{args});
         loader.clearAssertionStatus();

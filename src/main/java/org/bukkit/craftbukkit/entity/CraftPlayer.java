@@ -206,7 +206,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player, io.papermc.
     private double healthScale = 20;
     private CraftWorldBorder clientWorldBorder = null;
     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
-    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper - more resource pack API
     private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
     private long lastSaveTime; // Paper - getLastPlayed replacement API
 
@@ -2583,7 +2582,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, io.papermc.
     // Paper start - more resource pack API
     @Override
     public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus() {
-        return this.resourcePackStatus;
+        return this.getHandle().connection.connection.resourcePackStatus;
     }
     // Paper end - more resource pack API
 
@@ -3462,7 +3461,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, io.papermc.
     // Paper start - brand support
     @Override
     public String getClientBrandName() {
-        return getHandle().clientBrandName;
+        return getHandle().connection.playerBrand;
     }
     // Paper end
 
@@ -3604,7 +3603,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, io.papermc.
     // Purpur start
     @Override
     public boolean usesPurpurClient() {
-        return getHandle().purpurClient;
+        return getHandle().connection.purpurClient;
     }
 
     @Override

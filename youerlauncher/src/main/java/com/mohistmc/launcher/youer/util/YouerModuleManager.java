@@ -74,7 +74,7 @@ public class YouerModuleManager {
 
     public void init(List<String> args){
         applyLaunchArgs(args);
-        YouerConfigUtil.yml.set("youer.installation-finished", false);
+        YouerConfigUtil.yml.set("youer.installation-finished", true);
         YouerConfigUtil.save();
     }
 

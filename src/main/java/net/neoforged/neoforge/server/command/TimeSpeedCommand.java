@@ -54,10 +54,10 @@ class TimeSpeedCommand {
     private static int setSpeed(CommandSourceStack source, float speed) {
         final BooleanValue rule = source.getLevel().getGameRules().getRule(GameRules.RULE_DAYLIGHT);
         if (!rule.get() && speed > 0) {
-            rule.set(true, null);
+            rule.set(true, (net.minecraft.server.level.ServerLevel) null);
             source.sendSuccess(() -> CommandUtils.makeTranslatableWithFallback("commands.gamerule.set", GameRules.RULE_DAYLIGHT.getId(), rule.toString()), true);
         } else if (rule.get() && speed == 0) {
-            rule.set(false, null);
+            rule.set(false, (net.minecraft.server.level.ServerLevel) null);
             source.sendSuccess(() -> CommandUtils.makeTranslatableWithFallback("commands.gamerule.set", GameRules.RULE_DAYLIGHT.getId(), rule.toString()), true);
             return Command.SINGLE_SUCCESS;
         }
