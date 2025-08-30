@@ -1,9 +1,8 @@
 --- a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -1,15 +_,23 @@
+@@ -1,15 +_,22 @@
  package net.minecraft.server.network;
  
-+import com.mohistmc.youer.bukkit.LoginHandler;
 +import com.mohistmc.youer.proxy.VelocityProxy;
  import com.google.common.primitives.Ints;
 +import com.mohistmc.youer.util.I18n;
@@ -42,7 +41,7 @@
  import net.minecraft.network.protocol.login.ClientboundGameProfilePacket;
  import net.minecraft.network.protocol.login.ClientboundHelloPacket;
  import net.minecraft.network.protocol.login.ClientboundLoginCompressionPacket;
-@@ -35,30 +_,57 @@
+@@ -35,40 +_,87 @@
  import net.minecraft.network.protocol.login.ServerboundHelloPacket;
  import net.minecraft.network.protocol.login.ServerboundKeyPacket;
  import net.minecraft.network.protocol.login.ServerboundLoginAcknowledgedPacket;
@@ -97,44 +96,61 @@
 +    public volatile ServerLoginPacketListenerImpl.State state = ServerLoginPacketListenerImpl.State.HELLO;
      private int tick;
      @Nullable
-     String requestedUsername;
+-    String requestedUsername;
++    public String requestedUsername; // Paper
      @Nullable
 -    private GameProfile authenticatedProfile;
 +    public GameProfile authenticatedProfile;
      private final String serverId = "";
-     private final boolean transferred;
+-    private final boolean transferred;
++    public final boolean transferred; // Paper
++    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
++    private int velocityLoginMessageId = -1; // Paper - Add Velocity IP Forwarding Support
++    public @Nullable java.util.UUID requestedUuid; // Paper
++    private final io.papermc.paper.connection.PaperPlayerLoginConnection paperLoginConnection; // Paper - Config API
++    private volatile boolean disconnecting = false; // Paper - Fix disconnect still ticking login
 +    private ServerPlayer player; // CraftBukkit
-+    public int velocityLoginMessageId = -1; // Paper - Velocity support
  
      public ServerLoginPacketListenerImpl(MinecraftServer p_10027_, Connection p_10028_, boolean p_320815_) {
          this.server = p_10027_;
-@@ -69,9 +_,23 @@
+         this.connection = p_10028_;
+         this.challenge = Ints.toByteArray(RandomSource.create().nextInt());
+         this.transferred = p_320815_;
++        this.paperLoginConnection = new io.papermc.paper.connection.PaperPlayerLoginConnection(this); // Paper
+     }
  
      @Override
      public void tick() {
++        if (this.disconnecting) return; // Paper - Fix disconnect being called multiple times due to not awaiting for disconnect
++        // Paper start - login cookie API
++        // Don't block the connection
++        if (this.paperLoginConnection.isAwaitingCookies()) {
++            this.tickTimeout(); // Ensure we tick timeout logic
++            return;
++        }
++        // Paper end - login cookie API
 +        // Paper start - Do not allow logins while the server is shutting down
++        // Stellar TODO - should remove this?
 +        if (!MinecraftServer.getServer().isRunning()) {
 +            this.disconnect(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(org.spigotmc.SpigotConfig.restartMessage)[0]);
 +            return;
 +        }
 +        // Paper end - Do not allow logins while the server is shutting down
          if (this.state == ServerLoginPacketListenerImpl.State.VERIFYING) {
--            this.verifyLoginAndFinishConnectionSetup(Objects.requireNonNull(this.authenticatedProfile));
--        }
-+            if (this.connection.isConnected()) { // Paper - prevent logins to be processed even though disconnect was called
-+                this.verifyLoginAndFinishConnectionSetup(Objects.requireNonNull(this.authenticatedProfile));
-+            } // Paper - prevent logins to be processed even though disconnect was called
-+        }
-+
-+        // CraftBukkit start
-+        if (this.state == ServerLoginPacketListenerImpl.State.WAITING_FOR_COOKIES && !this.player.getBukkitEntity().isAwaitingCookies()) {
-+            this.postCookies(this.authenticatedProfile);
-+        }
-+        // CraftBukkit end
+             this.verifyLoginAndFinishConnectionSetup(Objects.requireNonNull(this.authenticatedProfile));
+         }
+@@ -78,6 +_,10 @@
+             this.finishLoginAndWaitForClient(this.authenticatedProfile);
+         }
  
-         if (this.state == ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT
-             && !this.isPlayerAlreadyInWorld(Objects.requireNonNull(this.authenticatedProfile))) {
-@@ -88,6 +_,12 @@
++        // Paper start - login cookie API
++        this.tickTimeout();
++    }
++    public void tickTimeout() { // Paper end - login cookie API
+         if (this.tick++ == 600) {
+             this.disconnect(Component.translatable("multiplayer.disconnect.slow_login"));
+         }
+@@ -88,11 +_,19 @@
          return this.connection.isConnected();
      }
  
@@ -143,20 +159,39 @@
 +    public void disconnect(String s) {
 +        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s))); // Paper - Fix hex colors not working in some kick messages
 +    }
++    // CraftBukkit end
 +
      public void disconnect(Component p_10054_) {
          try {
              LOGGER.info("Disconnecting {}: {}", this.getUserName(), p_10054_.getString());
-@@ -115,7 +_,7 @@
+             this.connection.send(new ClientboundLoginDisconnectPacket(p_10054_));
+             this.connection.disconnect(p_10054_);
++            this.disconnecting = true; // Paper - Fix disconnect still ticking login
+         } catch (Exception exception) {
+             LOGGER.error("Error whilst disconnecting player", (Throwable)exception);
+         }
+@@ -115,17 +_,49 @@
      @Override
      public void handleHello(ServerboundHelloPacket p_10047_) {
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet");
 -        Validate.validState(StringUtil.isValidPlayerName(p_10047_.name()), "Invalid characters in username");
-+        // Validate.validState(StringUtil.isValidPlayerName(p_10047_.name()), "Invalid characters in username");
++        // Paper start - Validate usernames
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()
++            && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation
++            && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) {
++            Validate.validState(net.minecraft.util.StringUtil.isReasonablePlayerName(p_10047_.name()), "Invalid characters in username");
++        }
++        // Paper end - Validate usernames
++        this.requestedUuid = p_10047_.profileId(); // Paper
          this.requestedUsername = p_10047_.name();
-         GameProfile gameprofile = this.server.getSingleplayerProfile();
-         if (gameprofile != null && this.requestedUsername.equalsIgnoreCase(gameprofile.getName())) {
-@@ -125,7 +_,34 @@
+-        GameProfile gameprofile = this.server.getSingleplayerProfile();
+-        if (gameprofile != null && this.requestedUsername.equalsIgnoreCase(gameprofile.getName())) {
+-            this.startClientVerification(gameprofile);
++        GameProfile singleplayerprofile = this.server.getSingleplayerProfile();
++        if (singleplayerprofile != null && this.requestedUsername.equalsIgnoreCase(singleplayerprofile.getName())) {
++            this.startClientVerification(singleplayerprofile);
+         } else {
+             if (this.server.usesAuthentication() && !this.connection.isMemoryConnection()) {
                  this.state = ServerLoginPacketListenerImpl.State.KEY;
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge, true));
              } else {
@@ -173,18 +208,16 @@
 +                // Paper end - Add Velocity IP Forwarding Support
 +                // CraftBukkit start
 +                // Paper start - Cache authenticator threads
-+                authenticatorPool.execute(new Runnable() {
++                authenticatorPool.execute(() -> {
++                    try {
++                        GameProfile gameprofile = createOfflineProfile(ServerLoginPacketListenerImpl.this.requestedUsername); // Spigot
++                        gameprofile = ServerLoginPacketListenerImpl.this.callPlayerPreLoginEvents(gameprofile); // Paper - Add more fields to AsyncPlayerPreLoginEvent
 +
-+                    @Override
-+                    public void run() {
-+                        try {
-+                            GameProfile gameprofile = createOfflineProfile(ServerLoginPacketListenerImpl.this.requestedUsername); // Spigot
-+                            new LoginHandler().fireEvents(ServerLoginPacketListenerImpl.this, gameprofile);
-+                            ServerLoginPacketListenerImpl.this.startClientVerification(gameprofile);
-+                        } catch (Exception ex) {
-+                            disconnect("Failed to verify username!");
-+                            ServerLoginPacketListenerImpl.this.server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.requestedUsername, ex);
-+                        }
++                        ServerLoginPacketListenerImpl.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
++                        ServerLoginPacketListenerImpl.this.startClientVerification(gameprofile);
++                    } catch (Exception ex) {
++                        ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
++                        ServerLoginPacketListenerImpl.this.server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.requestedUsername, ex);
 +                    }
 +                });
 +                // Paper end - Cache authenticator threads
@@ -192,58 +225,46 @@
              }
          }
      }
-@@ -137,10 +_,41 @@
+@@ -137,7 +_,8 @@
  
      private void verifyLoginAndFinishConnectionSetup(GameProfile p_294502_) {
          PlayerList playerlist = this.server.getPlayerList();
+-        Component component = playerlist.canPlayerLogin(this.connection.getRemoteAddress(), p_294502_);
 +        // CraftBukkit start - fire PlayerLoginEvent
-+        this.server.getPlayerList().youer$putHandler(this);
-         Component component = playerlist.canPlayerLogin(this.connection.getRemoteAddress(), p_294502_);
++        Component component = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerlist.canPlayerLogin(this.connection.getRemoteAddress(), p_294502_), this.paperLoginConnection, this.connection, p_294502_, this.server, true); // Paper
          if (component != null) {
              this.disconnect(component);
          } else {
-+            if (player == null) {
-+                player = playerlist.youer$canPlayerLogin$entity.get();
-+            }
-+            if (this.player.getBukkitEntity().isAwaitingCookies()) {
-+                this.state = ServerLoginPacketListenerImpl.State.WAITING_FOR_COOKIES;
-+            } else {
-+                if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
-+                    this.connection
-+                            .send(
-+                                    new ClientboundLoginCompressionPacket(this.server.getCompressionThreshold()),
-+                                    PacketSendListener.thenRun(() -> this.connection.setupCompression(this.server.getCompressionThreshold(), true))
-+                            );
-+                }
-+
-+                boolean flag = playerlist.disconnectAllPlayersWithProfile(p_294502_, this.player); // CraftBukkit - add player reference
-+                if (flag) {
-+                    this.state = ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT;
-+                } else {
-+                    this.finishLoginAndWaitForClient(p_294502_);
-+                }
-+            }
-+        }
-+    }
-+
+@@ -158,6 +_,28 @@
+         }
+     }
+ 
 +    private void postCookies(GameProfile p_294502_) {
 +        PlayerList playerlist = this.server.getPlayerList();
 +        if (this.player == null) {
 +            // CraftBukkit end
 +        } else {
-             if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
-                 this.connection
-                     .send(
-@@ -149,7 +_,7 @@
-                     );
-             }
- 
--            boolean flag = playerlist.disconnectAllPlayersWithProfile(p_294502_);
-+            boolean flag = playerlist.disconnectAllPlayersWithProfile(p_294502_, this.player); // CraftBukkit - add player reference
-             if (flag) {
-                 this.state = ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT;
-             } else {
-@@ -184,8 +_,8 @@
++            if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
++                this.connection
++                    .send(
++                        new ClientboundLoginCompressionPacket(this.server.getCompressionThreshold()),
++                        PacketSendListener.thenRun(() -> this.connection.setupCompression(this.server.getCompressionThreshold(), true))
++                    );
++            }
++
++            boolean flag = playerlist.disconnectAllPlayersWithProfile(p_294502_);
++            if (flag) {
++                this.state = ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT;
++            } else {
++                this.finishLoginAndWaitForClient(p_294502_);
++            }
++        }
++    }
++
+     private void finishLoginAndWaitForClient(GameProfile p_295520_) {
+         this.state = ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING;
+         this.connection.send(new ClientboundGameProfilePacket(p_295520_, true));
+@@ -184,20 +_,25 @@
              throw new IllegalStateException("Protocol error", cryptexception);
          }
  
@@ -254,18 +275,20 @@
              public void run() {
                  String s1 = Objects.requireNonNull(ServerLoginPacketListenerImpl.this.requestedUsername, "Player name not initialized");
  
-@@ -193,11 +_,16 @@
+                 try {
                      ProfileResult profileresult = ServerLoginPacketListenerImpl.this.server.getSessionService().hasJoinedServer(s1, s, this.getAddress());
                      if (profileresult != null) {
-                         GameProfile gameprofile = profileresult.profile();
+-                        GameProfile gameprofile = profileresult.profile();
 -                        ServerLoginPacketListenerImpl.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
+-                        ServerLoginPacketListenerImpl.this.startClientVerification(gameprofile);
++                        GameProfile gameProfile = profileresult.profile();
 +                        // CraftBukkit start - fire PlayerPreLoginEvent
-+                        if (!connection.isConnected()) {
++                        if (!ServerLoginPacketListenerImpl.this.connection.isConnected()) {
 +                            return;
 +                        }
-+                        new LoginHandler().fireEvents(ServerLoginPacketListenerImpl.this, gameprofile);
++                        gameProfile = ServerLoginPacketListenerImpl.this.callPlayerPreLoginEvents(gameProfile); // Paper - Add more fields to AsyncPlayerPreLoginEvent
 +                        // CraftBukkit end
-                         ServerLoginPacketListenerImpl.this.startClientVerification(gameprofile);
++                        ServerLoginPacketListenerImpl.this.startClientVerification(gameProfile);
                      } else if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
                          ServerLoginPacketListenerImpl.LOGGER.warn("Failed to verify username but will let them in anyway!");
 -                        ServerLoginPacketListenerImpl.this.startClientVerification(UUIDUtil.createOfflineProfile(s1));
@@ -292,7 +315,7 @@
                  }
              }
  
-@@ -220,24 +_,143 @@
+@@ -220,24 +_,188 @@
                      ? ((InetSocketAddress)socketaddress).getAddress()
                      : null;
              }
@@ -356,10 +379,55 @@
 +    // CraftBukkit end
  
      @Override
-     public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket p_295398_) {
+-    public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket p_295398_) {
++    public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket packet) {
++        // Paper start - Add Velocity IP Forwarding Support
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && packet.transactionId() == this.velocityLoginMessageId) {
++            ServerboundCustomQueryAnswerPacket.QueryAnswerPayload payload = (ServerboundCustomQueryAnswerPacket.QueryAnswerPayload)packet.payload();
++            if (payload == null) {
++                this.disconnect("This server requires you to connect with Velocity.");
++                return;
++            }
++
++            net.minecraft.network.FriendlyByteBuf buf = payload.buffer;
++            if (!com.destroystokyo.paper.proxy.VelocityProxy.checkIntegrity(buf)) {
++                this.disconnect("Unable to verify player details");
++                return;
++            }
++
++            int version = buf.readVarInt();
++            if (version > com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION) {
++                throw new IllegalStateException("Unsupported forwarding version " + version + ", wanted upto " + com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
++            }
++
++            java.net.SocketAddress listening = this.connection.getRemoteAddress();
++            int port = 0;
++            if (listening instanceof java.net.InetSocketAddress) {
++                port = ((java.net.InetSocketAddress) listening).getPort();
++            }
++            this.connection.address = new java.net.InetSocketAddress(com.destroystokyo.paper.proxy.VelocityProxy.readAddress(buf), port);
++
++            this.authenticatedProfile = com.destroystokyo.paper.proxy.VelocityProxy.createProfile(buf);
++
++            //TODO Update handling for lazy sessions, might not even have to do anything?
++
++            // Proceed with login
++            authenticatorPool.execute(() -> {
++                try {
++                    final GameProfile gameprofile = this.callPlayerPreLoginEvents(this.authenticatedProfile);
++                    ServerLoginPacketListenerImpl.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
++                    ServerLoginPacketListenerImpl.this.startClientVerification(gameprofile);
++                } catch (Exception ex) {
++                    disconnect("Failed to verify username!");
++                    server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + this.authenticatedProfile.getName(), ex);
++                }
++            });
++            return;
++        }
++        // Paper end - Add Velocity IP Forwarding Support
          this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
-     }
- 
++    }
++
 +    public void youer$handleCustomQueryPacket(FriendlyByteBuf payload, String type) {
 +        var buffer = payload.readNullable(r -> {
 +            int i = r.readableBytes();
@@ -399,7 +467,8 @@
 +        // Proceed with login
 +        authenticatorPool.execute(() -> {
 +            try {
-+                new LoginHandler().fireEvents(ServerLoginPacketListenerImpl.this, this.authenticatedProfile);
++                final GameProfile gameprofile = this.callPlayerPreLoginEvents(this.authenticatedProfile);
++                ServerLoginPacketListenerImpl.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
 +                ServerLoginPacketListenerImpl.this.startClientVerification(this.authenticatedProfile);
 +            } catch (Exception ex) {
 +                disconnect("Failed to verify username!");
@@ -425,8 +494,8 @@
 +                 InvocationTargetException e) {
 +            this.disconnect(Component.literal("Server encountered an error applying the Fabric Networking API workaround.\nThis is a server-side issue. Please contact an administrator."));
 +        }
-+    }
-+
+     }
+ 
      @Override
      public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket p_295661_) {
 +        PacketUtils.ensureRunningOnSameThread(p_295661_, this, this.server); // CraftBukkit
@@ -440,16 +509,11 @@
          this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, serverconfigurationpacketlistenerimpl);
          serverconfigurationpacketlistenerimpl.startConfiguration();
          this.state = ServerLoginPacketListenerImpl.State.ACCEPTED;
-@@ -250,8 +_,40 @@
+@@ -250,8 +_,35 @@
  
      @Override
      public void handleCookieResponse(ServerboundCookieResponsePacket p_320866_) {
-+        // CraftBukkit start
-+        PacketUtils.ensureRunningOnSameThread(p_320866_, this, this.server);
-+        if (this.player != null && this.player.getBukkitEntity().handleCookieResponse(p_320866_)) {
-+            return;
-+        }
-+        // CraftBukkit end
++        if (this.paperLoginConnection.handleCookieResponse(p_320866_)) return; // Paper
          this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
      }
 +

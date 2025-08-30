@@ -191,7 +191,7 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
-public class CraftPlayer extends CraftHumanEntity implements Player {
+public class CraftPlayer extends CraftHumanEntity implements Player, io.papermc.paper.connection.PluginMessageBridgeImpl {
     private long firstPlayed = 0;
     private long lastPlayed = 0;
     private boolean hasPlayedBefore = false;
@@ -2609,20 +2609,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().connection.send(resourcePackPushPacket);
     }
 
-    public void addChannel(String channel) {
-        if (channel.contains("fabric")) return;
-        Preconditions.checkState(DISABLE_CHANNEL_LIMIT || this.channels.size() < Integer.MAX_VALUE, "Cannot register channel. Too many channels registered!"); // Paper - flag to disable channel limit
-        channel = StandardMessenger.validateAndCorrectChannel(channel);
-        if (this.channels.add(channel)) {
-            this.server.getPluginManager().callEvent(new PlayerRegisterChannelEvent(this, channel));
-        }
-    }
+    @Override
+    public Set<String> channels() {
+        if (this.getHandle().connection == null) return new HashSet<>();
 
-    public void removeChannel(String channel) {
-        channel = StandardMessenger.validateAndCorrectChannel(channel);
-        if (this.channels.remove(channel)) {
-            this.server.getPluginManager().callEvent(new PlayerUnregisterChannelEvent(this, channel));
-        }
+        return this.getHandle().connection.pluginMessagerChannels;
     }
 
     @Override

@@ -1,7 +1,7 @@
 package org.bukkit.plugin.messaging;
 
-import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
+import io.papermc.paper.connection.PlayerConnection;import org.bukkit.entity.Player;
+import org.jetbrains.annotations.ApiStatus;import org.jetbrains.annotations.NotNull;
 
 /**
  * A listener for a specific Plugin Channel, which will receive notifications
@@ -18,4 +18,18 @@ public interface PluginMessageListener {
      * @param message The raw message that was sent.
      */
     public void onPluginMessageReceived(@NotNull String channel, @NotNull Player player, @NotNull byte[] message);
+
+    /**
+     * A method that will be invoked when a PluginMessageSource sends a plugin
+     * message on a registered channel.
+     * <p>
+     * Called for both joined players and players in the configuration stage.
+     *
+     * @param channel Channel that the message was sent through.
+     * @param connection Source of the message.
+     * @param message The raw message that was sent.
+     */
+    @ApiStatus.Experimental
+    default void onPluginMessageReceived(@NotNull String channel, @NotNull PlayerConnection connection, byte @NotNull [] message) {
+    }
 }

@@ -1,21 +1,23 @@
 --- a/net/minecraft/server/network/CommonListenerCookie.java
 +++ b/net/minecraft/server/network/CommonListenerCookie.java
-@@ -3,7 +_,17 @@
+@@ -3,8 +_,18 @@
  import com.mojang.authlib.GameProfile;
  import net.minecraft.server.level.ClientInformation;
  
 -public record CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred) {
 +// Paper start - improve keepalives
-+public record CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred, net.neoforged.neoforge.network.connection.ConnectionType connectionType, io.papermc.paper.util.KeepAlive keepAlive) {
++public record CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred, net.neoforged.neoforge.network.connection.ConnectionType connectionType, @org.jetbrains.annotations.Nullable String brandName, java.util.Set<String> channels, io.papermc.paper.util.KeepAlive keepAlive) { // Paper
 +    /**
-+     * @deprecated Use {@link #CommonListenerCookie(GameProfile, int, ClientInformation, boolean, net.neoforged.neoforge.network.connection.ConnectionType, io.papermc.paper.util.KeepAlive)} instead, to indicate whether the connection is modded.
++     * @deprecated Use {@link #CommonListenerCookie(GameProfile, int, ClientInformation, boolean, net.neoforged.neoforge.network.connection.ConnectionType, String, java.util.Set, io.papermc.paper.util.KeepAlive)} instead, to indicate whether the connection is modded.
 +     */
 +    @Deprecated
 +    public CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred) {
-+        this(gameProfile, latency, clientInformation, transferred, net.neoforged.neoforge.network.connection.ConnectionType.OTHER, new io.papermc.paper.util.KeepAlive());
++        this(gameProfile, latency, clientInformation, transferred, net.neoforged.neoforge.network.connection.ConnectionType.OTHER, null, new java.util.HashSet<>(), new io.papermc.paper.util.KeepAlive());
 +        // Paper end - improve keepalives
 +    }
 +
      public static CommonListenerCookie createInitial(GameProfile p_302024_, boolean p_320180_) {
-         return new CommonListenerCookie(p_302024_, 0, ClientInformation.createDefault(), p_320180_);
+-        return new CommonListenerCookie(p_302024_, 0, ClientInformation.createDefault(), p_320180_);
++        return new CommonListenerCookie(p_302024_, 0, ClientInformation.createDefault(), p_320180_, net.neoforged.neoforge.network.connection.ConnectionType.OTHER, null, new java.util.HashSet<>(), new io.papermc.paper.util.KeepAlive());
      }
+ }

@@ -8,39 +8,41 @@
  import javax.annotation.Nullable;
  import net.minecraft.network.FriendlyByteBuf;
  import net.minecraft.network.codec.StreamCodec;
-@@ -20,7 +_,20 @@
+@@ -20,7 +_,17 @@
      }
  
      private static CustomQueryAnswerPayload readPayload(int p_296215_, FriendlyByteBuf p_295168_) {
 -        return readUnknownPayload(p_295168_);
 +        // Paper start - MC Utils - default query payloads
-+        boolean hasPayload = p_295168_.readBoolean();
-+        if (!hasPayload) {
-+            return DiscardedQueryAnswerPayload.INSTANCE;
-+        }
-+        int i = p_295168_.readableBytes();
-+        if (i >= 0 && i < MAX_PAYLOAD_SIZE) {
-+            var payload = Unpooled.buffer(i);
-+            p_295168_.readBytes(payload);
-+            return new net.minecraft.network.protocol.login.ServerboundCustomQueryAnswerPacket.QueryAnswerPayload(Unpooled.wrappedBuffer(Unpooled.copyBoolean(true), payload));
-+        } else {
-+            throw new IllegalArgumentException("Payload may not be larger than 1048576 bytes");
-+        }
++        FriendlyByteBuf buf = p_295168_.readNullable((buf2) -> {
++            int readableBytes = buf2.readableBytes();
++            if (readableBytes >= 0 && readableBytes <= MAX_PAYLOAD_SIZE) {
++                return new FriendlyByteBuf(buf2.readBytes(readableBytes));
++            } else {
++                throw new IllegalArgumentException("Payload may not be larger than " + MAX_PAYLOAD_SIZE + " bytes");
++            }
++        });
++        return buf == null ? null : new net.minecraft.network.protocol.login.ServerboundCustomQueryAnswerPacket.QueryAnswerPayload(buf);
 +        // Paper end - MC Utils - default query payloads
      }
  
      private static CustomQueryAnswerPayload readUnknownPayload(FriendlyByteBuf p_294928_) {
-@@ -46,4 +_,14 @@
+@@ -46,4 +_,19 @@
      public void handle(ServerLoginPacketListener p_294750_) {
          p_294750_.handleCustomQueryPacket(this);
      }
 +
 +    // Paper start - MC Utils - default query payloads
-+    public record QueryAnswerPayload(ByteBuf buffer) implements CustomQueryAnswerPayload {
++    public static final class QueryAnswerPayload implements CustomQueryAnswerPayload {
++        public final FriendlyByteBuf buffer;
++
++        public QueryAnswerPayload(final net.minecraft.network.FriendlyByteBuf buffer) {
++            this.buffer = buffer;
++        }
 +
 +        @Override
-+        public void write(final FriendlyByteBuf buf) {
-+            buf.writeBytes(buf.slice());
++        public void write(final net.minecraft.network.FriendlyByteBuf buf) {
++            buf.writeBytes(this.buffer.copy());
 +        }
 +    }
 +    // Paper end - MC Utils - default query payloads

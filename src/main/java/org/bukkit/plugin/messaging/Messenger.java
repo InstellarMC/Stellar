@@ -1,14 +1,14 @@
 package org.bukkit.plugin.messaging;
 
 import com.mohistmc.youer.bukkit.messaging.PacketRecorder;
-import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
+import io.papermc.paper.connection.PlayerConnection;import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.ApiStatus;import org.jetbrains.annotations.NotNull;
 
 /**
  * A class responsible for managing the registrations of plugin channels and
@@ -232,11 +232,25 @@ public interface Messenger {
      * @param source Source of the message.
      * @param channel Channel that the message was sent by.
      * @param message Raw payload of the message.
+     * @deprecated only calls the {@link Player} version of onPluginMessageReceived, use {@link #dispatchIncomingMessage(PlayerConnection, String, byte[])} instead to call both.
      */
+    @Deprecated
     public void dispatchIncomingMessage(@NotNull Player source, @NotNull String channel, @NotNull byte[] message);
 
+    /**
+     * Dispatches the specified incoming message to any registered listeners. By default, also calls {@link PluginMessageListener#onPluginMessageReceived(String, Player, byte[])}.
+     *
+     * @param source Source of the message.
+     * @param channel Channel that the message was sent by.
+     * @param message Raw payload of the message.
+     */
+    @ApiStatus.Experimental
+    public void dispatchIncomingMessage(@NotNull PlayerConnection source, @NotNull String channel, byte @NotNull [] message);
+
+    // Youer start
     Object2BooleanOpenHashMap<String> valid = new Object2BooleanOpenHashMap<>();
     void sendCustomPayload(Plugin src, CraftPlayer dst, ResourceLocation location, byte[] data);
     void registerAnonymousOutgoing(ResourceLocation location);
     PacketRecorder getPacketRecorder();
+    // Youer end
 }

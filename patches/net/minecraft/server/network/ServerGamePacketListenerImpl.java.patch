@@ -84,11 +84,11 @@
      private int dropSpamTickCount;
      private double firstGoodX;
      private double firstGoodY;
-@@ -235,6 +_,21 @@
-     private final MessageSignatureCache messageSignatureCache = MessageSignatureCache.createDefault();
-     private final FutureChain chatMessageChain;
-     private boolean waitingForSwitchToConfig;
-+    // CraftBukkit start - add fields and methods
+@@ -228,13 +_,32 @@
+     private int aboveGroundVehicleTickCount;
+     private int receivedMovePacketCount;
+     private int knownMovePacketCount;
++    // CraftBukkit start - add fields
 +    private int lastTick = MinecraftServer.currentTick;
 +    private int allowedPlayerTicks = 1;
 +    private int lastDropTick = MinecraftServer.currentTick;
@@ -103,17 +103,43 @@
 +    private float lastYaw = Float.MAX_VALUE;
 +    private boolean justTeleported = false;
 +    // CraftBukkit end
+     @Nullable
+     private RemoteChatSession chatSession;
++    private boolean hasLoggedExpiry = false; // Paper - Prevent causing expired keys from impacting new joins
+     private SignedMessageChain.Decoder signedMessageDecoder;
+     private final LastSeenMessagesValidator lastSeenMessages = new LastSeenMessagesValidator(20);
+     private final MessageSignatureCache messageSignatureCache = MessageSignatureCache.createDefault();
+     private final FutureChain chatMessageChain;
+     private boolean waitingForSwitchToConfig;
++    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper - Limit client sign length
++    private final io.papermc.paper.event.packet.ClientTickEndEvent tickEndEvent; // Paper - add client tick end event
++    public final io.papermc.paper.connection.PaperPlayerGameConnection playerGameConnection; // Paper
  
      public ServerGamePacketListenerImpl(MinecraftServer p_9770_, Connection p_9771_, ServerPlayer p_9772_, CommonListenerCookie p_301978_) {
          super(p_9770_, p_9771_, p_301978_);
-@@ -243,8 +_,23 @@
+@@ -243,8 +_,37 @@
          p_9772_.connection = this;
          p_9772_.getTextFilter().join();
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(p_9772_.getUUID(), p_9770_::enforceSecureProfile);
 -        this.chatMessageChain = new FutureChain(p_9770_);
+-    }
 +        this.chatMessageChain = new FutureChain(server.chatExecutor); // CraftBukkit - async chat
++        this.tickEndEvent = new io.papermc.paper.event.packet.ClientTickEndEvent(player.getBukkitEntity()); // Paper - add client tick end event
++        this.playerGameConnection =  new io.papermc.paper.connection.PaperPlayerGameConnection(this); // Paper
 +        setPlayer(p_9772_);
-     }
++    }
++
++    // Paper start - configuration phase API
++    @Override
++    public io.papermc.paper.connection.PlayerCommonConnection getApiConnection() {
++        return this.playerGameConnection;
++    }
++
++    @Override
++    public net.kyori.adventure.audience.Audience getAudience() {
++        return this.getCraftPlayer();
++    }
++    // Paper end - configuration phase API
 +
 +    // Purpur start
 +    private final com.google.common.cache.LoadingCache<CraftPlayer, Boolean> kickPermissionCache = com.google.common.cache.CacheBuilder.newBuilder()
@@ -131,20 +157,24 @@
  
      @Override
      public void tick() {
-@@ -264,7 +_,7 @@
+@@ -263,8 +_,8 @@
+         this.knownMovePacketCount = this.receivedMovePacketCount;
          if (this.clientIsFloating && !this.player.isSleeping() && !this.player.isPassenger() && !this.player.isDeadOrDying()) {
              if (++this.aboveGroundTickCount > this.getMaximumFlyingTicks(this.player)) {
-                 LOGGER.warn("{} was kicked for floating too long!", this.player.getName().getString());
+-                LOGGER.warn("{} was kicked for floating too long!", this.player.getName().getString());
 -                this.disconnect(Component.translatable("multiplayer.disconnect.flying"));
++                // LOGGER.warn("{} was kicked for floating too long!", this.player.getName().getString()); // Paper - Logging moved to net.minecraft.server.network.ServerCommonPacketListenerImpl.disconnect()
 +                this.disconnect(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.flyingPlayer, org.bukkit.event.player.PlayerKickEvent.Cause.FLYING_PLAYER); // Paper - use configurable kick message & kick event cause
                  return;
              }
          } else {
-@@ -283,7 +_,7 @@
+@@ -282,8 +_,8 @@
+             this.vehicleLastGoodZ = this.lastVehicle.getZ();
              if (this.clientVehicleIsFloating && this.lastVehicle.getControllingPassenger() == this.player) {
                  if (++this.aboveGroundVehicleTickCount > this.getMaximumFlyingTicks(this.lastVehicle)) {
-                     LOGGER.warn("{} was kicked for floating a vehicle too long!", this.player.getName().getString());
+-                    LOGGER.warn("{} was kicked for floating a vehicle too long!", this.player.getName().getString());
 -                    this.disconnect(Component.translatable("multiplayer.disconnect.flying"));
++                    // LOGGER.warn("{} was kicked for floating a vehicle too long!", this.player.getName().getString()); // Paper - Logging moved to net.minecraft.server.network.ServerCommonPacketListenerImpl.disconnect()
 +                    this.disconnect(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.flyingVehicle, org.bukkit.event.player.PlayerKickEvent.Cause.FLYING_VEHICLE); // Paper - use configurable kick message & kick event cause
                      return;
                  }
@@ -167,12 +197,13 @@
  
          if (this.dropSpamTickCount > 0) {
              this.dropSpamTickCount--;
-@@ -307,8 +_,15 @@
+@@ -307,9 +_,22 @@
  
          if (this.player.getLastActionTime() > 0L
              && this.server.getPlayerIdleTimeout() > 0
 -            && Util.getMillis() - this.player.getLastActionTime() > (long)this.server.getPlayerIdleTimeout() * 1000L * 60L) {
 -            this.disconnect(Component.translatable("multiplayer.disconnect.idling"));
+-        }
 +            && Util.getMillis() - this.player.getLastActionTime() > (long)this.server.getPlayerIdleTimeout() * 1000L * 60L && !this.player.wonGame) { // Paper - Prevent AFK kick while watching end credits
 +            // Purpur start
 +            this.player.setAfk(true);
@@ -182,9 +213,24 @@
 +            // Purpur end
 +            this.player.resetLastActionTime(); // CraftBukkit - SPIGOT-854
 +            this.disconnect(Component.translatable("multiplayer.disconnect.idling"), org.bukkit.event.player.PlayerKickEvent.Cause.IDLING); // Paper - kick event cause
-         }
++        }
++        // Paper start - Prevent causing expired keys from impacting new joins
++        if (!this.hasLoggedExpiry && this.chatSession != null && this.chatSession.profilePublicKey().data().hasExpired()) {
++            LOGGER.info("Player profile key for {} has expired!", this.player.getName().getString());
++            this.hasLoggedExpiry = true;
++        }
++        // Paper end - Prevent causing expired keys from impacting new joins
      }
  
+     private int getMaximumFlyingTicks(Entity p_326388_) {
+@@ -371,6 +_,7 @@
+     public void handlePlayerInput(ServerboundPlayerInputPacket p_9893_) {
+         PacketUtils.ensureRunningOnSameThread(p_9893_, this, this.player.serverLevel());
+         this.player.setPlayerInput(p_9893_.getXxa(), p_9893_.getZza(), p_9893_.isJumping(), p_9893_.isShiftKeyDown());
++
+     }
+ 
+     private static boolean containsInvalidValues(double p_143664_, double p_143665_, double p_143666_, float p_143667_, float p_143668_) {
 @@ -389,11 +_,23 @@
      public void handleMoveVehicle(ServerboundMoveVehiclePacket p_9876_) {
          PacketUtils.ensureRunningOnSameThread(p_9876_, this, this.player.serverLevel());
@@ -2395,7 +2441,7 @@
      }
  
      @Override
-@@ -1858,4 +_,17 @@
+@@ -1858,4 +_,80 @@
      public interface EntityInteraction {
          InteractionResult run(ServerPlayer p_143695_, Entity p_143696_, InteractionHand p_143697_);
      }
@@ -2407,9 +2453,72 @@
 +        Location from = new Location(player.getWorld(), this.lastPosX, this.lastPosY, this.lastPosZ, this.lastYaw, this.lastPitch);
 +        Location to = new Location(player.getWorld(), toX, toY, toZ, toYaw, toPitch);
 +        io.papermc.paper.event.player.PlayerFailMoveEvent event = new io.papermc.paper.event.player.PlayerFailMoveEvent(player, failReason,
-+                false, logWarning, from, to);
++            false, logWarning, from, to);
 +        event.callEvent();
 +        return event;
 +    }
 +    // Paper end - Add fail move event
++
++    // Paper start - add utilities
++    public org.bukkit.craftbukkit.entity.CraftPlayer getCraftPlayer() {
++        return this.player == null ? null : this.player.getBukkitEntity();
++    }
++
++    @Override
++    public void disconnectAsync(final net.minecraft.network.DisconnectionDetails disconnectionInfo) {
++        if (this.cserver.isPrimaryThread()) {
++            this.disconnect(disconnectionInfo);
++            return;
++        }
++
++        this.connection.setReadOnly();
++        this.server.scheduleOnMain(() -> {
++            this.disconnect(disconnectionInfo);
++            if (this.player.quitReason == null) {
++                // cancelled
++                this.connection.enableAutoRead();
++            }
++        });
++    }
++
++    public final boolean isDisconnected() {
++        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper - Fix duplication bugs
++    }
++
++    @Override
++    public void handleResourcePackResponse(final net.minecraft.network.protocol.common.ServerboundResourcePackPacket packet) {
++        super.handleResourcePackResponse(packet);
++        // Paper start - store last pack status
++        org.bukkit.event.player.PlayerResourcePackStatusEvent.Status packStatus = org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()];
++        this.connection.resourcePackStatus = packStatus;
++        this.cserver.getPluginManager().callEvent(new org.bukkit.event.player.PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), packStatus)); // CraftBukkit
++        // Paper end - store last pack status
++    }
++
++    // Paper start - adventure
++    public void disconnect(final net.kyori.adventure.text.Component reason) {
++        this.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
++    }
++
++    public void disconnect(final net.kyori.adventure.text.Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(reason), io.papermc.paper.connection.DisconnectionReason.game(cause));
++    }
++
++    public void disconnect(final Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnect(reason, io.papermc.paper.connection.DisconnectionReason.game(cause));
++    }
++
++    public void disconnectAsync(net.kyori.adventure.text.Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnectAsync(io.papermc.paper.adventure.PaperAdventure.asVanilla(reason), cause);
++    }
++
++    public void disconnectAsync(Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnectAsync(reason, io.papermc.paper.connection.DisconnectionReason.game(cause));
++    }
++
++    @Override
++    public io.papermc.paper.connection.PaperPlayerGameConnection paperConnection() {
++        return this.playerGameConnection;
++    }
++    // Paper end
  }

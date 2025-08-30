@@ -15,7 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
-import net.minecraft.resources.ResourceLocation;
+import io.papermc.paper.connection.PlayerConnection;import io.papermc.paper.connection.PlayerGameConnection;import net.minecraft.resources.ResourceLocation;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -474,6 +474,33 @@ public class StandardMessenger implements Messenger {
                         String.format("Plugin %s generated an exception whilst handling plugin message",
                                 registration.getPlugin().getDescription().getFullName()
                         ), t);
+            }
+        }
+    }
+
+    @Override
+    public void dispatchIncomingMessage(@NotNull PlayerConnection source, @NotNull String channel, byte @NotNull [] message) {
+        if (source == null) {
+            throw new IllegalArgumentException("Player source cannot be null");
+        }
+        if (message == null) {
+            throw new IllegalArgumentException("Message cannot be null");
+        }
+        channel = validateAndCorrectChannel(channel);
+
+        Set<PluginMessageListenerRegistration> registrations = getIncomingChannelRegistrations(channel);
+
+        for (PluginMessageListenerRegistration registration : registrations) {
+            try {
+                registration.getListener().onPluginMessageReceived(channel, source, message);
+                if (source instanceof PlayerGameConnection gameConnection) {
+                    registration.getListener().onPluginMessageReceived(channel, gameConnection.getPlayer(), message);
+                }
+            } catch (Throwable t) {
+                registration.getPlugin().getLogger().log(Level.WARNING,
+                    String.format("Plugin %s generated an exception whilst handling plugin message",
+                        registration.getPlugin().getDescription().getFullName()
+                    ), t);
             }
         }
     }

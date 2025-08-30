@@ -19,8 +19,14 @@
  import org.slf4j.Logger;
  
  public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketListenerImpl implements ServerConfigurationPacketListener, TickablePacketListener {
-@@ -48,12 +_,26 @@
-     private ClientInformation clientInformation;
+@@ -44,16 +_,30 @@
+     private final GameProfile gameProfile;
+     private final Queue<ConfigurationTask> configurationTasks = new ConcurrentLinkedQueue<>();
+     @Nullable
+-    private ConfigurationTask currentTask;
+-    private ClientInformation clientInformation;
++    public ConfigurationTask currentTask; // Paper - public
++    public ClientInformation clientInformation; // Paper - public
      @Nullable
      private SynchronizeRegistriesTask synchronizeRegistriesTask;
 +    public io.papermc.paper.connection.PaperPlayerConfigurationConnection paperConnection; // Paper
@@ -56,8 +62,8 @@
 +        if (this.server.isDebugging()) {
 +            ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}, while in configuration phase {}", this.gameProfile.getName(), p_350569_.reason().getString(), this.currentTask != null ? this.currentTask.type().id() : "null");
 +        } else
-+            // Paper end
-+            LOGGER.info("{} lost connection: {}", this.gameProfile.getName(), p_350569_.reason().getString()); // Paper - log name instead of whole profile (as with other similar messages)
++        // Paper end
++        LOGGER.info("{} lost connection: {}", this.gameProfile.getName(), p_350569_.reason().getString()); // Paper - log name instead of whole profile (as with other similar messages)
          super.onDisconnect(p_350569_);
      }
  
@@ -80,7 +86,7 @@
          ServerLinks serverlinks = this.server.serverLinks();
 +        // CraftBukkit start
 +        CraftServerLinks wrapper = new CraftServerLinks(serverlinks);
-+        org.bukkit.event.player.PlayerLinksSendEvent event = new org.bukkit.event.player.PlayerLinksSendEvent(player.getBukkitEntity(), wrapper);
++        org.bukkit.event.player.PlayerLinksSendEvent event = new org.bukkit.event.player.PlayerLinksSendEvent(this.paperConnection, wrapper);
 +        player.getBukkitEntity().getServer().getPluginManager().callEvent(event);
 +        serverlinks = wrapper.getServerLinks();
 +        // CraftBukkit end
@@ -105,24 +111,12 @@
          this.configurationTasks.add(new JoinWorldTask());
          this.startNextTask();
      }
-@@ -95,11 +_,38 @@
+@@ -95,11 +_,26 @@
  
      private void addOptionalTasks() {
          this.server.getServerResourcePack().ifPresent(p_296496_ -> this.configurationTasks.add(new ServerResourcePackConfigurationTask(p_296496_)));
 +        // Neo: Gather modded configuration tasks and schedule them for execution
 +        this.configurationTasks.addAll(net.neoforged.fml.ModLoader.postEventWithReturn(new net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent(this)).getConfigurationTasks());
-+    }
-+
-+    @Override
-+    public void handleCustomPayload(net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket p_294276_) {
-+        // Neo: Perform modded network initialization when the client sends their channel list.
-+        if (p_294276_.payload() instanceof net.neoforged.neoforge.network.payload.ModdedNetworkQueryPayload moddedEnvironmentPayload) {
-+            this.connectionType = net.neoforged.neoforge.network.connection.ConnectionType.NEOFORGE;
-+            net.neoforged.neoforge.network.registration.NetworkRegistry.initializeNeoForgeConnection(this, moddedEnvironmentPayload.queries());
-+            return;
-+        }
-+
-+        super.handleCustomPayload(p_294276_); // Neo: Call super to invoke modded payload handling.
 +    }
 +
 +    @Override
@@ -177,7 +171,7 @@
          } catch (Exception exception) {
              LOGGER.error("Couldn't place player in world", (Throwable)exception);
              this.connection.send(new ClientboundDisconnectPacket(DISCONNECT_REASON_INVALID_DATA));
-@@ -175,4 +_,29 @@
+@@ -175,4 +_,36 @@
              this.startNextTask();
          }
      }
@@ -198,7 +192,14 @@
 +
 +    @Override
 +    public void handleCustomPayload(net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket packet) {
-+        super.handleCustomPayload(packet);
++        // Neo: Perform modded network initialization when the client sends their channel list.
++        if (packet.payload() instanceof net.neoforged.neoforge.network.payload.ModdedNetworkQueryPayload moddedEnvironmentPayload) {
++            this.connectionType = net.neoforged.neoforge.network.connection.ConnectionType.NEOFORGE;
++            net.neoforged.neoforge.network.registration.NetworkRegistry.initializeNeoForgeConnection(this, moddedEnvironmentPayload.queries());
++            return;
++        }
++
++        super.handleCustomPayload(packet); // Neo: Call super to invoke modded payload handling.
 +    }
 +
 +    @Override
