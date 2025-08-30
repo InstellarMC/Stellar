@@ -19,7 +19,49 @@
  import org.slf4j.Logger;
  
  public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketListenerImpl implements ServerConfigurationPacketListener, TickablePacketListener {
-@@ -72,8 +_,23 @@
+@@ -48,12 +_,26 @@
+     private ClientInformation clientInformation;
+     @Nullable
+     private SynchronizeRegistriesTask synchronizeRegistriesTask;
++    public io.papermc.paper.connection.PaperPlayerConfigurationConnection paperConnection; // Paper
+ 
+     public ServerConfigurationPacketListenerImpl(MinecraftServer p_294645_, Connection p_295787_, CommonListenerCookie p_302003_) {
+         super(p_294645_, p_295787_, p_302003_);
+         this.gameProfile = p_302003_.gameProfile();
+         this.clientInformation = p_302003_.clientInformation();
+-    }
++        this.paperConnection = new io.papermc.paper.connection.PaperPlayerConfigurationConnection(this); // Paper
++    }
++
++    // Paper start - configuration phase API
++    @Override
++    public io.papermc.paper.connection.PlayerCommonConnection getApiConnection() {
++        return this.paperConnection;
++    }
++
++    @Override
++    public net.kyori.adventure.audience.Audience getAudience() {
++        return this.paperConnection.getAudience();
++    }
++    // Paper end - configuration phase API
+ 
+     @Override
+     protected GameProfile playerProfile() {
+@@ -62,7 +_,12 @@
+ 
+     @Override
+     public void onDisconnect(DisconnectionDetails p_350569_) {
+-        LOGGER.info("{} lost connection: {}", this.gameProfile, p_350569_.reason().getString());
++        // Paper start - Debugging
++        if (this.server.isDebugging()) {
++            ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}, while in configuration phase {}", this.gameProfile.getName(), p_350569_.reason().getString(), this.currentTask != null ? this.currentTask.type().id() : "null");
++        } else
++            // Paper end
++            LOGGER.info("{} lost connection: {}", this.gameProfile.getName(), p_350569_.reason().getString()); // Paper - log name instead of whole profile (as with other similar messages)
+         super.onDisconnect(p_350569_);
+     }
+ 
+@@ -72,18 +_,42 @@
      }
  
      public void startConfiguration() {
@@ -27,6 +69,8 @@
 +        this.send(new net.neoforged.neoforge.network.payload.MinecraftUnregisterPayload(net.neoforged.neoforge.network.registration.NetworkRegistry.getInitialServerUnregisterChannels()));
 +        this.send(new net.neoforged.neoforge.network.payload.MinecraftRegisterPayload(net.neoforged.neoforge.network.registration.NetworkRegistry.getInitialListeningChannels(this.flow())));
 +        this.send(new net.neoforged.neoforge.network.payload.ModdedNetworkQueryPayload(java.util.Map.of()));
++
++        new io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigureEvent(this.paperConnection).callEvent(); // Paper
 +        this.send(new net.minecraft.network.protocol.common.ClientboundPingPacket(0));
 +    }
 +
@@ -41,9 +85,14 @@
 +        serverlinks = wrapper.getServerLinks();
 +        // CraftBukkit end
          if (!serverlinks.isEmpty()) {
-             this.send(new ClientboundServerLinksPacket(serverlinks.untrust()));
+-            this.send(new ClientboundServerLinksPacket(serverlinks.untrust()));
++            // Paper start
++            org.bukkit.craftbukkit.CraftServerLinks links = new org.bukkit.craftbukkit.CraftServerLinks(serverlinks);
++            new org.bukkit.event.player.PlayerLinksSendEvent(this.paperConnection, links).callEvent();
++            this.send(new ClientboundServerLinksPacket(links.getServerLinks().untrust()));
++            // Paper end
          }
-@@ -81,6 +_,8 @@
+ 
          LayeredRegistryAccess<RegistryLayer> layeredregistryaccess = this.server.registries();
          List<KnownPack> list = this.server.getResourceManager().listPacks().flatMap(p_325637_ -> p_325637_.location().knownPackInfo().stream()).toList();
          this.send(new ClientboundUpdateEnabledFeaturesPacket(FeatureFlags.REGISTRY.toNames(this.server.getWorldData().enabledFeatures())));
@@ -52,6 +101,10 @@
          this.synchronizeRegistriesTask = new SynchronizeRegistriesTask(list, layeredregistryaccess);
          this.configurationTasks.add(this.synchronizeRegistriesTask);
          this.addOptionalTasks();
++        this.configurationTasks.add(new io.papermc.paper.connection.PaperConfigurationTask(this)); // Paper
+         this.configurationTasks.add(new JoinWorldTask());
+         this.startNextTask();
+     }
 @@ -95,11 +_,38 @@
  
      private void addOptionalTasks() {
@@ -124,3 +177,33 @@
          } catch (Exception exception) {
              LOGGER.error("Couldn't place player in world", (Throwable)exception);
              this.connection.send(new ClientboundDisconnectPacket(DISCONNECT_REASON_INVALID_DATA));
+@@ -175,4 +_,29 @@
+             this.startNextTask();
+         }
+     }
++
++    // Paper start
++    @Override
++    public void disconnectAsync(final net.minecraft.network.DisconnectionDetails disconnectionInfo) {
++        if (this.cserver.isPrimaryThread()) {
++            this.disconnect(disconnectionInfo);
++            return;
++        }
++
++        this.connection.setReadOnly();
++        this.server.scheduleOnMain(() -> {
++            this.disconnect(disconnectionInfo); // Currently you cannot cancel disconnect during the config stage
++        });
++    }
++
++    @Override
++    public void handleCustomPayload(net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket packet) {
++        super.handleCustomPayload(packet);
++    }
++
++    @Override
++    public io.papermc.paper.connection.PaperPlayerConfigurationConnection paperConnection() {
++        return paperConnection;
++    }
++    // Paper end
+ }
