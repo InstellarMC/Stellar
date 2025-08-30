@@ -1,5 +1,12 @@
 --- a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
 +++ b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -1,5 +_,6 @@
+ package net.minecraft.world.entity.boss.enderdragon;
+ 
++import com.destroystokyo.paper.event.entity.TNTPrimeEvent;
+ import com.google.common.collect.Lists;
+ import com.mojang.logging.LogUtils;
+ import java.util.List;
 @@ -49,6 +_,8 @@
  import net.minecraft.world.level.pathfinder.Path;
  import net.minecraft.world.phys.AABB;
@@ -169,7 +176,7 @@
 +                }
 +                // Paper start - TNTPrimeEvent
 +                org.bukkit.block.Block tntBlock = CraftBlock.at(this.level(), blockposition);
-+                if (!new io.papermc.paper.event.block.TNTPrimeEvent(tntBlock, io.papermc.paper.event.block.TNTPrimeEvent.PrimeReason.EXPLOSION, explosionSource.getIndirectSourceEntity().getBukkitEntity()).callEvent())
++                if (!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.EXPLOSION, explosionSource.getIndirectSourceEntity().getBukkitEntity()).callEvent())
 +                    continue;
 +                // Paper end - TNTPrimeEvent
 +                nmsBlock.wasExploded(this.level(), blockposition, explosionSource);

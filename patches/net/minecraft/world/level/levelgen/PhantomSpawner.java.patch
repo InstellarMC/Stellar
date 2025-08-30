@@ -1,12 +1,5 @@
 --- a/net/minecraft/world/level/levelgen/PhantomSpawner.java
 +++ b/net/minecraft/world/level/levelgen/PhantomSpawner.java
-@@ -1,5 +_,6 @@
- package net.minecraft.world.level.levelgen;
- 
-+import io.papermc.paper.event.entity.PhantomPreSpawnEvent;
- import net.minecraft.core.BlockPos;
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.server.level.ServerPlayer;
 @@ -40,15 +_,17 @@
                      int i = 0;
  
@@ -38,7 +31,7 @@
  
                                              for (int i1 = 0; i1 < l; i1++) {
 +                                                // Paper start - PhantomPreSpawnEvent
-+                                                PhantomPreSpawnEvent eventPaper = new PhantomPreSpawnEvent(io.papermc.paper.util.MCUtil.toLocation(p_64576_, blockpos1), serverplayer.getBukkitEntity(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL);
++                                                com.destroystokyo.paper.event.entity.PhantomPreSpawnEvent eventPaper = new com.destroystokyo.paper.event.entity.PhantomPreSpawnEvent(io.papermc.paper.util.MCUtil.toLocation(p_64576_, blockpos1), serverplayer.getBukkitEntity(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL);
 +                                                if (!eventPaper.callEvent()) {
 +                                                    if (eventPaper.shouldAbortSpawn()) {
 +                                                        break;

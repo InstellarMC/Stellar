@@ -117,48 +117,63 @@
      }
  
      private static ListTag stringCollectionToTag(Set<String> p_277880_) {
-@@ -350,6 +_,20 @@
+@@ -350,7 +_,26 @@
  
      @Override
      public void setThundering(boolean p_78562_) {
+-        this.thundering = p_78562_;
++        // Paper start - Add cause to Weather/ThunderChangeEvents
++        this.setThundering(p_78562_, org.bukkit.event.weather.ThunderChangeEvent.Cause.UNKNOWN);
++    }
++    public void setThundering(boolean thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause cause) {
++        // Paper end - Add cause to Weather/ThunderChangeEvents
 +        // CraftBukkit start
-+        if (this.thundering == p_78562_) {
++        if (this.thundering == thundering) {
 +            return;
 +        }
 +
-+        org.bukkit.World world = Bukkit.getWorld(getLevelName());
++        org.bukkit.World world = Bukkit.getWorld(this.getLevelName());
 +        if (world != null) {
-+            ThunderChangeEvent thunder = new ThunderChangeEvent(world, p_78562_);
++            ThunderChangeEvent thunder = new ThunderChangeEvent(world, thundering, cause); // Paper - Add cause to Weather/ThunderChangeEvents
 +            Bukkit.getServer().getPluginManager().callEvent(thunder);
 +            if (thunder.isCancelled()) {
 +                return;
 +            }
 +        }
 +        // CraftBukkit end
-         this.thundering = p_78562_;
++        this.thundering = thundering;
      }
  
-@@ -370,6 +_,20 @@
+     @Override
+@@ -370,7 +_,27 @@
  
      @Override
      public void setRaining(boolean p_78576_) {
+-        this.raining = p_78576_;
++        // Paper start - Add cause to Weather/ThunderChangeEvents
++        this.setRaining(p_78576_, org.bukkit.event.weather.WeatherChangeEvent.Cause.UNKNOWN);
++    }
++
++    public void setRaining(boolean raining, org.bukkit.event.weather.WeatherChangeEvent.Cause cause) {
++        // Paper end - Add cause to Weather/ThunderChangeEvents
 +        // CraftBukkit start
-+        if (this.raining == p_78576_) {
++        if (this.raining == raining) {
 +            return;
 +        }
 +
 +        org.bukkit.World world = Bukkit.getWorld(this.getLevelName());
 +        if (world != null) {
-+            WeatherChangeEvent weather = new WeatherChangeEvent(world, p_78576_);
++            WeatherChangeEvent weather = new WeatherChangeEvent(world, raining, cause); // Paper - Add cause to Weather/ThunderChangeEvents
 +            Bukkit.getServer().getPluginManager().callEvent(weather);
 +            if (weather.isCancelled()) {
 +                return;
 +            }
 +        }
 +        // CraftBukkit end
-         this.raining = p_78576_;
++        this.raining = raining;
      }
  
+     @Override
 @@ -436,6 +_,12 @@
      @Override
      public void setDifficulty(Difficulty p_78521_) {

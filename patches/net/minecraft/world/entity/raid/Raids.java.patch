@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/raid/Raids.java
 +++ b/net/minecraft/world/entity/raid/Raids.java
-@@ -22,6 +_,7 @@
+@@ -22,9 +_,11 @@
  import net.minecraft.world.level.dimension.DimensionType;
  import net.minecraft.world.level.saveddata.SavedData;
  import net.minecraft.world.phys.Vec3;
@@ -8,7 +8,29 @@
  
  public class Raids extends SavedData {
      private static final String RAID_FILE_ID = "raids";
-@@ -111,11 +_,23 @@
++    public final Map<java.util.UUID, Integer> playerCooldowns = Maps.newHashMap(); // Purpur
+     public final Map<Integer, Raid> raidMap = Maps.newHashMap();
+     private final ServerLevel level;
+     private int nextAvailableID;
+@@ -46,6 +_,17 @@
+ 
+     public void tick() {
+         this.tick++;
++        // Purpur start
++        if (level.purpurConfig.raidCooldownSeconds != 0 && this.tick % 20 == 0) {
++            com.google.common.collect.ImmutableMap.copyOf(playerCooldowns).forEach((uuid, i) -> {
++                if (i < 1) {
++                    playerCooldowns.remove(uuid);
++                } else {
++                    playerCooldowns.put(uuid, i - 1);
++                }
++            });
++        }
++        // Purpur end
+         Iterator<Raid> iterator = this.raidMap.values().iterator();
+ 
+         while (iterator.hasNext()) {
+@@ -111,11 +_,25 @@
                  }
  
                  Raid raid = this.getOrCreateRaid(p_37964_.serverLevel(), blockpos1);
@@ -21,11 +43,13 @@
 +                */
 +
 +                if (!raid.isStarted() || (raid.isInProgress() && raid.getRaidOmenLevel() < raid.getMaxRaidOmenLevel())) { // CraftBukkit - fixed a bug with raid: players could add up Bad Omen level even when the raid had finished
++                    if (level.purpurConfig.raidCooldownSeconds != 0 && playerCooldowns.containsKey(p_37964_.getUUID())) return null; // Purpur
 +                    // CraftBukkit start
 +                    if (!CraftEventFactory.callRaidTriggerEvent(raid, p_37964_)) {
 +                        p_37964_.removeEffect(net.minecraft.world.effect.MobEffects.RAID_OMEN);
 +                        return null;
 +                    }
++                    if (level.purpurConfig.raidCooldownSeconds != 0) playerCooldowns.put(p_37964_.getUUID(), level.purpurConfig.raidCooldownSeconds); // Purpur
 +
 +                    if (!raid.isStarted() && !this.raidMap.containsKey(raid.getId())) {
 +                        this.raidMap.put(raid.getId(), raid);

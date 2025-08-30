@@ -1,5 +1,6 @@
 package org.bukkit.event.entity;
 
+import com.destroystokyo.paper.event.entity.EntityZapEvent;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.PigZombie;
@@ -9,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Stores data for pigs being zapped
  */
-public class PigZapEvent extends io.papermc.paper.event.entity.EntityZapEvent implements Cancellable { // Paper
+public class PigZapEvent extends EntityZapEvent implements Cancellable { // Paper
     // private static final HandlerList handlers = new HandlerList(); // Paper - moved in the super class
     private boolean canceled;
     private final PigZombie pigzombie;

@@ -1,9 +1,11 @@
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
-@@ -1,16 +_,26 @@
+@@ -1,16 +_,27 @@
  package net.minecraft.server.level;
  
-+import com.destroystokyo.paper.ClientOption;import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent;import com.mohistmc.youer.bukkit.inventory.InventoryOwner;
++import com.destroystokyo.paper.ClientOption;
++import com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent;
++import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent;import com.mohistmc.youer.bukkit.inventory.InventoryOwner;
 +import com.mohistmc.youer.plugins.KeepInventory;
  import com.google.common.net.InetAddresses;
  import com.mojang.authlib.GameProfile;
@@ -20,7 +22,6 @@
  import java.util.Optional;
  import java.util.OptionalInt;
  import java.util.Set;
-+import java.util.concurrent.atomic.AtomicReference;
 +import java.util.function.Consumer;
 +import java.util.function.IntConsumer;
 +import java.util.function.Supplier;
@@ -201,15 +202,31 @@
          @Override
          public void dataChanged(AbstractContainerMenu p_143462_, int p_143463_, int p_143464_) {
          }
-@@ -276,6 +_,67 @@
+@@ -276,6 +_,74 @@
      public final Object object;
      private int containerCounter;
      public boolean wonGame;
 +    private int containerUpdateDelay; // Paper - Configurable container update tick rate
++    public long loginTime; // Paper - Replace OfflinePlayer#getLastPlayed
++
++    // Mohist start
++    public boolean initialized = false;
++    // Mohist end
++    // Paper start - cancellable death event
++    public boolean queueHealthUpdatePacket;
++    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
++    // Paper end - cancellable death event
++    // Paper start - Optional per player mob spawns
++    public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
++    public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper
++    // Paper end - Optional per player mob spawns
++    public final int[] mobBackoffCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper - per player mob count backoff
++
 +    // CraftBukkit start
 +    public CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
 +    public net.kyori.adventure.text.Component adventure$displayName; // Paper
++    // public Component listName; // Stellar - respect neo; see #getTabListDisplayName
 +    public Location compassTarget;
 +    public int newExp = 0;
 +    public int newLevel = 0;
@@ -219,19 +236,10 @@
 +    public boolean joining = true;
 +    public boolean sentListPacket = false;
 +    // CraftBukkit end
-+
-+    // Mohist start
-+    public boolean initialized = false;
-+    // Mohist end
 +    public boolean isRealPlayer; // Paper
-+    public long loginTime; // Paper - Replace OfflinePlayer#getLastPlayed
-+    // Paper start - cancellable death event
-+    public boolean queueHealthUpdatePacket;
-+    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
-+    // Paper end - cancellable death event
++    public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
 +    public @Nullable String clientBrandName = null; // Paper - Brand support
 +    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
-+    public io.papermc.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
 +    public boolean purpurClient = false; // Purpur
 +    private boolean tpsBar = false; // Purpur
 +    private boolean compassBar = false; // Purpur

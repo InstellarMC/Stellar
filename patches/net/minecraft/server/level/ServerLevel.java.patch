@@ -14,8 +14,8 @@
  import com.mojang.datafixers.DataFixer;
  import com.mojang.datafixers.util.Pair;
  import com.mojang.logging.LogUtils;
-+import io.papermc.paper.event.entity.EntityAddToWorldEvent;
-+import io.papermc.paper.event.entity.EntityRemoveFromWorldEvent;
++import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
++import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
  import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
  import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  import it.unimi.dsi.fastutil.longs.LongSet;
@@ -90,7 +90,11 @@
  import net.minecraft.world.level.dimension.LevelStem;
  import net.minecraft.world.level.dimension.end.EndDragonFight;
  import net.minecraft.world.level.entity.EntityPersistentStorage;
-@@ -143,7 +_,9 @@
+@@ -139,11 +_,12 @@
+ import net.minecraft.world.level.entity.EntityTypeTest;
+ import net.minecraft.world.level.entity.LevelCallback;
+ import net.minecraft.world.level.entity.LevelEntityGetter;
+-import net.minecraft.world.level.entity.PersistentEntitySectionManager;
  import net.minecraft.world.level.gameevent.DynamicGameEventListener;
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.level.gameevent.GameEventDispatcher;
@@ -159,7 +163,7 @@
      @Nullable
      private EndDragonFight dragonFight;
 -    final Int2ObjectMap<EnderDragonPart> dragonParts = new Int2ObjectOpenHashMap<>();
-+    final Int2ObjectMap<net.neoforged.neoforge.entity.PartEntity<?>> dragonParts = new Int2ObjectOpenHashMap<>();
++    final Int2ObjectMap<net.neoforged.neoforge.entity.PartEntity<?>> dragonParts = new Int2ObjectOpenHashMap<>(); // Neo
      private final StructureManager structureManager;
      private final StructureCheck structureCheck;
      private final boolean tickTime;
@@ -660,13 +664,14 @@
          } else {
              this.dragonFight = null;
          }
-@@ -296,9 +_,75 @@
+@@ -296,10 +_,87 @@
          this.sleepStatus = new SleepStatus();
          this.gameEventDispatcher = new GameEventDispatcher(this);
          this.randomSequences = Objects.requireNonNullElseGet(
 -            p_288977_, () -> this.getDataStorage().computeIfAbsent(RandomSequences.factory(i), "random_sequences")
 -        );
 -    }
+-
 +            randomSequences, () -> this.getDataStorage().computeIfAbsent(RandomSequences.factory(i), "random_sequences")
 +        );
 +        // Paper start - rewrite chunk system
@@ -683,10 +688,13 @@
 +        this.chunkTaskScheduler = new ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler((ServerLevel)(Object)this, ca.spottedleaf.moonrise.common.util.MoonriseCommon.WORKER_POOL);
 +        // Paper end - rewrite chunk system
 +
++        // Neo start
 +        net.neoforged.neoforge.attachment.LevelAttachmentsSavedData.init(this);
 +        // Neo: Move the initialization of customSpawners to the end of costructor
 +        // Providing a fully initialized ServerLevel instance for the ServerLevelEvent.CustomSpawners
 +        this.customSpawners = net.neoforged.neoforge.event.EventHooks.getCustomSpawners(this, list);
++        // Neo end
++
 +        this.world = new CraftWorld(this, generator, biomeProvider, environment);
 +        this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
 +        this.K.setWorld(this);
@@ -736,9 +744,29 @@
 +        return this.getServer().getProfiler();
 +    }
 +    // Stellar end - lithium(profiler): Avoid indirection when accessing the profiler
- 
++
++    // Paper start
++    @Override
++    public boolean hasChunk(int chunkX, int chunkZ) {
++        return this.getChunkSource().getChunkAtIfLoadedImmediately(chunkX, chunkZ) != null;
++    }
++    // Paper end
++
++    /** @deprecated */
      @Deprecated
      @VisibleForTesting
+     public void setDragonFight(@Nullable EndDragonFight p_287779_) {
+@@ -310,8 +_,8 @@
+         this.serverLevelData.setClearWeatherTime(p_8607_);
+         this.serverLevelData.setRainTime(p_8608_);
+         this.serverLevelData.setThunderTime(p_8608_);
+-        this.serverLevelData.setRaining(p_8609_);
+-        this.serverLevelData.setThundering(p_8610_);
++        this.serverLevelData.setRaining(p_8609_, org.bukkit.event.weather.WeatherChangeEvent.Cause.COMMAND); // Paper - Add cause to Weather/ThunderChangeEvents
++        this.serverLevelData.setThundering(p_8610_, org.bukkit.event.weather.ThunderChangeEvent.Cause.COMMAND); // Paper - Add cause to Weather/ThunderChangeEvents
+     }
+ 
+     @Override
 @@ -340,12 +_,21 @@
  
          int i = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
@@ -766,12 +794,24 @@
              if (this.getGameRules().getBoolean(GameRules.RULE_WEATHER_CYCLE) && this.isRaining()) {
                  this.resetWeatherCycle();
              }
+@@ -360,9 +_,9 @@
+         if (!this.isDebug() && flag) {
+             long k = this.getGameTime();
+             profilerfiller.push("blockTicks");
+-            this.blockTicks.tick(k, 65536, this::tickBlock);
++            this.blockTicks.tick(k, paperConfig().environment.maxBlockTicks, this::tickBlock); // Paper - configurable max block ticks
+             profilerfiller.popPush("fluidTicks");
+-            this.fluidTicks.tick(k, 65536, this::tickFluid);
++            this.fluidTicks.tick(k, paperConfig().environment.maxFluidTicks, this::tickFluid); // Paper - configurable max block ticks
+             profilerfiller.pop();
+         }
+ 
 @@ -380,7 +_,7 @@
  
          this.handlingTick = false;
          profilerfiller.pop();
 -        boolean flag1 = !this.players.isEmpty() || !this.getForcedChunks().isEmpty();
-+        boolean flag1 = !paperConfig().unsupportedSettings.disableWorldTickingWhenEmpty || !this.players.isEmpty() || net.neoforged.neoforge.common.world.chunk.ForcedChunkManager.hasForcedChunks(this); // Neo: Replace vanilla's has forced chunk check with neo's that checks both the vanilla and neo added ones
++        boolean flag1 = !paperConfig().unsupportedSettings.disableWorldTickingWhenEmpty || !this.players.isEmpty()  || net.neoforged.neoforge.common.world.chunk.ForcedChunkManager.hasForcedChunks(this); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players // Paper - restore this // Neo: Replace vanilla's has forced chunk check with neo's that checks both the vanilla and neo added ones
          if (flag1) {
              this.resetEmptyTime();
          }
@@ -1138,7 +1178,7 @@
      }
  
      private void tickBlock(BlockPos p_184113_, Block p_184114_) {
-@@ -750,36 +_,57 @@
+@@ -750,36 +_,58 @@
          if (blockstate.is(p_184114_)) {
              blockstate.tick(this, p_184113_, this.random);
          }
@@ -1152,6 +1192,7 @@
 -    public void tickNonPassenger(Entity p_8648_) {
 -        p_8648_.setOldPosAndRot();
 +    public void tickNonPassenger(Entity entity) {
++        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(entity, "Cannot tick an entity off-main"); // Paper // Stellar - add entity param
 +        entity.setOldPosAndRot();
          ProfilerFiller profilerfiller = this.getProfiler();
 -        p_8648_.tickCount++;
@@ -1162,11 +1203,11 @@
 -        p_8648_.tick();
 +        // Neo: Permit cancellation of Entity#tick via EntityTickEvent.Pre
 +        final boolean isActive = io.papermc.paper.entity.activation.ActivationRange.checkIfActive(entity); // Paper - EAR 2
-+        if (!net.neoforged.neoforge.event.EventHooks.fireEntityTickPre(entity).isCanceled()) {
++        if (!net.neoforged.neoforge.event.EventHooks.fireEntityTickPre(entity).isCanceled()) { // Neo
 +        if (isActive) { // Paper - EAR 2
 +            entity.tick();
 +            entity.postTick(); // CraftBukkit
-+            net.neoforged.neoforge.event.EventHooks.fireEntityTickPost(entity);
++            net.neoforged.neoforge.event.EventHooks.fireEntityTickPost(entity); // Neo
 +        } else { entity.inactiveTick(); } // Paper - EAR 2
 +        }
          this.getProfiler().pop();

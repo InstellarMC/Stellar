@@ -1,5 +1,14 @@
 --- a/net/minecraft/world/entity/monster/Ravager.java
 +++ b/net/minecraft/world/entity/monster/Ravager.java
+@@ -2,6 +_,8 @@
+ 
+ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
++
++import com.destroystokyo.paper.event.entity.EntityJumpEvent;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.particles.ColorParticleOption;
+ import net.minecraft.core.particles.ParticleTypes;
 @@ -30,7 +_,6 @@
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.entity.raid.Raider;
@@ -40,7 +49,7 @@
  
                  if (!flag && this.onGround()) {
 -                    this.jumpFromGround();
-+                    if (new io.papermc.paper.event.entity.EntityJumpEvent(getBukkitLivingEntity()).callEvent()) { // Paper - Entity Jump API
++                    if (new EntityJumpEvent(getBukkitLivingEntity()).callEvent()) { // Paper - Entity Jump API
 +                        this.jumpFromGround();
 +                    } else { this.setJumping(false); } // Paper - Entity Jump API; setJumping(false) stops a potential loop
                  }
