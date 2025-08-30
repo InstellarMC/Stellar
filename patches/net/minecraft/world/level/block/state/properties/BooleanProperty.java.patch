@@ -1,0 +1,12 @@
+--- a/net/minecraft/world/level/block/state/properties/BooleanProperty.java
++++ b/net/minecraft/world/level/block/state/properties/BooleanProperty.java
+@@ -29,8 +_,7 @@
+         return p_61462_.toString();
+     }
+ 
+-    @Override
+-    public boolean equals(Object p_61471_) {
++    public boolean equals_unused(Object p_61471_) { // Paper - Perf: Optimize hashCode/equals
+         if (this == p_61471_) {
+             return true;
+         } else {

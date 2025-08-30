@@ -80,8 +80,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
     public void setOwner(AnimalTamer owner) {
         if (owner != null) {
             this.setTamed(true);
-            this.getHandle().setTargetReason(null, false);
-            this.getHandle().setTarget(null);
+            this.getHandle().setTarget(null, null, false);
             this.setOwnerUUID(owner.getUniqueId());
         } else {
             this.setTamed(false);

@@ -1,9 +1,9 @@
 package io.papermc.paper.event.server;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.network.StatusClient;
-import io.papermc.paper.profile.PlayerProfile;
-import io.papermc.paper.profile.ProfileProperty;
+import com.destroystokyo.paper.network.StatusClient;
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import io.papermc.paper.util.TransformingRandomAccessList;
 import java.util.ArrayList;
 import java.util.Collection;

@@ -182,6 +182,9 @@ dependencies {
     libraries("net.kyori:option:1.0.0")
     libraries("com.mohistmc:AutoRenamingTool:2.0.3") // Paper - remap plugins
     libraries("io.netty:netty-codec-haproxy:4.1.97.Final") // Paper - Add support for proxy protocol
+
+    // Spark
+    api(jarJar("me.lucko:spark-paper:1.10.133-20250413.112336-1"))
     // Paper end
 
     // LibraryLoader start
@@ -458,7 +461,7 @@ task youerJar(type: Jar, dependsOn: [youerJar0, downloadMultipleFiles, project('
     archiveClassifier = 'server'
     archiveExtension = 'jar'
     archiveBaseName = 'stellar' // Stellar
-    archiveVersion = '1.21.1-'//  + gradleutils.gitInfo.abbreviatedId // Stellar - fix configuration cache
+    archiveVersion = '1.21.1'//  + gradleutils.gitInfo.abbreviatedId // Stellar - fix configuration cache
     destinationDirectory = file('build/libs')
 
     manifest {

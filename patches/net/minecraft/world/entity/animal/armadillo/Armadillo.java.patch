@@ -1,5 +1,14 @@
 --- a/net/minecraft/world/entity/animal/armadillo/Armadillo.java
 +++ b/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+@@ -44,7 +_,7 @@
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.LevelAccessor;
+ import net.minecraft.world.level.block.state.BlockState;
+-import net.minecraft.world.level.gameevent.GameEvent;
++import net.minecraft.world.level.gameevent.GameEvent;import org.bukkit.event.entity.EntityDamageEvent;
+ 
+ public class Armadillo extends Animal {
+     public static final float BABY_SCALE = 0.6F;
 @@ -139,7 +_,9 @@
          this.level().getProfiler().pop();
          if (this.isAlive() && !this.isBaby() && --this.scuteTime <= 0) {
@@ -10,7 +19,7 @@
              this.gameEvent(GameEvent.ENTITY_PLACE);
              this.scuteTime = this.pickNextScuteDropTime();
          }
-@@ -274,24 +_,24 @@
+@@ -274,33 +_,39 @@
      }
  
      @Override
@@ -28,8 +37,12 @@
      @Override
 -    protected void actuallyHurt(DamageSource p_316204_, float p_316801_) {
 -        super.actuallyHurt(p_316204_, p_316801_);
-+    protected void actuallyHurt(DamageSource source, float amount) {
-+        super.actuallyHurt(source, amount);
++    public boolean actuallyHurt(DamageSource source, float amount, EntityDamageEvent event) { // CraftBukkit start - void -> boolean
++        final var result = super.actuallyHurt(source, amount, event);
++        if (!result) {
++            return false;
++        }
++        // CraftBukkit end
          if (!this.isNoAi() && !this.isDeadOrDying()) {
 -            if (p_316204_.getEntity() instanceof LivingEntity) {
 +            if (source.getEntity() instanceof LivingEntity) {
@@ -42,7 +55,10 @@
                  this.rollOut();
              }
          }
-@@ -300,7 +_,7 @@
++
++        return true; // CraftBukkit
+     }
+ 
      @Override
      public InteractionResult mobInteract(Player p_316559_, InteractionHand p_316119_) {
          ItemStack itemstack = p_316559_.getItemInHand(p_316119_);

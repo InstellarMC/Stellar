@@ -8,6 +8,15 @@
  import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
  import java.util.Arrays;
  import java.util.Collections;
+@@ -45,7 +_,7 @@
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.context.BlockPlaceContext;
+-import net.minecraft.world.level.BlockGetter;
++import net.minecraft.world.item.context.UseOnContext;import net.minecraft.world.level.BlockGetter;
+ import net.minecraft.world.level.EmptyBlockGetter;
+ import net.minecraft.world.level.Explosion;
+ import net.minecraft.world.level.Level;
 @@ -81,13 +_,14 @@
  import net.minecraft.world.phys.shapes.CollisionContext;
  import net.minecraft.world.phys.shapes.Shapes;
@@ -43,6 +52,22 @@
      }
  
      public BlockBehaviour.Properties properties() {
+@@ -156,7 +_,14 @@
+     }
+ 
+     protected void onPlace(BlockState p_60566_, Level p_60567_, BlockPos p_60568_, BlockState p_60569_, boolean p_60570_) {
+-    }
++        org.spigotmc.AsyncCatcher.catchOp("block onPlace"); // Spigot
++    }
++
++    // CraftBukkit start
++    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, @Nullable UseOnContext context) {
++        this.onPlace(state, world, pos, oldState, notify);
++    }
++    // CraftBukkit end
+ 
+     protected void onRemove(BlockState p_60515_, Level p_60516_, BlockPos p_60517_, BlockState p_60518_, boolean p_60519_) {
+         if (p_60515_.hasBlockEntity() && !p_60515_.is(p_60518_.getBlock())) {
 @@ -168,23 +_,24 @@
          if (!p_311951_.isAir() && p_312925_.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK) {
              Block block = p_311951_.getBlock();
@@ -316,6 +341,21 @@
              return this.pushReaction;
          }
  
+@@ -692,7 +_,13 @@
+         }
+ 
+         public void onPlace(Level p_60697_, BlockPos p_60698_, BlockState p_60699_, boolean p_60700_) {
+-            this.getBlock().onPlace(this.asState(), p_60697_, p_60698_, p_60699_, p_60700_);
++            // CraftBukkit start
++            this.onPlace(p_60697_, p_60698_, p_60699_, p_60700_, null);
++        }
++
++        public void onPlace(Level world, BlockPos blockposition, BlockState iblockdata, boolean flag, @Nullable UseOnContext context) {
++            this.getBlock().onPlace(this.asState(), world, blockposition, iblockdata, flag, context);
++            // CraftBukkit end
+         }
+ 
+         public void onRemove(Level p_60754_, BlockPos p_60755_, BlockState p_60756_, boolean p_60757_) {
 @@ -724,6 +_,9 @@
          }
  

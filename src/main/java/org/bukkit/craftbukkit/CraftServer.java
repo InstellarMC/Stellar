@@ -34,7 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
-import java.util.ArrayList;
+import java.nio.file.Paths;import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -54,8 +54,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
@@ -79,6 +77,7 @@ import net.minecraft.server.commands.ReloadCommand;
 import net.minecraft.server.dedicated.DedicatedPlayerList;
 import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.dedicated.DedicatedServerProperties;
+import net.minecraft.server.dedicated.DedicatedServerSettings;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
@@ -120,7 +119,6 @@ import net.minecraft.world.level.levelgen.WorldDimensions;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.saveddata.maps.MapId;
-import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraft.world.level.storage.LevelDataAndDimensions;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.PlayerDataStorage;
@@ -228,7 +226,7 @@ import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerChatTabCompleteEvent;
 import org.bukkit.event.server.BroadcastMessageEvent;
-import org.bukkit.event.server.TabCompleteEvent;
+import org.bukkit.event.server.ServerLoadEvent;import org.bukkit.event.server.TabCompleteEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.generator.BiomeProvider;
@@ -317,6 +315,7 @@ public final class CraftServer implements Server {
     public static Exception excessiveVelEx; // Paper - Velocity warnings
     private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
     private final io.papermc.paper.potion.PaperPotionBrewer potionBrewer; // Paper - Custom Potion Mixes
+    public final io.papermc.paper.SparksFly spark; // Paper - spark
     private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
 
     // Paper start - Folia region threading API
@@ -387,12 +386,17 @@ public final class CraftServer implements Server {
     public final boolean isOwnedByCurrentRegion(Entity entity) {
         return ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(((CraftEntity) entity).getHandleRaw());
     }
+
+    @Override
+    public final boolean isGlobalTickThread() {
+        return ca.spottedleaf.moonrise.common.util.TickThread.isTickThread();
+    }
     // Paper end - Folia reagion threading API
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
         ConfigurationSerialization.registerClass(CraftPlayerProfile.class);
-        ConfigurationSerialization.registerClass(io.papermc.paper.profile.CraftPlayerProfile.class); // Paper
+        ConfigurationSerialization.registerClass(com.destroystokyo.paper.profile.CraftPlayerProfile.class); // Paper
         CraftItemFactory.instance();
         CraftEntityFactory.instance();
     }
@@ -480,6 +484,7 @@ public final class CraftServer implements Server {
         }
         this.potionBrewer = new io.papermc.paper.potion.PaperPotionBrewer(console); // Paper - custom potion mixes
         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
+        this.spark = new io.papermc.paper.SparksFly(this);
     }
 
     // Youer start
@@ -1066,13 +1071,13 @@ public final class CraftServer implements Server {
         try {
             commands.performCommandCB(results, commandLine, commandLine, true);
         } catch (CommandException ex) {
-            this.pluginManager.callEvent(new io.papermc.paper.event.server.ServerExceptionEvent(new io.papermc.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
+            this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
             //target.timings.stopTiming(); // Spigot // Paper
             throw ex;
         } catch (Throwable ex) {
             //target.timings.stopTiming(); // Spigot // Paper
             String msg = "Unhandled exception executing '" + commandLine + "' in " + target;
-            this.pluginManager.callEvent(new io.papermc.paper.event.server.ServerExceptionEvent(new io.papermc.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
+            this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
             throw new CommandException(msg, ex);
         }
         // Paper end
@@ -1110,7 +1115,119 @@ public final class CraftServer implements Server {
 
     @Override
     public void reload() {
-        Youer.LOGGER.warn("For your server security, Bukkit reloading is not supported by Mohist.");
+        // Paper start - lifecycle events
+        if (io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.blocksPluginReloading()) {
+            throw new IllegalStateException(org.bukkit.command.defaults.ReloadCommand.RELOADING_DISABLED_MESSAGE);
+        }
+        // Paper end - lifecycle events
+        org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
+        this.reloadCount++;
+        this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
+        this.commandsConfiguration = YamlConfiguration.loadConfiguration(this.getCommandsConfigFile());
+
+        this.console.settings = new DedicatedServerSettings(Paths.get("server.properties"));
+        DedicatedServerProperties config = this.console.settings.getProperties();
+
+        this.console.setPvpAllowed(config.pvp);
+        this.console.setFlightAllowed(config.allowFlight);
+        this.console.setMotd(config.motd);
+        this.overrideSpawnLimits();
+        this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
+        TicketType.PLUGIN.timeout = Math.min(20, configuration.getInt("chunk-gc.period-in-ticks")); // Paper - cap plugin loads to 1 second
+        this.minimumAPI = ApiVersion.getOrCreateVersion(this.configuration.getString("settings.minimum-api"));
+        this.printSaveWarning = false;
+        this.console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
+        this.loadIcon();
+        this.loadCompatibilities();
+        CraftMagicNumbers.INSTANCE.getCommodore().updateReroute(activeCompatibilities::contains);
+
+        try {
+            this.playerList.getIpBans().load();
+        } catch (IOException ex) {
+            this.logger.log(Level.WARNING, "Failed to load banned-ips.json, " + ex.getMessage());
+        }
+        try {
+            this.playerList.getBans().load();
+        } catch (IOException ex) {
+            this.logger.log(Level.WARNING, "Failed to load banned-players.json, " + ex.getMessage());
+        }
+
+        org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
+        this.console.paperConfigurations.reloadConfigs(this.console);
+        this.console.stellarConfigurations.reloadConfigs(this.console); // Stellar
+        org.purpurmc.purpur.PurpurConfig.init((File) console.options.valueOf("purpur-settings")); // Purpur
+        for (ServerLevel world : this.console.getAllLevels()) {
+            // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
+            world.setSpawnSettings(world.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && config.spawnMonsters, config.spawnAnimals); // Paper - per level difficulty (from MinecraftServer#setDifficulty(ServerLevel, Difficulty, boolean))
+
+            for (SpawnCategory spawnCategory : SpawnCategory.values()) {
+                if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
+                    long ticksPerCategorySpawn = this.getTicksPerSpawns(spawnCategory);
+                    if (ticksPerCategorySpawn < 0) {
+                        world.ticksPerSpawnCategory.put(spawnCategory, CraftSpawnCategory.getDefaultTicksPerSpawn(spawnCategory));
+                    } else {
+                        world.ticksPerSpawnCategory.put(spawnCategory, ticksPerCategorySpawn);
+                    }
+                }
+            }
+            world.spigotConfig.init(); // Spigot
+            world.purpurConfig.init(); // Purpur
+        }
+
+        Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
+        this.commandMap.clearCommands(); // Paper - Move command reloading up
+        this.pluginManager.clearPlugins();
+        // Paper - move up
+        // Paper start
+        for (Plugin plugin : pluginClone) {
+            entityMetadata.removeAll(plugin);
+            worldMetadata.removeAll(plugin);
+            playerMetadata.removeAll(plugin);
+        }
+        // Paper end
+        this.reloadData();
+        org.spigotmc.SpigotConfig.registerCommands(); // Spigot
+        io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
+        this.spark.registerCommandBeforePlugins(this); // Paper - spark
+        org.purpurmc.purpur.PurpurConfig.registerCommands(); // Purpur
+        this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
+        this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+
+        int pollCount = 0;
+
+        // Wait for at most 2.5 seconds for plugins to close their threads
+        while (pollCount < 50 && this.getScheduler().getActiveWorkers().size() > 0) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {}
+            pollCount++;
+        }
+
+        List<BukkitWorker> overdueWorkers = this.getScheduler().getActiveWorkers();
+        for (BukkitWorker worker : overdueWorkers) {
+            Plugin plugin = worker.getOwner();
+            this.getLogger().log(Level.SEVERE, String.format(
+                "Nag author(s): '%s' of '%s' about the following: %s",
+                plugin.getDescription().getAuthors(),
+                plugin.getDescription().getFullName(),
+                "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
+            ));
+            if (console.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread(worker.getThread(), "still running"); // Paper - Debugging
+        }
+        io.papermc.paper.plugin.PluginInitializerManager.reload(this.console); // Paper
+        this.loadPlugins();
+        this.enablePlugins(PluginLoadOrder.STARTUP);
+        this.enablePlugins(PluginLoadOrder.POSTWORLD);
+        this.spark.registerCommandAfterPlugins(this); // Paper - spark
+        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
+        // Paper start - brigadier command API
+        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // to clear invalid state for event fire below
+        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // call commands event for regular plugins
+        this.helpMap.initializeCommands();
+        this.syncCommands(); // Refresh commands after event
+        // Paper end - brigadier command API
+        this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
+        org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
     }
 
     // Paper start - Wait for Async Tasks during shutdown
@@ -2537,35 +2654,35 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public io.papermc.paper.profile.PlayerProfile createProfile(@Nonnull UUID uuid) {
+    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nonnull UUID uuid) {
         return createProfile(uuid, null);
     }
 
     @Override
-    public io.papermc.paper.profile.PlayerProfile createProfile(@Nonnull String name) {
+    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nonnull String name) {
         return createProfile(null, name);
     }
 
     @Override
-    public io.papermc.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name) {
+    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name) {
         Player player = uuid != null ? Bukkit.getPlayer(uuid) : (name != null ? Bukkit.getPlayerExact(name) : null);
-        if (player != null) return new io.papermc.paper.profile.CraftPlayerProfile((CraftPlayer) player);
+        if (player != null) return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer) player);
 
-        return new io.papermc.paper.profile.CraftPlayerProfile(uuid, name);
+        return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
     }
 
     @Override
-    public io.papermc.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name) {
+    public com.destroystokyo.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name) {
         Player player = uuid != null ? Bukkit.getPlayer(uuid) : (name != null ? Bukkit.getPlayerExact(name) : null);
         if (player == null) {
-            return new io.papermc.paper.profile.CraftPlayerProfile(uuid, name);
+            return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
         }
 
         if (java.util.Objects.equals(uuid, player.getUniqueId()) && java.util.Objects.equals(name, player.getName())) {
-            return new io.papermc.paper.profile.CraftPlayerProfile((CraftPlayer) player);
+            return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer) player);
         }
 
-        final io.papermc.paper.profile.CraftPlayerProfile profile = new io.papermc.paper.profile.CraftPlayerProfile(uuid, name);
+        final com.destroystokyo.paper.profile.CraftPlayerProfile profile = new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
         profile.getGameProfile().getProperties().putAll(((CraftPlayer) player).getHandle().getGameProfile().getProperties());
         return profile;
     }
@@ -3196,9 +3313,9 @@ public final class CraftServer implements Server {
         return net.minecraft.server.MinecraftServer.getServer().hasStopped();
     }
 
-    private io.papermc.paper.entity.ai.MobGoals mobGoals = new io.papermc.paper.entity.ai.PaperMobGoals();
+    private com.destroystokyo.paper.entity.ai.MobGoals mobGoals = new com.destroystokyo.paper.entity.ai.PaperMobGoals();
     @Override
-    public io.papermc.paper.entity.ai.MobGoals getMobGoals() {
+    public com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
         return mobGoals;
     }
 

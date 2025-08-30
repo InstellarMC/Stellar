@@ -84,7 +84,7 @@ public class Action {
     @SneakyThrows
     public Action() {
         init();
-        this.mohistVer = DataParser.versionMap.get("youer");
+        this.mohistVer = DataParser.versionMap.get("stellar");
         this.neoforgeVer = DataParser.versionMap.get("neoforge");
         this.mcpVer = DataParser.versionMap.get("mcp");
         this.mcVer = DataParser.versionMap.get("minecraft");
@@ -129,7 +129,7 @@ public class Action {
         tasks.add(new FileCopyTask(universalJar, "data/neoforge-" + neoforgeVer + "-universal.jar", true));
 
         if (mohistVer == null || mcpVer == null) {
-            System.out.println("[Youer] There is an error with the installation, the forge / mcp version is not set.");
+            System.out.println("[Stellar] There is an error with the installation, the forge / mcp version is not set.");
             System.exit(0);
         }
 

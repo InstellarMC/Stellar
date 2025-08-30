@@ -16,14 +16,32 @@
  
  public class SetSpawnCommand {
      public static void register(CommandDispatcher<CommandSourceStack> p_138644_) {
-@@ -68,6 +_,7 @@
+@@ -67,12 +_,23 @@
+     private static int setSpawn(CommandSourceStack p_138650_, Collection<ServerPlayer> p_138651_, BlockPos p_138652_, float p_138653_) {
          ResourceKey<Level> resourcekey = p_138650_.getLevel().dimension();
  
++        final Collection<ServerPlayer> actualTargets = new java.util.ArrayList<>(); // Paper - Add PlayerSetSpawnEvent
          for (ServerPlayer serverplayer : p_138651_) {
-+            serverplayer.setRespawnPosition$cause(PlayerSpawnChangeEvent.Cause.COMMAND); // CraftBukkit
++            // Paper start - Add PlayerSetSpawnEvent
++            if (serverplayer.setRespawnPosition(resourcekey, p_138652_, p_138653_, true, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.COMMAND)) {
++                actualTargets.add(serverplayer);
++            }
              serverplayer.setRespawnPosition(resourcekey, p_138652_, p_138653_, true, false);
-         }
+-        }
++            // Paper end - Add PlayerSetSpawnEvent
++        }
++        // Paper start - Add PlayerSetSpawnEvent
++        if (actualTargets.isEmpty()) {
++            return 0;
++        }
++        // Paper end - Add PlayerSetSpawnEvent
  
+         String s = resourcekey.location().toString();
+-        if (p_138651_.size() == 1) {
++        if (actualTargets.size() == 1) { // Paper - Add PlayerSetSpawnEvent
+             p_138650_.sendSuccess(
+                 () -> Component.translatable(
+                         "commands.spawnpoint.success.single",
 @@ -80,7 +_,7 @@
                          p_138652_.getY(),
                          p_138652_.getZ(),
@@ -33,3 +51,11 @@
                          p_138651_.iterator().next().getDisplayName()
                      ),
                  true
+@@ -94,6 +_,6 @@
+             );
+         }
+ 
+-        return p_138651_.size();
++        return actualTargets.size(); // Paper - Add PlayerSetSpawnEvent
+     }
+ }

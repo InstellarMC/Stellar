@@ -1,5 +1,24 @@
 --- a/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
 +++ b/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
+@@ -18,6 +_,18 @@
+     private final int z;
+     private final ClientboundLevelChunkPacketData chunkData;
+     private final ClientboundLightUpdatePacketData lightData;
++    // Paper start - Async-Anti-Xray - Ready flag for the connection
++    private volatile boolean ready;
++
++    @Override
++    public boolean isReady() {
++        return this.ready;
++    }
++
++    public void setReady(boolean ready) {
++        this.ready = ready;
++    }
++    // Paper end
+ 
+     public ClientboundLevelChunkWithLightPacket(LevelChunk p_285290_, LevelLightEngine p_285254_, @Nullable BitSet p_285350_, @Nullable BitSet p_285304_) {
+         ChunkPos chunkpos = p_285290_.getPos();
 @@ -65,4 +_,11 @@
      public ClientboundLightUpdatePacketData getLightData() {
          return this.lightData;

@@ -16,13 +16,13 @@ public interface CraftMenuBuilder {
 
     static CraftMenuBuilder worldAccess(LocationBoundContainerBuilder builder) {
         return (ServerPlayer player, MenuType<?> type) -> {
-            return builder.build(player.nextContainerCounterInt(), player.getInventory(), ContainerLevelAccess.create(player.level(), player.blockPosition()));
+            return builder.build(player.nextContainerCounter(), player.getInventory(), ContainerLevelAccess.create(player.level(), player.blockPosition()));
         };
     }
 
     static CraftMenuBuilder tileEntity(TileEntityObjectBuilder objectBuilder, Block block) {
         return (ServerPlayer player, MenuType<?> type) -> {
-            return objectBuilder.build(player.blockPosition(), block.defaultBlockState()).createMenu(player.nextContainerCounterInt(), player.getInventory(), player);
+            return objectBuilder.build(player.blockPosition(), block.defaultBlockState()).createMenu(player.nextContainerCounter(), player.getInventory(), player);
         };
     }
 

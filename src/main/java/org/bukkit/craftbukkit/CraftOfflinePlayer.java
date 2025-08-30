@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
-import com.mojang.authlib.GameProfile;
-import io.papermc.paper.profile.CraftPlayerProfile;
+import com.destroystokyo.paper.profile.PlayerProfile;import com.mojang.authlib.GameProfile;
+import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
@@ -33,7 +33,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.profile.PlayerProfile;
 
 @SerializableAs("Player")
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
@@ -90,7 +89,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     @Override
-    public io.papermc.paper.profile.PlayerProfile getPlayerProfile() {
+    public PlayerProfile getPlayerProfile() {
         return CraftPlayerProfile.asBukkitCopy(this.profile); // Paper
     }
 
@@ -122,17 +121,17 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     @Override
-    public BanEntry<io.papermc.paper.profile.PlayerProfile> ban(String reason, Date expires, String source) { // Paper - fix ban list API
+    public BanEntry<PlayerProfile> ban(String reason, Date expires, String source) { // Paper - fix ban list API
         return ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source);
     }
 
     @Override
-    public BanEntry<io.papermc.paper.profile.PlayerProfile> ban(String reason, Instant expires, String source) { // Paper - fix ban list API
+    public BanEntry<PlayerProfile> ban(String reason, Instant expires, String source) { // Paper - fix ban list API
         return ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source);
     }
 
     @Override
-    public BanEntry<io.papermc.paper.profile.PlayerProfile> ban(String reason, Duration duration, String source) { // Paper - fix ban list API
+    public BanEntry<PlayerProfile> ban(String reason, Duration duration, String source) { // Paper - fix ban list API
         return ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, duration, source);
     }
 

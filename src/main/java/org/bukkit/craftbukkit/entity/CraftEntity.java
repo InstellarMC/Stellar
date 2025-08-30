@@ -4,10 +4,8 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Lists;
 import com.mohistmc.youer.neoforge.EntityClassLookup;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -52,7 +50,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityRemoveEvent.Cause;
+import org.bukkit.event.entity.EntityRemoveEvent;import org.bukkit.event.entity.EntityRemoveEvent.Cause;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.permissions.PermissibleBase;
@@ -76,7 +74,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     private EntityDamageEvent lastDamageEvent;
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
     protected net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
-    // Paper start - Folia shedulers
+    // Paper start - Folia schedulers
     public final io.papermc.paper.threadedregions.EntityScheduler taskScheduler = new io.papermc.paper.threadedregions.EntityScheduler(this);
     private final io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler apiScheduler = new io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler(this);
 
@@ -132,7 +130,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return (CraftEntity) entityTypeData.convertFunction().apply(server, entity);
         }
 
-        return (CraftEntity) EntityClassLookup.getEntityTypeData(entity).convertFunction().apply(server, entity);
+        return (CraftEntity) EntityClassLookup.getEntityTypeData(entity).convertFunction().apply(server, entity); // Stellar
     }
 
     @Override
@@ -268,6 +266,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         boolean ignorePassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
         // Don't allow teleporting between worlds while keeping passengers
         if (flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS) && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
+            if (!new org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent(entity.getBukkitEntity(), org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent.Reason.IS_VEHICLE, cause).callEvent()) // Purpur
             return false;
         }
 
@@ -276,6 +275,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return false;
         }
         // Paper end
+
         if ((!ignorePassengers && this.entity.isVehicle()) || this.entity.isRemoved()) { // Paper - Teleport passenger API
             return false;
         }
@@ -303,7 +303,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         // entity.setLocation() throws no event, and so cannot be cancelled
-        this.entity.absMoveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        this.entity.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
         // SPIGOT-619: Force sync head rotation also
         this.entity.setYHeadRot(location.getYaw());
 
@@ -326,7 +326,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         AsyncCatcher.catchOp("getNearbyEntities"); // Spigot
 
         List<Entity> notchEntityList = this.entity.level().getEntities(this.entity, this.entity.getBoundingBox().inflate(x, y, z), Predicates.alwaysTrue());
-        List<org.bukkit.entity.Entity> bukkitEntityList = new ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
+        List<org.bukkit.entity.Entity> bukkitEntityList = new java.util.ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
 
         for (Entity e : notchEntityList) {
             bukkitEntityList.add(e.getBukkitEntity());
@@ -401,7 +401,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public void remove() {
         this.entity.pluginRemoved = true;
-        this.entity.discard(this.getHandle().generation ? null : Cause.PLUGIN);
+        this.entity.discard(this.getHandle().generation ? null : EntityRemoveEvent.Cause.PLUGIN);
     }
 
     @Override
@@ -591,8 +591,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public int hashCode() {
         return getUniqueId().hashCode();
+        // Paper end
     }
-    // Paper end
 
     @Override
     public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
@@ -722,10 +722,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public Set<Player> getTrackedBy() {
         Preconditions.checkState(!this.entity.generation, "Cannot get tracking players during world generation");
-        Builder<Player> players = ImmutableSet.builder();
+        ImmutableSet.Builder<Player> players = ImmutableSet.builder();
 
         ServerLevel world = ((CraftWorld) this.getWorld()).getHandle();
-        TrackedEntity entityTracker = world.getChunkSource().chunkMap.entityMap.get(this.getEntityId());
+        ChunkMap.TrackedEntity entityTracker = world.getChunkSource().chunkMap.entityMap.get(this.getEntityId());
 
         if (entityTracker != null) {
             for (ServerPlayerConnection connection : entityTracker.seenBy) {
@@ -974,7 +974,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public String getAsString() {
         CompoundTag tag = new CompoundTag();
-        if (!this.getHandle().saveAsPassengerCB(tag, false)) {
+        if (!this.getHandle().saveAsPassenger(tag, false)) {
             return null;
         }
 
@@ -1007,7 +1007,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     private Entity copy(Level level) {
         CompoundTag compoundTag = new CompoundTag();
-        this.getHandle().saveAsPassengerCB(compoundTag, false);
+        this.getHandle().saveAsPassenger(compoundTag, false);
 
         return net.minecraft.world.entity.EntityType.loadEntityRecursive(compoundTag, level, java.util.function.Function.identity());
     }
@@ -1041,7 +1041,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         ServerLevel world = ((CraftWorld) this.getWorld()).getHandle();
-        TrackedEntity entityTracker = world.getChunkSource().chunkMap.entityMap.get(this.getEntityId());
+        ChunkMap.TrackedEntity entityTracker = world.getChunkSource().chunkMap.entityMap.get(this.getEntityId());
 
         if (entityTracker == null) {
             return;
@@ -1097,43 +1097,40 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         net.minecraft.server.level.ServerLevel world = ((CraftWorld)locationClone.getWorld()).getHandle();
         java.util.concurrent.CompletableFuture<Boolean> ret = new java.util.concurrent.CompletableFuture<>();
 
-        /*
         world.loadChunksForMoveAsync(getHandle().getBoundingBoxAt(locationClone.getX(), locationClone.getY(), locationClone.getZ()),
-                this instanceof CraftPlayer ? ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGHER : ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL, (list) -> {
-                    net.minecraft.server.level.ServerChunkCache chunkProviderServer = world.getChunkSource();
-                    for (net.minecraft.world.level.chunk.ChunkAccess chunk : list) {
-                        chunkProviderServer.addTicketAtLevel(net.minecraft.server.level.TicketType.POST_TELEPORT, chunk.getPos(), 33, CraftEntity.this.getEntityId());
-                    }
-                    net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
-                        try {
-                            ret.complete(CraftEntity.this.teleport(locationClone, cause, teleportFlags) ? Boolean.TRUE : Boolean.FALSE);
-                        } catch (Throwable throwable) {
-                            if (throwable instanceof ThreadDeath) {
-                                throw (ThreadDeath)throwable;
-                            }
-                            net.minecraft.server.MinecraftServer.LOGGER.error("Failed to teleport entity " + CraftEntity.this, throwable);
-                            ret.completeExceptionally(throwable);
+            this instanceof CraftPlayer ? ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGHER : ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL, (list) -> {
+                net.minecraft.server.level.ServerChunkCache chunkProviderServer = world.getChunkSource();
+                for (net.minecraft.world.level.chunk.ChunkAccess chunk : list) {
+                    chunkProviderServer.addTicketAtLevel(net.minecraft.server.level.TicketType.POST_TELEPORT, chunk.getPos(), 33, CraftEntity.this.getEntityId());
+                }
+                net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
+                    try {
+                        ret.complete(CraftEntity.this.teleport(locationClone, cause, teleportFlags) ? Boolean.TRUE : Boolean.FALSE);
+                    } catch (Throwable throwable) {
+                        if (throwable instanceof ThreadDeath) {
+                            throw (ThreadDeath)throwable;
                         }
-                    });
+                        net.minecraft.server.MinecraftServer.LOGGER.error("Failed to teleport entity " + CraftEntity.this, throwable);
+                        ret.completeExceptionally(throwable);
+                    }
                 });
-
-         */
+            });
 
         return ret;
     }
     // Paper end - more teleport API / async chunk API
 
     // Spigot start
-    private final Spigot spigot = new Spigot()
+    private final org.bukkit.entity.Entity.Spigot spigot = new org.bukkit.entity.Entity.Spigot()
     {
 
         @Override
-        public void sendMessage(BaseComponent component)
+        public void sendMessage(net.md_5.bungee.api.chat.BaseComponent component)
         {
         }
 
         @Override
-        public void sendMessage(BaseComponent... components)
+        public void sendMessage(net.md_5.bungee.api.chat.BaseComponent... components)
         {
         }
 
@@ -1148,25 +1145,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
     };
 
-    public Spigot spigot()
+    public org.bukkit.entity.Entity.Spigot spigot()
     {
         return this.spigot;
     }
     // Spigot end
-
-    // Paper start - Entity#fromMobSpawner
-    @Override
-    public boolean fromMobSpawner() {
-        return this.getHandle().spawnedViaMobSpawner;
-    }
-    // Paper end - Entity#fromMobSpawner
-
-    // Paper start - entity spawn reason API
-    @Override
-    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason getEntitySpawnReason() {
-        return getHandle().spawnReason;
-    }
-    // Paper end - entity spawn reason API
 
     // Paper start - entity origin API
     @Override
@@ -1185,51 +1168,19 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
     // Paper end - entity origin API
 
-    // Paper start - raw entity serialization API
+    // Paper start - Entity#fromMobSpawner
     @Override
-    public boolean spawnAt(Location location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
-        Preconditions.checkNotNull(location, "location cannot be null");
-        Preconditions.checkNotNull(reason, "reason cannot be null");
-        this.entity.setLevel(((CraftWorld) location.getWorld()).getHandle());
-        this.entity.setPos(location.getX(), location.getY(), location.getZ());
-        this.entity.setRot(location.getYaw(), location.getPitch());
-        return !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
+    public boolean fromMobSpawner() {
+        return this.getHandle().spawnedViaMobSpawner;
     }
-    // Paper end - raw entity serialization API
+    // Paper end - Entity#fromMobSpawner
 
-    // Paper start - entity powdered snow API
+    // Paper start - entity spawn reason API
     @Override
-    public boolean isInPowderedSnow() {
-        return getHandle().isInPowderSnow || getHandle().wasInPowderSnow; // depending on the location in the entity "tick" either could be needed.
+    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason getEntitySpawnReason() {
+        return getHandle().spawnReason;
     }
-    // Paper end - entity powdered snow API
-
-    // Paper start - entity body yaw API
-    @Override
-    public double getX() {
-        return this.entity.getX();
-    }
-
-    @Override
-    public double getY() {
-        return this.entity.getY();
-    }
-
-    @Override
-    public double getZ() {
-        return this.entity.getZ();
-    }
-
-    @Override
-    public float getPitch() {
-        return this.entity.getXRot();
-    }
-
-    @Override
-    public float getYaw() {
-        return this.entity.getBukkitYaw();
-    }
-    // Paper end - entity body yaw API
+    // Paper end - entity spawn reason API
 
     // Paper start - entity liquid API
     @Override
@@ -1292,16 +1243,51 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
     // Paper end - tracked players API
 
-    // Paper start - broadcast hurt animation
+    // Paper start - raw entity serialization API
     @Override
-    public void broadcastHurtAnimation(java.util.Collection<Player> players) {
-        //noinspection SuspiciousMethodCalls
-        Preconditions.checkArgument(!players.contains(this), "Cannot broadcast hurt animation to self without a yaw");
-        for (final org.bukkit.entity.Player player : players) {
-            ((CraftPlayer) player).sendHurtAnimation(0, this);
-        }
+    public boolean spawnAt(Location location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
+        Preconditions.checkNotNull(location, "location cannot be null");
+        Preconditions.checkNotNull(reason, "reason cannot be null");
+        this.entity.setLevel(((CraftWorld) location.getWorld()).getHandle());
+        this.entity.setPos(location.getX(), location.getY(), location.getZ());
+        this.entity.setRot(location.getYaw(), location.getPitch());
+        return !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
     }
-    // Paper end - broadcast hurt animation
+    // Paper end - raw entity serialization API
+
+    // Paper start - entity powdered snow API
+    @Override
+    public boolean isInPowderedSnow() {
+        return getHandle().isInPowderSnow || getHandle().wasInPowderSnow; // depending on the location in the entity "tick" either could be needed.
+    }
+    // Paper end - entity powdered snow API
+
+    // Paper start - entity body yaw API
+    @Override
+    public double getX() {
+        return this.entity.getX();
+    }
+
+    @Override
+    public double getY() {
+        return this.entity.getY();
+    }
+
+    @Override
+    public double getZ() {
+        return this.entity.getZ();
+    }
+
+    @Override
+    public float getPitch() {
+        return this.entity.getXRot();
+    }
+
+    @Override
+    public float getYaw() {
+        return this.entity.getBukkitYaw();
+    }
+    // Paper end - entity body yaw API
 
     // Paper start - missing entity api
     @Override
@@ -1348,6 +1334,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return this.getHandle().getScoreboardName();
     }
     // Paper end - entity scoreboard name
+
+    // Paper start - broadcast hurt animation
+    @Override
+    public void broadcastHurtAnimation(java.util.Collection<Player> players) {
+        //noinspection SuspiciousMethodCalls
+        Preconditions.checkArgument(!players.contains(this), "Cannot broadcast hurt animation to self without a yaw");
+        for (final org.bukkit.entity.Player player : players) {
+            ((CraftPlayer) player).sendHurtAnimation(0, this);
+        }
+    }
+    // Paper end - broadcast hurt animation
 
     // Purpur start
     @Override

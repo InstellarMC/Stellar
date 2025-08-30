@@ -1,6 +1,6 @@
 package org.bukkit;
 
-import com.google.common.base.Preconditions;
+import com.destroystokyo.paper.ParticleBuilder;import com.google.common.base.Preconditions;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -196,13 +196,13 @@ public enum Particle implements Keyed {
 
     // Paper start - Particle API expansion
     /**
-     * Creates a {@link io.papermc.paper.ParticleBuilder}
+     * Creates a {@link ParticleBuilder}
      *
-     * @return a {@link io.papermc.paper.ParticleBuilder} for the particle
+     * @return a {@link ParticleBuilder} for the particle
      */
     @NotNull
-    public io.papermc.paper.ParticleBuilder builder() {
-        return new io.papermc.paper.ParticleBuilder(this);
+    public ParticleBuilder builder() {
+        return new ParticleBuilder(this);
     }
     // Paper end
 

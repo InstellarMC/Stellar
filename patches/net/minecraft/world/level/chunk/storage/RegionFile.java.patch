@@ -13,7 +13,7 @@
  import net.minecraft.util.profiling.jfr.JvmProfiler;
  import net.minecraft.world.level.ChunkPos;
  import org.slf4j.Logger;
-@@ -44,6 +_,354 @@
+@@ -44,19 +_,369 @@
      private final IntBuffer timestamps;
      @VisibleForTesting
      protected final RegionBitmap usedSectors = new RegionBitmap();
@@ -367,8 +367,10 @@
 +    // Paper end - Attempt to recalculate regionfile header if it is corrupt
  
      public RegionFile(RegionStorageInfo p_326174_, Path p_196950_, Path p_196951_, boolean p_196952_) throws IOException {
-         this(p_326174_, p_196950_, p_196951_, RegionFileVersion.getSelected(), p_196952_);
-@@ -52,11 +_,13 @@
+-        this(p_326174_, p_196950_, p_196951_, RegionFileVersion.getSelected(), p_196952_);
++        this(p_326174_, p_196950_, p_196951_, RegionFileVersion.getCompressionFormat(), p_196952_);
+     }
+ 
      public RegionFile(RegionStorageInfo p_326221_, Path p_63633_, Path p_63634_, RegionFileVersion p_63635_, boolean p_63636_) throws IOException {
          this.info = p_326221_;
          this.path = p_63633_;
@@ -522,6 +524,14 @@
              ByteBuffer bytebuffer = ByteBuffer.allocate(l);
              this.file.read(bytebuffer, (long)(j * 4096));
              bytebuffer.flip();
+@@ -260,6 +_,7 @@
+                     return true;
+                 }
+             } catch (IOException ioexception) {
++                com.destroystokyo.paper.util.SneakyThrow.sneaky(ioexception); // Paper - Chunk save reattempt; we want the upper try/catch to retry this
+                 return false;
+             }
+         }
 @@ -318,9 +_,14 @@
      }
  

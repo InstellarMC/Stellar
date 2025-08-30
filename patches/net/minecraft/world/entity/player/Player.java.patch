@@ -73,7 +73,7 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      public static final HumanoidArm DEFAULT_MAIN_HAND = HumanoidArm.RIGHT;
      public static final int DEFAULT_MODEL_CUSTOMIZATION = 0;
-@@ -150,7 +_,7 @@
+@@ -150,16 +_,16 @@
          .build();
      private static final EntityDataAccessor<Float> DATA_PLAYER_ABSORPTION_ID = SynchedEntityData.defineId(Player.class, EntityDataSerializers.FLOAT);
      private static final EntityDataAccessor<Integer> DATA_SCORE_ID = SynchedEntityData.defineId(Player.class, EntityDataSerializers.INT);
@@ -82,16 +82,18 @@
      protected static final EntityDataAccessor<Byte> DATA_PLAYER_MAIN_HAND = SynchedEntityData.defineId(Player.class, EntityDataSerializers.BYTE);
      protected static final EntityDataAccessor<CompoundTag> DATA_SHOULDER_LEFT = SynchedEntityData.defineId(Player.class, EntityDataSerializers.COMPOUND_TAG);
      protected static final EntityDataAccessor<CompoundTag> DATA_SHOULDER_RIGHT = SynchedEntityData.defineId(Player.class, EntityDataSerializers.COMPOUND_TAG);
-@@ -159,7 +_,7 @@
-     protected PlayerEnderChestContainer enderChestInventory = new PlayerEnderChestContainer();
+     private long timeEntitySatOnShoulder;
+     final Inventory inventory = new Inventory(this);
+-    protected PlayerEnderChestContainer enderChestInventory = new PlayerEnderChestContainer();
++    protected PlayerEnderChestContainer enderChestInventory = new PlayerEnderChestContainer(this); // CraftBukkit - add "this" to constructor
      public final InventoryMenu inventoryMenu;
      public AbstractContainerMenu containerMenu;
 -    protected FoodData foodData = new FoodData();
-+    protected FoodData foodData = new FoodData().player(this);
++    protected FoodData foodData = new FoodData(this); // CraftBukkit - add "this" to constructor
      protected int jumpTriggerTime;
      public float oBob;
      public float bob;
-@@ -179,25 +_,65 @@
+@@ -179,25 +_,68 @@
      public int enchantmentSeed;
      protected final float defaultFlySpeed = 0.02F;
      private int lastLevelUpTime;
@@ -117,6 +119,9 @@
 +    private long lastDayTimeTick = -1L; // Neo: Used to limit TIME_SINCE_REST increases when day length is non-standard. No need to persist, at most Phantoms will spawn one tick too early for each save/load cycle.
 +    public boolean affectsSpawning = true; // Paper - Affects Spawning API
 +    public net.kyori.adventure.util.TriState flyingFallDamage = net.kyori.adventure.util.TriState.NOT_SET; // Paper - flying fall damage
++    public int sixRowEnderchestSlotCount = -1; // Purpur
++    public int burpDelay = 0; // Purpur
++    public boolean canPortalInstant = false; // Purpur
 +
 +    // CraftBukkit start
 +    public boolean fauxSleeping;
@@ -169,11 +174,17 @@
      }
  
      @Override
-@@ -245,6 +_,7 @@
+@@ -245,6 +_,13 @@
  
      @Override
      public void tick() {
-+        net.neoforged.neoforge.event.EventHooks.firePlayerTickPre(this);
++        net.neoforged.neoforge.event.EventHooks.firePlayerTickPre(this); // Neo
++        // Purpur start
++        if (this.burpDelay > 0 && --this.burpDelay == 0) {
++            this.level().playSound(null, getX(), getY(), getZ(), SoundEvents.PLAYER_BURP, SoundSource.PLAYERS, 1.0F, this.level().random.nextFloat() * 0.1F + 0.9F);
++        }
++        // Purpur end
++
          this.noPhysics = this.isSpectator();
          if (this.isSpectator()) {
              this.setOnGround(false);
@@ -553,7 +564,7 @@
                  if (this.useItem.isEmpty()) {
                      if (interactionhand == InteractionHand.MAIN_HAND) {
                          this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-@@ -949,27 +_,37 @@
+@@ -949,29 +_,40 @@
          }
      }
  
@@ -586,7 +597,7 @@
 +            if (!this.isInvulnerableTo(source)) {
 +                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ARMOR, this.damageContainers.peek().getNewDamage() - this.getDamageAfterArmorAbsorb(source, this.damageContainers.peek().getNewDamage()));
 +                this.getDamageAfterMagicAbsorb(source, this.damageContainers.peek().getNewDamage());
-+                float damage = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek());
++                float damage = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek());  // Neo
 +                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION, Math.min(this.getAbsorptionAmount(), damage));
 +                float absorbed = Math.min(damage, this.damageContainers.peek().getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION));
 +                this.setAbsorptionAmount(Math.max(0, this.getAbsorptionAmount() - absorbed));
@@ -607,10 +618,13 @@
 +                    this.gameEvent(GameEvent.ENTITY_DAMAGE);
 +                    this.onDamageTaken(this.damageContainers.peek());
 +                }
-+                net.neoforged.neoforge.common.CommonHooks.onLivingDamagePost(this, this.damageContainers.peek());
++                net.neoforged.neoforge.common.CommonHooks.onLivingDamagePost(this, this.damageContainers.peek()); // Neo
              }
          }
++        return false; // CraftBukkit
      }
+ 
+     public boolean isTextFilteringEnabled() {
 @@ -1014,6 +_,8 @@
  
              return InteractionResult.PASS;
@@ -902,24 +916,32 @@
          this.inventoryMenu.removed(this);
          if (this.containerMenu != null && this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1384,6 +_,12 @@
+@@ -1384,13 +_,26 @@
          return this.containerMenu != this.inventoryMenu;
      }
  
+-    public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos p_36203_) {
+-        this.startSleeping(p_36203_);
 +    protected AtomicBoolean startSleepInBed_force = new AtomicBoolean(false);
 +    public Player forceSleepInBed(boolean force) {
 +        startSleepInBed_force.set(force);
 +        return this;
 +    }
 +
-     public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos p_36203_) {
-         this.startSleeping(p_36203_);
++    public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos pos) {
++        // CraftBukkit start
++        return this.startSleepInBed(pos, false);
++    }
++
++    public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos pos, boolean force) {
++        // CraftBukkit end
++        this.startSleeping(pos);
          this.sleepCounter = 0;
-@@ -1391,6 +_,7 @@
+         return Either.right(Unit.INSTANCE);
      }
  
      public void stopSleepInBed(boolean p_36226_, boolean p_36227_) {
-+        net.neoforged.neoforge.event.EventHooks.onPlayerWakeup(this, p_36226_, p_36227_);
++        net.neoforged.neoforge.event.EventHooks.onPlayerWakeup(this, p_36226_, p_36227_); // Neo
          super.stopSleeping();
          if (this.level() instanceof ServerLevel && p_36227_) {
              ((ServerLevel)this.level()).updateSleepingPlayerList();
@@ -1042,13 +1064,31 @@
          this.experienceLevel += p_36276_;
          if (this.experienceLevel < 0) {
              this.experienceLevel = 0;
-@@ -1664,10 +_,27 @@
-     public void causeFoodExhaustion(float p_36400_) {
+@@ -1660,11 +_,29 @@
+             return this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2;
+         }
+     }
++    // Paper start - send while respecting visibility
++    private static void sendSoundEffect(Player fromEntity, double x, double y, double z, SoundEvent soundEffect, SoundSource soundCategory, float volume, float pitch) {
++        fromEntity.level().playSound(fromEntity, x, y, z, soundEffect, soundCategory, volume, pitch); // This will not send the effect to the entity itself
++        if (fromEntity instanceof ServerPlayer serverPlayer) {
++            serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.wrapAsHolder(soundEffect), soundCategory, x, y, z, volume, pitch, fromEntity.random.nextLong()));
++        }
++    }
++    // Paper end - send while respecting visibility
+ 
+-    public void causeFoodExhaustion(float p_36400_) {
++    // CraftBukkit start
++    public void causeFoodExhaustion(float exhaustion) {
++        this.causeFoodExhaustion(exhaustion, EntityExhaustionEvent.ExhaustionReason.UNKNOWN);
++    }
++    public void causeFoodExhaustion(float f, EntityExhaustionEvent.ExhaustionReason reason) {
++        // CraftBukkit end
          if (!this.abilities.invulnerable) {
              if (!this.level().isClientSide) {
 -                this.foodData.addExhaustion(p_36400_);
 +                // CraftBukkit start
-+                EntityExhaustionEvent event = CraftEventFactory.callPlayerExhaustionEvent(this, causeFoodExhaustion$reason, p_36400_);
++                EntityExhaustionEvent event = CraftEventFactory.callPlayerExhaustionEvent(this, reason, f);
 +                if (!event.isCancelled()) {
 +                    this.foodData.addExhaustion(event.getExhaustion());
 +                }
@@ -1056,21 +1096,6 @@
              }
          }
      }
-+
-+    // Youer start
-+    // CraftBukkit start
-+    public void exhaustionReason(EntityExhaustionEvent.ExhaustionReason exhaustionReason) {
-+        causeFoodExhaustion$reason = exhaustionReason;
-+    }
-+    public void causeFoodExhaustion(float f, EntityExhaustionEvent.ExhaustionReason reason) {
-+        this.exhaustionReason(reason);
-+        causeFoodExhaustion(f);
-+    }
-+    // CraftBukkit end
-+    // Youer end
- 
-     public Optional<WardenSpawnTracker> getWardenSpawnTracker() {
-         return Optional.empty();
 @@ -1701,6 +_,7 @@
  
      @Override

@@ -9,7 +9,7 @@
  import org.slf4j.Logger;
  
  public abstract class BaseSpawner implements net.neoforged.neoforge.common.extensions.IOwnedSpawner {
-@@ -44,17 +_,19 @@
+@@ -44,17 +_,20 @@
      public int maxNearbyEntities = 6;
      public int requiredPlayerRange = 16;
      public int spawnRange = 4;
@@ -25,6 +25,7 @@
 -    private boolean isNearPlayer(Level p_151344_, BlockPos p_151345_) {
 -        return p_151344_.hasNearbyAlivePlayer(
 +    public boolean isNearPlayer(Level p_151344_, BlockPos p_151345_) {
++        if (p_151344_.purpurConfig.spawnerDeactivateByRedstone && p_151344_.hasNeighborSignal(p_151345_)) return false; // Purpur
 +        return p_151344_.hasNearbyAlivePlayerThatAffectsSpawning(
              (double)p_151345_.getX() + 0.5, (double)p_151345_.getY() + 0.5, (double)p_151345_.getZ() + 0.5, (double)this.requiredPlayerRange
 -        );
@@ -60,7 +61,7 @@
  
 +                        {
 +                            // Paper start - PreCreatureSpawnEvent
-+                            io.papermc.paper.event.entity.PreSpawnerSpawnEvent event = new io.papermc.paper.event.entity.PreSpawnerSpawnEvent(
++                            com.destroystokyo.paper.event.entity.PreSpawnerSpawnEvent event = new com.destroystokyo.paper.event.entity.PreSpawnerSpawnEvent(
 +                                    io.papermc.paper.util.MCUtil.toLocation(p_151312_, d0, d1, d2),
 +                                    org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(optional.get()),
 +                                    io.papermc.paper.util.MCUtil.toLocation(p_151312_, p_151313_)
@@ -72,14 +73,17 @@
 +                                }
 +                                continue;
 +                            }
-+                            // Paper end - PreCreatureSpawnEvent\
++                            // Paper end - PreCreatureSpawnEvent
 +                        }
 +
                          Entity entity = EntityType.loadEntityRecursive(compoundtag, p_151312_, p_151310_ -> {
                              p_151310_.moveTo(d0, d1, d2, p_151310_.getYRot(), p_151310_.getXRot());
                              return p_151310_;
-@@ -151,19 +_,24 @@
+@@ -149,22 +_,35 @@
+                             return;
+                         }
  
++                        entity.preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported; preserve entity motion from tag
                          entity.moveTo(entity.getX(), entity.getY(), entity.getZ(), randomsource.nextFloat() * 360.0F, 0.0F);
                          if (entity instanceof Mob mob) {
 -                            if (spawndata.getCustomSpawnRules().isEmpty() && !mob.checkSpawnRules(p_151312_, MobSpawnType.SPAWNER)
@@ -97,24 +101,34 @@
 +                            net.neoforged.neoforge.event.EventHooks.finalizeMobSpawnSpawner(mob, p_151312_, p_151312_.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.SPAWNER, null, this, flag1);
  
                              spawndata.getEquipment().ifPresent(mob::equip);
-                         }
+-                        }
 -
-+                        // CraftBukkit start
+-                        if (!p_151312_.tryAddFreshEntityWithPassengers(entity)) {
++                            // Spigot Start
++                            if ( mob.level().spigotConfig.nerfSpawnerMobs )
++                            {
++                                mob.aware = false;
++                            }
++                            // Spigot End
++                        }
 +                        entity.spawnedViaMobSpawner = true; // Paper
++                        entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER; // Paper - Entity#getEntitySpawnReason
 +                        flag = true; // Paper
-+                        entity.spawnReason(CreatureSpawnEvent.SpawnReason.SPAWNER); // Mohist  // Paper - Entity#getEntitySpawnReason
-+                        if (CraftEventFactory.callSpawnerSpawnEvent(entity, p_151313_).isCancelled()) {
++                        // CraftBukkit start
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, p_151313_).isCancelled()) {
 +                            continue;
 +                        }
-                         if (!p_151312_.tryAddFreshEntityWithPassengers(entity)) {
++                        if (!p_151312_.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER)) {
++                            // CraftBukkit end
                              this.delay(p_151312_, p_151313_);
                              return;
-@@ -174,8 +_,6 @@
-                         if (entity instanceof Mob) {
+                         }
+@@ -175,7 +_,7 @@
                              ((Mob)entity).spawnAnim();
                          }
--
+ 
 -                        flag = true;
++                        // flag = true; // Paper - moved up above cancellable event
                      }
                  }
  

@@ -3,7 +3,9 @@
 @@ -1,16 +_,27 @@
  package net.minecraft.server.level;
  
-+import com.mohistmc.youer.bukkit.inventory.InventoryOwner;
++import com.destroystokyo.paper.ClientOption;
++import com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent;
++import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent;import com.mohistmc.youer.bukkit.inventory.InventoryOwner;
 +import com.mohistmc.youer.plugins.KeepInventory;
  import com.google.common.net.InetAddresses;
  import com.mojang.authlib.GameProfile;
@@ -11,7 +13,6 @@
  import com.mojang.logging.LogUtils;
  import com.mojang.serialization.Dynamic;
 +import io.papermc.paper.adventure.PaperAdventure;
-+import io.papermc.paper.event.player.PlayerSetSpawnEvent;
 +import io.papermc.paper.event.player.PlayerTeleportEndGatewayEvent;
  import java.net.InetSocketAddress;
 +import java.util.ArrayList;
@@ -21,7 +22,6 @@
  import java.util.Optional;
  import java.util.OptionalInt;
  import java.util.Set;
-+import java.util.concurrent.atomic.AtomicReference;
 +import java.util.function.Consumer;
 +import java.util.function.IntConsumer;
 +import java.util.function.Supplier;
@@ -96,7 +96,7 @@
  import net.minecraft.world.level.block.HorizontalDirectionalBlock;
  import net.minecraft.world.level.block.RespawnAnchorBlock;
  import net.minecraft.world.level.block.entity.BlockEntity;
-@@ -158,12 +_,43 @@
+@@ -158,12 +_,42 @@
  import net.minecraft.world.scores.PlayerTeam;
  import net.minecraft.world.scores.ScoreAccess;
  import net.minecraft.world.scores.ScoreHolder;
@@ -129,7 +129,6 @@
 +import org.bukkit.event.player.PlayerLocaleChangeEvent;
 +import org.bukkit.event.player.PlayerRespawnEvent;
 +import org.bukkit.event.player.PlayerSpawnChangeEvent;
-+import org.bukkit.event.player.PlayerTeleportEvent;
 +import org.bukkit.event.player.PlayerToggleSneakEvent;
 +import org.bukkit.inventory.MainHand;
  import org.slf4j.Logger;
@@ -203,15 +202,31 @@
          @Override
          public void dataChanged(AbstractContainerMenu p_143462_, int p_143463_, int p_143464_) {
          }
-@@ -276,6 +_,63 @@
+@@ -276,6 +_,74 @@
      public final Object object;
      private int containerCounter;
      public boolean wonGame;
 +    private int containerUpdateDelay; // Paper - Configurable container update tick rate
++    public long loginTime; // Paper - Replace OfflinePlayer#getLastPlayed
++
++    // Mohist start
++    public boolean initialized = false;
++    // Mohist end
++    // Paper start - cancellable death event
++    public boolean queueHealthUpdatePacket;
++    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
++    // Paper end - cancellable death event
++    // Paper start - Optional per player mob spawns
++    public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
++    public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper
++    // Paper end - Optional per player mob spawns
++    public final int[] mobBackoffCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper - per player mob count backoff
++
 +    // CraftBukkit start
 +    public CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
 +    public net.kyori.adventure.text.Component adventure$displayName; // Paper
++    // public Component listName; // Stellar - respect neo; see #getTabListDisplayName
 +    public Location compassTarget;
 +    public int newExp = 0;
 +    public int newLevel = 0;
@@ -221,15 +236,10 @@
 +    public boolean joining = true;
 +    public boolean sentListPacket = false;
 +    // CraftBukkit end
-+
-+    // Mohist start
-+    public boolean initialized = false;
-+    // Mohist end
 +    public boolean isRealPlayer; // Paper
-+    public long loginTime; // Paper - Replace OfflinePlayer#getLastPlayed
++    public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
 +    public @Nullable String clientBrandName = null; // Paper - Brand support
 +    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
-+    public io.papermc.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
 +    public boolean purpurClient = false; // Purpur
 +    private boolean tpsBar = false; // Purpur
 +    private boolean compassBar = false; // Purpur
@@ -628,12 +638,21 @@
                  if (entity instanceof Player player && !this.canHarmPlayer(player)) {
                      return false;
                  }
-@@ -772,7 +_,7 @@
+@@ -772,7 +_,16 @@
                      return false;
                  }
  
 -                return super.hurt(p_9037_, p_9038_);
-+                return super.hurt(source, amount);
++                // Paper start - cancellable death events
++                this.queueHealthUpdatePacket = true;
++                boolean damaged = super.hurt(source, amount);
++                this.queueHealthUpdatePacket = false;
++                if (this.queuedHealthUpdatePacket != null) {
++                    this.connection.send(this.queuedHealthUpdatePacket);
++                    this.queuedHealthUpdatePacket = null;
++                }
++                return damaged;
++                // Paper end
              }
          }
      }
@@ -801,43 +820,90 @@
                  return this;
              }
          }
-@@ -933,20 +_,29 @@
+@@ -932,26 +_,71 @@
+         this.containerMenu.broadcastChanges();
      }
  
++    // CraftBukkit start - moved bed result checks from below into separate method
++    private Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> getBedResult(BlockPos blockposition, Direction enumdirection) {
++        if (!this.isSleeping() && this.isAlive()) {
++            if (!this.level().dimensionType().natural() || !this.level().dimensionType().bedWorks()) {
++                return Either.left(net.minecraft.world.entity.player.Player.BedSleepingProblem.NOT_POSSIBLE_HERE);
++            } else if (!this.bedInRange(blockposition, enumdirection)) {
++                return Either.left(net.minecraft.world.entity.player.Player.BedSleepingProblem.TOO_FAR_AWAY);
++            } else if (this.bedBlocked(blockposition, enumdirection)) {
++                return Either.left(net.minecraft.world.entity.player.Player.BedSleepingProblem.OBSTRUCTED);
++            } else {
++                this.setRespawnPosition(this.level().dimension(), blockposition, this.getYRot(), false, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.BED); // Paper - Add PlayerSetSpawnEvent
++                if (this.level().isDay()) {
++                    return Either.left(net.minecraft.world.entity.player.Player.BedSleepingProblem.NOT_POSSIBLE_NOW);
++                } else {
++                    if (!this.isCreative()) {
++                        double d0 = 8.0D;
++                        double d1 = 5.0D;
++                        Vec3 vec3d = Vec3.atBottomCenterOf(blockposition);
++                        List<Monster> list = this.level().getEntitiesOfClass(Monster.class, new AABB(vec3d.x() - 8.0D, vec3d.y() - 5.0D, vec3d.z() - 8.0D, vec3d.x() + 8.0D, vec3d.y() + 5.0D, vec3d.z() + 8.0D), (entitymonster) -> {
++                            return entitymonster.isPreventingPlayerRest(this);
++                        });
++
++                        if (!this.level().purpurConfig.playerSleepNearMonsters && !list.isEmpty()) { // Purpur
++                            return Either.left(net.minecraft.world.entity.player.Player.BedSleepingProblem.NOT_SAFE);
++                        }
++                    }
++
++                    return Either.right(Unit.INSTANCE);
++                }
++            }
++        } else {
++            return Either.left(net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM);
++        }
++    }
++
      @Override
 -    public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos p_9115_) {
-+    public Either<BedSleepingProblem, Unit> startSleepInBed(BlockPos p_9115_) {
+-        Direction direction = this.level().getBlockState(p_9115_).getValue(HorizontalDirectionalBlock.FACING);
++    public Either<BedSleepingProblem, Unit> startSleepInBed(BlockPos pos, boolean force) {
++        // CraftBukkit end
 +        // Neo: Encapsulate the vanilla check logic to supply to the CanPlayerSleepEvent
 +        var vanillaResult = ((Supplier<Either<BedSleepingProblem, Unit>>) () -> {
 +        // Guard against modded beds that may not have the FACING property.
 +        // We just return success (Unit) here. Modders will need to implement conditions in the CanPlayerSleepEvent
-+        if (!this.level().getBlockState(p_9115_).hasProperty(HorizontalDirectionalBlock.FACING)) {
++        if (!this.level().getBlockState(pos).hasProperty(HorizontalDirectionalBlock.FACING)) {
 +            return Either.right(Unit.INSTANCE);
 +        }
 +
 +        // Start vanilla code
-         Direction direction = this.level().getBlockState(p_9115_).getValue(HorizontalDirectionalBlock.FACING);
++        Direction direction = this.level().getBlockState(pos).getValue(HorizontalDirectionalBlock.FACING);
          if (this.isSleeping() || !this.isAlive()) {
 -            return Either.left(Player.BedSleepingProblem.OTHER_PROBLEM);
 +            return Either.left(BedSleepingProblem.OTHER_PROBLEM);
          } else if (!this.level().dimensionType().natural()) {
 -            return Either.left(Player.BedSleepingProblem.NOT_POSSIBLE_HERE);
-+            return Either.left(BedSleepingProblem.NOT_POSSIBLE_HERE);
-         } else if (!this.bedInRange(p_9115_, direction)) {
+-        } else if (!this.bedInRange(p_9115_, direction)) {
 -            return Either.left(Player.BedSleepingProblem.TOO_FAR_AWAY);
-+            return Either.left(BedSleepingProblem.TOO_FAR_AWAY);
-         } else if (this.bedBlocked(p_9115_, direction)) {
+-        } else if (this.bedBlocked(p_9115_, direction)) {
 -            return Either.left(Player.BedSleepingProblem.OBSTRUCTED);
++            return Either.left(BedSleepingProblem.NOT_POSSIBLE_HERE);
++        } else if (!this.bedInRange(pos, direction)) {
++            return Either.left(BedSleepingProblem.TOO_FAR_AWAY);
++        } else if (this.bedBlocked(pos, direction)) {
 +            return Either.left(BedSleepingProblem.OBSTRUCTED);
          } else {
-             this.setRespawnPosition(this.level().dimension(), p_9115_, this.getYRot(), false, true);
+-            this.setRespawnPosition(this.level().dimension(), p_9115_, this.getYRot(), false, true);
++            this.setRespawnPosition(this.level().dimension(), pos, this.getYRot(), false, true);
              if (this.level().isDay()) {
 -                return Either.left(Player.BedSleepingProblem.NOT_POSSIBLE_NOW);
 +                return Either.left(BedSleepingProblem.NOT_POSSIBLE_NOW);
              } else {
                  if (!this.isCreative()) {
                      double d0 = 8.0;
-@@ -959,11 +_,25 @@
+                     double d1 = 5.0;
+-                    Vec3 vec3 = Vec3.atBottomCenterOf(p_9115_);
++                    Vec3 vec3 = Vec3.atBottomCenterOf(pos);
+                     List<Monster> list = this.level()
+                         .getEntitiesOfClass(
+                             Monster.class,
+@@ -959,16 +_,43 @@
                              p_9062_ -> p_9062_.isPreventingPlayerRest(this)
                          );
                      if (!list.isEmpty()) {
@@ -853,19 +919,38 @@
 +        return Either.right(Unit.INSTANCE);
 +        }).get();
 +
++
 +        // Fire the event. Return the error if one exists after the event, otherwise use the vanilla logic to start sleeping.
-+        vanillaResult = EventHooks.canPlayerStartSleeping(this, p_9115_, vanillaResult);
-+        if (vanillaResult.left().isPresent()) {
++        vanillaResult = EventHooks.canPlayerStartSleeping(this, pos, vanillaResult);
++        if (force || vanillaResult.left().isPresent()) { // Paper // Stellar - respect force param
 +            return vanillaResult;
 +        }
 +
 +        {
 +            {
 +                // Start vanilla code
-+                Either<BedSleepingProblem, Unit> either = super.startSleepInBed(p_9115_).ifRight(p_9029_ -> {
++                Either<BedSleepingProblem, Unit> either = super.startSleepInBed(pos).ifRight(p_9029_ -> {
                      this.awardStat(Stats.SLEEP_IN_BED);
                      CriteriaTriggers.SLEPT_IN_BED.trigger(this);
                  });
+                 if (!this.serverLevel().canSleepThroughNights()) {
+-                    this.displayClientMessage(Component.translatable("sleep.not_possible"), true);
++                    // Purpur start
++                    Component clientMessage;
++                    if (org.purpurmc.purpur.PurpurConfig.sleepNotPossible.isBlank()) {
++                        clientMessage = null;
++                    } else if (!org.purpurmc.purpur.PurpurConfig.sleepNotPossible.equalsIgnoreCase("default")) {
++                        clientMessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.sleepNotPossible));
++                    } else {
++                        clientMessage = Component.translatable("sleep.not_possible");
++                    }
++                    if (clientMessage != null) {
++                        this.displayClientMessage(clientMessage, true);
++                    }
++                    // Purpur end
+                 }
+ 
+                 ((ServerLevel)this.level()).updateSleepingPlayerList();
 @@ -984,6 +_,7 @@
      }
  
@@ -897,15 +982,16 @@
          if (this.isSleeping()) {
              this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(this, 2));
          }
-@@ -1072,17 +_,72 @@
-         this.containerCounter = this.containerCounter % 100 + 1;
+@@ -1068,21 +_,72 @@
+         this.connection.send(new ClientboundOpenSignEditorPacket(p_277909_.getBlockPos(), p_277495_));
      }
  
-+    public int nextContainerCounterInt() {
-+        this.containerCounter = this.containerCounter % 100 + 1;
+-    public void nextContainerCounter() {
++    public int nextContainerCounter() { // CraftBukkit - void -> int
+         this.containerCounter = this.containerCounter % 100 + 1;
 +        return containerCounter; // CraftBukkit
-+    }
-+
+     }
+ 
      @Override
      public OptionalInt openMenu(@Nullable MenuProvider p_9033_) {
 +        return openMenu(p_9033_, (Consumer<RegistryFriendlyByteBuf>) null);
@@ -1346,16 +1432,16 @@
      }
  
 +    // Paper start - Client option API
-+    private java.util.Map<io.papermc.paper.ClientOption<?>, ?> getClientOptionMap(String locale, int viewDistance, io.papermc.paper.ClientOption.ChatVisibility chatVisibility, boolean chatColors, io.papermc.paper.PaperSkinParts skinParts, org.bukkit.inventory.MainHand mainHand, boolean allowsServerListing, boolean textFilteringEnabled) {
-+        java.util.Map<io.papermc.paper.ClientOption<?>, Object> map = new java.util.HashMap<>();
-+        map.put(io.papermc.paper.ClientOption.LOCALE, locale);
-+        map.put(io.papermc.paper.ClientOption.VIEW_DISTANCE, viewDistance);
-+        map.put(io.papermc.paper.ClientOption.CHAT_VISIBILITY, chatVisibility);
-+        map.put(io.papermc.paper.ClientOption.CHAT_COLORS_ENABLED, chatColors);
-+        map.put(io.papermc.paper.ClientOption.SKIN_PARTS, skinParts);
-+        map.put(io.papermc.paper.ClientOption.MAIN_HAND, mainHand);
-+        map.put(io.papermc.paper.ClientOption.ALLOW_SERVER_LISTINGS, allowsServerListing);
-+        map.put(io.papermc.paper.ClientOption.TEXT_FILTERING_ENABLED, textFilteringEnabled);
++    private java.util.Map<ClientOption<?>, ?> getClientOptionMap(String locale, int viewDistance, ClientOption.ChatVisibility chatVisibility, boolean chatColors, io.papermc.paper.PaperSkinParts skinParts, org.bukkit.inventory.MainHand mainHand, boolean allowsServerListing, boolean textFilteringEnabled) {
++        java.util.Map<ClientOption<?>, Object> map = new java.util.HashMap<>();
++        map.put(ClientOption.LOCALE, locale);
++        map.put(ClientOption.VIEW_DISTANCE, viewDistance);
++        map.put(ClientOption.CHAT_VISIBILITY, chatVisibility);
++        map.put(ClientOption.CHAT_COLORS_ENABLED, chatColors);
++        map.put(ClientOption.SKIN_PARTS, skinParts);
++        map.put(ClientOption.MAIN_HAND, mainHand);
++        map.put(ClientOption.ALLOW_SERVER_LISTINGS, allowsServerListing);
++        map.put(ClientOption.TEXT_FILTERING_ENABLED, textFilteringEnabled);
 +        return map;
 +    }
 +    // Paper end
@@ -1370,7 +1456,7 @@
 -        this.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte)p_301998_.modelCustomisation());
 -        this.getEntityData().set(DATA_PLAYER_MAIN_HAND, (byte)p_301998_.mainHand().getId());
 -    }
-+        new io.papermc.paper.event.player.PlayerClientOptionsChangeEvent(getBukkitEntity(), getClientOptionMap(p_301998_.language(), p_301998_.viewDistance(), io.papermc.paper.ClientOption.ChatVisibility.valueOf(p_301998_.chatVisibility().name()), p_301998_.chatColors(), new io.papermc.paper.PaperSkinParts(p_301998_.modelCustomisation()), p_301998_.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT, p_301998_.allowsListing(), p_301998_.textFilteringEnabled())).callEvent(); // Paper - settings event
++        new io.papermc.paper.event.player.PlayerClientOptionsChangeEvent(getBukkitEntity(), getClientOptionMap(p_301998_.language(), p_301998_.viewDistance(), ClientOption.ChatVisibility.valueOf(p_301998_.chatVisibility().name()), p_301998_.chatColors(), new io.papermc.paper.PaperSkinParts(p_301998_.modelCustomisation()), p_301998_.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT, p_301998_.allowsListing(), p_301998_.textFilteringEnabled())).callEvent(); // Paper - settings event
 +        // CraftBukkit start
 +        if (getMainArm() != p_301998_.mainHand()) {
 +            PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(getBukkitEntity(), getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
@@ -1549,66 +1635,76 @@
      }
  
      @Nullable
-@@ -1709,11 +_,44 @@
+@@ -1709,23 +_,60 @@
          );
      }
  
-+    // Youer start
-+    private final AtomicReference<PlayerSpawnChangeEvent.Cause> setRespawnPosition$cause = new AtomicReference<>(PlayerSpawnChangeEvent.Cause.UNKNOWN);
-+
-+    public void setRespawnPosition$cause(PlayerSpawnChangeEvent.Cause cause) {
-+        this.setRespawnPosition$cause.set(cause);
-+    }
-+
-     public void setRespawnPosition(ResourceKey<Level> p_9159_, @Nullable BlockPos p_9160_, float p_9161_, boolean p_9162_, boolean p_9163_) {
-+        if (EventHooks.onPlayerSpawnSet(this, p_9160_ == null ? Level.OVERWORLD : p_9159_, p_9160_, p_9162_)) return;
-+        Location spawnLoc = null;
-+        boolean willNotify = false;
-         if (p_9160_ != null) {
+-    public void setRespawnPosition(ResourceKey<Level> p_9159_, @Nullable BlockPos p_9160_, float p_9161_, boolean p_9162_, boolean p_9163_) {
+-        if (p_9160_ != null) {
 -            boolean flag = p_9160_.equals(this.respawnPosition) && p_9159_.equals(this.respawnDimension);
 -            if (p_9163_ && !flag) {
 -                this.sendSystemMessage(Component.translatable("block.minecraft.set_spawn"));
-+            boolean flag2 = p_9160_.equals(this.respawnPosition) && p_9159_.equals(this.respawnDimension);
-+            spawnLoc = io.papermc.paper.util.MCUtil.toLocation(this.getServer().getLevel(p_9159_), p_9160_);
-+            spawnLoc.setYaw(p_9161_);
-+            willNotify = p_9163_ && !flag2;
++    @Deprecated // Paper - Add PlayerSetSpawnEvent
++    public void setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage) {
++        // Paper start - Add PlayerSetSpawnEvent
++        this.setRespawnPosition(dimension, pos, angle, forced, sendMessage, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.UNKNOWN);
++    }
++    @Deprecated
++    public boolean setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage, PlayerSpawnChangeEvent.Cause cause) {
++        return this.setRespawnPosition(dimension, pos, angle, forced, sendMessage, cause == PlayerSpawnChangeEvent.Cause.RESET ?
++            com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN : com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.valueOf(cause.name()));
++    }
++    public boolean setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause cause) {
++        if (EventHooks.onPlayerSpawnSet(this, pos == null ? Level.OVERWORLD : dimension, pos, forced)) return false; // Neo
++
++        Location spawnLoc = null;
++        boolean willNotify = false;
++        if (pos != null) {
++            boolean flag2 = pos.equals(this.respawnPosition) && dimension.equals(this.respawnDimension);
++            spawnLoc = io.papermc.paper.util.MCUtil.toLocation(this.getServer().getLevel(dimension), pos);
++            spawnLoc.setYaw(angle);
++            willNotify = sendMessage && !flag2;
 +        }
-+        PlayerSpawnChangeEvent.Cause cause = setRespawnPosition$cause.getAndSet(PlayerSpawnChangeEvent.Cause.UNKNOWN);
-+        PlayerSetSpawnEvent.Cause causePaper = cause == PlayerSpawnChangeEvent.Cause.RESET ?
-+                PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN : PlayerSetSpawnEvent.Cause.valueOf(cause.name());
-+        PlayerSpawnChangeEvent dumbEvent = new PlayerSpawnChangeEvent(this.getBukkitEntity(), spawnLoc, p_9162_,
-+                causePaper == io.papermc.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN ? PlayerSpawnChangeEvent.Cause.RESET : PlayerSpawnChangeEvent.Cause.valueOf(cause.name()));
++
++        PlayerSpawnChangeEvent dumbEvent = new PlayerSpawnChangeEvent(this.getBukkitEntity(), spawnLoc, forced,
++            cause == com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN ? PlayerSpawnChangeEvent.Cause.RESET : PlayerSpawnChangeEvent.Cause.valueOf(cause.name()));
 +        dumbEvent.callEvent();
 +
-+        io.papermc.paper.event.player.PlayerSetSpawnEvent event = new io.papermc.paper.event.player.PlayerSetSpawnEvent(this.getBukkitEntity(), causePaper, dumbEvent.getNewSpawn(), dumbEvent.isForced(), willNotify, willNotify ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null);
++        PlayerSetSpawnEvent event = new PlayerSetSpawnEvent(this.getBukkitEntity(), cause, dumbEvent.getNewSpawn(), dumbEvent.isForced(), willNotify, willNotify ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null);
 +        event.setCancelled(dumbEvent.isCancelled());
 +        if (!event.callEvent()) {
-+            return;
++            return false;
 +        }
 +        if (event.getLocation() != null) {
-+            p_9159_ = event.getLocation().getWorld() != null ? ((CraftWorld) event.getLocation().getWorld()).getHandle().dimension() : p_9159_;
-+            p_9160_ = io.papermc.paper.util.MCUtil.toBlockPosition(event.getLocation());
-+            p_9161_ = event.getLocation().getYaw();
-+            p_9162_ = event.isForced();
++            dimension = event.getLocation().getWorld() != null ? ((CraftWorld) event.getLocation().getWorld()).getHandle().dimension() : dimension;
++            pos = io.papermc.paper.util.MCUtil.toBlockPosition(event.getLocation());
++            angle = event.getLocation().getYaw();
++            forced = event.isForced();
 +            // Paper end - Add PlayerSetSpawnEvent
 +
 +            if (event.willNotifyPlayer() && event.getNotification() != null) { // Paper - Add PlayerSetSpawnEvent
 +                this.sendSystemMessage(PaperAdventure.asVanilla(event.getNotification())); // Paper - Add PlayerSetSpawnEvent
              }
  
-             this.respawnPosition = p_9160_;
-@@ -1727,6 +_,11 @@
+-            this.respawnPosition = p_9160_;
+-            this.respawnDimension = p_9159_;
+-            this.respawnAngle = p_9161_;
+-            this.respawnForced = p_9162_;
++            this.respawnPosition = pos;
++            this.respawnDimension = dimension;
++            this.respawnAngle = angle;
++            this.respawnForced = forced;
+         } else {
+             this.respawnPosition = null;
+             this.respawnDimension = Level.OVERWORLD;
+             this.respawnAngle = 0.0F;
              this.respawnForced = false;
          }
++
++        return true; // Paper - Add PlayerSetSpawnEvent
      }
-+    public void setRespawnPosition(ResourceKey<Level> p_9159_, @Nullable BlockPos p_9160_, float p_9161_, boolean p_9162_, boolean p_9163_, PlayerSpawnChangeEvent.Cause cause) {
-+        setRespawnPosition$cause(cause);
-+        setRespawnPosition(p_9159_, p_9160_, p_9161_, p_9162_, p_9163_);
-+    }
-+    // Youer end
  
      public SectionPos getLastSectionPos() {
-         return this.lastSectionPos;
 @@ -1767,6 +_,8 @@
          if (itementity == null) {
              return null;

@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.command;
 
+import com.destroystokyo.paper.event.brigadier.CommandRegisteredEvent;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -38,7 +39,7 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
         LiteralCommandNode<CommandSourceStack> defaultNode = literal;
         com.mojang.brigadier.tree.ArgumentCommandNode<CommandSourceStack, String> defaultArgs = RequiredArgumentBuilder.<CommandSourceStack, String>argument("args", StringArgumentType.greedyString()).suggests(this).executes(this).build();
         literal.addChild(defaultArgs);
-        io.papermc.paper.event.brigadier.CommandRegisteredEvent<CommandSourceStack> event = new io.papermc.paper.event.brigadier.CommandRegisteredEvent<>(label, this, this.command, root, literal, defaultArgs);
+        CommandRegisteredEvent<CommandSourceStack> event = new CommandRegisteredEvent<>(label, this, this.command, root, literal, defaultArgs);
         if (!event.callEvent()) {
             return null;
         }

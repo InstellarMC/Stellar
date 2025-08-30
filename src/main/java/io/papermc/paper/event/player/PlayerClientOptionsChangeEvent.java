@@ -1,8 +1,8 @@
 package io.papermc.paper.event.player;
 
-import io.papermc.paper.ClientOption;
-import io.papermc.paper.ClientOption.ChatVisibility;
-import io.papermc.paper.SkinParts;
+import com.destroystokyo.paper.ClientOption;
+import com.destroystokyo.paper.ClientOption.ChatVisibility;
+import com.destroystokyo.paper.SkinParts;
 import java.util.Map;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;

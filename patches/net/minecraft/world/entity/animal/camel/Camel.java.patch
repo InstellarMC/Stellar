@@ -1,5 +1,14 @@
 --- a/net/minecraft/world/entity/animal/camel/Camel.java
 +++ b/net/minecraft/world/entity/animal/camel/Camel.java
+@@ -48,7 +_,7 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.phys.Vec2;
+-import net.minecraft.world.phys.Vec3;
++import net.minecraft.world.phys.Vec3;import org.bukkit.event.entity.EntityDamageEvent;
+ 
+ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddleable {
+     public static final float BABY_SCALE = 0.45F;
 @@ -286,6 +_,7 @@
          this.dashCooldown = 55;
          this.setDashing(true);
@@ -8,15 +17,20 @@
      }
  
      public boolean isDashing() {
-@@ -451,9 +_,9 @@
+@@ -451,9 +_,14 @@
      }
  
      @Override
 -    protected void actuallyHurt(DamageSource p_250410_, float p_251451_) {
-+    protected void actuallyHurt(DamageSource source, float amount) {
++    public boolean actuallyHurt(DamageSource source, float amount, EntityDamageEvent event) { // CraftBukkit start - void -> boolean
++        final var result = super.actuallyHurt(source, amount, event); // CraftBukkit
++        if (!result) {
++            return false;
++        }
++        // CraftBukkit end
          this.standUpInstantly();
 -        super.actuallyHurt(p_250410_, p_251451_);
-+        super.actuallyHurt(source, amount);
++        return true; // CraftBukkit
      }
  
      @Override

@@ -1,6 +1,6 @@
 package org.bukkit;
 
-import com.google.common.collect.Multimap;
+import com.destroystokyo.paper.util.VersionFetcher;import com.google.common.collect.Multimap;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -8,7 +8,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
-import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Entity;import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -145,9 +145,66 @@ public interface UnsafeValues {
         return !Bukkit.getUnsafe().isSupportedApiVersion(plugin.getDescription().getAPIVersion());
     }
 
-    byte[] serializeItem(ItemStack item);
+    default @NotNull byte[] serializeItem(@NotNull ItemStack item) {
+        return serializeItem(item, true);
+    }
 
-    ItemStack deserializeItem(byte[] data);
+    @NotNull byte[] serializeItem(@NotNull ItemStack item, boolean compress);
+
+    void serializeItemToNbt(@NotNull ItemStack item, @NotNull java.io.OutputStream output) throws java.io.IOException;
+
+    @NotNull ItemStack deserializeItem(@NotNull byte[] data);
+
+    @NotNull ItemStack deserializeItemFromNbt(@NotNull java.io.InputStream input) throws java.io.IOException;
+
+    /**
+     * Determines if the provided byte[] was compressed using GZip.<br>
+     * This method does not mutate the input.
+     * <p>
+     * This method is intended for those who wish to manually handle NBT data emitted
+     * from NBT serialization methods, such as {@link #serializeItem(ItemStack)}
+     * <p>
+     * NBT data always starts with 0A, which is the ID for an NBT Compound.
+     * The next two bytes are a short denoting the length of the tag name.
+     *
+     * <p><b>NBT Format:</b>
+     * <pre>
+     * POS  DATA  DESCRIPTION
+     * 0    0A    ID for NBT Compound
+     * 1    ??    First byte of 2-byte string length {@link java.io.DataOutputStream#writeUTF(String)}
+     * 2    ??    Second byte of 2-byte string length
+     * </pre>
+     *
+     * Whereas GZip data always starts with the GZip header,
+     * as defined by the GZip spec.
+     * The first two bytes are always {@code 1F} and {@code 8B}.
+     *
+     * <p><b>GZip Format:</b>
+     * <pre>
+     * POS  DATA  DESCRIPTION
+     * 0    1F    First GZip header byte
+     * 1    8B    Second GZip header byte
+     * 2    ??    Compression method
+     * </pre>
+     *
+     * Using this difference, we can reliably determine if the data is compressed or
+     * not by any of the NBT serialization methods provided by Paper.
+     * <p>
+     * This method will only reliably determine compression of raw NBT data
+     * compressed by GZip.<br>
+     * Don't use it with any other input.
+     *
+     * @param data the data to check
+     * @return true if the data has a GZip header, false otherwise, including
+     * if the {@code data.length} is below 2
+     * @since 1.21.8
+     */
+    static boolean isGZipCompressedNbt(@NotNull byte[] data) {
+        // if data length is below 2, it's always invalid data
+        return data.length > 1
+                && ((byte) 0x1F) == data[0]
+                && ((byte) 0x8B) == data[1];
+    }
 
     /**
      * Serializes this itemstack to json format.
@@ -186,7 +243,6 @@ public interface UnsafeValues {
     }
 
     org.bukkit.entity.Entity deserializeEntity(byte[] data, World world, boolean preserveUUID);
-
     // Paper end
 
     /**
@@ -296,8 +352,8 @@ public interface UnsafeValues {
     /**
      * Called once by the version command on first use, then cached.
      */
-    default io.papermc.paper.util.VersionFetcher getVersionFetcher() {
-        return new io.papermc.paper.util.VersionFetcher.DummyVersionFetcher();
+    default VersionFetcher getVersionFetcher() {
+        return new VersionFetcher.DummyVersionFetcher();
     }
 
 }

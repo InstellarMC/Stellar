@@ -14,19 +14,20 @@ import org.bukkit.loot.LootTable;
 public abstract class CraftMob extends CraftLivingEntity implements Mob, io.papermc.paper.entity.PaperLeashable { // Paper - Leashable API
     public CraftMob(CraftServer server, net.minecraft.world.entity.Mob entity) {
         super(server, entity);
+        paperPathfinder = new com.destroystokyo.paper.entity.PaperPathfinder(entity); // Paper - Mob Pathfinding API
     }
 
+    private final com.destroystokyo.paper.entity.PaperPathfinder paperPathfinder; // Paper - Mob Pathfinding API
+    @Override public com.destroystokyo.paper.entity.Pathfinder getPathfinder() { return paperPathfinder; } // Paper - Mob Pathfinding API
     @Override
     public void setTarget(LivingEntity target) {
         Preconditions.checkState(!this.getHandle().generation, "Cannot set target during world generation");
 
         net.minecraft.world.entity.Mob entity = this.getHandle();
         if (target == null) {
-            entity.setTargetReason(null, false);
-            entity.setTarget(null);
+            entity.setTarget(null, null, false);
         } else if (target instanceof CraftLivingEntity) {
-            entity.setTargetReason(null, false);
-            entity.setTarget(((CraftLivingEntity) target).getHandle());
+            entity.setTarget(((CraftLivingEntity) target).getHandle(), null, false);
         }
     }
 
@@ -57,6 +58,14 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public net.minecraft.world.entity.Mob getHandle() {
         return (net.minecraft.world.entity.Mob) this.entity;
     }
+
+    // Paper start - Mob Pathfinding API
+    @Override
+    public void setHandle(net.minecraft.world.entity.Entity entity) {
+        super.setHandle(entity);
+        paperPathfinder.setHandle(getHandle());
+    }
+    // Paper end - Mob Pathfinding API
 
     @Override
     public String toString() {

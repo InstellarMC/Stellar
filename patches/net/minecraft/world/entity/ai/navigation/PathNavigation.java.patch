@@ -1,5 +1,14 @@
 --- a/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 +++ b/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+@@ -50,7 +_,7 @@
+     private BlockPos targetPos;
+     private int reachRange;
+     private float maxVisitedNodesMultiplier = 1.0F;
+-    private final PathFinder pathFinder;
++    public final PathFinder pathFinder; // Stellar - public
+     private boolean isStuck;
+ 
+     public PathNavigation(Mob p_26515_, Level p_26516_) {
 @@ -167,7 +_,7 @@
          return path != null && this.moveTo(path, p_26533_);
      }

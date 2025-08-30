@@ -17,20 +17,19 @@
  import org.slf4j.Logger;
  
  public class AreaEffectCloud extends Entity implements TraceableEntity {
-@@ -128,6 +_,17 @@
+@@ -128,6 +_,16 @@
          this.duration = p_19735_;
      }
  
-+    // Spigot start - copied from below
++    // Paper start - EAR 2
 +    @Override
 +    public void inactiveTick() {
 +        super.inactiveTick();
 +        if (this.tickCount >= this.waitTime + this.duration) {
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-+            return;
 +        }
 +    }
-+    // Spigot end
++    // Paper end - EAR 2
 +
      @Override
      public void tick() {

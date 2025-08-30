@@ -76,8 +76,33 @@
      }
  
      @Override
-@@ -120,18 +_,24 @@
+@@ -118,20 +_,49 @@
+         return 0.04;
+     }
  
++    // Paper start - EAR 2
++    @Override
++    public void inactiveTick() {
++        super.inactiveTick();
++        if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
++            this.pickupDelay--;
++        }
++        if (this.age != -32768) {
++            this.age++;
++        }
++
++        if (!this.level().isClientSide && this.age >= this.despawnRate) {// Paper - Alternative item-despawn-rate
++            // CraftBukkit start - fire ItemDespawnEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
++                this.age = 0;
++                return;
++            }
++            // CraftBukkit end
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++        }
++    }
++    // Paper end - EAR 2
++
      @Override
      public void tick() {
 +        if (getItem().onEntityItemUpdate(this)) return;
@@ -131,7 +156,7 @@
  
              this.hasImpulse = this.hasImpulse | this.updateInWaterStateAndDoFluidPushing();
              if (!this.level().isClientSide) {
-@@ -185,11 +_,49 @@
+@@ -185,7 +_,21 @@
                  }
              }
  
@@ -154,34 +179,6 @@
                  this.discard();
              }
          }
-     }
-+
-+    // Spigot start - copied from above
-+    @Override
-+    public void inactiveTick() {
-+        // Paper start - remove anti tick skipping measures / wall time - copied from above
-+        if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
-+            --this.pickupDelay;
-+        }
-+        if (this.age != -32768) {
-+            ++this.age;
-+        }
-+        // Paper end - remove anti tick skipping measures / wall time - copied from above
-+
-+        if (!this.level().isClientSide && this.age >= this.despawnRate) { // Spigot // Paper - Alternative item-despawn-rate
-+            // CraftBukkit start - fire ItemDespawnEvent
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
-+                this.age = 0;
-+                return;
-+            }
-+            // CraftBukkit end
-+            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-+        }
-+    }
-+    // Spigot end
- 
-     @Override
-     public BlockPos getBlockPosBelowThatAffectsMyMovement() {
 @@ -208,8 +_,11 @@
  
      private void mergeWithNeighbours() {

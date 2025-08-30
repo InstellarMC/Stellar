@@ -27,11 +27,8 @@ import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
-import java.util.Arrays;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.OptionalDouble;
+
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import net.minecraft.Util;
@@ -201,6 +198,11 @@ public class WorldConfiguration extends ConfigurationPart {
             }
 
             @PostProcess
+            public void makeDespawnRangesEnumMap() {
+                this.despawnRanges = new EnumMap<>(this.despawnRanges);
+            }
+
+            @PostProcess
             public void precomputeDespawnDistances() throws SerializationException {
                 for (Map.Entry<MobCategory, DespawnRangePair> entry : this.despawnRanges.entrySet()) {
                     final MobCategory category = entry.getKey();
@@ -299,6 +301,7 @@ public class WorldConfiguration extends ConfigurationPart {
             public int phantomsSpawnAttemptMinSeconds = 60;
             public int phantomsSpawnAttemptMaxSeconds = 119;
             public boolean parrotsAreUnaffectedByPlayerMovement = false;
+            public boolean throttleInactiveMobGoalSelector = false;
             @BelowZeroToEmpty
             public DoubleOr.Default zombieVillagerInfectionChance = DoubleOr.Default.USE_DEFAULT;
             public MobsCanAlwaysPickUpLoot mobsCanAlwaysPickUpLoot;

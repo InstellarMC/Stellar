@@ -3,7 +3,7 @@
 @@ -1,16 +_,26 @@
  package net.minecraft.server;
  
-+import com.mohistmc.youer.neoforge.NeoForgeInjectBukkit;
++import com.destroystokyo.paper.event.server.ServerTickEndEvent;import com.destroystokyo.paper.event.server.ServerTickStartEvent;import com.mohistmc.youer.neoforge.NeoForgeInjectBukkit;
 +import com.mohistmc.youer.plugins.MohistPlugin;
 +import com.mohistmc.youer.util.I18n;
  import com.google.common.base.Preconditions;
@@ -13,10 +13,10 @@
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
 +import com.google.gson.Gson;
-+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner;
++import com.mojang.serialization.Dynamic;import com.mojang.serialization.Lifecycle;import io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
 +import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-+import java.util.ArrayList;
++import java.io.File;import java.util.ArrayList;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
  import com.mojang.authlib.GameProfile;
  import com.mojang.authlib.GameProfileRepository;
@@ -27,7 +27,7 @@
  import it.unimi.dsi.fastutil.longs.LongIterator;
  import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  import it.unimi.dsi.fastutil.objects.ObjectArraySet;
-@@ -33,21 +_,28 @@
+@@ -33,21 +_,27 @@
  import java.util.List;
  import java.util.Locale;
  import java.util.Map;
@@ -41,9 +41,9 @@
  import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentLinkedQueue;
  import java.util.concurrent.Executor;
+-import java.util.concurrent.RejectedExecutionException;
 +import java.util.concurrent.ExecutorService;
 +import java.util.concurrent.Executors;
- import java.util.concurrent.RejectedExecutionException;
  import java.util.concurrent.atomic.AtomicReference;
 +import java.util.concurrent.locks.LockSupport;
  import java.util.function.BooleanSupplier;
@@ -65,14 +65,34 @@
  import net.minecraft.core.HolderGetter;
  import net.minecraft.core.LayeredRegistryAccess;
  import net.minecraft.core.Registry;
-@@ -78,6 +_,7 @@
+@@ -68,7 +_,7 @@
+ import net.minecraft.core.registries.Registries;
+ import net.minecraft.data.worldgen.features.MiscOverworldFeatures;
+ import net.minecraft.gametest.framework.GameTestTicker;
+-import net.minecraft.network.chat.ChatDecorator;
++import net.minecraft.nbt.NbtException;import net.minecraft.nbt.ReportedNbtException;import net.minecraft.network.chat.ChatDecorator;
+ import net.minecraft.network.chat.ChatType;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.protocol.game.ClientboundChangeDifficultyPacket;
+@@ -78,7 +_,8 @@
  import net.minecraft.resources.ResourceKey;
  import net.minecraft.resources.ResourceLocation;
  import net.minecraft.server.bossevents.CustomBossEvents;
+-import net.minecraft.server.level.DemoMode;
 +import net.minecraft.server.dedicated.DedicatedServer;
- import net.minecraft.server.level.DemoMode;
++import net.minecraft.server.dedicated.DedicatedServerProperties;import net.minecraft.server.level.DemoMode;
  import net.minecraft.server.level.PlayerRespawnLogic;
  import net.minecraft.server.level.ServerChunkCache;
+ import net.minecraft.server.level.ServerLevel;
+@@ -107,7 +_,7 @@
+ import net.minecraft.util.RandomSource;
+ import net.minecraft.util.SignatureValidator;
+ import net.minecraft.util.TimeUtil;
+-import net.minecraft.util.debugchart.RemoteDebugSampleType;
++import net.minecraft.util.datafix.DataFixers;import net.minecraft.util.debugchart.RemoteDebugSampleType;
+ import net.minecraft.util.debugchart.SampleLogger;
+ import net.minecraft.util.debugchart.TpsDebugDimensions;
+ import net.minecraft.util.profiling.EmptyProfileResults;
 @@ -125,6 +_,7 @@
  import net.minecraft.util.thread.ReentrantBlockableEventLoop;
  import net.minecraft.world.Difficulty;
@@ -81,13 +101,27 @@
  import net.minecraft.world.entity.ai.village.VillageSiege;
  import net.minecraft.world.entity.npc.CatSpawner;
  import net.minecraft.world.entity.npc.WanderingTraderSpawner;
-@@ -161,14 +_,40 @@
- import net.minecraft.world.level.storage.LevelResource;
- import net.minecraft.world.level.storage.LevelStorageSource;
- import net.minecraft.world.level.storage.PlayerDataStorage;
-+import net.minecraft.world.level.storage.PrimaryLevelData;
- import net.minecraft.world.level.storage.ServerLevelData;
- import net.minecraft.world.level.storage.WorldData;
+@@ -149,26 +_,40 @@
+ import net.minecraft.world.level.chunk.storage.ChunkIOErrorReporter;
+ import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
+ import net.minecraft.world.level.dimension.LevelStem;
+-import net.minecraft.world.level.levelgen.Heightmap;
+-import net.minecraft.world.level.levelgen.PatrolSpawner;
+-import net.minecraft.world.level.levelgen.PhantomSpawner;
+-import net.minecraft.world.level.levelgen.WorldOptions;
+-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+-import net.minecraft.world.level.storage.CommandStorage;
+-import net.minecraft.world.level.storage.DerivedLevelData;
+-import net.minecraft.world.level.storage.DimensionDataStorage;
+-import net.minecraft.world.level.storage.LevelData;
+-import net.minecraft.world.level.storage.LevelResource;
+-import net.minecraft.world.level.storage.LevelStorageSource;
+-import net.minecraft.world.level.storage.PlayerDataStorage;
+-import net.minecraft.world.level.storage.ServerLevelData;
+-import net.minecraft.world.level.storage.WorldData;
++import net.minecraft.world.level.levelgen.*;
++import net.minecraft.world.level.levelgen.presets.WorldPresets;import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
++import net.minecraft.world.level.storage.*;
  import net.minecraft.world.phys.Vec2;
  import net.minecraft.world.phys.Vec3;
 +import net.minecraft.world.scores.PlayerTeam;
@@ -157,7 +191,7 @@
      @Nullable
      private KeyPair keyPair;
      @Nullable
-@@ -254,18 +_,47 @@
+@@ -254,18 +_,49 @@
      public final Executor executor;
      @Nullable
      private String serverId;
@@ -194,6 +228,8 @@
 +    public final dev.instellar.stellar.configuration.StellarConfigurations stellarConfigurations; // Stellar - add stellar configuration files
 +    public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
 +    public boolean lagging = false; // Purpur
++    protected boolean upnp = false; // Purpur
++
 +    public volatile Thread shutdownThread; // Paper
 +    public volatile boolean abnormalExit = false; // Paper
 +    public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
@@ -323,7 +359,7 @@
          }
      }
  
-@@ -325,7 +_,82 @@
+@@ -325,18 +_,95 @@
  
      protected abstract boolean initServer() throws IOException;
  
@@ -407,9 +443,218 @@
          if (!JvmProfiler.INSTANCE.isRunning()) {
          }
  
-@@ -354,7 +_,7 @@
+         boolean flag = false;
+         ProfiledDuration profiledduration = JvmProfiler.INSTANCE.onWorldLoadedStarted();
++
+         this.worldData.setModdedInfo(this.getServerModName(), this.getModdedStatus().shouldReportAsModified());
+         ChunkProgressListener chunkprogresslistener = this.progressListenerFactory
+             .create(this.worldData.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS));
+         this.createLevels(chunkprogresslistener);
+         this.forceDifficulty();
+         this.prepareLevels(chunkprogresslistener);
++
+         if (profiledduration != null) {
+             profiledduration.finish();
+         }
+@@ -353,8 +_,203 @@
+     protected void forceDifficulty() {
      }
  
++    // CraftBukkit start
++    /*
++    private void loadWorld0(String s) {
++        LevelStorageSource.LevelStorageAccess worldSession = this.storageSource;
++
++        RegistryAccess.Frozen registryAccess = this.registries.compositeAccess();
++        Registry<LevelStem> dimensions = registryAccess.registryOrThrow(Registries.LEVEL_STEM);
++        NeoForgeInjectBukkit.addEnumEnvironment(dimensions); // Stellar
++        for (LevelStem worldDimension : dimensions) {
++            ResourceKey<LevelStem> dimensionKey = dimensions.getResourceKey(worldDimension).get();
++
++            ServerLevel world;
++            final Path worldDir = this.server.getWorldContainer().toPath().resolve(s); // Stellar
++            int dimension = 0;
++            if (dimensionKey == LevelStem.NETHER) {
++                if (this.server.getAllowNether()) {
++                    dimension = -1;
++                } else {
++                    continue;
++                }
++            } else if (dimensionKey == LevelStem.END) {
++                if (this.server.getAllowEnd()) {
++                    dimension = 1;
++                } else {
++                    continue;
++                }
++            } else if (dimensionKey != LevelStem.OVERWORLD) {
++                dimension = -999;
++            }
++
++            String worldType = (dimension == -999)
++                ? dimensionKey.location().getNamespace() + "_" + dimensionKey.location().getPath()
++                : org.bukkit.World.Environment.getEnvironment(dimension).toString().toLowerCase(Locale.ROOT);
++
++            final Path dimensionDir = LevelStorageSource.getStorageFolder(new File(s).toPath(), dimensionKey); // Stellar - dimensionDir
++            String name = (dimensionKey == LevelStem.OVERWORLD) ? s : s + "_" + worldType;
++
++            Dynamic<?> dynamic;
++            if (worldSession.hasWorldData()) {
++                LevelSummary worldinfo;
++
++                try {
++                    dynamic = worldSession.getDataTag();
++                    worldinfo = worldSession.getSummary(dynamic);
++                } catch (NbtException | ReportedNbtException | IOException ioexception) {
++                    LevelStorageSource.LevelDirectory convertable_b = worldSession.getLevelDirectory();
++
++                    MinecraftServer.LOGGER.warn("Failed to load world data from {}", convertable_b.dataFile(), ioexception);
++                    MinecraftServer.LOGGER.info("Attempting to use fallback");
++
++                    try {
++                        dynamic = worldSession.getDataTagFallback();
++                        worldinfo = worldSession.getSummary(dynamic);
++                    } catch (NbtException | ReportedNbtException | IOException ioexception1) {
++                        MinecraftServer.LOGGER.error("Failed to load world data from {}", convertable_b.oldDataFile(), ioexception1);
++                        MinecraftServer.LOGGER.error("Failed to load world data from {} and {}. World files may be corrupted. Shutting down.", convertable_b.dataFile(), convertable_b.oldDataFile());
++                        return;
++                    }
++
++                    worldSession.restoreLevelDataFromOld();
++                }
++
++                if (worldinfo.requiresManualConversion()) {
++                    MinecraftServer.LOGGER.info("This world must be opened in an older version (like 1.6.4) to be safely converted");
++                    return;
++                }
++
++                if (!worldinfo.isCompatible()) {
++                    MinecraftServer.LOGGER.info("This world was created by an incompatible version.");
++                    return;
++                }
++            } else {
++                dynamic = null;
++            }
++
++            org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(worldType); // Stellar
++            org.bukkit.generator.BiomeProvider biomeProvider = this.server.getBiomeProvider(worldType); // Stellar
++
++            PrimaryLevelData worlddata;
++            WorldLoader.DataLoadContext worldloader_a = this.worldLoader;
++            Registry<LevelStem> iregistry = worldloader_a.datapackDimensions().registryOrThrow(Registries.LEVEL_STEM);
++            if (dynamic != null) {
++                LevelDataAndDimensions leveldataanddimensions = LevelStorageSource.getLevelDataAndDimensions(dynamic, worldloader_a.dataConfiguration(), iregistry, worldloader_a.datapackWorldgen());
++
++                worlddata = (PrimaryLevelData) leveldataanddimensions.worldData();
++            } else {
++                LevelSettings worldsettings;
++                WorldOptions worldoptions;
++                WorldDimensions worlddimensions;
++
++                if (this.isDemo()) {
++                    worldsettings = MinecraftServer.DEMO_SETTINGS;
++                    worldoptions = WorldOptions.DEMO_OPTIONS;
++                    worlddimensions = WorldPresets.createNormalWorldDimensions(worldloader_a.datapackWorldgen());
++                } else {
++                    DedicatedServerProperties dedicatedserverproperties = ((DedicatedServer) this).getProperties();
++
++                    worldsettings = new LevelSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(), worldloader_a.dataConfiguration());
++                    worldoptions = this.options.has("bonusChest") ? dedicatedserverproperties.worldOptions.withBonusChest(true) : dedicatedserverproperties.worldOptions;
++                    worlddimensions = dedicatedserverproperties.createDimensions(worldloader_a.datapackWorldgen());
++                }
++
++                WorldDimensions.Complete worlddimensions_b = worlddimensions.bake(iregistry);
++                Lifecycle lifecycle = worlddimensions_b.lifecycle().add(worldloader_a.datapackWorldgen().allRegistriesLifecycle());
++
++                worlddata = new PrimaryLevelData(worldsettings, worldoptions, worlddimensions_b.specialWorldProperty(), lifecycle);
++            }
++            worlddata.checkName(worldType); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end) // Stellar
++            if (this.options.has("forceUpgrade")) {
++                net.minecraft.server.Main.forceUpgrade(worldSession, DataFixers.getDataFixer(), this.options.has("eraseCache"), () -> {
++                    return true;
++                }, registryAccess, this.options.has("recreateRegionFiles"));
++            }
++
++            PrimaryLevelData iworlddataserver = worlddata;
++            boolean flag = worlddata.isDebugWorld();
++            WorldOptions worldoptions = worlddata.worldGenOptions();
++            long i = worldoptions.seed();
++            long j = BiomeManager.obfuscateSeed(i);
++            List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(iworlddataserver));
++            LevelStem worlddimension = (LevelStem) dimensions.get(dimensionKey);
++
++            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), worlddimension.type().value(), worlddimension.generator(), this.registryAccess()); // Paper - Expose vanilla BiomeProvider from WorldInfo
++            if (biomeProvider == null && gen != null) {
++                biomeProvider = gen.getDefaultBiomeProvider(worldInfo);
++            }
++
++            ResourceKey<Level> worldKey = ResourceKey.create(Registries.DIMENSION, dimensionKey.location());
++
++            if (dimensionKey == LevelStem.OVERWORLD) {
++                this.worldData = worlddata;
++                this.worldData.setGameType(((DedicatedServer) this).getProperties().gamemode); // From DedicatedServer.init
++
++                ChunkProgressListener worldloadlistener = this.progressListenerFactory.create(this.worldData.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS));
++
++                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, worlddimension, worldloadlistener, flag, j, list, true, (RandomSequences) null, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
++                DimensionDataStorage worldpersistentdata = world.getDataStorage();
++                this.readScoreboard(worldpersistentdata);
++                this.server.scoreboardManager = new org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager(this, world.getScoreboard());
++                this.commandStorage = new CommandStorage(worldpersistentdata);
++            } else {
++                ChunkProgressListener worldloadlistener = this.progressListenerFactory.create(this.worldData.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS));
++                // Paper start - option to use the dimension_type to check if spawners should be added. I imagine mojang will add some datapack-y way of managing this in the future.
++                final List<CustomSpawner> spawners;
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.useDimensionTypeForCustomSpawners && this.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE).getResourceKey(worlddimension.type().value()).orElseThrow() == net.minecraft.world.level.dimension.BuiltinDimensionTypes.OVERWORLD) {
++                    spawners = list;
++                } else {
++                    spawners = Collections.emptyList();
++                }
++                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, worlddimension, worldloadlistener, flag, j, spawners, true, this.overworld().getRandomSequences(), org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
++                // Paper end - option to use the dimension_type to check if spawners should be added
++
++                Level.craftWorldData(NeoForgeInjectBukkit.environment.get(dimensionKey), gen, biomeProvider); // Stellar
++            }
++
++            worlddata.setModdedInfo(this.getServerModName(), this.getModdedStatus().shouldReportAsModified());
++            this.addLevel(world); // Paper - Put world into worldlist before initing the world; move up
++            this.initWorld(world, worlddata, this.worldData, worldoptions);
++            NeoForge.EVENT_BUS.post(new LevelEvent.Load(world)); // Neo // Stellar
++
++            // Paper - Put world into worldlist before initing the world; move up
++            this.getPlayerList().addWorldborderListener(world);
++
++            if (worlddata.getCustomBossEvents() != null) {
++                this.getCustomBossEvents().load(worlddata.getCustomBossEvents(), this.registryAccess());
++            }
++        }
++        this.forceDifficulty();
++
++        // Paper start - Configurable player collision; Handle collideRule team for player collision toggle
++        final ServerScoreboard scoreboard = this.getScoreboard();
++        final java.util.Collection<String> toRemove = scoreboard.getPlayerTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(net.minecraft.world.scores.PlayerTeam::getName).collect(java.util.stream.Collectors.toList());
++        for (String teamName : toRemove) {
++            scoreboard.removePlayerTeam(scoreboard.getPlayerTeam(teamName)); // Clean up after ourselves
++        }
++
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions) {
++            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + java.util.concurrent.ThreadLocalRandom.current().nextInt(), 16);
++            net.minecraft.world.scores.PlayerTeam collideTeam = scoreboard.addPlayerTeam(this.getPlayerList().collideRuleTeamName);
++            collideTeam.setSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
++        }
++        // Paper end - Configurable player collision
++
++        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
++        this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
++        this.server.spark.enableAfterPlugins(this.server); // Paper - spark
++        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
++        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
++        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - call commands event for regular plugins
++        ((org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
++        this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
++        this.connection.acceptConnections();
++    }
++    */
++
      protected void createLevels(ChunkProgressListener p_129816_) {
 -        ServerLevelData serverleveldata = this.worldData.overworldData();
 +        ServerLevelData serverleveldata = (PrimaryLevelData)this.worldData.overworldData();
@@ -530,30 +775,38 @@
              int i = serverchunkcache.getGenerator().getSpawnHeight(p_177897_);
              if (i < p_177897_.getMinBuildHeight()) {
                  BlockPos blockpos = chunkpos.getWorldPosition();
-@@ -484,25 +_,64 @@
+@@ -484,25 +_,72 @@
          serverleveldata.setGameType(GameType.SPECTATOR);
      }
  
-+    public void prepareLevels(ChunkProgressListener p_129941_, ServerLevel serverlevel) {
+-    public void prepareLevels(ChunkProgressListener p_129941_) {
+-        ServerLevel serverlevel = this.overworld();
++    public void prepareLevels(ChunkProgressListener worldloadlistener, ServerLevel serverlevel) {
 +        markWorldsDirty();
 +        if (!serverlevel.getWorld().getKeepSpawnInMemory()) {
 +            return;
 +        }
 +        this.forceTicks = true;
-+        LOGGER.info(I18n.as("minecraftserver.4", serverlevel.dimension().location()));
-+        BlockPos blockpos = serverlevel.getSharedSpawnPos();
-+        p_129941_.updateSpawnPos(new ChunkPos(blockpos));
+         LOGGER.info("Preparing start region for dimension {}", serverlevel.dimension().location());
+         BlockPos blockpos = serverlevel.getSharedSpawnPos();
++
++        worldloadlistener.updateSpawnPos(new ChunkPos(blockpos));
 +        ServerChunkCache serverchunkcache = serverlevel.getChunkSource();
++
 +        this.nextTickTimeNanos = Util.getNanos();
 +        serverlevel.setDefaultSpawnPos(blockpos, serverlevel.getSharedSpawnAngle());
-+        int i = serverlevel.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS);
++        int i = serverlevel.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS); // CraftBukkit - per-world
 +        int j = i > 0 ? Mth.square(ChunkProgressListener.calculateDiameter(i)) : 0;
 +
 +        while (serverchunkcache.getTickingGenerated() < j) {
++            // CraftBukkit start
++            // this.nextTickTimeNanos = SystemUtils.getNanos() + MinecraftServer.PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
 +            this.executeModerately();
 +        }
 +
++        // this.nextTickTimeNanos = SystemUtils.getNanos() + MinecraftServer.PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
 +        this.executeModerately();
++
 +        ForcedChunksSavedData forcedchunkssaveddata = serverlevel.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
 +        if (forcedchunkssaveddata != null) {
 +            LongIterator longiterator = forcedchunkssaveddata.getChunks().iterator();
@@ -561,26 +814,27 @@
 +            while (longiterator.hasNext()) {
 +                long k = longiterator.nextLong();
 +                ChunkPos chunkpos = new ChunkPos(k);
++
 +                serverlevel.getChunkSource().updateChunkForced(chunkpos, true);
 +            }
-+            ForcedChunkManager.reinstatePersistentChunks(serverlevel, forcedchunkssaveddata);
++            ForcedChunkManager.reinstatePersistentChunks(serverlevel, forcedchunkssaveddata); // Neo
 +        }
 +        Bukkit.getPluginManager().callEvent(new WorldLoadEvent(serverlevel.getWorld()));
 +
 +        // CraftBukkit start
 +        this.executeModerately();
-+        p_129941_.stop();
++        worldloadlistener.stop();
 +        serverlevel.setSpawnSettings(serverlevel.K.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals()); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
++
 +        this.forceTicks = false;
 +        // CraftBukkit end
 +    }
 +
-     public void prepareLevels(ChunkProgressListener p_129941_) {
-         ServerLevel serverlevel = this.overworld();
--        LOGGER.info("Preparing start region for dimension {}", serverlevel.dimension().location());
++    public void prepareLevels(ChunkProgressListener p_129941_) {
++        ServerLevel serverlevel = this.overworld();
 +        this.forceTicks = true;
 +        LOGGER.info(I18n.as("minecraftserver.4", serverlevel.dimension().location()));
-         BlockPos blockpos = serverlevel.getSharedSpawnPos();
++        BlockPos blockpos = serverlevel.getSharedSpawnPos();
          p_129941_.updateSpawnPos(new ChunkPos(blockpos));
          ServerChunkCache serverchunkcache = serverlevel.getChunkSource();
          this.nextTickTimeNanos = Util.getNanos();
@@ -602,7 +856,7 @@
          for (ServerLevel serverlevel1 : this.levels.values()) {
              ForcedChunksSavedData forcedchunkssaveddata = serverlevel1.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
              if (forcedchunkssaveddata != null) {
-@@ -513,13 +_,27 @@
+@@ -513,13 +_,29 @@
                      ChunkPos chunkpos = new ChunkPos(k);
                      serverlevel1.getChunkSource().updateChunkForced(chunkpos, true);
                  }
@@ -622,6 +876,8 @@
 +
 +        // Stellar start - moved from createLevels - call plugins here so make sure worlds are fully loaded
 +        this.server.enablePlugins(PluginLoadOrder.POSTWORLD);
++        this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
++        this.server.spark.enableAfterPlugins(this.server); // Paper - spark
 +        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
 +        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
 +        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - call commands event for regular plugins
@@ -690,7 +946,7 @@
          }
  
          return flag;
-@@ -582,21 +_,52 @@
+@@ -582,21 +_,62 @@
          this.stopServer();
      }
  
@@ -721,9 +977,18 @@
              this.cancelRecordingMetrics();
          }
  
--        LOGGER.info("Stopping server");
-+        LOGGER.info(I18n.as("minecraftserver.8"));
+         LOGGER.info("Stopping server");
 +        Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
++        this.server.spark.disable(); // Paper - spark
++        // Purpur start
++        if (upnp) {
++            if (dev.omega24.upnp4j.UPnP4J.close(this.getPort(), dev.omega24.upnp4j.util.Protocol.TCP)) {
++                LOGGER.info("[UPnP] Port {} closed", this.getPort());
++            } else {
++                LOGGER.error("[UPnP] Failed to close port {}", this.getPort());
++            }
++        }
++        // Purpur end
 +        // CraftBukkit start
 +        if (this.server != null) {
 +            this.server.disablePlugins();
@@ -806,7 +1071,7 @@
      }
  
      public String getLocalIp() {
-@@ -650,26 +_,105 @@
+@@ -650,26 +_,114 @@
      }
  
      public void halt(boolean p_129884_) {
@@ -893,22 +1158,30 @@
  
      protected void runServer() {
          try {
++            long serverStartTime = Util.getNanos(); // Paper
              if (!this.initServer()) {
--                throw new IllegalStateException("Failed to initialize server");
-+                throw new IllegalStateException(I18n.as("minecraftserver.15"));
+                 throw new IllegalStateException("Failed to initialize server");
              }
  
-+            ServerLifecycleHooks.handleServerStarted(this);
++            ServerLifecycleHooks.handleServerStarted(this); // Neo
              this.nextTickTimeNanos = Util.getNanos();
              this.statusIcon = this.loadStatusIcon().orElse(null);
              this.status = this.buildServerStatus();
 +            resetStatusCache(status);
  
 +            // Spigot start
++            // Paper start - Improved Watchdog Support
 +            LOGGER.info("Running delayed init tasks");
++            new io.papermc.paper.threadedregions.RegionizedServerInitEvent().callEvent(); // Call Folia init event
 +            this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // run all 1 tick delay tasks during init,
++            // this is going to be the first thing the tick process does anyways, so move done and run it after
++            // everything is init before watchdog tick.
++            // anything at 3+ won't be caught here but also will trip watchdog....
++            // tasks are default scheduled at -1 + delay, and first tick will tick at 1
++            this.server.spark.enableBeforePlugins(); // Paper - spark
 +            org.spigotmc.WatchdogThread.tick();
 +            org.spigotmc.WatchdogThread.hasStarted = true; // Paper
++            // Paper end - Improved Watchdog Support
 +            Arrays.fill( recentTps, 20 );
 +            // Paper start - further improve server tick loop
 +            long tickSection = Util.getNanos();
@@ -1103,26 +1376,27 @@
          }
      }
  
-@@ -900,12 +_,26 @@
+@@ -898,26 +_,60 @@
+         return false;
+     }
  
-     public void tickServer(BooleanSupplier p_129871_) {
+-    public void tickServer(BooleanSupplier p_129871_) {
++    public void tickServer(BooleanSupplier shouldKeepTicking) {
          long i = Util.getNanos();
++
 +        // Paper start - move oversleep into full server tick
 +        isOversleep = true;
-+        this.managedBlock(new BooleanSupplier() {
-+            @Override
-+            public boolean getAsBoolean() {
-+                return !MinecraftServer.this.canOversleep();
-+            }
-+        });
++        this.managedBlock(() -> !MinecraftServer.this.canOversleep());
 +        isOversleep = false;
 +        // Paper end
-+        new io.papermc.paper.event.server.ServerTickStartEvent(this.tickCount+1).callEvent(); // Paper - Server Tick Events
++        this.server.spark.tickStart(); // Paper - spark
++        new ServerTickStartEvent(this.tickCount+1).callEvent(); // Paper - Server Tick Events
 +
          this.tickCount++;
-+        EventHooks.fireServerTickPre(p_129871_, this);
++        EventHooks.fireServerTickPre(shouldKeepTicking, this); // Neo
          this.tickRateManager.tick();
-         this.tickChildren(p_129871_);
+-        this.tickChildren(p_129871_);
++        this.tickChildren(shouldKeepTicking);
          if (i - this.lastServerStatus >= STATUS_EXPIRE_TIME_NANOS) {
              this.lastServerStatus = i;
              this.status = this.buildServerStatus();
@@ -1130,20 +1404,49 @@
          }
  
          this.ticksUntilAutosave--;
-@@ -917,7 +_,11 @@
-             this.profiler.pop();
-             LOGGER.debug("Autosave finished");
+-        if (this.ticksUntilAutosave <= 0) {
+-            this.ticksUntilAutosave = this.computeNextAutosaveInterval();
+-            LOGGER.debug("Autosave started");
+-            this.profiler.push("save");
+-            this.saveEverything(true, false, false);
+-            this.profiler.pop();
+-            LOGGER.debug("Autosave finished");
++        // Paper start - Incremental chunk and player saving
++        int playerSaveInterval = io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.rate;
++        if (playerSaveInterval < 0) {
++            playerSaveInterval = autosavePeriod;
          }
--
+ 
++        this.profiler.push("save");
++        final boolean fullSave = autosavePeriod > 0 && this.tickCount % autosavePeriod == 0;
++        try {
++            this.isSaving = true;
++            if (playerSaveInterval > 0) {
++                this.playerList.saveAll(playerSaveInterval);
++            }
++            for (ServerLevel level : this.getAllLevels()) {
++                if (level.paperConfig().chunks.autoSaveInterval.value() > 0) {
++                    level.saveIncrementally(fullSave);
++                }
++            }
++        } finally {
++            this.isSaving = false;
++        }
++        this.profiler.pop();
++        // Paper end - Incremental chunk and player saving
++        // Paper start - move executeAll() into full server tick timing
++        this.runAllTasks();
++        // Paper end
 +        // Paper start - Server Tick Events
 +        long endTime = System.nanoTime();
 +        long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
-+        new io.papermc.paper.event.server.ServerTickEndEvent(this.tickCount, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
++        new ServerTickEndEvent(this.tickCount, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
++        this.server.spark.tickEnd(((double)(endTime - lastTick) / 1000000D)); // Paper - spark
 +        // Paper end - Server Tick Events
          this.profiler.push("tallying");
          long j = Util.getNanos() - i;
          int k = this.tickCount % 100;
-@@ -925,8 +_,14 @@
+@@ -925,8 +_,15 @@
          this.aggregatedTickTimesNanos += j;
          this.tickTimesNanos[k] = j;
          this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float)j / (float)TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
@@ -1154,7 +1457,8 @@
 +        // Paper end - Add tick times API and /mspt command
          this.logTickMethodTime(i);
          this.profiler.pop();
-+        EventHooks.fireServerTickPost(p_129871_, this);
++        org.spigotmc.WatchdogThread.tick(); // Spigot
++        EventHooks.fireServerTickPost(shouldKeepTicking, this); // Neo
      }
  
      private void logTickMethodTime(long p_321837_) {

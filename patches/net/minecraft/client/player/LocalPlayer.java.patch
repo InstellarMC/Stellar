@@ -29,19 +29,22 @@
          ItemStack itemstack = this.getInventory().removeFromSelected(p_108701_);
          this.connection.send(new ServerboundPlayerActionPacket(serverboundplayeractionpacket$action, BlockPos.ZERO, Direction.DOWN));
          return !itemstack.isEmpty();
-@@ -315,9 +_,9 @@
+@@ -315,10 +_,12 @@
      }
  
      @Override
 -    protected void actuallyHurt(DamageSource p_108729_, float p_108730_) {
 -        if (!this.isInvulnerableTo(p_108729_)) {
 -            this.setHealth(this.getHealth() - p_108730_);
-+    protected void actuallyHurt(DamageSource source, float amount) {
++    protected boolean actuallyHurt(DamageSource source, float amount, org.bukkit.event.entity.EntityDamageEvent event) {
 +        if (!this.isInvulnerableTo(source)) {
 +            this.setHealth(this.getHealth() - amount);
          }
++
++        return true; // Stellar
      }
  
+     @Override
 @@ -489,7 +_,14 @@
  
      @Override

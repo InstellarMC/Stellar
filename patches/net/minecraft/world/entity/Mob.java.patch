@@ -16,13 +16,12 @@
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.LevelAccessor;
  import net.minecraft.world.level.LevelReader;
-@@ -85,6 +_,12 @@
+@@ -85,6 +_,11 @@
  import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
  import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
  import net.minecraft.world.phys.AABB;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
-+import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.entity.EntityTargetEvent;
 +import org.bukkit.event.entity.EntityTransformEvent;
 +import org.bukkit.event.entity.EntityUnleashEvent;
@@ -62,10 +61,12 @@
      protected void registerGoals() {
      }
  
-@@ -236,8 +_,30 @@
+@@ -236,8 +_,28 @@
          return this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
      }
  
+-    public void setTarget(@Nullable LivingEntity p_21544_) {
+-        this.target = p_21544_;
 +    private EntityTargetEvent.TargetReason reason = EntityTargetEvent.TargetReason.UNKNOWN;
 +    private boolean fireCBEvent = true;
 +    public boolean canSetTarget = true;
@@ -74,9 +75,13 @@
 +        this.fireCBEvent = fireCBEvent;
 +    }
 +
-     public void setTarget(@Nullable LivingEntity p_21544_) {
--        this.target = p_21544_;
-+        net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent changeTargetEvent = net.neoforged.neoforge.common.CommonHooks.onLivingChangeTarget(this, p_21544_, net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent.LivingTargetType.MOB_TARGET);
++    public void setTarget(@Nullable LivingEntity target) {
++        // CraftBukkit start - fire event
++        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);
++    }
++    public boolean setTarget(@Nullable LivingEntity livingEntity, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
++        if (this.getTarget() == livingEntity) return false;
++        net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent changeTargetEvent = net.neoforged.neoforge.common.CommonHooks.onLivingChangeTarget(this, livingEntity, net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent.LivingTargetType.MOB_TARGET); // Neo
 +        changeTargetEvent.setReason(reason);
 +        changeTargetEvent.setfireCBEvent(fireCBEvent);
 +        if(!changeTargetEvent.isCanceled()) {
@@ -84,17 +89,29 @@
 +        } else {
 +            this.canSetTarget = false;
 +        }
-+    }
-+
-+    public boolean setTargetCB(LivingEntity p_21544_, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fireEvent) {
-+        if (getTarget() == p_21544_) return false;
-+        setTargetReason(reason, fireEvent);
-+        return canSetTarget;
-+        // CraftBukkit end
      }
  
      @Override
-@@ -346,6 +_,12 @@
+@@ -340,12 +_,31 @@
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public void inactiveTick() {
++        super.inactiveTick();
++        if (this.goalSelector.inactiveTick()) {
++            this.goalSelector.tick();
++        }
++        if (this.targetSelector.inactiveTick()) {
++            this.targetSelector.tick();
++        }
++    }
++    // Paper end
++
+     @Override
+     public void tick() {
+         super.tick();
          if (!this.level().isClientSide && this.tickCount % 5 == 0) {
              this.updateControlFlags();
          }

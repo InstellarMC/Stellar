@@ -648,6 +648,11 @@ public class NeoDevPlugin implements Plugin<Project> {
             task.getSourcesArtifact().set(minecraftArtifactsDir.map(dir -> dir.file("base-sources.jar")));
             task.getResourcesArtifact().set(minecraftArtifactsDir.map(dir -> dir.file("minecraft-resources.jar")));
             task.getNeoFormArtifact().set(mcAndNeoFormVersion.map(version -> "net.neoforged:neoform:" + version + "@zip"));
+            // Stellar start
+            // task.getParchmentEnabled().set(true);
+            // task.getParchmentData().from(project.getRootProject().file("src/main/resources/META-INF/mappings/parchment.json"));
+            // task.getParchmentConflictResolutionPrefix().set("stellar_");
+            // Stellar end
         });
     }
 

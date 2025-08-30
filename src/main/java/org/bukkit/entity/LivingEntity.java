@@ -97,7 +97,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
     public default Block getTargetBlock(int maxDistance) {
-        return getTargetBlock(maxDistance, io.papermc.paper.block.TargetBlockInfo.FluidMode.NEVER);
+        return getTargetBlock(maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode.NEVER);
     }
 
     /**
@@ -111,7 +111,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
-    public Block getTargetBlock(int maxDistance, @NotNull io.papermc.paper.block.TargetBlockInfo.FluidMode fluidMode);
+    public Block getTargetBlock(int maxDistance, @NotNull com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode);
 
     /**
      * Gets the blockface of that block that the living entity has targeted, ignoring fluids
@@ -136,7 +136,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
-    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, @NotNull io.papermc.paper.block.TargetBlockInfo.FluidMode fluidMode);
+    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, @NotNull com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode);
 
     /**
      * Gets the blockface of that block that the living entity has targeted
@@ -159,8 +159,8 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
-    public default io.papermc.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance) {
-        return getTargetBlockInfo(maxDistance, io.papermc.paper.block.TargetBlockInfo.FluidMode.NEVER);
+    public default com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance) {
+        return getTargetBlockInfo(maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode.NEVER);
     }
 
     /**
@@ -174,7 +174,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
-    public io.papermc.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, @NotNull io.papermc.paper.block.TargetBlockInfo.FluidMode fluidMode);
+    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, @NotNull com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode);
 
     /**
      * Gets information about the entity being targeted
@@ -207,7 +207,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
-    public default io.papermc.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance) {
+    public default com.destroystokyo.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance) {
         return getTargetEntityInfo(maxDistance, false);
     }
 
@@ -234,7 +234,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
-    public io.papermc.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance, boolean ignoreBlocks);
+    public com.destroystokyo.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance, boolean ignoreBlocks);
 
     /**
      * Gets information about the entity being targeted
@@ -365,15 +365,19 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return the item being used by the player, or null if they are not using
      * an item
+     * @deprecated Use {@link #getActiveItem()}
      */
     @Nullable
+    @Deprecated(forRemoval = true, since = "1.20.4") // Paper
     public ItemStack getItemInUse();
 
     /**
      * Gets the number of ticks remaining for the current item's usage.
      *
      * @return The number of ticks remaining
+     * @deprecated use {@link #getActiveItemRemainingTime()}
      */
+    @Deprecated(forRemoval = true, since = "1.20.4") // Paper
     public int getItemInUseTicks();
 
     /**
@@ -382,7 +386,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * or throwing a trident.
      *
      * @param ticks The number of ticks remaining
+     * @deprecated use {@link #setActiveItemRemainingTime(int)}
      */
+    @Deprecated(forRemoval = true, since = "1.20.4") // Paper
     public void setItemInUseTicks(int ticks);
 
     /**
@@ -585,6 +591,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
 
     /**
      * Adds the given {@link PotionEffect} to the living entity.
+     * <p>
+     * Note: {@link PotionEffect#getHiddenPotionEffect()} is ignored when
+     * adding the effect to the entity.
      *
      * @param effect PotionEffect to be added
      * @return whether the effect could be added
@@ -609,6 +618,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     /**
      * Attempts to add all of the given {@link PotionEffect} to the living
      * entity.
+     * <p>
+     * Note: {@link PotionEffect#getHiddenPotionEffect()} is ignored when
+     * adding the effect to the entity.
      *
      * @param effects the effects to add
      * @return whether all of the effects could be added
@@ -742,7 +754,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     /**
      * Sets the leash on this entity to be held by the supplied entity.
      * <p>
-     * This method has no effect on EnderDragons, Withers, Players, or Bats.
+     * This method has no effect on players.
      * Non-living entities excluding leashes will not persist as leash
      * holders.
      *
@@ -778,7 +790,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * This may have unexpected results if the entity is not in water.
      *
      * @param swimming True if the entity is swimming.
+     * @deprecated This does nothing and is immediately reverted by the server, in the next tick <!-- Paper - future note: should wait a mojang input client/server side -->
      */
+    @Deprecated // Paper
     public void setSwimming(boolean swimming);
 
     /**
@@ -1043,7 +1057,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @deprecated entity groupings are now managed by tags, not categories
      */
     @NotNull
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "1.20.5") @org.jetbrains.annotations.Contract("-> fail") // Paper
     public EntityCategory getCategory();
 
     /**
@@ -1062,6 +1076,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     @Override // Paper - move invisibility up to Entity
     public boolean isInvisible();
 
+    // Paper start
     /**
      * Get the number of arrows stuck in this entity
      * @return Number of arrows stuck
@@ -1299,16 +1314,68 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     void setJumping(boolean jumping);
     // Paper end - entity jump API
 
-    // Paper start - Expose canUseSlot
+    // Paper start - pickup animation API
     /**
-     * Checks whether this entity can use the equipment slot.
-     * <br>For example, not all entities may have {@link org.bukkit.inventory.EquipmentSlot#BODY}.
+     * Plays pickup item animation towards this entity.
+     * <p>
+     * <b>This will remove the item on the client.</b>
+     * <p>
+     * Quantity is inferred to be that of the {@link Item}.
      *
-     * @param slot equipment slot
-     * @return whether this entity can use the equipment slot
+     * @param item item to pickup
      */
-    boolean canUseEquipmentSlot(org.bukkit.inventory.@NotNull EquipmentSlot slot);
-    // Paper end - Expose canUseSlot
+    default void playPickupItemAnimation(@NotNull Item item) {
+        playPickupItemAnimation(item, item.getItemStack().getAmount());
+    }
+
+    /**
+     * Plays pickup item animation towards this entity.
+     * <p>
+     * <b>This will remove the item on the client.</b>
+     *
+     * @param item item to pickup
+     * @param quantity quantity of item
+     */
+    void playPickupItemAnimation(@NotNull Item item, int quantity);
+    // Paper end - pickup animation API
+
+    // Paper start - hurt direction API
+    /**
+     * Gets player hurt direction
+     *
+     * @return hurt direction
+     */
+    float getHurtDirection();
+
+    /**
+     * Sets player hurt direction
+     *
+     * @param hurtDirection hurt direction
+     * @deprecated use {@link Player#setHurtDirection(float)}
+     */
+    @Deprecated
+    void setHurtDirection(float hurtDirection);
+    // Paper end - hurt direction API
+
+    // Paper start - swing hand API
+    /**
+     * Makes this entity swing their hand.
+     *
+     * <p>This method does nothing if this entity does not
+     * have an animation for swinging their hand.
+     *
+     * @param hand hand to be swung, either {@link org.bukkit.inventory.EquipmentSlot#HAND} or {@link org.bukkit.inventory.EquipmentSlot#OFF_HAND}
+     * @throws IllegalArgumentException if invalid hand is passed
+     */
+    default void swingHand(@NotNull org.bukkit.inventory.EquipmentSlot hand) {
+        com.google.common.base.Preconditions.checkArgument(hand != null && hand.isHand(), String.format("Expected a valid hand, got \"%s\" instead!", hand));
+        if (hand == org.bukkit.inventory.EquipmentSlot.HAND) {
+            this.swingMainHand();
+        } else {
+            this.swingOffHand();
+        }
+    }
+    // Paper end - swing hand API
 
     // Paper start - knockback API
     /**
@@ -1373,44 +1440,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     void damageItemStack(org.bukkit.inventory.@NotNull EquipmentSlot slot, int amount);
     // Paper end - ItemStack damage API
 
-    // Paper start - hurt direction API
-    /**
-     * Gets player hurt direction
-     *
-     * @return hurt direction
-     */
-    float getHurtDirection();
-
-    /**
-     * Sets player hurt direction
-     *
-     * @param hurtDirection hurt direction
-     * @deprecated use {@link Player#setHurtDirection(float)}
-     */
-    @Deprecated
-    void setHurtDirection(float hurtDirection);
-    // Paper end - hurt direction API
-
-    // Paper start - swing hand API
-    /**
-     * Makes this entity swing their hand.
-     *
-     * <p>This method does nothing if this entity does not
-     * have an animation for swinging their hand.
-     *
-     * @param hand hand to be swung, either {@link org.bukkit.inventory.EquipmentSlot#HAND} or {@link org.bukkit.inventory.EquipmentSlot#OFF_HAND}
-     * @throws IllegalArgumentException if invalid hand is passed
-     */
-    default void swingHand(@NotNull org.bukkit.inventory.EquipmentSlot hand) {
-        com.google.common.base.Preconditions.checkArgument(hand != null && hand.isHand(), String.format("Expected a valid hand, got \"%s\" instead!", hand));
-        if (hand == org.bukkit.inventory.EquipmentSlot.HAND) {
-            this.swingMainHand();
-        } else {
-            this.swingOffHand();
-        }
-    }
-    // Paper end - swing hand API
-
     // Paper start - body yaw API
     /**
      * Gets entity body yaw
@@ -1429,30 +1458,16 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     void setBodyYaw(float bodyYaw);
     // Paper end - body yaw API
 
-    // Paper start - pickup animation API
+    // Paper start - Expose canUseSlot
     /**
-     * Plays pickup item animation towards this entity.
-     * <p>
-     * <b>This will remove the item on the client.</b>
-     * <p>
-     * Quantity is inferred to be that of the {@link Item}.
+     * Checks whether this entity can use the equipment slot.
+     * <br>For example, not all entities may have {@link org.bukkit.inventory.EquipmentSlot#BODY}.
      *
-     * @param item item to pickup
+     * @param slot equipment slot
+     * @return whether this entity can use the equipment slot
      */
-    default void playPickupItemAnimation(@NotNull Item item) {
-        playPickupItemAnimation(item, item.getItemStack().getAmount());
-    }
-
-    /**
-     * Plays pickup item animation towards this entity.
-     * <p>
-     * <b>This will remove the item on the client.</b>
-     *
-     * @param item item to pickup
-     * @param quantity quantity of item
-     */
-    void playPickupItemAnimation(@NotNull Item item, int quantity);
-    // Paper end - pickup animation API
+    boolean canUseEquipmentSlot(org.bukkit.inventory.@NotNull EquipmentSlot slot);
+    // Paper end - Expose canUseSlot
 
     // Purpur start - API for any mob to burn daylight
     /**

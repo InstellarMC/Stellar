@@ -2,6 +2,8 @@ package io.papermc.paper.network;
 
 import java.net.InetSocketAddress;
 import javax.annotation.Nullable;
+
+import com.destroystokyo.paper.network.NetworkClient;
 import net.minecraft.network.Connection;
 
 public class PaperNetworkClient implements NetworkClient {

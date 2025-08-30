@@ -1,5 +1,6 @@
 package io.papermc.paper;
 
+import com.destroystokyo.paper.SkinParts;
 import com.google.common.base.Objects;
 import java.util.StringJoiner;
 

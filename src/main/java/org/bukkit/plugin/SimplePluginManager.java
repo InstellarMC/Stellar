@@ -5,9 +5,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.Graphs;
 import com.google.common.graph.MutableGraph;
-import io.papermc.paper.event.server.ServerExceptionEvent;
-import io.papermc.paper.exception.ServerEventException;
-import io.papermc.paper.exception.ServerPluginEnableDisableException;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -604,7 +601,7 @@ public final class SimplePluginManager implements PluginManager {
         gg.pufferfish.pufferfish.sentry.SentryContext.setPluginContext(plugin); // Pufferfish
         server.getLogger().log(Level.SEVERE, msg, ex);
         gg.pufferfish.pufferfish.sentry.SentryContext.removePluginContext(); // Pufferfish
-        callEvent(new ServerExceptionEvent(new ServerPluginEnableDisableException(msg, ex, plugin)));
+        callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
     }
     // Paper end
 
@@ -678,8 +675,8 @@ public final class SimplePluginManager implements PluginManager {
                 String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName();
                 server.getLogger().log(Level.SEVERE, msg, ex);
                 gg.pufferfish.pufferfish.sentry.SentryContext.removeEventContext(); // Pufferfish
-                if (!(event instanceof ServerExceptionEvent)) { // We don't want to cause an endless event loop
-                    callEvent(new ServerExceptionEvent(new ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
+                if (!(event instanceof com.destroystokyo.paper.event.server.ServerExceptionEvent)) { // We don't want to cause an endless event loop
+                    callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
                 }
                 // Paper end
             }

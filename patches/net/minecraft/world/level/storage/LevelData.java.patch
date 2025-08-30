@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/level/storage/LevelData.java
++++ b/net/minecraft/world/level/storage/LevelData.java
+@@ -22,6 +_,8 @@
+ 
+     void setRaining(boolean p_78171_);
+ 
++    void setRaining(boolean raining, org.bukkit.event.weather.WeatherChangeEvent.Cause cause); // Stellar
++
+     boolean isHardcore();
+ 
+     GameRules getGameRules();

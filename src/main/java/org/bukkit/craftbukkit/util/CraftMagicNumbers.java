@@ -1,29 +1,27 @@
 package org.bukkit.craftbukkit.util;
 
+import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
-import com.mohistmc.youer.util.I18n;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.serialization.Dynamic;
+import com.mojang.logging.LogUtils;import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
-import net.minecraft.SharedConstants;
+import net.kyori.adventure.text.Component;import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.CompoundTag;import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
@@ -70,10 +68,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.potion.PotionType;
+import org.bukkit.potion.PotionType;import org.slf4j.Logger;
 
 @SuppressWarnings("deprecation")
 public final class CraftMagicNumbers implements UnsafeValues {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     public static final CraftMagicNumbers INSTANCE = new CraftMagicNumbers();
     public static final boolean DISABLE_OLD_API_SUPPORT = Boolean.getBoolean("paper.disableOldApiSupport"); // Paper
 
@@ -81,7 +82,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     private CraftMagicNumbers() {}
 
-    // Paper start
     @Override
     public net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener() {
         return io.papermc.paper.adventure.PaperAdventure.FLATTENER;
@@ -116,7 +116,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public net.kyori.adventure.text.Component resolveWithContext(final net.kyori.adventure.text.Component component, final org.bukkit.command.CommandSender context, final org.bukkit.entity.Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
         return io.papermc.paper.adventure.PaperAdventure.resolveWithContext(component, context, scoreboardSubject, bypassPermissions);
     }
-    // Paper end
 
     public static BlockState getBlock(MaterialData material) {
         return CraftMagicNumbers.getBlock(material.getItemType(), material.getData());
@@ -255,22 +254,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     /**
-     * This string should be changed if the NMS mappings do.
-     *
-     * It has no meaning and should only be used as an equality check. Plugins
-     * which are sensitive to the NMS mappings may read it and refuse to load if
-     * it cannot be found or is different to the expected value.
-     *
-     * Remember: NMS is not supported API and may break at any time for any
-     * reason irrespective of this. There is often supported API to do the same
-     * thing as many common NMS usages. If not, you are encouraged to open a
-     * feature and/or pull request for consideration, or use a well abstracted
-     * third-party API such as ProtocolLib.
-     *
-     * @return string
+     * @deprecated in favor of {@link io.papermc.paper.ServerBuildInfo#minecraftVersionId()}
+     * Paper has used Mojang mappings since 1.20.5, and this method no longer returns a useful value.
      */
+    @Deprecated(forRemoval = true, since = "1.21.6")
     public String getMappingsVersion() {
-        return "7092ff1ff9352ad7e2260dc150e6a3ec";
+        throw new UnsupportedOperationException("Use ServerBuildInfo#minecraftVersionId instead.");
     }
 
     @Override
@@ -306,8 +295,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
         final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE); // Paper - use RegistryOps
         final net.minecraft.advancements.Advancement nms = net.minecraft.advancements.Advancement.CODEC.parse(ops, jsonelement).getOrThrow(JsonParseException::new); // Paper - use RegistryOps
         if (nms != null) {
-            // Paper start - Fix throw UnsupportedOperationException
-            //MinecraftServer.getServer().getAdvancements().advancements.put(minecraftkey, new AdvancementHolder(minecraftkey, nms));
             final com.google.common.collect.ImmutableMap.Builder<ResourceLocation, AdvancementHolder> mapBuilder = com.google.common.collect.ImmutableMap.builder();
             mapBuilder.putAll(MinecraftServer.getServer().getAdvancements().advancements);
 
@@ -326,7 +313,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     net.minecraft.advancements.TreeNodePosition.run(root);
                 }
             }
-            // Paper end - Fix throw UnsupportedOperationException
+
             Advancement bukkit = Bukkit.getAdvancement(key);
 
             if (bukkit != null) {
@@ -339,13 +326,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     Bukkit.getLogger().log(Level.SEVERE, "Error saving advancement " + key, ex);
                 }
 
-                // Paper start - Fix client lag on advancement loading
-                //MinecraftServer.getServer().getPlayerList().reload();
                 MinecraftServer.getServer().getPlayerList().getPlayers().forEach(player -> {
                     player.getAdvancements().reload(MinecraftServer.getServer().getAdvancements());
                     player.getAdvancements().flushDirty(player);
                 });
-                // Paper end - Fix client lag on advancement loading
 
                 return bukkit;
             }
@@ -380,7 +364,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
 
         if (toCheck == ApiVersion.NONE) {
-            Bukkit.getLogger().log(Level.WARNING, I18n.as("craftmagicnumbers.1", pdf.getFullName()));
+            Bukkit.getLogger().log(Level.WARNING, "Legacy plugin " + pdf.getFullName() + " does not specify an api-version.");
         }
     }
 
@@ -438,9 +422,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public String getTranslationKey(ItemStack itemStack) {
         net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
-        return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
+        return nmsItemStack.getItem().getDescriptionId();
     }
-    // Paper start
+
     @Override
     public boolean isSupportedApiVersion(String apiVersion) {
         if (apiVersion == null) return false;
@@ -449,11 +433,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         return !toCheck.isNewerThan(ApiVersion.CURRENT) && !toCheck.isOlderThan(minimumVersion);
     }
-    // Paper end
 
     @Override
     public String getTranslationKey(final Attribute attribute) {
-        return CraftAttribute.bukkitToMinecraft(attribute).getDescriptionId();
+        return CraftAttribute.bukkitToMinecraft(attribute).getDescriptionId(); // TODO(Sayakie): Attribute
     }
 
     @Override
@@ -464,6 +447,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return new CraftPotionType(namespacedKey, potionRegistry);
     }
 
+    // Stellar - check still valid
     @Override
     public DamageEffect getDamageEffect(String key) {
         Preconditions.checkArgument(key != null, "key cannot be null");
@@ -476,22 +460,75 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public byte[] serializeItem(ItemStack item) {
-        Preconditions.checkNotNull(item, "null cannot be serialized");
-        Preconditions.checkArgument(item.getType() != Material.AIR, "air cannot be serialized");
+    public String get(Class<?> aClass, String s) {
+        if (aClass == Enchantment.class) {
+            // We currently do not have any version-dependent remapping, so we can use current version
+            return FieldRename.convertEnchantmentName(ApiVersion.CURRENT, s);
+        }
+        return s;
+    }
 
-        return serializeNbtToBytes((net.minecraft.nbt.CompoundTag) (item instanceof CraftItemStack ? ((CraftItemStack) item).handle : CraftItemStack.asNMSCopy(item)).save(MinecraftServer.getServer().registryAccess()));
+    @Override
+    public <B extends Keyed> B get(Registry<B> registry, NamespacedKey namespacedKey) {
+        // We currently do not have any version-dependent remapping, so we can use current version
+        return CraftRegistry.get(registry, namespacedKey, ApiVersion.CURRENT);
+    }
+
+    @Override
+    public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
+        return new com.destroystokyo.paper.PaperVersionFetcher();
+    }
+
+    @Override
+    public byte[] serializeItem(ItemStack item, boolean compress) {
+        CompoundTag compound = serializeItemToCompound(item);
+        return writeCompoundToBytes(compound, compress);
+    }
+
+    @Override
+    public void serializeItemToNbt(ItemStack item, java.io.OutputStream output) throws IOException {
+        Preconditions.checkNotNull(output, "output cannot be null");
+
+        CompoundTag compound = serializeItemToCompound(item);
+        writeCompoundToStream(compound, output);
+    }
+
+    private CompoundTag serializeItemToCompound(ItemStack item) {
+        Preconditions.checkNotNull(item, "null cannot be serialized");
+        Preconditions.checkArgument(!item.isEmpty(), "Empty itemstack cannot be serialized");
+
+        return (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
+                MinecraftServer.getServer().registryAccess().createSerializationContext(NbtOps.INSTANCE),
+                CraftItemStack.unwrap(item)
+        ).getOrThrow();
     }
 
     @Override
     public ItemStack deserializeItem(byte[] data) {
-        Preconditions.checkNotNull(data, "null cannot be deserialized");
-        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
+        Preconditions.checkNotNull(data, "data cannot be null");
+        Preconditions.checkArgument(data.length > 0, "data cannot be empty");
 
-        net.minecraft.nbt.CompoundTag compound = deserializeNbtFromBytes(data);
-        final int dataVersion = compound.getInt("DataVersion");
-        compound = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ITEM_STACK, compound, dataVersion, this.getDataVersion()); // Paper - replace data conversion system
-        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
+        CompoundTag compound = readCompoundFromBytes(data);
+        return deserializeItemFromCompound(compound);
+    }
+
+    @Override
+    public ItemStack deserializeItemFromNbt(java.io.InputStream input) throws IOException {
+        Preconditions.checkNotNull(input, "input cannot be null");
+
+        CompoundTag compound = readCompoundFromStream(input);
+        return deserializeItemFromCompound(compound);
+    }
+
+    private ItemStack deserializeItemFromCompound(CompoundTag compound) {
+        final int dataVersion = compound.getIntOr("DataVersion", 0);
+        compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, DataFixers.getDataFixer(), compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
+        if (compound.getStringOr("id", "minecraft:air").equals("minecraft:air")) {
+            return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.EMPTY);
+        }
+        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(
+            CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), compound
+        ).getOrThrow());
     }
 
     @Override
@@ -550,7 +587,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             compound.remove("UUID");
         }
         return net.minecraft.world.entity.EntityType.create(compound, ((org.bukkit.craftbukkit.CraftWorld) world).getHandle())
-                .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
+            .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
     }
 
     private byte[] serializeNbtToBytes(net.minecraft.nbt.CompoundTag compound) {
@@ -579,6 +616,47 @@ public final class CraftMagicNumbers implements UnsafeValues {
         int dataVersion = compound.getInt("DataVersion");
         Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
         return compound;
+    }
+
+    private void writeCompoundToStream(CompoundTag compound, java.io.OutputStream output) throws IOException {
+        compound.putInt("DataVersion", getDataVersion());
+        net.minecraft.nbt.NbtIo.write(
+                compound,
+                new java.io.DataOutputStream(output)
+        );
+    }
+
+    private CompoundTag readCompoundFromStream(java.io.InputStream input) throws IOException {
+        CompoundTag compound = net.minecraft.nbt.NbtIo.read(
+                new java.io.DataInputStream(input),
+                net.minecraft.nbt.NbtAccounter.unlimitedHeap()
+        );
+        int dataVersion = compound.getIntOr("DataVersion", 0);
+        Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
+        return compound;
+    }
+
+    private CompoundTag readCompoundFromBytes(byte[] data) {
+        boolean decompress = UnsafeValues.isGZipCompressedNbt(data);
+        var bis = new it.unimi.dsi.fastutil.io.FastByteArrayInputStream(data);
+        try (var is = decompress ?
+                new java.io.BufferedInputStream(new java.util.zip.GZIPInputStream(bis)) :  bis) {
+            return readCompoundFromStream(is);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private byte[] writeCompoundToBytes(CompoundTag compound, boolean compress) {
+        var bos = new it.unimi.dsi.fastutil.io.FastByteArrayOutputStream();
+        try (var os = compress ?
+                new java.io.BufferedOutputStream(new java.util.zip.GZIPOutputStream(bos)) : bos) {
+            writeCompoundToStream(compound, os);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        bos.trim();
+        return bos.array;
     }
 
     @Override
@@ -615,9 +693,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         var supplier = net.minecraft.world.entity.ai.attributes.DefaultAttributes.getSupplier((net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.LivingEntity>) net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(bukkitEntityKey)));
         return new io.papermc.paper.attribute.UnmodifiableAttributeMap(supplier);
     }
-    // Paper end
 
-    // Paper start - namespaced key biome methods
     @Override
     public org.bukkit.NamespacedKey getBiomeKey(org.bukkit.RegionAccessor accessor, int x, int y, int z) {
         CraftRegionAccessor cra = (CraftRegionAccessor) accessor;
@@ -630,61 +706,34 @@ public final class CraftMagicNumbers implements UnsafeValues {
         net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biomeBase = cra.getHandle().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME).getHolderOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BIOME, CraftNamespacedKey.toMinecraft(biomeKey)));
         cra.setBiome(x, y, z, biomeBase);
     }
-    // Paper end - namespaced key biome methods
 
-    // Paper start - fix custom stats criteria creation
     @Override
     public String getStatisticCriteriaKey(org.bukkit.Statistic statistic) {
         if (statistic.getType() != org.bukkit.Statistic.Type.UNTYPED) return "minecraft.custom:minecraft." + statistic.getKey().getKey();
         return CraftStatistic.getNMSStatistic(statistic).getName();
     }
 
-    // Paper start - spawn egg color visibility
+    @Override
+    public List<Component> computeTooltipLines(final ItemStack itemStack, final io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final org.bukkit.entity.Player player) {
+        Preconditions.checkArgument(tooltipContext != null, "tooltipContext cannot be null");
+        net.minecraft.world.item.TooltipFlag.Default flag = tooltipContext.isAdvanced() ? net.minecraft.world.item.TooltipFlag.ADVANCED : net.minecraft.world.item.TooltipFlag.NORMAL;
+        if (tooltipContext.isCreative()) {
+            flag = flag.asCreative();
+        }
+        final List<net.minecraft.network.chat.Component> lines = CraftItemStack.asNMSCopy(itemStack).getTooltipLines(
+            net.minecraft.world.item.Item.TooltipContext.of(player == null ? CraftRegistry.getMinecraftRegistry() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
+            player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
+        return lines.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).toList();
+    }
+
     @Override
     public org.bukkit.Color getSpawnEggLayerColor(final EntityType entityType, final int layer) {
         final net.minecraft.world.entity.EntityType<?> nmsType = CraftEntityType.bukkitToMinecraft(entityType);
         final net.minecraft.world.item.SpawnEggItem eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
         return eggItem == null ? null : org.bukkit.Color.fromRGB(eggItem.getColor(layer));
     }
-    // Paper end - spawn egg color visibility
 
-    // Paper start - expose itemstack tooltip lines
-    @Override
-    public java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(final ItemStack itemStack, final io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final org.bukkit.entity.Player player) {
-        Preconditions.checkArgument(tooltipContext != null, "tooltipContext cannot be null");
-        net.minecraft.world.item.TooltipFlag.Default flag = tooltipContext.isAdvanced() ? net.minecraft.world.item.TooltipFlag.ADVANCED : net.minecraft.world.item.TooltipFlag.NORMAL;
-        if (tooltipContext.isCreative()) {
-            flag = flag.asCreative();
-        }
-        final java.util.List<net.minecraft.network.chat.Component> lines = CraftItemStack.asNMSCopy(itemStack).getTooltipLines(
-                net.minecraft.world.item.Item.TooltipContext.of(player == null ? net.minecraft.server.MinecraftServer.getServer().registryAccess() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
-                player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
-        return lines.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).toList();
-    }
-    // Paper end - expose itemstack tooltip lines
-
-    @Override
-    public String get(Class<?> aClass, String s) {
-        if (aClass == Enchantment.class) {
-            // We currently do not have any version-dependent remapping, so we can use current version
-            return FieldRename.convertEnchantmentName(ApiVersion.CURRENT, s);
-        }
-        return s;
-    }
-
-    @Override
-    public <B extends Keyed> B get(Registry<B> registry, NamespacedKey namespacedKey) {
-        // We currently do not have any version-dependent remapping, so we can use current version
-        return CraftRegistry.get(registry, namespacedKey, ApiVersion.CURRENT);
-    }
-    // Paper start - lifecycle event API
-    @Override
-    public io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> createPluginLifecycleEventManager(final org.bukkit.plugin.java.JavaPlugin plugin, final java.util.function.BooleanSupplier registrationCheck) {
-        return new io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEventManager<>(plugin, registrationCheck);
-    }
-    // Paper end - lifecycle event API
-
-    // Paper start - hack to get tags for non server-backed registries
+    // Stellar - still valid?
     @Override
     public <A extends Keyed, M> io.papermc.paper.registry.tag.Tag<A> getTag(final io.papermc.paper.registry.tag.TagKey<A> tagKey) { // TODO remove Keyed
         if (tagKey.registryKey() != io.papermc.paper.registry.RegistryKey.ENTITY_TYPE && tagKey.registryKey() != io.papermc.paper.registry.RegistryKey.FLUID) {
@@ -697,20 +746,16 @@ public final class CraftMagicNumbers implements UnsafeValues {
             .map(named -> new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(tagKey, named))
             .orElse(null);
     }
-    // Paper end - hack to get tags for non server-backed registries
 
-    // Paper start - proxy ItemStack
+    @Override
+    public io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> createPluginLifecycleEventManager(final org.bukkit.plugin.java.JavaPlugin plugin, final java.util.function.BooleanSupplier registrationCheck) {
+        return new io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEventManager<>(plugin, registrationCheck);
+    }
+
     @Override
     public org.bukkit.inventory.ItemStack createEmptyStack() {
         return CraftItemStack.asCraftMirror(null);
     }
-    // Paper end - proxy ItemStack
-
-    @Override
-    public io.papermc.paper.util.VersionFetcher getVersionFetcher() {
-        return new io.papermc.paper.PaperVersionFetcher();
-    }
-    // Paper end
 
     /**
      * This helper class represents the different NBT Tags.

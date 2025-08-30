@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import com.destroystokyo.paper.event.entity.AnvilDamagedEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Keyed;
@@ -661,16 +663,16 @@ public class MaterialRerouting {
     }
 
     // Method added post 1.13, no-op (https://github.com/PaperMC/Paper/pull/1244)
-    public static Material getMaterial(final io.papermc.paper.event.block.AnvilDamagedEvent.DamageState damageState) {
+    public static Material getMaterial(final AnvilDamagedEvent.DamageState damageState) {
         return damageState.getMaterial();
     }
 
     // Method added post 1.13, no-op (https://github.com/PaperMC/Paper/pull/1244)
     @RerouteStatic("com/destroystokyo/paper/event/block/AnvilDamagedEvent$DamageState")
-    public static io.papermc.paper.event.block.AnvilDamagedEvent.DamageState getState(
+    public static AnvilDamagedEvent.DamageState getState(
             final Material material
     ) {
-        return io.papermc.paper.event.block.AnvilDamagedEvent.DamageState.getState(material);
+        return AnvilDamagedEvent.DamageState.getState(material);
     }
 
     // Method added post 1.13, no-op (https://github.com/PaperMC/Paper/pull/10290)

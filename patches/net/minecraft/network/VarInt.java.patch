@@ -1,0 +1,47 @@
+--- a/net/minecraft/network/VarInt.java
++++ b/net/minecraft/network/VarInt.java
+@@ -8,7 +_,19 @@
+     private static final int CONTINUATION_BIT_MASK = 128;
+     private static final int DATA_BITS_PER_BYTE = 7;
+ 
+-    public static int getByteSize(int p_295994_) {
++    public static int getByteSize(int i) {
++    // Paper start - Optimize VarInts
++        return VARINT_EXACT_BYTE_LENGTHS[Integer.numberOfLeadingZeros(i)];
++    }
++    private static final int[] VARINT_EXACT_BYTE_LENGTHS = new int[33];
++    static {
++        for (int i = 0; i <= 32; ++i) {
++            VARINT_EXACT_BYTE_LENGTHS[i] = (int) Math.ceil((31d - (i - 1)) / 7d);
++        }
++        VARINT_EXACT_BYTE_LENGTHS[32] = 1; // Special case for the number 0.
++    }
++    public static int getByteSizeOld(int p_295994_) {
++    // Paper end - Optimize VarInts
+         for (int i = 1; i < 5; i++) {
+             if ((p_295994_ & -1 << i * 7) == 0) {
+                 return i;
+@@ -38,7 +_,22 @@
+         return i;
+     }
+ 
+-    public static ByteBuf write(ByteBuf p_295539_, int p_294256_) {
++    public static ByteBuf write(ByteBuf buf, int i) {
++     // Paper start - Optimize VarInts
++        // Peel the one and two byte count cases explicitly as they are the most common VarInt sizes
++        // that the proxy will write, to improve inlining.
++        if ((i & (0xFFFFFFFF << 7)) == 0) {
++            buf.writeByte(i);
++        } else if ((i & (0xFFFFFFFF << 14)) == 0) {
++            int w = (i & 0x7F | 0x80) << 8 | (i >>> 7);
++            buf.writeShort(w);
++        } else {
++            writeOld(buf, i);
++        }
++        return buf;
++    }
++    public static ByteBuf writeOld(ByteBuf p_295539_, int p_294256_) {
++    // Paper end - Optimize VarInts
+         while ((p_294256_ & -128) != 0) {
+             p_295539_.writeByte(p_294256_ & 127 | 128);
+             p_294256_ >>>= 7;

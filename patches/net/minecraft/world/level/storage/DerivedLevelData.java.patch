@@ -49,6 +49,30 @@
      }
  
      @Override
+@@ -95,6 +_,12 @@
+     public void setThundering(boolean p_78100_) {
+     }
+ 
++    // Stellar start
++    @Override
++    public void setThundering(boolean thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause cause) {
++    }
++    // Stellar end
++
+     @Override
+     public void setThunderTime(int p_78118_) {
+     }
+@@ -104,6 +_,10 @@
+     }
+ 
+     @Override
++    public void setRaining(boolean raining, org.bukkit.event.weather.WeatherChangeEvent.Cause cause) {
++    }
++
++    @Override
+     public void setRainTime(int p_78121_) {
+     }
+ 
 @@ -190,5 +_,27 @@
      public void fillCrashReportCategory(CrashReportCategory p_164852_, LevelHeightAccessor p_164853_) {
          p_164852_.setDetail("Derived", true);

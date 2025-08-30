@@ -11,7 +11,7 @@ import com.mohistmc.youer.bukkit.remapping.RemappingClassLoader;
 import com.mohistmc.youer.util.I18n;
 import cpw.mods.modlauncher.TransformingClassLoader;
 import io.izzel.tools.product.Product2;
-import io.papermc.paper.utils.PaperPluginLogger;
+import com.destroystokyo.paper.utils.PaperPluginLogger;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
