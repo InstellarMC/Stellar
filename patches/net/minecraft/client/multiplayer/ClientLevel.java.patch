@@ -129,6 +129,17 @@
      protected Map<MapId, MapItemSavedData> getAllMapData() {
          return ImmutableMap.copyOf(this.mapData);
      }
+@@ -1008,6 +_,10 @@
+         }
+ 
+         @Override
++        public void setRaining(boolean p_104866_, org.bukkit.event.weather.WeatherChangeEvent.Cause cause) {
++        }
++
++        @Override
+         public boolean isHardcore() {
+             return this.hardcore;
+         }
 @@ -1033,6 +_,7 @@
          }
  

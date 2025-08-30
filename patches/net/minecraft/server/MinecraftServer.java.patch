@@ -1071,7 +1071,7 @@
      }
  
      public String getLocalIp() {
-@@ -650,26 +_,114 @@
+@@ -650,26 +_,115 @@
      }
  
      public void halt(boolean p_129884_) {
@@ -1109,6 +1109,7 @@
 +    private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
 +    private long lastTick = 0;
 +    private long catchupTime = 0;
++    public final RollingAverage tps5s = new RollingAverage(5); // Purpur
 +    public final RollingAverage tps1 = new RollingAverage(60);
 +    public final RollingAverage tps5 = new RollingAverage(60 * 5);
 +    public final RollingAverage tps15 = new RollingAverage(60 * 15);
