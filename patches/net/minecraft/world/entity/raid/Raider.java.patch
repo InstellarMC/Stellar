@@ -24,19 +24,21 @@
      }
  
      @Nullable
-@@ -295,6 +_,7 @@
+@@ -295,7 +_,7 @@
              for (Raider raider : this.mob
                  .level()
                  .getNearbyEntities(Raider.class, this.shoutTargeting, this.mob, this.mob.getBoundingBox().inflate(8.0, 8.0, 8.0))) {
-+                raider.setTargetReason(org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER, true); // CraftBukkit
-                 raider.setTarget(this.mob.getTarget());
+-                raider.setTarget(this.mob.getTarget());
++                raider.setTarget(this.mob.getTarget(), org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER, true); // CraftBukkit
              }
          }
-@@ -307,6 +_,7 @@
+ 
+@@ -307,7 +_,7 @@
                  for (Raider raider : this.mob
                      .level()
                      .getNearbyEntities(Raider.class, this.shoutTargeting, this.mob, this.mob.getBoundingBox().inflate(8.0, 8.0, 8.0))) {
-+                    raider.setTargetReason(org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER, true); // CraftBukkit
-                     raider.setTarget(livingentity);
+-                    raider.setTarget(livingentity);
++                    raider.setTarget(livingentity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER, true); // CraftBukkit
                      raider.setAggressive(true);
                  }
+ 

@@ -39,33 +39,6 @@ import org.bukkit.inventory.ItemStack;
 public class EntityEventDispatcher {
 
     @SubscribeEvent(receiveCanceled = true)
-    public void changeTargetEvent(LivingChangeTargetEvent event) {
-        EntityTargetEvent.TargetReason reason = event.getReason();
-        LivingEntity entityliving = event.getNewAboutToBeSetTarget();
-
-        if (entityliving instanceof Mob mob) {
-            if (event.isFireCBEvent()) {
-                if (reason == EntityTargetEvent.TargetReason.UNKNOWN && mob.getTarget() != null && entityliving == null) {
-                    reason = mob.getTarget().isAlive() ? EntityTargetEvent.TargetReason.FORGOT_TARGET : EntityTargetEvent.TargetReason.TARGET_DIED;
-                }
-                CraftLivingEntity ctarget = null;
-                if (entityliving != null) {
-                    ctarget = (CraftLivingEntity) entityliving.getBukkitEntity();
-                }
-                EntityTargetLivingEntityEvent CBevent = new EntityTargetLivingEntityEvent(event.getEntity().getBukkitEntity(), ctarget, reason);
-                Bukkit.getPluginManager().callEvent(CBevent);
-                if (CBevent.isCancelled()) {
-                    event.setCanceled(true);
-                } else {
-                    if (CBevent.getTarget() != null) {
-                        event.setNewAboutToBeSetTarget(((CraftLivingEntity) CBevent.getTarget()).getHandle());
-                    }
-                }
-            }
-        }
-    }
-
-    @SubscribeEvent(receiveCanceled = true)
     public void onLivingDeath(LivingDropsEvent event) {
         if (event.getEntity() instanceof ServerPlayer) {
             return;

@@ -17,14 +17,13 @@
          this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
          this.targetSelector.addGoal(3, new ResetUniversalAngerTargetGoal<>(this, true));
      }
-@@ -148,7 +_,10 @@
+@@ -148,7 +_,9 @@
              .filter(p_34463_ -> p_34463_ != this)
              .filter(p_325818_ -> p_325818_.getTarget() == null)
              .filter(p_325817_ -> !p_325817_.isAlliedTo(this.getTarget()))
 -            .forEach(p_325816_ -> p_325816_.setTarget(this.getTarget()));
 +            .forEach(p_325816_ -> {
-+                p_325816_.setTargetReason(org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY, true); // CraftBukkit
-+                p_325816_.setTarget(this.getTarget());
++                p_325816_.setTarget(this.getTarget(), org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY, true); // CraftBukkit
 +            });
      }
  

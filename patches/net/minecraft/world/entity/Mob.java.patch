@@ -28,13 +28,15 @@
  
  public abstract class Mob extends LivingEntity implements EquipmentUser, Leashable, Targeting {
      private static final EntityDataAccessor<Byte> DATA_MOB_FLAGS_ID = SynchedEntityData.defineId(Mob.class, EntityDataSerializers.BYTE);
-@@ -131,13 +_,17 @@
+@@ -131,13 +_,19 @@
      private Leashable.LeashData leashData;
      private BlockPos restrictCenter = BlockPos.ZERO;
      private float restrictRadius = -1.0F;
 +    @Nullable
 +    private MobSpawnType spawnType;
 +    private boolean spawnCancelled = false;
++
++    public int ticksSinceLastInteraction; // Purpur
 +    public boolean aware = true; // CraftBukkit
  
      protected Mob(EntityType<? extends Mob> p_21368_, Level p_21369_) {
@@ -61,37 +63,85 @@
      protected void registerGoals() {
      }
  
-@@ -236,8 +_,28 @@
+@@ -236,8 +_,47 @@
          return this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
      }
  
 -    public void setTarget(@Nullable LivingEntity p_21544_) {
 -        this.target = p_21544_;
-+    private EntityTargetEvent.TargetReason reason = EntityTargetEvent.TargetReason.UNKNOWN;
-+    private boolean fireCBEvent = true;
-+    public boolean canSetTarget = true;
-+    public void setTargetReason(EntityTargetEvent.TargetReason reason, boolean fireCBEvent) {
-+        this.reason = reason;
-+        this.fireCBEvent = fireCBEvent;
-+    }
-+
 +    public void setTarget(@Nullable LivingEntity target) {
 +        // CraftBukkit start - fire event
 +        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);
 +    }
 +    public boolean setTarget(@Nullable LivingEntity livingEntity, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
 +        if (this.getTarget() == livingEntity) return false;
++        // Neo start
 +        net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent changeTargetEvent = net.neoforged.neoforge.common.CommonHooks.onLivingChangeTarget(this, livingEntity, net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent.LivingTargetType.MOB_TARGET); // Neo
-+        changeTargetEvent.setReason(reason);
-+        changeTargetEvent.setfireCBEvent(fireCBEvent);
-+        if(!changeTargetEvent.isCanceled()) {
++        if (!changeTargetEvent.isCanceled()) {
 +             this.target = changeTargetEvent.getNewAboutToBeSetTarget();
-+        } else {
-+            this.canSetTarget = false;
++             return false; // Stellar - respect paper
 +        }
++        // Neo end
++
++        if (fireEvent) {
++            if (reason == EntityTargetEvent.TargetReason.UNKNOWN && this.getTarget() != null && livingEntity == null) {
++                reason = this.getTarget().isAlive() ? EntityTargetEvent.TargetReason.FORGOT_TARGET : EntityTargetEvent.TargetReason.TARGET_DIED;
++            }
++            if (reason == EntityTargetEvent.TargetReason.UNKNOWN) {
++                this.level().getCraftServer().getLogger().log(java.util.logging.Level.WARNING, "Unknown target reason, please report on the issue tracker", new Exception());
++            }
++            org.bukkit.craftbukkit.entity.CraftLivingEntity ctarget = null;
++            if (livingEntity != null) {
++                ctarget = (org.bukkit.craftbukkit.entity.CraftLivingEntity) livingEntity.getBukkitEntity();
++            }
++            org.bukkit.event.entity.EntityTargetLivingEntityEvent event = new org.bukkit.event.entity.EntityTargetLivingEntityEvent(this.getBukkitEntity(), ctarget, reason);
++            this.level().getCraftServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return false;
++            }
++
++            if (event.getTarget() != null) {
++                livingEntity = ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
++            } else {
++                livingEntity = null;
++            }
++        }
++        if (livingEntity instanceof net.minecraft.server.level.ServerPlayer) this.ticksSinceLastInteraction = 0; // Purpur
++        this.target = livingEntity;
++        return true;
++        // CraftBukkit end
      }
  
      @Override
+@@ -276,8 +_,28 @@
+             this.playAmbientSound();
+         }
+ 
++        incrementTicksSinceLastInteraction(); // Purpur
+         this.level().getProfiler().pop();
+     }
++
++    // Purpur start
++    private void incrementTicksSinceLastInteraction() {
++        ++this.ticksSinceLastInteraction;
++        if (getRider() != null) {
++            this.ticksSinceLastInteraction = 0;
++            return;
++        }
++        if (this.level().purpurConfig.entityLifeSpan <= 0) {
++            return; // feature disabled
++        }
++        if (!this.removeWhenFarAway(0) || isPersistenceRequired() || requiresCustomPersistence() || hasCustomName()) {
++            return; // mob persistent
++        }
++        if (this.ticksSinceLastInteraction > this.level().purpurConfig.entityLifeSpan) {
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
++        }
++    }
++    // Purpur end
+ 
+     @Override
+     protected void playHurtSound(DamageSource p_21493_) {
 @@ -340,12 +_,31 @@
          }
      }
@@ -137,7 +187,7 @@
      @Override
      public void addAdditionalSaveData(CompoundTag p_21484_) {
          super.addAdditionalSaveData(p_21484_);
-@@ -425,6 +_,10 @@
+@@ -425,6 +_,11 @@
          if (this.isNoAi()) {
              p_21484_.putBoolean("NoAI", this.isNoAi());
          }
@@ -145,18 +195,26 @@
 +            p_21484_.putString("neoforge:spawn_type", this.spawnType.name());
 +        }
 +        p_21484_.putBoolean("Bukkit.Aware", this.aware); // CraftBukkit
++        p_21484_.putInt("Purpur.ticksSinceLastInteraction", this.ticksSinceLastInteraction); // Purpur
      }
  
      @Override
-@@ -484,6 +_,18 @@
+@@ -484,6 +_,26 @@
          }
  
          this.setNoAi(p_21450_.getBoolean("NoAI"));
 +
++        // CraftBukkit start
 +        if (p_21450_.contains("Bukkit.Aware")) {
 +            this.aware = p_21450_.getBoolean("Bukkit.Aware");
 +        }
-+
++        // CraftBukkit end
++        // Purpur start
++        if (p_21450_.contains("Purpur.ticksSinceLastInteraction")) {
++            this.ticksSinceLastInteraction = p_21450_.getInt("Purpur.ticksSinceLastInteraction");
++        }
++        // Purpur end
++        // Neo start
 +        if (p_21450_.contains("neoforge:spawn_type")) {
 +            try {
 +                this.spawnType = MobSpawnType.valueOf(p_21450_.getString("neoforge:spawn_type"));
@@ -164,6 +222,7 @@
 +                p_21450_.remove("neoforge:spawn_type");
 +            }
 +        }
++        // Neo end
      }
  
      @Override
@@ -397,7 +456,14 @@
                  );
                  this.setDeltaMovement(this.getDeltaMovement().multiply(0.6, 1.0, 0.6));
              }
-@@ -1456,28 +_,29 @@
+@@ -1450,34 +_,36 @@
+             this.playAttackSound();
+         }
+ 
++        if (p_21372_ instanceof net.minecraft.server.level.ServerPlayer) this.ticksSinceLastInteraction = 0; // Purpur
+         return flag;
+     }
+ 
      protected void playAttackSound() {
      }
  
