@@ -1252,32 +1252,38 @@
          if (!this.useItem.isEmpty() && this.isUsingItem()) {
              this.connection.send(new ClientboundEntityEventPacket(this, (byte)9));
              super.completeUsingItem();
-@@ -1334,19 +_,22 @@
+@@ -1334,31 +_,40 @@
      }
  
      public void restoreFrom(ServerPlayer p_9016_, boolean p_9017_) {
++        // Stellar start
 +        p_9016_.getBukkitEntity().setHandle(this);
 +        this.setBukkitEntity(p_9016_.getBukkitEntity());
 +        this.isRealPlayer = p_9016_.isRealPlayer;
++        // Stellar end
++
          this.wardenSpawnTracker = p_9016_.wardenSpawnTracker;
          this.chatSession = p_9016_.chatSession;
          this.gameMode.setGameModeForPlayer(p_9016_.gameMode.getGameModeForPlayer(), p_9016_.gameMode.getPreviousGameModeForPlayer());
          this.onUpdateAbilities();
          this.getAttributes().assignBaseValues(p_9016_.getAttributes());
 -        this.setHealth(this.getMaxHealth());
-+        this.setHealth(this.getMaxHealth()); // CraftBukkit
++        // this.setHealth(this.getMaxHealth()); // CraftBukkit
          if (p_9017_) {
              this.getInventory().replaceWith(p_9016_.getInventory());
              this.setHealth(p_9016_.getHealth());
              this.foodData = p_9016_.foodData;
  
-             for (MobEffectInstance mobeffectinstance : p_9016_.getActiveEffects()) {
+-            for (MobEffectInstance mobeffectinstance : p_9016_.getActiveEffects()) {
 -                this.addEffect(new MobEffectInstance(mobeffectinstance));
-+               this.addEffect(new MobEffectInstance(mobeffectinstance));
-             }
+-            }
++            // CraftBukkit
++            // for (MobEffectInstance mobeffectinstance : p_9016_.getActiveEffects()) {
++            //    this.addEffect(new MobEffectInstance(mobeffectinstance));
++            // }
  
              this.experienceLevel = p_9016_.experienceLevel;
-@@ -1354,11 +_,13 @@
+             this.totalExperience = p_9016_.totalExperience;
              this.experienceProgress = p_9016_.experienceProgress;
              this.setScore(p_9016_.getScore());
              this.portalProcess = p_9016_.portalProcess;

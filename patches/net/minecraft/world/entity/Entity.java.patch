@@ -514,7 +514,16 @@
          this.setYRot(p_19916_ % 360.0F);
          this.setXRot(p_19917_ % 360.0F);
      }
-@@ -419,7 +_,19 @@
+@@ -416,10 +_,28 @@
+     }
+ 
+     public void tick() {
++        // Pufferfish start - entity TTL
++        if (type != EntityType.PLAYER && type.ttl >= 0 && this.tickCount >= type.ttl) {
++            discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Purpur
++            return;
++        }
++        // Pufferfish end - entity TTL
          this.baseTick();
      }
  
