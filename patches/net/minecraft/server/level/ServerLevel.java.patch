@@ -235,7 +235,7 @@
 +    }
 +
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
-+        return this.chunkSource.getChunk(x, z, false);
++        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
 +    }
 +
 +    // Paper start - optimise getPlayerByUUID

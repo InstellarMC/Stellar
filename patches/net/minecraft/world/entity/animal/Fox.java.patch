@@ -16,6 +16,72 @@
  
  public class Fox extends Animal implements VariantHolder<Fox.Type> {
      private static final EntityDataAccessor<Integer> DATA_TYPE_ID = SynchedEntityData.defineId(Fox.class, EntityDataSerializers.INT);
+@@ -130,6 +_,65 @@
+         this.setCanPickUpLoot(true);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean isRidable() {
++        return level().purpurConfig.foxRidable;
++    }
++
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.foxRidableInWater;
++    }
++
++    @Override
++    public boolean isControllable() {
++        return level().purpurConfig.foxControllable;
++    }
++
++    @Override
++    public float getJumpPower() {
++        return getRider() != null && this.isControllable() ? 0.5F : super.getJumpPower();
++    }
++
++    @Override
++    public void onMount(Player rider) {
++        super.onMount(rider);
++        setCanPickUpLoot(false);
++        clearStates();
++        setIsPouncing(false);
++        spitOutItem(getItemBySlot(EquipmentSlot.MAINHAND));
++        setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
++    }
++
++    @Override
++    public void onDismount(Player rider) {
++        super.onDismount(rider);
++        setCanPickUpLoot(true);
++    }
++    // Purpur end
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.foxMaxHealth);
++        this.getAttribute(Attributes.SCALE).setBaseValue(this.level().purpurConfig.foxScale);
++    }
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.foxBreedingTicks;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.foxTakeDamageFromWater;
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.foxAlwaysDropExp;
++    }
++
+     @Override
+     protected void defineSynchedData(SynchedEntityData.Builder p_326335_) {
+         super.defineSynchedData(p_326335_);
 @@ -416,6 +_,7 @@
  
          this.setSleeping(p_28493_.getBoolean("Sleeping"));
@@ -59,11 +125,67 @@
          return SoundEvents.FOX_DEATH;
      }
  
-@@ -677,13 +_,16 @@
+@@ -675,15 +_,69 @@
+         return this.getTrustedUUIDs().contains(p_28530_);
+     }
  
-     @Override
-     protected void dropAllDeathLoot(ServerLevel p_348640_, DamageSource p_28536_) {
-+        super.dropAllDeathLoot(p_348640_, p_28536_);
+-    @Override
+-    protected void dropAllDeathLoot(ServerLevel p_348640_, DamageSource p_28536_) {
++    // Paper start - handle the bitten item separately like vanilla
++    @Override
++    protected boolean shouldSkipLoot(EquipmentSlot slot) {
++        return slot == EquipmentSlot.MAINHAND;
++    }
++    // Paper end
++
++    // Purpur start
++    @Override
++    public net.minecraft.world.InteractionResult mobInteract(Player player, InteractionHand hand) {
++        if (level().purpurConfig.foxTypeChangesWithTulips) {
++            ItemStack itemstack = player.getItemInHand(hand);
++            if (getVariant() == Type.RED && itemstack.getItem() == Items.WHITE_TULIP) {
++                setVariant(Type.SNOW);
++                if (!player.getAbilities().instabuild) {
++                    itemstack.shrink(1);
++                }
++                return net.minecraft.world.InteractionResult.SUCCESS;
++            } else if (getVariant() == Type.SNOW && itemstack.getItem() == Items.ORANGE_TULIP) {
++                setVariant(Type.RED);
++                if (!player.getAbilities().instabuild) {
++                    itemstack.shrink(1);
++                }
++                return net.minecraft.world.InteractionResult.SUCCESS;
++            }
++        }
++        return super.mobInteract(player, hand);
++    }
++    // Purpur end
++
++    @Override
++    // Paper start - Cancellable death event
++    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(ServerLevel world, DamageSource damageSource) {
++        ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND);
++
++        boolean releaseMouth = false;
++        if (!itemstack.isEmpty() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Fix MC-153010
++            this.spawnAtLocation(itemstack);
++            releaseMouth = true;
++        }
++
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = super.dropAllDeathLoot(world, damageSource);
++
++        // Below is code to drop
++
++        if (deathEvent == null || deathEvent.isCancelled()) {
++            return deathEvent;
++        }
++
++        if (releaseMouth) {
++            // Paper end - Cancellable death event
++            this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
++        }
++
++        return deathEvent; // Paper - Cancellable death event
 +    }
 +    protected void dropEquipment() { // Forge: move extra drops to dropEquipment to allow them to be captured by LivingDropsEvent
 +        super.dropEquipment();
@@ -72,7 +194,7 @@
              this.spawnAtLocation(itemstack);
              this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
          }
- 
+-
 -        super.dropAllDeathLoot(p_348640_, p_28536_);
      }
  

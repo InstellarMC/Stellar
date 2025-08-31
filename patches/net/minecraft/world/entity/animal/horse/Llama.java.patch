@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/horse/Llama.java
 +++ b/net/minecraft/world/entity/animal/horse/Llama.java
-@@ -74,16 +_,24 @@
+@@ -74,16 +_,83 @@
      @Nullable
      private Llama caravanHead;
      @Nullable
@@ -11,6 +11,65 @@
      public Llama(EntityType<? extends Llama> p_30750_, Level p_30751_) {
          super(p_30750_, p_30751_);
 +        this.maxDomestication = 30; // Paper - Missing entity API; configure max temper instead of a hardcoded value
++        // Purpur start
++        this.moveControl = new org.purpurmc.purpur.controller.MoveControllerWASD(this) {
++            @Override
++            public void tick() {
++                if (entity.getRider() != null && entity.isControllable() && isSaddled()) {
++                    purpurTick(entity.getRider());
++                } else {
++                    vanillaTick();
++                }
++            }
++        };
++        this.lookControl = new org.purpurmc.purpur.controller.LookControllerWASD(this) {
++            @Override
++            public void tick() {
++                if (entity.getRider() != null && entity.isControllable() && isSaddled()) {
++                    purpurTick(entity.getRider());
++                } else {
++                    vanillaTick();
++                }
++            }
++        };
++        // Purpur end
++    }
++
++    // Purpur start
++    @Override
++    public boolean isRidable() {
++        return level().purpurConfig.llamaRidable;
++    }
++
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.llamaRidableInWater;
++    }
++
++    @Override
++    public boolean isControllable() {
++        return level().purpurConfig.llamaControllable;
++    }
++
++    @Override
++    public boolean isSaddled() {
++        return super.isSaddled() || (isTamed() && getSwag() != null);
++    }
++    // Purpur end
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.llamaBreedingTicks;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.llamaTakeDamageFromWater;
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.llamaAlwaysDropExp;
      }
  
      public boolean isTraderLlama() {

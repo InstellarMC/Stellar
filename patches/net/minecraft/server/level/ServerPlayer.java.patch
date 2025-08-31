@@ -202,7 +202,7 @@
          @Override
          public void dataChanged(AbstractContainerMenu p_143462_, int p_143463_, int p_143464_) {
          }
-@@ -276,6 +_,72 @@
+@@ -276,6 +_,73 @@
      public final Object object;
      private int containerCounter;
      public boolean wonGame;
@@ -235,6 +235,7 @@
 +    public double maxHealthCache;
 +    public boolean joining = true;
 +    public boolean sentListPacket = false;
++    public boolean supressTrackerForLogin = false; // Paper - Fire PlayerJoinEvent when Player is actually ready
 +    // CraftBukkit end
 +    public boolean isRealPlayer; // Paper
 +    public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
@@ -555,10 +556,54 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking player");
              CrashReportCategory crashreportcategory = crashreport.addCategory("Player being ticked");
-@@ -657,9 +_,41 @@
+@@ -654,12 +_,95 @@
+         this.getScoreboard().forAllObjectives(p_9105_, this, p_313589_ -> p_313589_.set(p_9106_));
+     }
+ 
++    // Paper start - PlayerDeathEvent#getItemsToKeep
++    private static void processKeep(org.bukkit.event.entity.PlayerDeathEvent event, NonNullList<ItemStack> inv) {
++        List<org.bukkit.inventory.ItemStack> itemsToKeep = event.getItemsToKeep();
++        if (inv == null) {
++            // remainder of items left in toKeep - plugin added stuff on death that wasn't in the initial loot?
++            if (!itemsToKeep.isEmpty()) {
++                for (org.bukkit.inventory.ItemStack itemStack : itemsToKeep) {
++                    event.getEntity().getInventory().addItem(itemStack);
++                }
++            }
++
++            return;
++        }
++
++        for (int i = 0; i < inv.size(); ++i) {
++            ItemStack item = inv.get(i);
++            if (EnchantmentHelper.has(item, EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP) || itemsToKeep.isEmpty() || item.isEmpty()) {
++                inv.set(i, ItemStack.EMPTY);
++                continue;
++            }
++
++            final org.bukkit.inventory.ItemStack bukkitStack = item.getBukkitStack();
++            boolean keep = false;
++            final java.util.Iterator<org.bukkit.inventory.ItemStack> iterator = itemsToKeep.iterator();
++            while (iterator.hasNext()) {
++                final org.bukkit.inventory.ItemStack itemStack = iterator.next();
++                if (bukkitStack.equals(itemStack)) {
++                    iterator.remove();
++                    keep = true;
++                    break;
++                }
++            }
++
++            if (!keep) {
++                inv.set(i, ItemStack.EMPTY);
++            }
++        }
++    }
++    // Paper end - PlayerDeathEvent#getItemsToKeep
++
      @Override
      public void die(DamageSource p_9035_) {
-         this.gameEvent(GameEvent.ENTITY_DIE);
+-        this.gameEvent(GameEvent.ENTITY_DIE);
++        // this.gameEvent(GameEvent.ENTITY_DIE); // Paper - move below event cancellation check
 +        if (CommonHooks.onLivingDeath(this, p_9035_)) return;
          boolean flag = this.level().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES);
 -        if (flag) {
@@ -588,6 +633,17 @@
 +        Component defaultMessage = this.getCombatTracker().getDeathMessage();
 +        keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
 +        PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, p_9035_, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
++        // Paper start - cancellable death event
++        if (event.isCancelled()) {
++            // make compatible with plugins that might have already set the health in an event listener
++            if (this.getHealth() <= 0) {
++                this.setHealth((float) event.getReviveHealth());
++            }
++            return;
++        }
++        this.gameEvent(GameEvent.ENTITY_DIE); // moved from the top of this method
++        // Paper end
++
 +        // SPIGOT-943 - only call if they have an inventory open
 +        if (this.containerMenu != this.inventoryMenu) {
 +            InventoryOwner.setClose$Reason(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DEATH); // Paper - Inventory close reason
@@ -599,15 +655,22 @@
              this.connection
                  .send(
                      new ClientboundPlayerCombatKillPacket(this.getId(), component),
-@@ -692,10 +_,13 @@
+@@ -692,10 +_,20 @@
          if (this.level().getGameRules().getBoolean(GameRules.RULE_FORGIVE_DEAD_PLAYERS)) {
              this.tellNeutralMobsThatIDied();
          }
 -
 -        if (!this.isSpectator()) {
-+        shouldDropExperience.set(event.shouldDropExperience()); // Paper - tie to event
++        // SPIGOT-5478 must be called manually now
++        if (event.shouldDropExperience()) this.dropExperience(p_9035_.getEntity()); // Paper - tie to event
 +        // we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
 +        if (!event.getKeepInventory()) {
++            // Paper start - PlayerDeathEvent#getItemsToKeep
++            for (NonNullList<ItemStack> inv : this.getInventory().compartments) {
++                processKeep(event, inv);
++            }
++            processKeep(event, null);
++            // Paper end - PlayerDeathEvent#getItemsToKeep
              this.dropAllDeathLoot(this.serverLevel(), p_9035_);
          }
 +        this.setCamera(this); // Remove spectated target
@@ -1213,6 +1276,20 @@
                      }
                  }
              } else if (this.isFallFlying()) {
+@@ -1295,6 +_,13 @@
+     public void disconnect() {
+         this.disconnected = true;
+         this.ejectPassengers();
++
++        // Paper start - Workaround vehicle not tracking the passenger disconnection dismount
++        if (this.isPassenger() && this.getVehicle() instanceof ServerPlayer) {
++            this.stopRiding();
++        }
++        // Paper end - Workaround vehicle not tracking the passenger disconnection dismount
++
+         if (this.isSleeping()) {
+             this.stopSleepInBed(true, false);
+         }
 @@ -1306,7 +_,28 @@
  
      public void resetSentInfo() {
@@ -1257,9 +1334,9 @@
  
      public void restoreFrom(ServerPlayer p_9016_, boolean p_9017_) {
 +        // Stellar start
-+        p_9016_.getBukkitEntity().setHandle(this);
-+        this.setBukkitEntity(p_9016_.getBukkitEntity());
-+        this.isRealPlayer = p_9016_.isRealPlayer;
++        // p_9016_.getBukkitEntity().setHandle(this);
++        // this.setBukkitEntity(p_9016_.getBukkitEntity());
++        // this.isRealPlayer = p_9016_.isRealPlayer;
 +        // Stellar end
 +
          this.wardenSpawnTracker = p_9016_.wardenSpawnTracker;
@@ -1667,7 +1744,7 @@
 +            com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN : com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.valueOf(cause.name()));
 +    }
 +    public boolean setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause cause) {
-+        if (EventHooks.onPlayerSpawnSet(this, pos == null ? Level.OVERWORLD : dimension, pos, forced)) return false; // Neo
++        boolean neoEvent = net.neoforged.neoforge.event.EventHooks.onPlayerSpawnSet(this, pos == null ? Level.OVERWORLD : dimension, pos, forced); // Neo // Stellar - give some chance to Paper that respawn event is fired
 +
 +        Location spawnLoc = null;
 +        boolean willNotify = false;
@@ -1683,7 +1760,7 @@
 +        dumbEvent.callEvent();
 +
 +        PlayerSetSpawnEvent event = new PlayerSetSpawnEvent(this.getBukkitEntity(), cause, dumbEvent.getNewSpawn(), dumbEvent.isForced(), willNotify, willNotify ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null);
-+        event.setCancelled(dumbEvent.isCancelled());
++        event.setCancelled(dumbEvent.isCancelled() || neoEvent);
 +        if (!event.callEvent()) {
 +            return false;
 +        }

@@ -1,5 +1,39 @@
 --- a/net/minecraft/world/entity/animal/horse/ZombieHorse.java
 +++ b/net/minecraft/world/entity/animal/horse/ZombieHorse.java
+@@ -33,6 +_,33 @@
+         super(p_30994_, p_30995_);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.zombieHorseRidableInWater;
++    }
++
++    @Override
++    public boolean isTamed() {
++        return super.isTamed() || this.level().purpurConfig.zombieHorseRidable;
++    }
++    // Purpur end
++
++    @Override
++    public int getPurpurBreedTime() {
++        return 6000;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.zombieHorseTakeDamageFromWater;
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.zombieHorseAlwaysDropExp;
++    }
++
+     public static AttributeSupplier.Builder createAttributes() {
+         return createBaseHorseAttributes().add(Attributes.MAX_HEALTH, 15.0).add(Attributes.MOVEMENT_SPEED, 0.2F);
+     }
 @@ -56,7 +_,7 @@
      }
  

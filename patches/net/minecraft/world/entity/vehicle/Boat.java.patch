@@ -31,6 +31,15 @@
      public Boat(EntityType<? extends Boat> p_38290_, Level p_38291_) {
          super(p_38290_, p_38291_);
          this.blocksBuilding = true;
+@@ -132,7 +_,7 @@
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
+         return true;
+     }
+ 
 @@ -157,7 +_,7 @@
              }
          }

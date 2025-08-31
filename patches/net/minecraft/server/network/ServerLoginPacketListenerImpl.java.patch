@@ -1,9 +1,8 @@
 --- a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -1,15 +_,22 @@
+@@ -1,15 +_,21 @@
  package net.minecraft.server.network;
  
-+import com.mohistmc.youer.proxy.VelocityProxy;
  import com.google.common.primitives.Ints;
 +import com.mohistmc.youer.util.I18n;
  import com.mojang.authlib.GameProfile;
@@ -200,8 +199,8 @@
 +                if (GlobalConfiguration.get().proxies.velocity.enabled) {
 +                    this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
 +                    net.minecraft.network.FriendlyByteBuf buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
-+                    buf.writeByte(VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
-+                    ClientboundCustomQueryPacket packet1 = new ClientboundCustomQueryPacket(this.velocityLoginMessageId, ClientboundCustomQueryPacket.readPayload(VelocityProxy.PLAYER_INFO_CHANNEL, buf));
++                    buf.writeByte(com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
++                    ClientboundCustomQueryPacket packet1 = new ClientboundCustomQueryPacket(this.velocityLoginMessageId, ClientboundCustomQueryPacket.readPayload(com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, buf));
 +                    this.connection.send(packet1);
 +                    return;
 +                }
@@ -329,7 +328,7 @@
                  }
              }
  
-@@ -220,18 +_,181 @@
+@@ -220,18 +_,131 @@
                      ? ((InetSocketAddress)socketaddress).getAddress()
                      : null;
              }
@@ -440,56 +439,6 @@
 +        }
 +        // Paper end - Add Velocity IP Forwarding Support
          this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
-+    }
-+
-+    public void youer$handleCustomQueryPacket(FriendlyByteBuf payload, String type) {
-+        var buffer = payload.readNullable(r -> {
-+            int i = r.readableBytes();
-+            if (i >= 0 && i <= 1048576) {
-+                return new FriendlyByteBuf(r.readBytes(i));
-+            } else {
-+                throw new IllegalArgumentException("Payload may not be larger than 1048576 bytes");
-+            }
-+        });
-+        if (buffer == null) {
-+            this.disconnect(I18n.as("velocity.requires"));
-+            return;
-+        }
-+        if (!VelocityProxy.checkIntegrity(buffer)) {
-+            this.disconnect("Unable to verify player details");
-+            return;
-+        }
-+
-+        int version = buffer.readVarInt();
-+        if (version > VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION) {
-+            this.disconnect(Component.literal(String.format("Unsupported forwarding version %d, supported up to %d", version, VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION)));
-+            return;
-+        }
-+
-+        java.net.SocketAddress listening = this.connection.getRemoteAddress();
-+        int port = 0;
-+        if (listening instanceof java.net.InetSocketAddress) {
-+            port = ((java.net.InetSocketAddress) listening).getPort();
-+        }
-+        this.connection.address = new java.net.InetSocketAddress(VelocityProxy.readAddress(buffer), port);
-+
-+        if (ModList.get().isLoaded("fabric_networking_api_v1")) fixFabricNetworkingIssue();
-+
-+        this.authenticatedProfile = VelocityProxy.createProfile(buffer);
-+        //TODO Update handling for lazy sessions, might not even have to do anything?
-+
-+        // Proceed with login
-+        authenticatorPool.execute(() -> {
-+            try {
-+                final GameProfile gameprofile = this.callPlayerPreLoginEvents(this.authenticatedProfile);
-+                ServerLoginPacketListenerImpl.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
-+                ServerLoginPacketListenerImpl.this.startClientVerification(this.authenticatedProfile);
-+            } catch (Exception ex) {
-+                disconnect("Failed to verify username!");
-+                server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + authenticatedProfile.getName(), ex);
-+            }
-+        });
-+        ServerLoginPacketListenerImpl.LOGGER.info("Authenticated {} ({}) via Velocity proxy form {}", this.authenticatedProfile.getName(), this.authenticatedProfile.getId(), type);
 +    }
 +
 +    private void fixFabricNetworkingIssue() {

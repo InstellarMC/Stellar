@@ -1,5 +1,40 @@
 --- a/net/minecraft/world/entity/animal/sniffer/Sniffer.java
 +++ b/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+@@ -91,6 +_,34 @@
+         this.setPathfindingMalus(PathType.DAMAGE_CAUTIOUS, -1.0F);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean isRidable() {
++        return level().purpurConfig.snifferRidable;
++    }
++
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.snifferRidableInWater;
++    }
++
++    @Override
++    public boolean isControllable() {
++        return level().purpurConfig.snifferControllable;
++    }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.snifferMaxHealth);
++        this.getAttribute(Attributes.SCALE).setBaseValue(this.level().purpurConfig.snifferScale);
++    }
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.snifferBreedingTicks;
++    }
++    // Purpur end
++
+     @Override
+     protected void defineSynchedData(SynchedEntityData.Builder p_326082_) {
+         super.defineSynchedData(p_326082_);
 @@ -277,6 +_,13 @@
  
              for (ItemStack itemstack : list) {

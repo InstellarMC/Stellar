@@ -9,6 +9,24 @@
  
  public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddleable {
      public static final float BABY_SCALE = 0.45F;
+@@ -83,6 +_,17 @@
+         groundpathnavigation.setCanWalkOverFences(true);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.camelRidableInWater;
++    }
++
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.camelBreedingTicks;
++    }
++    // Purpur end
++
+     @Override
+     public void addAdditionalSaveData(CompoundTag p_250330_) {
+         super.addAdditionalSaveData(p_250330_);
 @@ -286,6 +_,7 @@
          this.dashCooldown = 55;
          this.setDashing(true);

@@ -24,6 +24,44 @@
  
  public class Bee extends Animal implements NeutralMob, FlyingAnimal {
      public static final float FLAP_DEGREES_PER_TICK = 120.32113F;
+@@ -136,7 +_,36 @@
+ 
+     public Bee(EntityType<? extends Bee> p_27717_, Level p_27718_) {
+         super(p_27717_, p_27718_);
+-        this.moveControl = new FlyingMoveControl(this, 20, true);
++        final org.purpurmc.purpur.controller.FlyingMoveControllerWASD flyingController = new org.purpurmc.purpur.controller.FlyingMoveControllerWASD(this, 0.25F, 1.0F, false); // Purpur
++        // Paper start - Fix MC-167279
++        class BeeFlyingMoveControl extends FlyingMoveControl {
++            public BeeFlyingMoveControl(final Mob entity, final int maxPitchChange, final boolean noGravity) {
++                super(entity, maxPitchChange, noGravity);
++            }
++
++            @Override
++            public void tick() {
++                // Purpur start
++                if (mob.getRider() != null && mob.isControllable()) {
++                    flyingController.purpurTick(mob.getRider());
++                    return;
++                }
++                // Purpur end
++                if (this.mob.getY() <= Bee.this.level().getMinBuildHeight()) {
++                    this.mob.setNoGravity(false);
++                }
++                super.tick();
++            }
++
++            // Purpur start
++            @Override
++            public boolean hasWanted() {
++                return mob.getRider() != null || !mob.isControllable() || super.hasWanted();
++            }
++            // Purpur end
++        }
++        this.moveControl = new BeeFlyingMoveControl(this, 20, true);
++        // Paper end - Fix MC-167279
+         this.lookControl = new Bee.BeeLookControl(this);
+         this.setPathfindingMalus(PathType.DANGER_FIRE, -1.0F);
+         this.setPathfindingMalus(PathType.WATER, -1.0F);
 @@ -181,12 +_,19 @@
  
      @Override
@@ -55,6 +93,34 @@
                  }
              }
  
+@@ -392,6 +_,27 @@
+     }
+ 
+     @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.beeMaxHealth);
++        this.getAttribute(Attributes.SCALE).setBaseValue(this.level().purpurConfig.beeScale);
++    }
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.beeBreedingTicks;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.beeTakeDamageFromWater;
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.beeAlwaysDropExp;
++    }
++
++    @Override
+     public int getRemainingPersistentAngerTime() {
+         return this.entityData.get(DATA_REMAINING_ANGER_TIME);
+     }
 @@ -486,8 +_,9 @@
          } else if (this.isTooFarAway(this.hivePos)) {
              return false;

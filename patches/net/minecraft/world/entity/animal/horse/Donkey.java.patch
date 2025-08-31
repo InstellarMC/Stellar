@@ -1,5 +1,34 @@
 --- a/net/minecraft/world/entity/animal/horse/Donkey.java
 +++ b/net/minecraft/world/entity/animal/horse/Donkey.java
+@@ -15,6 +_,28 @@
+         super(p_30672_, p_30673_);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.donkeyRidableInWater;
++    }
++    // Purpur end
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.donkeyBreedingTicks;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.donkeyTakeDamageFromWater;
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.donkeyAlwaysDropExp;
++    }
++
+     @Override
+     protected SoundEvent getAmbientSound() {
+         return SoundEvents.DONKEY_AMBIENT;
 @@ -26,7 +_,7 @@
      }
  

@@ -112,6 +112,15 @@
          CompoundTag compoundtag1 = p_31600_.getCompound("Pose");
          this.readPose(compoundtag1);
      }
+@@ -280,7 +_,7 @@
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
+         return false;
+     }
+ 
 @@ -290,9 +_,15 @@
  
      @Override
@@ -167,7 +176,7 @@
              this.setItemSlot(p_31590_, p_31591_.copyWithCount(1));
              return true;
          } else if (p_31591_.isEmpty() || p_31591_.getCount() <= 1) {
-@@ -375,58 +_,69 @@
+@@ -375,58 +_,124 @@
              this.setItemSlot(p_31590_, p_31591_.split(1));
              return true;
          }
@@ -192,19 +201,74 @@
 -            } else if (p_31579_.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
 +            if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 +                // CraftBukkit start
-+                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount)) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount)) {
 +                    return false;
 +                }
 +                this.kill(source); // CraftBukkit
 +                // CraftBukkit end
 +                return false;
-+             } else if (this.isInvulnerableTo(source) || this.invisible || this.isMarker()) {
++             } else if (this.isInvulnerableTo(source) || this.invisible || this.isMarker()) { // CraftBukkit
 +                // CraftBukkit start
-+                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount, true, this.invisible)) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount, true, this.invisible)) {
 +                    return false;
 +                }
 +                // CraftBukkit end
-+                return false;
++                    if (source.is(DamageTypeTags.IS_EXPLOSION)) {
++                        // Paper start - avoid duplicate event call
++                        org.bukkit.event.entity.EntityDeathEvent event = this.brokenByAnything(serverlevel, source);
++                        if (!event.isCancelled()) this.kill(source, false); // CraftBukkit
++                        // Paper end
++                        return false;
++                    } else if (source.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
++                        if (this.isOnFire()) {
++                            this.causeDamage(serverlevel, source, 0.15F);
++                        } else {
++                            this.igniteForSeconds(5.0F);
++                        }
++
++                        return false;
++                    } else if (source.is(DamageTypeTags.BURNS_ARMOR_STANDS) && this.getHealth() > 0.5F) {
++                        this.causeDamage(serverlevel, source, 4.0F);
++                        return false;
++                    } else {
++                        boolean flag = source.is(DamageTypeTags.CAN_BREAK_ARMOR_STAND);
++                        boolean flag1 = source.is(DamageTypeTags.ALWAYS_KILLS_ARMOR_STANDS);
++
++                        if (!flag && !flag1) {
++                            return false;
++                        } else {
++                            Entity entity = source.getEntity();
++
++                            if (entity instanceof net.minecraft.world.entity.player.Player) {
++                                net.minecraft.world.entity.player.Player entityhuman = (net.minecraft.world.entity.player.Player) entity;
++
++                                if (!entityhuman.getAbilities().mayBuild) {
++                                    return false;
++                                }
++                            }
++
++                            if (source.isCreativePlayer()) {
++                                this.playBrokenSound();
++                                this.showBreakingParticles();
++                                this.kill(source); // CraftBukkit
++                                return true;
++                            } else {
++                                long i = serverlevel.getGameTime();
++
++                                if (i - this.lastHit > 5L && !flag1) {
++                                    serverlevel.broadcastEntityEvent(this, (byte) 32);
++                                    this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
++                                    this.lastHit = i;
++                                } else {
++                                    org.bukkit.event.entity.EntityDeathEvent event = this.brokenByPlayer(serverlevel, source); // Paper
++                                    this.showBreakingParticles();
++                                    if (!event.isCancelled()) this.kill(source, false); // Paper - we still need to kill to follow vanilla logic (emit the game event etc...)
++                                }
++
++                                return true;
++                            }
++                        }
++                    }
 +            } else if (source.is(DamageTypeTags.IS_EXPLOSION)) {
 +                this.brokenByAnything(serverlevel, source);
 +                this.kill(source); // CraftBukkit
@@ -259,15 +323,72 @@
                          }
  
                          return true;
-@@ -483,7 +_,7 @@
+@@ -482,40 +_,49 @@
+         float f = this.getHealth();
          f -= p_31650_;
          if (f <= 0.5F) {
-             this.brokenByAnything(p_348633_, p_31649_);
+-            this.brokenByAnything(p_348633_, p_31649_);
 -            this.kill();
-+            this.kill(p_31649_); // CraftBukkit
++            // Paper start - avoid duplicate event call
++            org.bukkit.event.entity.EntityDeathEvent event = this.brokenByAnything(p_348633_, p_31649_);
++            if (!event.isCancelled()) this.kill(p_31649_, false); // CraftBukkit
++            // Paper end
          } else {
              this.setHealth(f);
              this.gameEvent(GameEvent.ENTITY_DAMAGE, p_31649_.getEntity());
+         }
+     }
+ 
+-    private void brokenByPlayer(ServerLevel p_348677_, DamageSource p_31647_) {
++    private org.bukkit.event.entity.EntityDeathEvent brokenByPlayer(ServerLevel world, DamageSource damageSource) { // Paper
+         ItemStack itemstack = new ItemStack(Items.ARMOR_STAND);
++
++        if (this.level().purpurConfig.persistentDroppableEntityDisplayNames)
+         itemstack.set(DataComponents.CUSTOM_NAME, this.getCustomName());
+-        Block.popResource(this.level(), this.blockPosition(), itemstack);
+-        this.brokenByAnything(p_348677_, p_31647_);
++        this.drops.add(new DefaultDrop(itemstack, stack -> Block.popResource(this.level(), this.blockPosition(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior
++        return this.brokenByAnything(world, damageSource); // Paper
+     }
+ 
+-    private void brokenByAnything(ServerLevel p_348553_, DamageSource p_31654_) {
++    private org.bukkit.event.entity.EntityDeathEvent brokenByAnything(ServerLevel world, DamageSource damageSource) { // Paper
+         this.playBrokenSound();
+-        this.dropAllDeathLoot(p_348553_, p_31654_);
+-
+-        for (int i = 0; i < this.handItems.size(); i++) {
+-            ItemStack itemstack = this.handItems.get(i);
++        // this.dropAllDeathLoot(worldserver, damagesource); // CraftBukkit - moved down
++
++        ItemStack itemstack;
++        int i;
++
++        for (i = 0; i < this.handItems.size(); ++i) {
++            itemstack = (ItemStack) this.handItems.get(i);
+             if (!itemstack.isEmpty()) {
+-                Block.popResource(this.level(), this.blockPosition().above(), itemstack);
++                this.drops.add(new DefaultDrop(itemstack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly
+                 this.handItems.set(i, ItemStack.EMPTY);
+             }
+         }
+ 
+-        for (int j = 0; j < this.armorItems.size(); j++) {
+-            ItemStack itemstack1 = this.armorItems.get(j);
+-            if (!itemstack1.isEmpty()) {
+-                Block.popResource(this.level(), this.blockPosition().above(), itemstack1);
+-                this.armorItems.set(j, ItemStack.EMPTY);
++        for (i = 0; i < this.armorItems.size(); ++i) {
++            itemstack = (ItemStack) this.armorItems.get(i);
++            if (!itemstack.isEmpty()) {
++                this.drops.add(new DefaultDrop(itemstack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly
++                this.armorItems.set(i, ItemStack.EMPTY);
+             }
+         }
++        return this.dropAllDeathLoot(world, damageSource); // CraftBukkit - moved from above // Paper
++
+     }
+ 
+     private void playBrokenSound() {
 @@ -550,7 +_,29 @@
  
      @Override
@@ -298,7 +419,7 @@
          Rotations rotations = this.entityData.get(DATA_HEAD_POSE);
          if (!this.headPose.equals(rotations)) {
              this.setHeadPose(rotations);
-@@ -598,9 +_,27 @@
+@@ -598,9 +_,31 @@
          return this.isSmall();
      }
  
@@ -312,16 +433,20 @@
      @Override
      public void kill() {
 -        this.remove(Entity.RemovalReason.KILLED);
-+        Collection<ItemEntity> captureDrops = this.captureDrops(null);
-+        CraftEventFactory.callEntityDeathEvent(this, this.damageSources().genericKill(), captureDrops); // CraftBukkit - call event
-+        this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
-+        // CraftBukkit end
-+        this.gameEvent(GameEvent.ENTITY_DIE);
++        // CraftBukkit start - pass DamageSource for kill
++        this.kill(null);
 +    }
 +
 +    public void kill(DamageSource damageSource) {
-+        Collection<ItemEntity> captureDrops = this.captureDrops(null);
-+        CraftEventFactory.callEntityDeathEvent(this, (damageSource == null ? this.damageSources().genericKill() : damageSource), captureDrops); // CraftBukkit - call event
++        // Paper start - make cancellable
++        this.kill(damageSource, true);
++    }
++    public void kill(DamageSource damageSource, boolean callEvent) {
++        if (callEvent) {
++            org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, (damageSource == null ? this.damageSources().genericKill() : damageSource), this.drops); // CraftBukkit - call event
++            if (event.isCancelled()) return;
++        }
++        // Paper end
 +        this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
 +        // CraftBukkit end
          this.gameEvent(GameEvent.ENTITY_DIE);

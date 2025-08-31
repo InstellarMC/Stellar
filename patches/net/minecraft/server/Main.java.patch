@@ -141,7 +141,7 @@
  
          try {
              OptionSet optionset = optionparser.parse(p_129699_);
-@@ -90,6 +_,30 @@
+@@ -90,6 +_,40 @@
                  optionparser.printHelpOn(System.err);
                  return;
              }
@@ -169,6 +169,16 @@
 +
 +            System.setProperty("library.jansi.version", "Youer"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
 +            org.spigotmc.SpigotConfig.disabledAdvancements = spigotConfiguration.getStringList("advancements.disabled"); // Paper - fix SPIGOT-5885, must be set early in init
++            // Paper start - fix SPIGOT-5824
++            File file;
++            File userCacheFile = new File(Services.USERID_CACHE_FILE);
++            if (optionset.has("universe")) {
++                file = (File) optionset.valueOf("universe"); // CraftBukkit
++                userCacheFile = new File(file, Services.USERID_CACHE_FILE);
++            } else {
++                file = new File(bukkitConfiguration.getString("settings.world-container", "."));
++            }
++            // Paper end - fix SPIGOT-5824
  
              Path path = optionset.valueOf(optionspec14);
              if (path != null) {
@@ -212,7 +222,7 @@
 -
              File file1 = new File(optionset.valueOf(optionspec9));
 -            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file1);
-+            Services services = Services.create(new PaperAuthenticationService(Proxy.NO_PROXY), file1, optionset); // Paper - pass OptionSet to load paper config files; override authentication service
++            Services services = Services.create(new PaperAuthenticationService(Proxy.NO_PROXY), file1, userCacheFile, optionset); // Paper - pass OptionSet to load paper config files; override authentication service; fix world-container
              String s = Optional.ofNullable(optionset.valueOf(optionspec10)).orElse(dedicatedserversettings.getProperties().levelName);
 +            if (s == null || s.isEmpty() || new File(file1, s).getAbsolutePath().equals(new File(s).getAbsolutePath())) {
 +                LOGGER.error("Invalid world directory specified, must not be null, empty or the same directory as your universe! " + s);

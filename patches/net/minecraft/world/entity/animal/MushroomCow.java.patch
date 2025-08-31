@@ -16,6 +16,50 @@
  
  public class MushroomCow extends Cow implements Shearable, VariantHolder<MushroomCow.MushroomType> {
      private static final EntityDataAccessor<String> DATA_TYPE = SynchedEntityData.defineId(MushroomCow.class, EntityDataSerializers.STRING);
+@@ -55,6 +_,43 @@
+         super(p_28914_, p_28915_);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean isRidable() {
++        return level().purpurConfig.mooshroomRidable;
++    }
++
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.mooshroomRidableInWater;
++    }
++
++    @Override
++    public boolean isControllable() {
++        return level().purpurConfig.mooshroomControllable;
++    }
++    // Purpur end
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.mooshroomMaxHealth);
++    }
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.mooshroomBreedingTicks;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.mooshroomTakeDamageFromWater;
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.mooshroomAlwaysDropExp;
++    }
++
+     @Override
+     public float getWalkTargetValue(BlockPos p_28933_, LevelReader p_28934_) {
+         return p_28934_.getBlockState(p_28933_.below()).is(Blocks.MYCELIUM) ? 10.0F : p_28934_.getPathfindingCostFromLightLevels(p_28933_);
 @@ -108,7 +_,7 @@
  
              this.playSound(soundevent, 1.0F, 1.0F);
@@ -25,10 +69,17 @@
              this.shear(SoundSource.PLAYERS);
              this.gameEvent(GameEvent.SHEAR, p_28941_);
              if (!this.level().isClientSide) {
-@@ -162,13 +_,30 @@
+@@ -162,16 +_,42 @@
      }
  
      @Override
+-    public void shear(SoundSource p_28924_) {
++    public void shear(SoundSource shearedSoundCategory) {
++        // Paper start - custom shear drops
++        this.shear(shearedSoundCategory, this.generateDefaultDrops(0)); // Purpur
++    }
++
++    @Override
 +    public java.util.List<ItemStack> generateDefaultDrops() {
 +        java.util.List<ItemStack> dropEntities = new java.util.ArrayList<>(5);
 +        for (int i = 0; i < 5; ++i) {
@@ -37,27 +88,33 @@
 +        return dropEntities;
 +    }
 +
-+    @Override
-+    public void shearPaper(SoundSource p_28924_, java.util.List<net.minecraft.world.item.ItemStack> drops) {
-+        shear$drops = drops;
-+        this.shear(p_28924_);
-+    }
-+
 +    public java.util.List<net.minecraft.world.item.ItemStack> shear$drops = new java.util.ArrayList<>();
++    private static final java.util.function.Consumer<Integer> EMPTY_TASK = (timer) -> {};
 +    @Override
-     public void shear(SoundSource p_28924_) {
++    public void shear(SoundSource p_28924_, java.util.List<ItemStack> drops) { // If drops is null, need to generate drops
          this.level().playSound(null, this, SoundEvents.MOOSHROOM_SHEAR, p_28924_, 1.0F, 1.0F);
          if (!this.level().isClientSide()) {
-+            if (!net.neoforged.neoforge.event.EventHooks.canLivingConvert(this, EntityType.COW, (timer) -> {})) return;
++            if (!net.neoforged.neoforge.event.EventHooks.canLivingConvert(this, EntityType.COW, EMPTY_TASK)) return; // Neo // Stellar - reduce lambda allocation
++
              Cow cow = EntityType.COW.create(this.level());
              if (cow != null) {
-+                net.neoforged.neoforge.event.EventHooks.onLivingConvert(this, cow);
++                net.neoforged.neoforge.event.EventHooks.onLivingConvert(this, cow); // Neo
++
                  ((ServerLevel)this.level()).sendParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY(0.5), this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
 -                this.discard();
                  cow.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
                  cow.setHealth(this.getHealth());
                  cow.yBodyRot = this.yBodyRot;
-@@ -182,13 +_,21 @@
++                // Purpur start
++                cow.copyPosition(this);
++                cow.setYHeadRot(this.getYHeadRot());
++                cow.yRotO = this.yRotO;
++                cow.xRotO = this.xRotO;
++                // Purpur end
+                 if (this.hasCustomName()) {
+                     cow.setCustomName(this.getCustomName());
+                     cow.setCustomNameVisible(this.isCustomNameVisible());
+@@ -182,13 +_,29 @@
                  }
  
                  cow.setInvulnerable(this.isInvulnerable());
@@ -73,8 +130,16 @@
 +                    return;
 +                }
 +                this.level().addFreshEntity(cow, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
++
 +                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - from above and add Bukkit remove cause
 +                // CraftBukkit end
++
++                // Paper start - custom shear drops; moved drop generation to separate method
++                for (final ItemStack drop : drops) {
++                    ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY(1.0D), this.getZ(), drop);
++                    this.spawnAtLocation(entityitem);
++                }
++                // Paper end - custom shear drops
 +                for (final ItemStack drop : shear$drops.isEmpty() ? generateDefaultDrops() : shear$drops) {
 +                    // Neo: Change from addFreshEntity to spawnAtLocation to ensure captureDrops can capture this, we also need to unset the default pickup delay from the item
 +                    // Vanilla uses this.getY(1.0) for the y-level, which is this.getY() + this.getBbHeight() * 1.0, so we pass the BB height as the Y-offset.

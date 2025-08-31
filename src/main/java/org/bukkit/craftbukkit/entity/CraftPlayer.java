@@ -4,6 +4,7 @@ import com.destroystokyo.paper.ClientOption;import com.destroystokyo.paper.Title
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.BaseEncoding;
 import com.mohistmc.youer.YouerConfig;
+import com.mohistmc.youer.feature.GlobalVariableSystem;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
@@ -383,7 +384,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, io.papermc.
         if (message == null) message = "";
         if (this.getHandle().connection == null) return;
 
-        for (Component component : CraftChatMessage.fromString(message)) {
+        for (Component component : CraftChatMessage.fromString(GlobalVariableSystem.as(this, message))) {
             this.getHandle().sendSystemMessage(component);
         }
     }

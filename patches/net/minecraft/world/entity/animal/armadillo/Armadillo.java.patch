@@ -9,6 +9,41 @@
  
  public class Armadillo extends Animal {
      public static final float BABY_SCALE = 0.6F;
+@@ -68,6 +_,34 @@
+         this.scuteTime = this.pickNextScuteDropTime();
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean isRidable() {
++        return level().purpurConfig.armadilloRidable;
++    }
++
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.armadilloRidableInWater;
++    }
++
++    @Override
++    public boolean isControllable() {
++        return level().purpurConfig.armadilloControllable;
++    }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.armadilloMaxHealth);
++        this.getAttribute(Attributes.SCALE).setBaseValue(this.level().purpurConfig.armadilloScale);
++    }
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.armadilloBreedingTicks;
++    }
++    // Purpur end
++
+     @Nullable
+     @Override
+     public AgeableMob getBreedOffspring(ServerLevel p_316757_, AgeableMob p_316523_) {
 @@ -139,7 +_,9 @@
          this.level().getProfiler().pop();
          if (this.isAlive() && !this.isBaby() && --this.scuteTime <= 0) {

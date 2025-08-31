@@ -17,6 +17,61 @@
  
  public class Panda extends Animal {
      private static final EntityDataAccessor<Integer> UNHAPPY_COUNTER = SynchedEntityData.defineId(Panda.class, EntityDataSerializers.INT);
+@@ -114,6 +_,54 @@
+         }
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean isRidable() {
++        return level().purpurConfig.pandaRidable;
++    }
++
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.pandaRidableInWater;
++    }
++
++    @Override
++    public boolean isControllable() {
++        return level().purpurConfig.pandaControllable;
++    }
++
++    @Override
++    public void onMount(Player rider) {
++        super.onMount(rider);
++        setForwardMot(0.0F);
++        sit(false);
++        eat(false);
++        setOnBack(false);
++    }
++    // Purpur end
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.pandaMaxHealth);
++        this.getAttribute(Attributes.SCALE).setBaseValue(this.level().purpurConfig.pandaScale);
++        setAttributes();
++    }
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.pandaBreedingTicks;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.pandaTakeDamageFromWater;
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.pandaAlwaysDropExp;
++    }
++
+     @Override
+     public boolean canTakeItem(ItemStack p_29146_) {
+         EquipmentSlot equipmentslot = this.getEquipmentSlotForItem(p_29146_);
 @@ -137,6 +_,7 @@
      }
  
