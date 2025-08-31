@@ -60,7 +60,7 @@
              p_54918_.setAsInsidePortal(this, p_54917_);
          }
      }
-@@ -120,24 +_,55 @@
+@@ -120,24 +_,54 @@
      @Nullable
      @Override
      public DimensionTransition getPortalDestination(ServerLevel p_350444_, Entity p_350334_, BlockPos p_350764_) {
@@ -114,7 +114,6 @@
      ) {
 -        Optional<BlockPos> optional = p_350564_.getPortalForcer().findClosestPortalPosition(p_350747_, p_350326_, p_350718_);
 +        PortalForcer portalforcer = p_350564_.getPortalForcer();
-+        portalforcer.findClosestPortalPosition$i.set(getExitPortal$searchRadius.getAndSet(0));
 +        Optional<BlockPos> optional = portalforcer.findClosestPortalPosition(p_350747_, p_350326_, p_350718_);
          BlockUtil.FoundRectangle blockutil$foundrectangle;
          DimensionTransition.PostDimensionTransition dimensiontransition$postdimensiontransition;

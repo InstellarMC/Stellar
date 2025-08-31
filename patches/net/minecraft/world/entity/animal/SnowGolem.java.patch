@@ -50,7 +50,7 @@
      }
  
      @Override
-@@ -89,10 +_,10 @@
+@@ -89,13 +_,14 @@
          super.aiStep();
          if (!this.level().isClientSide) {
              if (this.level().getBiome(this.blockPosition()).is(BiomeTags.SNOW_GOLEM_MELTS)) {
@@ -63,6 +63,10 @@
                  return;
              }
  
++            if (getRider() != null && this.isControllable() && !level().purpurConfig.snowGolemLeaveTrailWhenRidden) return; // Purpur - don't leave snow trail when being ridden
+             BlockState blockstate = Blocks.SNOW.defaultBlockState();
+ 
+             for (int i = 0; i < 4; i++) {
 @@ -104,7 +_,11 @@
                  int l = Mth.floor(this.getZ() + (double)((float)(i / 2 % 2 * 2 - 1) * 0.25F));
                  BlockPos blockpos = new BlockPos(j, k, l);
@@ -85,39 +89,47 @@
              this.shear(SoundSource.PLAYERS);
              this.gameEvent(GameEvent.SHEAR, p_29920_);
              if (!this.level().isClientSide) {
-@@ -141,12 +_,31 @@
+@@ -141,11 +_,38 @@
      }
  
      @Override
-+    public java.util.List<ItemStack> generateDefaultDrops() {
+-    public void shear(SoundSource p_29907_) {
++    public void shear(SoundSource shearedSoundCategory) {
++        // Paper start - custom shear drops
++        this.shear(shearedSoundCategory, this.generateDefaultDrops(0)); // Purpur
++    }
++
++    @Override
++    // Purpur start
++    public java.util.List<ItemStack> generateDefaultDrops(int looting) {
++        if (org.purpurmc.purpur.PurpurConfig.allowShearsLooting) {
++            java.util.ArrayList<ItemStack> list = new java.util.ArrayList<>();
++            for (int i = 0; i < 1 + looting; i++) {
++                list.add(new ItemStack(Items.CARVED_PUMPKIN));
++            }
++            return java.util.Collections.unmodifiableList(list);
++        }
++    // Purpur end
 +        return java.util.Collections.singletonList(new ItemStack(Items.CARVED_PUMPKIN));
 +    }
 +
 +    @Override
-     public void shear(SoundSource p_29907_) {
++    public void shear(SoundSource p_29907_, java.util.List<ItemStack> drops) {
++        // Paper end - custom shear drops
          this.level().playSound(null, this, SoundEvents.SNOW_GOLEM_SHEAR, p_29907_, 1.0F, 1.0F);
          if (!this.level().isClientSide()) {
              this.setPumpkin(false);
 -            this.spawnAtLocation(new ItemStack(Items.CARVED_PUMPKIN), this.getEyeHeight());
 +            // Paper start - custom shear drops (moved drop generation to separate method)
-+            for (final ItemStack drop : shear$drops.isEmpty() ? generateDefaultDrops() : shear$drops) {
++            for (final ItemStack drop : drops.isEmpty() ? generateDefaultDrops() : drops) {
 +                this.forceDrops = true;
 +                this.spawnAtLocation(drop, this.getEyeHeight());
 +                this.forceDrops = false;
 +            }
 +            // Paper end - custom shear drops
          }
-+    }
-+
-+    public java.util.List<net.minecraft.world.item.ItemStack> shear$drops = new java.util.ArrayList<>();
-+
-+    @Override
-+    public void shearPaper(SoundSource p_331493_, java.util.List<net.minecraft.world.item.ItemStack> drops) {
-+        shear$drops = drops;
-+        this.shear(p_331493_);
      }
  
-     @Override
 @@ -181,7 +_,7 @@
  
      @Nullable

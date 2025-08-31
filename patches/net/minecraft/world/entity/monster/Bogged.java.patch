@@ -15,6 +15,36 @@
  
  public class Bogged extends AbstractSkeleton implements Shearable {
      private static final int HARD_ATTACK_INTERVAL = 50;
+@@ -45,6 +_,29 @@
+         super(p_326920_, p_326946_);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean isRidable() {
++        return level().purpurConfig.boggedRidable;
++    }
++
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.boggedRidableInWater;
++    }
++
++    @Override
++    public boolean isControllable() {
++        return level().purpurConfig.boggedControllable;
++    }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.boggedMaxHealth);
++        this.getAttribute(Attributes.SCALE).setBaseValue(this.level().purpurConfig.boggedScale);
++    }
++    // Purpur end
++
+     @Override
+     protected void defineSynchedData(SynchedEntityData.Builder p_331269_) {
+         super.defineSynchedData(p_331269_);
 @@ -74,7 +_,7 @@
      @Override
      protected InteractionResult mobInteract(Player p_330736_, InteractionHand p_331786_) {
@@ -33,30 +63,38 @@
          return SoundEvents.BOGGED_DEATH;
      }
  
-@@ -130,10 +_,18 @@
+@@ -128,25 +_,64 @@
+     }
+ 
      @Override
-     public void shear(SoundSource p_331493_) {
+-    public void shear(SoundSource p_331493_) {
++    public void shear(SoundSource shearedSoundCategory) {
++    // Paper start - shear drop API
++        this.shear(shearedSoundCategory, generateDefaultDrops(0)); // Purpur
++    }
++
++    @Override
++    public void shear(SoundSource p_331493_, java.util.List<net.minecraft.world.item.ItemStack> drops) {
          this.level().playSound(null, this, SoundEvents.BOGGED_SHEAR, p_331493_, 1.0F, 1.0F);
 -        this.spawnShearedMushrooms();
-+        this.spawnDrops(shear$drops.isEmpty() ? generateDefaultDrops() : shear$drops); // Paper - shear drop API
++        this.spawnDrops(drops); // Paper - shear drop API
          this.setSheared(true);
      }
  
-+    public java.util.List<net.minecraft.world.item.ItemStack> shear$drops = new java.util.ArrayList<>();
-+
-+    @Override
-+    public void shearPaper(SoundSource p_331493_, java.util.List<net.minecraft.world.item.ItemStack> drops) {
-+        shear$drops = drops;
-+        this.shear(p_331493_);
+     private void spawnShearedMushrooms() {
+-        if (this.level() instanceof ServerLevel serverlevel) {
+-            LootTable loottable = serverlevel.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.BOGGED_SHEAR);
+-            LootParams lootparams = new LootParams.Builder(serverlevel)
+-                .withParameter(LootContextParams.ORIGIN, this.position())
+-                .withParameter(LootContextParams.THIS_ENTITY, this)
+-                .create(LootContextParamSets.SHEARING);
+-
+-            for (ItemStack itemstack : loottable.getRandomItems(lootparams)) {
+-                this.spawnAtLocation(itemstack, this.getBbHeight());
++    // Paper start - shear drops API
++        this.spawnDrops(generateDefaultDrops(0)); // Only here for people calling spawnSheardMushrooms. Not used otherwise. // Purpur
 +    }
 +
-     private void spawnShearedMushrooms() {
-         if (this.level() instanceof ServerLevel serverlevel) {
-             LootTable loottable = serverlevel.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.BOGGED_SHEAR);
-@@ -148,8 +_,42 @@
-         }
-     }
- 
 +    private void spawnDrops(java.util.List<net.minecraft.world.item.ItemStack> drops) {
 +        drops.forEach(stack -> {
 +            this.forceDrops = true;
@@ -64,35 +102,41 @@
 +            this.forceDrops = false;
 +        });
 +    }
-+    private void generateShearedMushrooms(java.util.function.Consumer<ItemStack> stackConsumer) {
++    private void generateShearedMushrooms(java.util.function.Consumer<ItemStack> stackConsumer, int looting) { // Purpur
 +        // Paper end - shear drops API
 +        Level world = this.level();
 +
 +        if (world instanceof ServerLevel worldserver) {
 +            LootTable loottable = worldserver.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.BOGGED_SHEAR);
 +            LootParams lootparams = (new LootParams.Builder(worldserver)).withParameter(LootContextParams.ORIGIN, this.position()).withParameter(LootContextParams.THIS_ENTITY, this).create(LootContextParamSets.SHEARING);
-+            ObjectListIterator objectlistiterator = loottable.getRandomItems(lootparams).iterator();
++            // Purpur start
++            it.unimi.dsi.fastutil.objects.ObjectArrayList<ItemStack> randomItemsList = loottable.getRandomItems(lootparams);
++            if (org.purpurmc.purpur.PurpurConfig.allowShearsLooting && looting > 0) {
++                for (int i = 0; i < looting; i++) {
++                    randomItemsList.addAll(loottable.getRandomItems(lootparams));
++                }
++            }
++            ObjectListIterator objectlistiterator = randomItemsList.iterator();
++            // Purpur end
 +
 +            while (objectlistiterator.hasNext()) {
 +                ItemStack itemstack = (ItemStack) objectlistiterator.next();
 +
 +                stackConsumer.accept(itemstack); // Paper
-+            }
-+        }
+             }
+         }
+-    }
 +
 +    }
-+
-     @Override
-     public boolean readyForShearing() {
-         return !this.isSheared() && this.isAlive();
-     }
 +
 +    // Paper start - shear drops API
 +    @Override
-+    public java.util.List<ItemStack> generateDefaultDrops() {
++    public java.util.List<ItemStack> generateDefaultDrops(int looting) { // Purpur
 +        final java.util.List<ItemStack> drops = new java.util.ArrayList<>();
-+        this.generateShearedMushrooms(drops::add);
++        this.generateShearedMushrooms(drops::add, looting); // Purpur
 +        return drops;
 +    }
 +    // Paper end - shear drops API
- }
+ 
+     @Override
+     public boolean readyForShearing() {
