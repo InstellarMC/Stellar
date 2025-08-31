@@ -40,7 +40,7 @@ public class YouerConfigUtil {
     }
 
     public static boolean INSTALLATIONFINISHED() {
-        return !yml.getBoolean("youer.installation-finished", false);
+        return !yml.getBoolean("youer.installation-finished", true);
     }
 
     public static boolean NETWORKMANAGER_DEBUG() {
