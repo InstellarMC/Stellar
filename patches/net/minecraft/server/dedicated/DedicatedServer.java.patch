@@ -169,7 +169,7 @@
 +        }
 +        this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
 +        // Paper end - fix converting txt to json file
-+        // org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread // Stellar - moved down
++        org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
 +        thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
 +        io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
 +        dev.instellar.stellar.command.StellarCommands.registerCommands(this); // Stellar - setup /stellar command
@@ -335,7 +335,7 @@
                  Thread thread1 = new Thread(new ServerWatchdog(this));
                  thread1.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(LOGGER));
                  thread1.setName("Server Watchdog");
-@@ -217,10 +_,30 @@
+@@ -217,10 +_,29 @@
                  LOGGER.info("JMX monitoring enabled");
              }
  
@@ -347,7 +347,6 @@
 +            // Neo end
 +            // Metrics.MohistMetrics.startMetrics(); // Stellar - do not collect usage data
 +            // WatchMohist.start(); // Stellar - do not monitor server w/ MohistMC
-+            org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread // Stellar - moved down
 +            net.neoforged.neoforge.server.ServerLifecycleHooks.handleServerStarting(this); // Neo
 +            if (gg.pufferfish.pufferfish.PufferfishConfig.enableAsyncMobSpawning) mobSpawnExecutor.start(); // Pufferfish
 +            org.purpurmc.purpur.task.BossBarTask.startAll(); // Purpur
