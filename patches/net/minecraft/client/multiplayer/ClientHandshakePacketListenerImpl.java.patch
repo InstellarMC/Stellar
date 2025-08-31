@@ -1,0 +1,28 @@
+--- a/net/minecraft/client/multiplayer/ClientHandshakePacketListenerImpl.java
++++ b/net/minecraft/client/multiplayer/ClientHandshakePacketListenerImpl.java
+@@ -107,6 +_,7 @@
+         this.updateStatus.accept(clienthandshakepacketlistenerimpl$state.message);
+     }
+ 
++    private SecretKey secretkey; // Stellar - moved up
+     @Override
+     public void handleHello(ClientboundHelloPacket p_104549_) {
+         this.switchState(ClientHandshakePacketListenerImpl.State.AUTHORIZING);
+@@ -116,7 +_,7 @@
+         String s;
+         ServerboundKeyPacket serverboundkeypacket;
+         try {
+-            SecretKey secretkey = Crypt.generateSecretKey();
++            secretkey = Crypt.generateSecretKey(); // Stellar - allocate
+             PublicKey publickey = p_104549_.getPublicKey();
+             s = new BigInteger(Crypt.digestData(p_104549_.getServerId(), publickey, secretkey)).toString(16);
+             cipher = Crypt.getCipher(2, secretkey);
+@@ -148,7 +_,7 @@
+ 
+     private void setEncryption(ServerboundKeyPacket p_319860_, Cipher p_320550_, Cipher p_320442_) {
+         this.switchState(ClientHandshakePacketListenerImpl.State.ENCRYPTING);
+-        this.connection.send(p_319860_, PacketSendListener.thenRun(() -> this.connection.setEncryptionKey(p_320550_, p_320442_)));
++        this.connection.send(p_319860_, PacketSendListener.thenRun(() -> { try { this.connection.setupEncryption(this.secretkey); } catch (final Exception ignored) {} })); // Stellar
+     }
+ 
+     @Nullable

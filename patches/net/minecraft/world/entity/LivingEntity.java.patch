@@ -1216,6 +1216,15 @@
          }
      }
  
+@@ -1464,7 +_,7 @@
+     }
+ 
+     @Nullable
+-    protected SoundEvent getDeathSound() {
++    public SoundEvent getDeathSound() { // Paper - public
+         return SoundEvents.GENERIC_DEATH;
+     }
+ 
 @@ -1511,6 +_,28 @@
          return p_21202_.getEatingSound();
      }

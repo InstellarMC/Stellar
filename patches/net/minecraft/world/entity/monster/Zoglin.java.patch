@@ -17,3 +17,12 @@
              if (this.canAttack(livingentity) && !BehaviorUtils.isOtherTargetMuchFurtherAwayThanCurrentAttackTarget(this, livingentity, 4.0)) {
                  this.setAttackTarget(livingentity);
              }
+@@ -291,7 +_,7 @@
+     }
+ 
+     @Override
+-    protected SoundEvent getDeathSound() {
++    public SoundEvent getDeathSound() {
+         return SoundEvents.ZOGLIN_DEATH;
+     }
+ 

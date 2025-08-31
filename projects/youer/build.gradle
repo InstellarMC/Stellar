@@ -182,6 +182,11 @@ dependencies {
     libraries("net.kyori:option:1.0.0")
     libraries("com.mohistmc:AutoRenamingTool:2.0.3") // Paper - remap plugins
     libraries("io.netty:netty-codec-haproxy:4.1.97.Final") // Paper - Add support for proxy protocol
+    // Paper start - Use Velocity cipher
+    libraries("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT") {
+        setTransitive(false)
+    }
+    // Paper end - Use Velocity cipher
 
     // Spark
     api(jarJar("me.lucko:spark-paper:1.10.133-20250413.112336-1"))

@@ -18,3 +18,12 @@
              }
  
              return flag;
+@@ -144,7 +_,7 @@
+     }
+ 
+     @Override
+-    protected SoundEvent getDeathSound() {
++    public SoundEvent getDeathSound() {
+         return SoundEvents.PIGLIN_BRUTE_DEATH;
+     }
+ 
