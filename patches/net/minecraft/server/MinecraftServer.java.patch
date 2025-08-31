@@ -928,7 +928,7 @@
              }
  
              LOGGER.info("ThreadedAnvilChunkStorage: All dimensions are saved");
-@@ -582,18 +_,59 @@
+@@ -582,18 +_,61 @@
          this.stopServer();
      }
  
@@ -950,14 +950,17 @@
 +            if (hasStopped) return;
 +            hasStopped = true;
 +        }
-+        // CraftBukkit end
++        if (!hasLoggedStop && isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
 +        // Paper start - kill main thread, and kill it hard
 +        shutdownThread = Thread.currentThread();
 +        org.spigotmc.WatchdogThread.doStop(); // Paper
 +        // Paper end
++        // CraftBukkit end
++        /* Purpur start
          if (this.metricsRecorder.isRecording()) {
              this.cancelRecordingMetrics();
-         }
+-        }
++        } */// Purpur end
  
          LOGGER.info("Stopping server");
 +        Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
@@ -984,7 +987,7 @@
              LOGGER.info("Saving players");
              this.playerList.saveAll();
 -            this.playerList.removeAll();
-+            this.playerList.removeAll(this.isRestarting);
++            this.playerList.removeAll(this.isRestarting); // Paper
 +            try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
          }
  
@@ -1338,7 +1341,7 @@
          }
      }
  
-@@ -898,26 +_,60 @@
+@@ -898,26 +_,61 @@
          return false;
      }
  
@@ -1401,9 +1404,10 @@
 +        // Paper end
 +        // Paper start - Server Tick Events
 +        long endTime = System.nanoTime();
++        double duration = (double)(endTime - lastTick) / 1000000D;
 +        long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
-+        new ServerTickEndEvent(this.tickCount, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
-+        this.server.spark.tickEnd(((double)(endTime - lastTick) / 1000000D)); // Paper - spark
++        new ServerTickEndEvent(this.tickCount, duration, remaining).callEvent();
++        this.server.spark.tickEnd(duration); // Paper - spark
 +        // Paper end - Server Tick Events
          this.profiler.push("tallying");
          long j = Util.getNanos() - i;
@@ -1466,7 +1470,7 @@
              ObjectArrayList<GameProfile> objectarraylist = new ObjectArrayList<>(j);
              int k = Mth.nextInt(this.random, 0, list.size() - j);
  
-@@ -992,19 +_,66 @@
+@@ -992,19 +_,68 @@
  
      public void tickChildren(BooleanSupplier p_129954_) {
          this.getPlayerList().getPlayers().forEach(p_341570_ -> p_341570_.connection.suspendFlushing());
@@ -1489,15 +1493,16 @@
          this.profiler.push("commandFunctions");
          this.getFunctions().tick();
          this.profiler.popPush("levels");
--
--        for (ServerLevel serverlevel : this.getAllLevels()) {
 +        // Run tasks that are waiting on processing
 +        while (!processQueue.isEmpty()) {
 +            processQueue.remove().run();
 +        }
+ 
+-        for (ServerLevel serverlevel : this.getAllLevels()) {
++        final ServerLevel[] levels = this.getWorldArray(); // Stellar: avoid repeated allocations
 +        // Send time updates to everyone, it will get the right time from the world the player is in.
 +        // Paper start - Perf: Optimize time updates
-+        for (final ServerLevel level : this.getWorldArray()) {
++        for (final ServerLevel level : levels) {
 +            final boolean doDaylight = level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT);
 +            final long dayTime = level.getDayTime();
 +            long worldTime = level.getGameTime();
@@ -1515,7 +1520,7 @@
 +        }
 +        // Paper end - Perf: Optimize time updates
 +        this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
-+        for(ServerLevel serverlevel : this.getWorldArray()) {
++        for (ServerLevel serverlevel : levels) {
 +            long tickStart = Util.getNanos();
 +            serverlevel.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
 +            serverlevel.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent

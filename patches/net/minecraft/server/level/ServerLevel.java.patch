@@ -767,30 +767,29 @@
      }
  
      @Override
-@@ -340,12 +_,21 @@
+@@ -339,13 +_,21 @@
+         }
  
          int i = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
-         if (this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
-+            long j = this.levelData.getDayTime() + 24000L;
+-        if (this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
++        if (this.purpurConfig.playersSkipNight && this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
 +            // CraftBukkit start
++            long j = this.levelData.getDayTime() + 24000L;
 +            TimeSkipEvent event = new TimeSkipEvent(this.getWorld(), TimeSkipEvent.SkipReason.NIGHT_SKIP, net.neoforged.neoforge.event.EventHooks.onSleepFinished(this, j - j % 24000L, this.getDayTime()) - this.getDayTime());
              if (this.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
 -                long j = this.levelData.getDayTime() + 24000L;
 -                this.setDayTime(j - j % 24000L);
--            }
--
--            this.wakeUpAllPlayers();
 +                this.getCraftServer().getPluginManager().callEvent(event);
 +                if (!event.isCancelled()) {
 +                    this.setDayTime(this.getDayTime() + event.getSkipAmount());
 +                }
-+            }
-+
+             }
+ 
+-            this.wakeUpAllPlayers();
 +            if (!event.isCancelled()) {
 +                this.wakeUpAllPlayers();
 +            }
 +            // CraftBukkit end
-+
              if (this.getGameRules().getBoolean(GameRules.RULE_WEATHER_CYCLE) && this.isRaining()) {
                  this.resetWeatherCycle();
              }
@@ -811,7 +810,7 @@
          this.handlingTick = false;
          profilerfiller.pop();
 -        boolean flag1 = !this.players.isEmpty() || !this.getForcedChunks().isEmpty();
-+        boolean flag1 = !paperConfig().unsupportedSettings.disableWorldTickingWhenEmpty || !this.players.isEmpty()  || net.neoforged.neoforge.common.world.chunk.ForcedChunkManager.hasForcedChunks(this); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players // Paper - restore this // Neo: Replace vanilla's has forced chunk check with neo's that checks both the vanilla and neo added ones
++        boolean flag1 = !paperConfig().unsupportedSettings.disableWorldTickingWhenEmpty || !this.players.isEmpty() || net.neoforged.neoforge.common.world.chunk.ForcedChunkManager.hasForcedChunks(this); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players // Paper - restore this // Neo: Replace vanilla's has forced chunk check with neo's that checks both the vanilla and neo added ones
          if (flag1) {
              this.resetEmptyTime();
          }
@@ -836,7 +835,7 @@
                              Entity entity = p_308566_.getVehicle();
                              if (entity != null) {
                                  if (!entity.isRemoved() && entity.hasPassenger(p_308566_)) {
-@@ -412,7 +_,23 @@
+@@ -412,7 +_,25 @@
                              }
  
                              profilerfiller.push("tick");
@@ -854,6 +853,8 @@
 +                                    getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
 +                                    entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Pufferfish - diff on change ServerLevel.tick
 +                                    // Paper end - Prevent block entity and entity crashes
++                                } finally {
++                                    TimeTracker.ENTITY_UPDATE.trackEnd(p_308566_);
 +                                }
 +                                // Pufferfish end // Stellar end - neo
 +                            }

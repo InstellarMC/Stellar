@@ -76,7 +76,7 @@
 +                final var gameProfile = new GameProfile(UUID.randomUUID(), "FakePlayer" + String.format("%04d", lotNo));
 +                final var cookie = CommonListenerCookie.createInitial(gameProfile, false);
 +                final var connection = new Connection(PacketFlow.SERVERBOUND);
-+                new EmbeddedChannel(connection);
++                connection.channel = new EmbeddedChannel(connection);
 +                ServerPlayer fakePlayer = FakePlayerFactory.get(dimension, gameProfile);
 +                fakePlayers.add(fakePlayer);
 +
