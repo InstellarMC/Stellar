@@ -1159,11 +1159,11 @@
 +    public void addEntity(Entity p_140200_) {
 +        org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
 +        // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
-+        if (!p_140200_.valid || p_140200_.level() != this.level || this.entityMap.containsKey(p_140200_.getId())) {
-+            LOGGER.error("Illegal ChunkMap::addEntity for world " + this.level.getWorld().getName()
-+                + ": " + p_140200_  + (this.entityMap.containsKey(p_140200_.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""), new Throwable());
-+            return;
-+        }
++        // if (!p_140200_.valid || p_140200_.level() != this.level || this.entityMap.containsKey(p_140200_.getId())) {
++        //     LOGGER.error("Illegal ChunkMap::addEntity for world " + this.level.getWorld().getName()
++        //         + ": " + p_140200_  + (this.entityMap.containsKey(p_140200_.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""), new Throwable());
++        //     return;
++        // }
 +        // Paper end - ignore and warn about illegal addEntity calls instead of crashing server
 +        if (p_140200_ instanceof ServerPlayer player && player.supressTrackerForLogin) return; // Paper - Fire PlayerJoinEvent when Player is actually ready; Delay adding to tracker until after list packets
 +        if (!(p_140200_ instanceof net.neoforged.neoforge.entity.PartEntity)) {
@@ -1183,6 +1183,14 @@
                      chunkmap$trackedentity.updatePlayers(this.level.players());
                      if (p_140200_ instanceof ServerPlayer serverplayer) {
                          this.updatePlayerStatus(serverplayer, true);
+@@ -1095,6 +_,7 @@
+     }
+ 
+     protected void removeEntity(Entity p_140332_) {
++        org.spigotmc.AsyncCatcher.catchOp("entity untrack"); // Spigot
+         if (p_140332_ instanceof ServerPlayer serverplayer) {
+             this.updatePlayerStatus(serverplayer, false);
+ 
 @@ -1107,9 +_,51 @@
          if (chunkmap$trackedentity1 != null) {
              chunkmap$trackedentity1.broadcastRemoved();
