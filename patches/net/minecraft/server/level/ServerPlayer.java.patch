@@ -1977,7 +1977,7 @@
 +    public CraftPlayer getBukkitEntity() {
 +        return (CraftPlayer) super.getBukkitEntity();
 +    }
-+   // CraftBukkit end
++    // CraftBukkit end
 +
 +    // Purpur start
 +    public void teleport(Location to) {

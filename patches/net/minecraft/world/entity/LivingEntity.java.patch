@@ -1645,6 +1645,15 @@
      public abstract void setItemSlot(EquipmentSlot p_21036_, ItemStack p_21037_);
  
      public Iterable<ItemStack> getHandSlots() {
+@@ -2000,7 +_,7 @@
+         }
+     }
+ 
+-    protected float getSoundVolume() {
++    public float getSoundVolume() { // Paper
+         return 1.0F;
+     }
+ 
 @@ -2052,27 +_,43 @@
          return this.hasEffect(MobEffects.JUMP) ? 0.1F * ((float)this.getEffect(MobEffects.JUMP).getAmplifier() + 1.0F) : 0.0F;
      }
@@ -1696,7 +1705,7 @@
  
              FluidState fluidstate = this.level().getFluidState(this.blockPosition());
 -            if (this.isInWater() && this.isAffectedByFluids() && !this.canStandOnFluid(fluidstate)) {
-+            if ((this.isInWater() || (this.isInFluidType(fluidstate) && fluidstate.getFluidType() != net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value())) && this.isAffectedByFluids() && !this.canStandOnFluid(fluidstate)) {
++            if ((this.isInWater() || (this.isInFluidType(fluidstate) && fluidstate.getFluidType() != net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value())) && this.isAffectedByFluids() && !this.canStandOnFluid(fluidstate)) { // Neo
 +                if (this.isInWater() || (this.isInFluidType(fluidstate) && !this.moveInFluid(fluidstate, p_21280_, d0))) {
                  double d9 = this.getY();
                  float f4 = this.isSprinting() ? 0.9F : this.getWaterSlowDown();
