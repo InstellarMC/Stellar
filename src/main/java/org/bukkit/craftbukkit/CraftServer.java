@@ -484,7 +484,7 @@ public final class CraftServer implements Server {
         }
         this.potionBrewer = new io.papermc.paper.potion.PaperPotionBrewer(console); // Paper - custom potion mixes
         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
-        this.spark = new io.papermc.paper.SparksFly(this, getClass().getClassLoader());
+        this.spark = new io.papermc.paper.SparksFly(this);
     }
 
     // Youer start

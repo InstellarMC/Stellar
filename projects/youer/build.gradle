@@ -189,7 +189,7 @@ dependencies {
     // Paper end - Use Velocity cipher
 
     // Spark
-    api(jarJar("me.lucko:spark-paper:1.10.133-20250413.112336-1"))
+    implementation("me.lucko:spark-paper:1.10.133-20250413.112336-1")
     // Paper end
 
     // LibraryLoader start
@@ -461,13 +461,25 @@ def installerDeps = {
 
 dependencies installerDeps
 
-task youerJar(type: Jar, dependsOn: [youerJar0, downloadMultipleFiles, project(':youerlauncher').tasks.jar]) {
+tasks.jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from({
+        configurations.runtimeClasspath
+            .filter { it.name.startsWith("spark-paper") && it.name.endsWith(".jar") }
+            .collect { zipTree(it) }
+    }) {
+        into ""
+    }
+}
+
+tasks.register("youerJar", Jar) {
+    dependsOn( youerJar0, downloadMultipleFiles, project(':youerlauncher').tasks.jar )
     group = "build" // Stellar
-    archiveClassifier = 'server'
-    archiveExtension = 'jar'
-    archiveBaseName = 'stellar' // Stellar
-    archiveVersion = '1.21.1'//  + gradleutils.gitInfo.abbreviatedId // Stellar - fix configuration cache
-    destinationDirectory = file('build/libs')
+    archiveClassifier = "server"
+    archiveExtension = "jar"
+    archiveBaseName = "stellar" // Stellar
+    archiveVersion = "1.21.1"//  + gradleutils.gitInfo.abbreviatedId // Stellar - fix configuration cache
+    destinationDirectory = file("build/libs")
 
     manifest {
         attributes('Class-Path': configurations.libraries.resolvedConfiguration.resolvedArtifacts.collect {

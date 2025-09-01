@@ -2206,14 +2206,14 @@
 -            int l = Mth.ceil(aabb.maxY);
 -            int i1 = Mth.floor(aabb.minZ);
 -            int j1 = Mth.ceil(aabb.maxZ);
-+            // Pufferfish start - rename // Stellar start - just copy, TODO later
++            // Pufferfish start - rename
 +            int minBlockX = Mth.floor(aabb.minX);
 +            int maxBlockX = Mth.ceil(aabb.maxX);
 +            int minBlockY = Mth.floor(aabb.minY);
 +            int maxBlockY = Mth.ceil(aabb.maxY);
 +            int minBlockZ = Mth.floor(aabb.minZ);
 +            int maxBlockZ = Mth.ceil(aabb.maxZ);
-+            // Pufferfish end // Stellar end
++            // Pufferfish end
              double d0 = 0.0;
              boolean flag = this.isPushedByFluid();
              boolean flag1 = false;
