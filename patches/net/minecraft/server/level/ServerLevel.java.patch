@@ -35,6 +35,18 @@
  import java.util.function.BooleanSupplier;
  import java.util.function.Function;
  import java.util.function.Predicate;
+@@ -34,10 +_,7 @@
+ import java.util.stream.Stream;
+ import javax.annotation.Nonnull;
+ import javax.annotation.Nullable;
+-import net.minecraft.CrashReport;
+-import net.minecraft.CrashReportCategory;
+-import net.minecraft.ReportType;
+-import net.minecraft.Util;
++import net.minecraft.*;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.core.Holder;
 @@ -56,6 +_,11 @@
  import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
  import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
@@ -848,10 +860,10 @@
 +                                } catch (Throwable throwable) { // Pufferfish - diff on change ServerLevel.tick
 +                                    if (throwable instanceof ThreadDeath) throw throwable; // Paper
 +                                    // Paper start - Prevent block entity and entity crashes
-+                                    final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
++                                    final String msg = String.format("Entity threw exception at %s:%s,%s,%s", p_308566_.level().getWorld().getName(), p_308566_.getX(), p_308566_.getY(), p_308566_.getZ());
 +                                    MinecraftServer.LOGGER.error(msg, throwable);
 +                                    getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
-+                                    entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Pufferfish - diff on change ServerLevel.tick
++                                    p_308566_.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Pufferfish - diff on change ServerLevel.tick
 +                                    // Paper end - Prevent block entity and entity crashes
 +                                } finally {
 +                                    TimeTracker.ENTITY_UPDATE.trackEnd(p_308566_);
