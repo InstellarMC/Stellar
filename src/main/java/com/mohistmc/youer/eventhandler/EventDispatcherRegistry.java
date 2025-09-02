@@ -29,10 +29,10 @@ import net.neoforged.neoforge.common.NeoForge;
 public class EventDispatcherRegistry {
 
     public static void init() {
-        NeoForge.EVENT_BUS.register(new PlayerEventDispatcher());
+        // NeoForge.EVENT_BUS.register(new PlayerEventDispatcher());
         NeoForge.EVENT_BUS.register(new WorldEventDispatcher());
         NeoForge.EVENT_BUS.register(new ItemEventDispatcher());
-        NeoForge.EVENT_BUS.register(new EntityEventDispatcher());
+        // NeoForge.EVENT_BUS.register(new EntityEventDispatcher());
         NeoForge.EVENT_BUS.register(new BlockEventDispatcher());
         Youer.LOGGER.info("EventDispatcherRegistry initialized");
     }

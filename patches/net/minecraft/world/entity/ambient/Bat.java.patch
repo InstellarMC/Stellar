@@ -76,13 +76,19 @@
          return 0.1F;
      }
  
-@@ -77,7 +_,7 @@
+@@ -77,12 +_,12 @@
      }
  
      @Override
 -    protected SoundEvent getDeathSound() {
 +    public SoundEvent getDeathSound() {
          return SoundEvents.BAT_DEATH;
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
+         return false;
      }
  
 @@ -95,7 +_,7 @@

@@ -68,6 +68,24 @@
          return true;
      }
  
+@@ -170,11 +_,16 @@
+ 
+     @Override
+     protected int getBaseExperienceReward() {
++        final int previousReward = this.xpReward; // Paper - store previous value to reset after calculating XP reward
+         if (this.isBaby()) {
+             this.xpReward = (int)((double)this.xpReward * 2.5);
+         }
+ 
+-        return super.getBaseExperienceReward();
++        // Paper start - store previous value to reset after calculating XP reward
++        int reward = super.getBaseExperienceReward();
++        this.xpReward = previousReward;
++        return reward;
++        // Paper end - store previous value to reset after calculating XP reward
+     }
+ 
+     @Override
 @@ -182,9 +_,9 @@
          this.getEntityData().set(DATA_BABY_ID, p_34309_);
          if (this.level() != null && !this.level().isClientSide) {

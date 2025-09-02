@@ -59,15 +59,15 @@
      public static AbstractMinecart createMinecart(
          ServerLevel p_305794_,
          double p_38121_,
-@@ -139,7 +_,7 @@
- 
-     @Override
-     public boolean isPushable() {
--        return true;
-+        return canBePushed;
+@@ -138,7 +_,7 @@
      }
  
      @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
+         return true;
+     }
+ 
 @@ -241,6 +_,14 @@
  
      @Override

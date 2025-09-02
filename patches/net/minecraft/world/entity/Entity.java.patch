@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -4,8 +_,11 @@
+@@ -4,7 +_,11 @@
  import com.google.common.collect.Lists;
  import com.google.common.collect.Sets;
  import com.google.common.collect.ImmutableList.Builder;
@@ -8,11 +8,10 @@
 +import com.mohistmc.youer.plugins.ban.bans.BanEntity;
 +import com.mohistmc.youer.util.LambdaFix;
  import com.mojang.logging.LogUtils;
--import it.unimi.dsi.fastutil.floats.FloatArraySet;
-+import io.papermc.paper.entity.activation.ActivationRange;import it.unimi.dsi.fastutil.floats.FloatArraySet;
++import io.papermc.paper.entity.activation.ActivationRange;
+ import it.unimi.dsi.fastutil.floats.FloatArraySet;
  import it.unimi.dsi.fastutil.floats.FloatArrays;
  import it.unimi.dsi.fastutil.floats.FloatSet;
- import it.unimi.dsi.fastutil.objects.Object2DoubleArrayMap;
 @@ -48,10 +_,10 @@
  import net.minecraft.network.chat.Component;
  import net.minecraft.network.chat.HoverEvent;
@@ -93,7 +92,7 @@
      private float eyeHeight;
      public boolean isInPowderSnow;
      public boolean wasInPowderSnow;
-@@ -243,6 +_,236 @@
+@@ -243,6 +_,237 @@
      public boolean hasVisualFire;
      @Nullable
      private BlockState inBlockState = null;
@@ -181,6 +180,7 @@
 +    public void inactiveTick() {
 +    }
 +    // Paper end - EAR 2
++    public boolean fromNetherPortal; // Paper - Add option to nerf pigmen from nether portals
 +
 +    // Paper start - Entity origin API
 +    @javax.annotation.Nullable
@@ -514,7 +514,16 @@
          this.setYRot(p_19916_ % 360.0F);
          this.setXRot(p_19917_ % 360.0F);
      }
-@@ -419,7 +_,19 @@
+@@ -416,10 +_,28 @@
+     }
+ 
+     public void tick() {
++        // Pufferfish start - entity TTL
++        if (type != EntityType.PLAYER && type.ttl >= 0 && this.tickCount >= type.ttl) {
++            discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Purpur
++            return;
++        }
++        // Pufferfish end - entity TTL
          this.baseTick();
      }
  
@@ -1118,6 +1127,19 @@
      protected void markHurt() {
          this.hurtMarked = true;
      }
+@@ -1600,6 +_,12 @@
+     }
+ 
+     public boolean isPushable() {
++        // Paper start - Climbing should not bypass cramming gamerule
++        return isCollidable(false);
++    }
++
++    public boolean isCollidable(boolean ignoreClimbing) {
++        // Paper end - Climbing should not bypass cramming gamerule
+         return false;
+     }
+ 
 @@ -1627,71 +_,135 @@
          return p_19883_ < d0 * d0;
      }
@@ -1296,7 +1318,7 @@
              if (this.isVehicle()) {
                  ListTag listtag1 = new ListTag();
  
-@@ -1716,11 +_,37 @@
+@@ -1716,11 +_,43 @@
                  }
  
                  if (!listtag1.isEmpty()) {
@@ -1312,6 +1334,12 @@
 +            // Save entity's from mob spawner status
 +            if (spawnedViaMobSpawner) {
 +                nbt.putBoolean("Paper.FromMobSpawner", true);
++            }
++            if (fromNetherPortal) {
++                nbt.putBoolean("Paper.FromNetherPortal", true);
++            }
++            if (freezeLocked) {
++                nbt.putBoolean("Paper.FreezeLock", true);
 +            }
 +            // Paper end
 +            // Paper start
@@ -1360,7 +1388,7 @@
                  if (p_20259_.contains("Tags", 9)) {
                      this.tags.clear();
                      ListTag listtag3 = p_20259_.getList("Tags", 8);
-@@ -1801,6 +_,89 @@
+@@ -1801,6 +_,90 @@
              } else {
                  throw new IllegalStateException("Entity has invalid rotation");
              }
@@ -1417,6 +1445,7 @@
 +            }
 +
 +            spawnedViaMobSpawner = p_20259_.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
++            fromNetherPortal = p_20259_.getBoolean("Paper.FromNetherPortal");
 +            if (p_20259_.contains("Paper.SpawnReason")) {
 +                String spawnReasonName = p_20259_.getString("Paper.SpawnReason");
 +                try {
@@ -1450,15 +1479,78 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Loading entity NBT");
              CrashReportCategory crashreportcategory = crashreport.addCategory("Entity being loaded");
-@@ -1868,6 +_,8 @@
+@@ -1861,15 +_,66 @@
+ 
+     @Nullable
+     public ItemEntity spawnAtLocation(ItemStack p_19985_, float p_19986_) {
+-        if (p_19985_.isEmpty()) {
++        // Paper start - Restore vanilla drops behavior
++        return this.spawnAtLocation(p_19985_, p_19986_, null);
++    }
++    public record DefaultDrop(Item item, org.bukkit.inventory.ItemStack stack, @Nullable java.util.function.Consumer<ItemStack> dropConsumer) {
++        public DefaultDrop(final ItemStack stack, final java.util.function.Consumer<ItemStack> dropConsumer) {
++            this(stack.getItem(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack), dropConsumer);
++        }
++
++        public void runConsumer(final java.util.function.Consumer<org.bukkit.inventory.ItemStack> fallback) {
++            if (this.dropConsumer == null || org.bukkit.craftbukkit.inventory.CraftItemType.bukkitToMinecraft(this.stack.getType()) != this.item) {
++                fallback.accept(this.stack);
++            } else {
++                this.dropConsumer.accept(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(this.stack));
++            }
++        }
++    }
++    @Nullable
++    public ItemEntity spawnAtLocation(ItemStack stack, float yOffset, @Nullable java.util.function.Consumer<? super ItemEntity> delayedAddConsumer) {
++        // Paper end - Restore vanilla drops behavior
++        if (stack.isEmpty()) {
+             return null;
+         } else if (this.level().isClientSide) {
+             return null;
          } else {
-             ItemEntity itementity = new ItemEntity(this.level(), this.getX(), this.getY() + (double)p_19986_, this.getZ(), p_19985_);
-             itementity.setDefaultPickUpDelay();
-+            if (captureDrops() != null) captureDrops().add(itementity);
-+            else
-             this.level().addFreshEntity(itementity);
-             return itementity;
+-            ItemEntity itementity = new ItemEntity(this.level(), this.getX(), this.getY() + (double)p_19986_, this.getZ(), p_19985_);
+-            itementity.setDefaultPickUpDelay();
+-            this.level().addFreshEntity(itementity);
+-            return itementity;
++            // CraftBukkit start - Capture drops for death event
++            if (this instanceof net.minecraft.world.entity.LivingEntity && !((net.minecraft.world.entity.LivingEntity) this).forceDrops) {
++                // Paper start - Restore vanilla drops behavior
++                ((net.minecraft.world.entity.LivingEntity) this).drops.add(new net.minecraft.world.entity.Entity.DefaultDrop(stack, itemStack -> {
++                    ItemEntity itemEntity = new ItemEntity(this.level, this.getX(), this.getY() + (double) yOffset, this.getZ(), itemStack); // stack is copied before consumer
++                    itemEntity.setDefaultPickUpDelay();
++                    if (captureDrops() != null) captureDrops().add(itemEntity);
++                    else
++                    this.level.addFreshEntity(itemEntity);
++                    if (delayedAddConsumer != null) delayedAddConsumer.accept(itemEntity);
++                }));
++                // Paper end - Restore vanilla drops behavior
++                return null;
++            }
++            // CraftBukkit end
++            ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY() + (double) yOffset, this.getZ(), stack.copy()); // Paper - copy so we can destroy original
++            stack.setCount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe
++
++            entityitem.setDefaultPickUpDelay(); // Paper - diff on change (in dropConsumer)
++            // Paper start - Call EntityDropItemEvent
++            return this.spawnAtLocation(entityitem);
++        }
++    }
++    @Nullable
++    public ItemEntity spawnAtLocation(ItemEntity entityitem) {
++        {
++            // Paper end - Call EntityDropItemEvent
++            // CraftBukkit start
++            org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
++            Bukkit.getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return null;
++            }
++            // CraftBukkit end
++            this.level().addFreshEntity(entityitem);
++            return entityitem;
          }
+     }
+ 
 @@ -1878,33 +_,91 @@
      }
  
@@ -2114,14 +2206,14 @@
 -            int l = Mth.ceil(aabb.maxY);
 -            int i1 = Mth.floor(aabb.minZ);
 -            int j1 = Mth.ceil(aabb.maxZ);
-+            // Pufferfish start - rename // Stellar start - just copy, TODO later
++            // Pufferfish start - rename
 +            int minBlockX = Mth.floor(aabb.minX);
 +            int maxBlockX = Mth.ceil(aabb.maxX);
 +            int minBlockY = Mth.floor(aabb.minY);
 +            int maxBlockY = Mth.ceil(aabb.maxY);
 +            int minBlockZ = Mth.floor(aabb.minZ);
 +            int maxBlockZ = Mth.ceil(aabb.maxZ);
-+            // Pufferfish end // Stellar end
++            // Pufferfish end
              double d0 = 0.0;
              boolean flag = this.isPushedByFluid();
              boolean flag1 = false;

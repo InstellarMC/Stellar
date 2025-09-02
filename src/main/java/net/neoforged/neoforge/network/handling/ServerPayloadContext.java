@@ -28,19 +28,27 @@ public record ServerPayloadContext(ServerCommonPacketListener listener, Resource
 
     @Override
     public CompletableFuture<Void> enqueueWork(Runnable task) {
+        /*// Stellar start
         if (listener.getMainThreadEventLoop().isSameThread()) {
             task.run();
             return CompletableFuture.completedFuture(null);
         }
         return NetworkRegistry.guard(listener.getMainThreadEventLoop().submit(task), this.payloadId);
+        */// Stellar end
+        net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(task);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public <T> CompletableFuture<T> enqueueWork(Supplier<T> task) {
+        /*// Stellar start
         if (listener.getMainThreadEventLoop().isSameThread()) {
             return CompletableFuture.completedFuture(task.get());
         }
         return NetworkRegistry.guard(listener.getMainThreadEventLoop().submit(task), this.payloadId);
+        */// Stellar end
+        net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(task::get);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override

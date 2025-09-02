@@ -1,9 +1,11 @@
 package com.mohistmc.youer.api.gui;
 
+import com.mohistmc.youer.feature.GlobalVariableSystem;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -13,20 +15,18 @@ import org.bukkit.inventory.meta.ItemMeta;
 public class ItemStackFactory {
 
     ItemStack item;
+    Player player;
 
-    private ItemStackFactory() {
-    }
-
-    public ItemStackFactory(String type) {
-        this(Material.getMaterial(type), 1);
+    public ItemStackFactory(String typeOrKey) {
+        this(Material.matchMaterial(typeOrKey), 1);
     }
 
     public ItemStackFactory(Material type) {
         this(type, 1);
     }
 
-    public ItemStackFactory(String type, int amount) {
-        this(Material.getMaterial(type), amount);
+    public ItemStackFactory(String typeOrKey, int amount) {
+        this(Material.matchMaterial(typeOrKey), amount);
     }
 
     public ItemStackFactory(Material type, int amount) {
@@ -57,7 +57,7 @@ public class ItemStackFactory {
         ItemMeta im = this.item.getItemMeta();
         List<String> lores_ = new ArrayList<>();
         for (String lore : lores) {
-            lores_.add(lore.replaceAll("&", "§"));
+            lores_.add(hook(lore.replaceAll("&", "§")));
         }
         im.setLore(lores_);
         this.item.setItemMeta(im);
@@ -72,17 +72,36 @@ public class ItemStackFactory {
         } else {
             lores = new ArrayList<>();
         }
-        lores.add(lore.replaceAll("&", "§"));
+        lores.add(hook(lore.replaceAll("&", "§")));
         im.setLore(lores);
         this.item.setItemMeta(im);
         return this;
     }
 
-    public ItemStackFactory setCustomModelData(int customModelData) {
+    public ItemStackFactory customModelData(int customModelData) {
         ItemMeta im = this.item.getItemMeta();
         im.setCustomModelData(customModelData);
         this.item.setItemMeta(im);
         return this;
+    }
+
+    public ItemStackFactory hideTooltip() {
+        ItemMeta im = this.item.getItemMeta();
+        im.setHideTooltip(true);
+        this.item.setItemMeta(im);
+        return this;
+    }
+
+    public ItemStackFactory player(Player player) {
+        this.player = player;
+        return this;
+    }
+
+    private String hook(String text) {
+        if (player != null) {
+            return GlobalVariableSystem.as(player, text);
+        }
+        return text;
     }
 
 }

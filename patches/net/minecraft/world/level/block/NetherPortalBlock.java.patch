@@ -37,6 +37,15 @@
              && p_221800_.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)
              && p_221802_.nextInt(2000) < p_221800_.getDifficulty().getId()) {
              while (p_221800_.getBlockState(p_221801_).is(this)) {
+@@ -80,6 +_,8 @@
+                 Entity entity = EntityType.ZOMBIFIED_PIGLIN.spawn(p_221800_, p_221801_.above(), MobSpawnType.STRUCTURE);
+                 if (entity != null) {
+                     entity.setPortalCooldown();
++                    entity.fromNetherPortal = true; // Paper - Add option to nerf pigmen from nether portals
++                    if (p_221800_.paperConfig().entities.behavior.nerfPigmenFromNetherPortals) ((net.minecraft.world.entity.Mob) entity).aware = false; // Paper - Add option to nerf pigmen from nether portals
+                 }
+             }
+         }
 @@ -97,7 +_,13 @@
  
      @Override
@@ -51,7 +60,7 @@
              p_54918_.setAsInsidePortal(this, p_54917_);
          }
      }
-@@ -120,24 +_,55 @@
+@@ -120,24 +_,54 @@
      @Nullable
      @Override
      public DimensionTransition getPortalDestination(ServerLevel p_350444_, Entity p_350334_, BlockPos p_350764_) {
@@ -105,7 +114,6 @@
      ) {
 -        Optional<BlockPos> optional = p_350564_.getPortalForcer().findClosestPortalPosition(p_350747_, p_350326_, p_350718_);
 +        PortalForcer portalforcer = p_350564_.getPortalForcer();
-+        portalforcer.findClosestPortalPosition$i.set(getExitPortal$searchRadius.getAndSet(0));
 +        Optional<BlockPos> optional = portalforcer.findClosestPortalPosition(p_350747_, p_350326_, p_350718_);
          BlockUtil.FoundRectangle blockutil$foundrectangle;
          DimensionTransition.PostDimensionTransition dimensiontransition$postdimensiontransition;

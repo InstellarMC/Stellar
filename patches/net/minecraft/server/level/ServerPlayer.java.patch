@@ -202,7 +202,7 @@
          @Override
          public void dataChanged(AbstractContainerMenu p_143462_, int p_143463_, int p_143464_) {
          }
-@@ -276,6 +_,72 @@
+@@ -276,6 +_,73 @@
      public final Object object;
      private int containerCounter;
      public boolean wonGame;
@@ -235,6 +235,7 @@
 +    public double maxHealthCache;
 +    public boolean joining = true;
 +    public boolean sentListPacket = false;
++    public boolean supressTrackerForLogin = false; // Paper - Fire PlayerJoinEvent when Player is actually ready
 +    // CraftBukkit end
 +    public boolean isRealPlayer; // Paper
 +    public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
@@ -555,10 +556,54 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking player");
              CrashReportCategory crashreportcategory = crashreport.addCategory("Player being ticked");
-@@ -657,9 +_,41 @@
+@@ -654,12 +_,98 @@
+         this.getScoreboard().forAllObjectives(p_9105_, this, p_313589_ -> p_313589_.set(p_9106_));
+     }
+ 
++    // Paper start - PlayerDeathEvent#getItemsToKeep
++    private static void processKeep(org.bukkit.event.entity.PlayerDeathEvent event, NonNullList<ItemStack> inv) {
++        List<org.bukkit.inventory.ItemStack> itemsToKeep = event.getItemsToKeep();
++        if (inv == null) {
++            // remainder of items left in toKeep - plugin added stuff on death that wasn't in the initial loot?
++            if (!itemsToKeep.isEmpty()) {
++                for (org.bukkit.inventory.ItemStack itemStack : itemsToKeep) {
++                    event.getEntity().getInventory().addItem(itemStack);
++                }
++            }
++
++            return;
++        }
++
++        for (int i = 0; i < inv.size(); ++i) {
++            ItemStack item = inv.get(i);
++            if (EnchantmentHelper.has(item, EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP) || itemsToKeep.isEmpty() || item.isEmpty()) {
++                inv.set(i, ItemStack.EMPTY);
++                continue;
++            }
++
++            final org.bukkit.inventory.ItemStack bukkitStack = item.getBukkitStack();
++            boolean keep = false;
++            final java.util.Iterator<org.bukkit.inventory.ItemStack> iterator = itemsToKeep.iterator();
++            while (iterator.hasNext()) {
++                final org.bukkit.inventory.ItemStack itemStack = iterator.next();
++                if (bukkitStack.equals(itemStack)) {
++                    iterator.remove();
++                    keep = true;
++                    break;
++                }
++            }
++
++            if (!keep) {
++                inv.set(i, ItemStack.EMPTY);
++            }
++        }
++    }
++    // Paper end - PlayerDeathEvent#getItemsToKeep
++
      @Override
      public void die(DamageSource p_9035_) {
-         this.gameEvent(GameEvent.ENTITY_DIE);
+-        this.gameEvent(GameEvent.ENTITY_DIE);
++        // this.gameEvent(GameEvent.ENTITY_DIE); // Paper - move below event cancellation check
 +        if (CommonHooks.onLivingDeath(this, p_9035_)) return;
          boolean flag = this.level().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES);
 -        if (flag) {
@@ -568,30 +613,44 @@
 +        if (this.isRemoved()) {
 +            return;
 +        }
-+        List<org.bukkit.inventory.ItemStack> loot = new ArrayList<>(this.getInventory().getContainerSize());
++        List<DefaultDrop> loot = new java.util.ArrayList<>(this.getInventory().getContainerSize()); // Paper - Restore vanilla drops behavior
 +        boolean keepInventory = this.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || this.isSpectator();
 +
 +        if (!keepInventory) {
 +            for (ItemStack item : this.getInventory().getContents()) {
 +                if (!item.isEmpty() && !EnchantmentHelper.has(item, EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)) {
-+                    loot.add(CraftItemStack.asCraftMirror(item).markForInventoryDrop());
++                    loot.add(new DefaultDrop(item, stack -> this.drop(stack, true, false, false))); // Paper - Restore vanilla drops behavior; drop function taken from Inventory#dropAll (don't fire drop event)
 +                }
 +            }
 +        }
 +
 +        if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - fix player loottables running when mob loot gamerule is false
 +            // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
-+            this.dropFromLootTable(p_9035_, this.lastHurtByPlayerTime > 0);
-+            this.dropCustomDeathLoot(this.serverLevel(), p_9035_, flag);
++        this.dropFromLootTable(p_9035_, this.lastHurtByPlayerTime > 0);
++        // Paper - Restore vanilla drops behaviour; custom death loot is a noop on server player, remove.
++
++        loot.addAll(this.drops);
++        this.drops.clear(); // SPIGOT-5188: make sure to clear
 +        } // Paper - fix player loottables running when mob loot gamerule is false
 +
 +        Component defaultMessage = this.getCombatTracker().getDeathMessage();
++
 +        keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
 +        PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, p_9035_, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
++        // Paper start - cancellable death event
++        if (event.isCancelled()) {
++            // make compatible with plugins that might have already set the health in an event listener
++            if (this.getHealth() <= 0) {
++                this.setHealth((float) event.getReviveHealth());
++            }
++            return;
++        }
++        this.gameEvent(GameEvent.ENTITY_DIE); // moved from the top of this method
++        // Paper end
++
 +        // SPIGOT-943 - only call if they have an inventory open
 +        if (this.containerMenu != this.inventoryMenu) {
-+            InventoryOwner.setClose$Reason(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DEATH); // Paper - Inventory close reason
-+            this.closeContainer();
++            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DEATH); // Paper - Inventory close reason
 +        }
 +        net.kyori.adventure.text.Component deathMessage = event.deathMessage() != null ? event.deathMessage() : net.kyori.adventure.text.Component.empty(); // Paper - Adventure
 +        if (deathMessage != null && deathMessage != net.kyori.adventure.text.Component.empty() && flag) { // Paper - Adventure // TODO: allow plugins to override?
@@ -599,15 +658,38 @@
              this.connection
                  .send(
                      new ClientboundPlayerCombatKillPacket(this.getId(), component),
-@@ -692,10 +_,13 @@
+@@ -677,12 +_,15 @@
+                     )
+                 );
+             Team team = this.getTeam();
++            if (org.purpurmc.purpur.PurpurConfig.deathMessageOnlyBroadcastToAffectedPlayer) this.sendSystemMessage(component); else // Purpur
+             if (team == null || team.getDeathMessageVisibility() == Team.Visibility.ALWAYS) {
+                 this.server.getPlayerList().broadcastSystemMessage(component, false);
+             } else if (team.getDeathMessageVisibility() == Team.Visibility.HIDE_FOR_OTHER_TEAMS) {
+                 this.server.getPlayerList().broadcastSystemToTeam(this, component);
+             } else if (team.getDeathMessageVisibility() == Team.Visibility.HIDE_FOR_OWN_TEAM) {
+                 this.server.getPlayerList().broadcastSystemToAllExceptTeam(this, component);
++            } else {
++                this.server.getPlayerList().broadcastSystemMessage(component, false);
+             }
+         } else {
+             this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), CommonComponents.EMPTY));
+@@ -692,10 +_,20 @@
          if (this.level().getGameRules().getBoolean(GameRules.RULE_FORGIVE_DEAD_PLAYERS)) {
              this.tellNeutralMobsThatIDied();
          }
 -
 -        if (!this.isSpectator()) {
-+        shouldDropExperience.set(event.shouldDropExperience()); // Paper - tie to event
++        // SPIGOT-5478 must be called manually now
++        if (event.shouldDropExperience()) this.dropExperience(p_9035_.getEntity()); // Paper - tie to event
 +        // we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
 +        if (!event.getKeepInventory()) {
++            // Paper start - PlayerDeathEvent#getItemsToKeep
++            for (NonNullList<ItemStack> inv : this.getInventory().compartments) {
++                processKeep(event, inv);
++            }
++            processKeep(event, null);
++            // Paper end - PlayerDeathEvent#getItemsToKeep
              this.dropAllDeathLoot(this.serverLevel(), p_9035_);
          }
 +        this.setCamera(this); // Remove spectated target
@@ -1213,6 +1295,20 @@
                      }
                  }
              } else if (this.isFallFlying()) {
+@@ -1295,6 +_,13 @@
+     public void disconnect() {
+         this.disconnected = true;
+         this.ejectPassengers();
++
++        // Paper start - Workaround vehicle not tracking the passenger disconnection dismount
++        if (this.isPassenger() && this.getVehicle() instanceof ServerPlayer) {
++            this.stopRiding();
++        }
++        // Paper end - Workaround vehicle not tracking the passenger disconnection dismount
++
+         if (this.isSleeping()) {
+             this.stopSleepInBed(true, false);
+         }
 @@ -1306,7 +_,28 @@
  
      public void resetSentInfo() {
@@ -1252,32 +1348,38 @@
          if (!this.useItem.isEmpty() && this.isUsingItem()) {
              this.connection.send(new ClientboundEntityEventPacket(this, (byte)9));
              super.completeUsingItem();
-@@ -1334,19 +_,22 @@
+@@ -1334,31 +_,40 @@
      }
  
      public void restoreFrom(ServerPlayer p_9016_, boolean p_9017_) {
-+        p_9016_.getBukkitEntity().setHandle(this);
-+        this.setBukkitEntity(p_9016_.getBukkitEntity());
-+        this.isRealPlayer = p_9016_.isRealPlayer;
++        // Stellar start
++        // p_9016_.getBukkitEntity().setHandle(this);
++        // this.setBukkitEntity(p_9016_.getBukkitEntity());
++        // this.isRealPlayer = p_9016_.isRealPlayer;
++        // Stellar end
++
          this.wardenSpawnTracker = p_9016_.wardenSpawnTracker;
          this.chatSession = p_9016_.chatSession;
          this.gameMode.setGameModeForPlayer(p_9016_.gameMode.getGameModeForPlayer(), p_9016_.gameMode.getPreviousGameModeForPlayer());
          this.onUpdateAbilities();
          this.getAttributes().assignBaseValues(p_9016_.getAttributes());
 -        this.setHealth(this.getMaxHealth());
-+        this.setHealth(this.getMaxHealth()); // CraftBukkit
++        // this.setHealth(this.getMaxHealth()); // CraftBukkit
          if (p_9017_) {
              this.getInventory().replaceWith(p_9016_.getInventory());
              this.setHealth(p_9016_.getHealth());
              this.foodData = p_9016_.foodData;
  
-             for (MobEffectInstance mobeffectinstance : p_9016_.getActiveEffects()) {
+-            for (MobEffectInstance mobeffectinstance : p_9016_.getActiveEffects()) {
 -                this.addEffect(new MobEffectInstance(mobeffectinstance));
-+               this.addEffect(new MobEffectInstance(mobeffectinstance));
-             }
+-            }
++            // CraftBukkit
++            // for (MobEffectInstance mobeffectinstance : p_9016_.getActiveEffects()) {
++            //    this.addEffect(new MobEffectInstance(mobeffectinstance));
++            // }
  
              this.experienceLevel = p_9016_.experienceLevel;
-@@ -1354,11 +_,13 @@
+             this.totalExperience = p_9016_.totalExperience;
              this.experienceProgress = p_9016_.experienceProgress;
              this.setScore(p_9016_.getScore());
              this.portalProcess = p_9016_.portalProcess;
@@ -1295,7 +1397,15 @@
              this.setScore(p_9016_.getScore());
          }
  
-@@ -1375,6 +_,15 @@
+@@ -1368,13 +_,22 @@
+         this.lastSentExp = -1;
+         this.lastSentHealth = -1.0F;
+         this.lastSentFood = -1;
+-        this.recipeBook.copyOverData(p_9016_.recipeBook);
++        // this.recipeBook.copyOverData(p_9016_.recipeBook); // CraftBukkit
+         this.seenCredits = p_9016_.seenCredits;
+         this.enteredNetherPosition = p_9016_.enteredNetherPosition;
+         this.chunkTrackingView = p_9016_.chunkTrackingView;
          this.setShoulderEntityLeft(p_9016_.getShoulderEntityLeft());
          this.setShoulderEntityRight(p_9016_.getShoulderEntityRight());
          this.setLastDeathLocation(p_9016_.getLastDeathLocation());
@@ -1653,7 +1763,7 @@
 +            com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN : com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.valueOf(cause.name()));
 +    }
 +    public boolean setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause cause) {
-+        if (EventHooks.onPlayerSpawnSet(this, pos == null ? Level.OVERWORLD : dimension, pos, forced)) return false; // Neo
++        boolean neoEvent = net.neoforged.neoforge.event.EventHooks.onPlayerSpawnSet(this, pos == null ? Level.OVERWORLD : dimension, pos, forced); // Neo // Stellar - give some chance to Paper that respawn event is fired
 +
 +        Location spawnLoc = null;
 +        boolean willNotify = false;
@@ -1669,7 +1779,7 @@
 +        dumbEvent.callEvent();
 +
 +        PlayerSetSpawnEvent event = new PlayerSetSpawnEvent(this.getBukkitEntity(), cause, dumbEvent.getNewSpawn(), dumbEvent.isForced(), willNotify, willNotify ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null);
-+        event.setCancelled(dumbEvent.isCancelled());
++        event.setCancelled(dumbEvent.isCancelled() || neoEvent);
 +        if (!event.callEvent()) {
 +            return false;
 +        }

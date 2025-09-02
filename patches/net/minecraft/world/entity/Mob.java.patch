@@ -355,6 +355,25 @@
          ProfilerFiller profilerfiller = this.level().getProfiler();
          profilerfiller.push("sensing");
          this.sensing.tick();
+@@ -926,11 +_,18 @@
+         }
+     }
+ 
++    // Paper start
++    protected boolean shouldSkipLoot(EquipmentSlot slot) { // method to avoid to fallback into the global mob loot logic (i.e fox)
++        return false;
++    }
++    // Paper end
++
+     @Override
+     protected void dropCustomDeathLoot(ServerLevel p_348683_, DamageSource p_21385_, boolean p_21387_) {
+         super.dropCustomDeathLoot(p_348683_, p_21385_, p_21387_);
+ 
+         for (EquipmentSlot equipmentslot : EquipmentSlot.values()) {
++            if (this.shouldSkipLoot(equipmentslot)) continue; // Paper
+             ItemStack itemstack = this.getItemBySlot(equipmentslot);
+             float f = this.getEquipmentDropChance(equipmentslot);
+             if (f != 0.0F) {
 @@ -960,7 +_,7 @@
          }
      }

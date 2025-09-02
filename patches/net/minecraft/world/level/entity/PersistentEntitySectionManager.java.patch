@@ -61,7 +61,7 @@
          if (!this.addEntityUuid(p_157539_)) {
              return false;
          } else {
-@@ -101,11 +_,17 @@
+@@ -101,27 +_,37 @@
      }
  
      public void addLegacyChunkEntities(Stream<T> p_157553_) {
@@ -81,6 +81,42 @@
      }
  
      void startTicking(T p_157565_) {
++        org.spigotmc.AsyncCatcher.catchOp("Entity start ticking"); // Paper
+         this.callbacks.onTickingStart(p_157565_);
+     }
+ 
+     void stopTicking(T p_157571_) {
++        org.spigotmc.AsyncCatcher.catchOp("Entity stop ticking"); // Paper
+         this.callbacks.onTickingEnd(p_157571_);
+     }
+ 
+     void startTracking(T p_157576_) {
++        org.spigotmc.AsyncCatcher.catchOp("Entity start tracking"); // Paper
+         this.visibleEntityStorage.add(p_157576_);
+         this.callbacks.onTrackingStart(p_157576_);
+     }
+ 
+     void stopTracking(T p_157581_) {
++        org.spigotmc.AsyncCatcher.catchOp("Entity stop tracking"); // Paper
+         this.callbacks.onTrackingEnd(p_157581_);
+         this.visibleEntityStorage.remove(p_157581_);
+     }
+@@ -132,6 +_,7 @@
+     }
+ 
+     public void updateChunkStatus(ChunkPos p_157528_, Visibility p_157529_) {
++        org.spigotmc.AsyncCatcher.catchOp("Update chunk status"); // Paper
+         long i = p_157528_.toLong();
+         if (p_157529_ == Visibility.HIDDEN) {
+             this.chunkVisibility.remove(i);
+@@ -165,6 +_,7 @@
+     }
+ 
+     public void ensureChunkQueuedForLoad(long p_157556_) {
++        org.spigotmc.AsyncCatcher.catchOp("Entity chunk save"); // Paper
+         PersistentEntitySectionManager.ChunkLoadStatus persistententitysectionmanager$chunkloadstatus = this.chunkLoadStatuses.get(p_157556_);
+         if (persistententitysectionmanager$chunkloadstatus == PersistentEntitySectionManager.ChunkLoadStatus.FRESH) {
+             this.requestChunkLoad(p_157556_);
 @@ -172,6 +_,12 @@
      }
  
@@ -110,11 +146,20 @@
                  this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(p_157513_), list));
                  list.forEach(p_157514_);
                  return true;
-@@ -207,7 +_,7 @@
+@@ -198,6 +_,7 @@
+     }
+ 
+     private void requestChunkLoad(long p_157563_) {
++        org.spigotmc.AsyncCatcher.catchOp("Entity chunk load request"); // Paper
+         this.chunkLoadStatuses.put(p_157563_, PersistentEntitySectionManager.ChunkLoadStatus.PENDING);
+         ChunkPos chunkpos = new ChunkPos(p_157563_);
+         this.permanentStorage.loadEntities(chunkpos).thenAccept(this.loadingInbox::add).exceptionally(p_157532_ -> {
+@@ -207,7 +_,8 @@
      }
  
      private boolean processChunkUnload(long p_157569_) {
 -        boolean flag = this.storeChunkSections(p_157569_, p_157595_ -> p_157595_.getPassengersAndSelf().forEach(this::unloadEntity));
++        org.spigotmc.AsyncCatcher.catchOp("Entity chunk unload process"); // Paper
 +        boolean flag = this.storeChunkSections(p_157569_, p_157595_ -> p_157595_.getPassengersAndSelf().forEach(this::unloadEntity), true); // CraftBukkit - add boolean for event call
          if (!flag) {
              return false;
@@ -128,8 +173,11 @@
          p_157586_.setLevelCallback(EntityInLevelCallback.NULL);
      }
  
-@@ -228,8 +_,15 @@
+@@ -226,14 +_,23 @@
+     }
+ 
      private void processPendingLoads() {
++        org.spigotmc.AsyncCatcher.catchOp("Entity chunk process pending loads"); // Paper
          ChunkEntities<T> chunkentities;
          while ((chunkentities = this.loadingInbox.poll()) != null) {
 -            chunkentities.getEntities().forEach(p_157593_ -> this.addEntity((T)p_157593_, true));
@@ -145,21 +193,44 @@
          }
      }
  
-@@ -284,6 +_,14 @@
-         this.permanentStorage.close();
+     public void tick() {
++        org.spigotmc.AsyncCatcher.catchOp("Entity manager tick"); // Paper
+         this.processPendingLoads();
+         this.processUnloads();
+     }
+@@ -251,6 +_,7 @@
      }
  
+     public void autoSave() {
++        org.spigotmc.AsyncCatcher.catchOp("Entity manager autosave"); // Paper
+         this.getAllChunksToSave().forEach(p_157579_ -> {
+             boolean flag = this.chunkVisibility.get(p_157579_) == Visibility.HIDDEN;
+             if (flag) {
+@@ -263,6 +_,7 @@
+     }
+ 
+     public void saveAll() {
++        org.spigotmc.AsyncCatcher.catchOp("Entity manager save"); // Paper
+         LongSet longset = this.getAllChunksToSave();
+ 
+         while (!longset.isEmpty()) {
+@@ -280,7 +_,15 @@
+ 
+     @Override
+     public void close() throws IOException {
+-        this.saveAll();
++        // CraftBukkit start - add save boolean
++        this.close(true);
++    }
++
 +    public void close(boolean save) throws IOException {
 +        if (save) {
 +            this.saveAll();
 +        }
 +        // CraftBukkit end
-+        this.permanentStorage.close();
-+    }
-+
-     public boolean isLoaded(UUID p_157551_) {
-         return this.knownUuids.contains(p_157551_);
+         this.permanentStorage.close();
      }
+ 
 @@ -367,11 +_,13 @@
  
      class Callback implements EntityInLevelCallback {
@@ -174,6 +245,14 @@
              this.currentSectionKey = p_157615_;
              this.currentSection = p_157616_;
          }
+@@ -381,6 +_,7 @@
+             BlockPos blockpos = this.entity.blockPosition();
+             long i = SectionPos.asLong(blockpos);
+             if (i != this.currentSectionKey) {
++                org.spigotmc.AsyncCatcher.catchOp("Entity move"); // Paper
+                 Visibility visibility = this.currentSection.getStatus();
+                 if (!this.currentSection.remove(this.entity)) {
+                     PersistentEntitySectionManager.LOGGER
 @@ -390,9 +_,11 @@
                  PersistentEntitySectionManager.this.removeSectionIfEmpty(this.currentSectionKey, this.currentSection);
                  EntitySection<T> entitysection = PersistentEntitySectionManager.this.sectionStorage.getOrCreateSection(i);
@@ -186,3 +265,11 @@
              }
          }
  
+@@ -428,6 +_,7 @@
+ 
+         @Override
+         public void onRemove(Entity.RemovalReason p_157619_) {
++            org.spigotmc.AsyncCatcher.catchOp("Entity remove"); // Paper
+             if (!this.currentSection.remove(this.entity)) {
+                 PersistentEntitySectionManager.LOGGER
+                     .warn("Entity {} wasn't found in section {} (destroying due to {})", this.entity, SectionPos.of(this.currentSectionKey), p_157619_);

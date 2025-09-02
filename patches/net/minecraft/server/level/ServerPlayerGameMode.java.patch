@@ -280,42 +280,93 @@
              int i = p_9264_.getCount();
              int j = p_9264_.getDamageValue();
              InteractionResultHolder<ItemStack> interactionresultholder = p_9264_.use(p_9263_, p_9262_, p_9265_);
-@@ -305,11 +_,19 @@
+@@ -304,24 +_,86 @@
+         }
      }
  
++    // CraftBukkit start - whole method
++    public boolean interactResult = false;
++    public boolean firedInteract = false;
++    public BlockPos interactPosition;
++    public InteractionHand interactHand;
++    public ItemStack interactItemStack;
      public InteractionResult useItemOn(ServerPlayer p_9266_, Level p_9267_, ItemStack p_9268_, InteractionHand p_9269_, BlockHitResult p_9270_) {
++        // Youer start
 +        if (BanItem.checkMoShou(p_9266_, p_9266_.getItemInHand(p_9269_))) {
 +            p_9266_.setItemInHand(p_9269_, ItemStack.EMPTY);
 +            return InteractionResult.FAIL;
 +        }
 +        if (BanItem.check(p_9266_, p_9268_)) return InteractionResult.FAIL;
++        // Youer end
++        if (shiftClickMended(p_9268_)) return InteractionResult.SUCCESS; // Purpur
          BlockPos blockpos = p_9270_.getBlockPos();
          BlockState blockstate = p_9267_.getBlockState(blockpos);
++        boolean cancelledBlock = false;
++        boolean cancelledItem = false; // Paper - correctly handle items on cooldown
++
          if (!blockstate.getBlock().isEnabled(p_9267_.enabledFeatures())) {
              return InteractionResult.FAIL;
--        } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
+         } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
++            MenuProvider itileinventory = blockstate.getMenuProvider(p_9267_, blockpos);
++            cancelledBlock = !(itileinventory instanceof MenuProvider);
 +        }
-+        net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock event = net.neoforged.neoforge.common.CommonHooks.onRightClickBlock(p_9266_, p_9269_, blockpos, p_9270_);
-+        if (event.isCanceled()) return event.getCancellationResult();
-+        if (this.gameModeForPlayer == GameType.SPECTATOR) {
++
++        if (p_9266_.getCooldowns().isOnCooldown(p_9268_.getItem())) {
++            cancelledItem = true; // Paper - correctly handle items on cooldown
++        }
++
++        // Neo start
++        net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock neoEvent = net.neoforged.neoforge.common.CommonHooks.onRightClickBlock(p_9266_, p_9269_, blockpos, p_9270_);
++        // if (neoEvent.isCanceled()) return neoEvent.getCancellationResult(); // Stellar - respect bukkit
++        // Neo end
++
++        org.bukkit.event.player.PlayerInteractEvent bukkitEvent = CraftEventFactory.callPlayerInteractEvent(p_9266_, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, blockpos, p_9270_.getDirection(), p_9268_, cancelledBlock, cancelledItem, p_9269_, p_9270_.getLocation()); // Paper - correctly handle items on cooldown
++        this.firedInteract = true;
++        this.interactResult = bukkitEvent.useItemInHand() == org.bukkit.event.Event.Result.DENY;
++        this.interactPosition = blockpos.immutable();
++        this.interactHand = p_9269_;
++        this.interactItemStack = p_9268_.copy();
++
++        if (neoEvent.isCanceled() || neoEvent.getCancellationResult() == InteractionResult.FAIL || bukkitEvent.useItemInHand() == org.bukkit.event.Event.Result.DENY) { // Stellar - respect neo
++            // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
++            if (blockstate.getBlock() instanceof net.minecraft.world.level.block.DoorBlock) {
++                // Paper start - Don't resync blocks
++                // boolean bottom = blockstate.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER;
++                // p_9266_.connection.send(new ClientboundBlockUpdatePacket(world, bottom ? blockpos.above() : blockpos.below()));
++                // Paper end - Don't resync blocks
++            } else if (blockstate.getBlock() instanceof net.minecraft.world.level.block.CakeBlock) {
++                p_9266_.getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
++            } else if (blockstate.is(net.minecraft.world.level.block.Blocks.JIGSAW) || blockstate.is(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK) || blockstate.getBlock() instanceof net.minecraft.world.level.block.CommandBlock) {
++                p_9266_.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerClosePacket(this.player.containerMenu.containerId));
++            }
++            // Paper end - extend Player Interact cancellation
++            p_9266_.getBukkitEntity().updateInventory(); // SPIGOT-2867
++            this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
++            return neoEvent.getCancellationResult();
++        } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
              MenuProvider menuprovider = blockstate.getMenuProvider(p_9267_, blockpos);
-             if (menuprovider != null) {
+-            if (menuprovider != null) {
++            if (menuprovider != null && player.openMenu(menuprovider).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
                  p_9266_.openMenu(menuprovider);
-@@ -318,10 +_,15 @@
+                 return InteractionResult.SUCCESS;
+             } else {
                  return InteractionResult.PASS;
              }
          } else {
 +            UseOnContext useoncontext = new UseOnContext(p_9266_, p_9269_, p_9270_);
-+            if (event.getUseItem() != net.neoforged.neoforge.common.util.TriState.FALSE) {
++            // Neo start
++            if (neoEvent.getUseItem() != net.neoforged.neoforge.common.util.TriState.FALSE) {
 +                InteractionResult result = p_9268_.onItemUseFirst(useoncontext);
 +                if (result != InteractionResult.PASS) return result;
 +            }
++            // Neo end
              boolean flag = !p_9266_.getMainHandItem().isEmpty() || !p_9266_.getOffhandItem().isEmpty();
 -            boolean flag1 = p_9266_.isSecondaryUseActive() && flag;
-+            boolean flag1 = (p_9266_.isSecondaryUseActive() && flag) && !(p_9266_.getMainHandItem().doesSneakBypassUse(p_9267_, blockpos, p_9266_) && p_9266_.getOffhandItem().doesSneakBypassUse(p_9267_, blockpos, p_9266_));
++            boolean flag1 = (p_9266_.isSecondaryUseActive() && flag)
++                && !(p_9266_.getMainHandItem().doesSneakBypassUse(p_9267_, blockpos, p_9266_) && p_9266_.getOffhandItem().doesSneakBypassUse(p_9267_, blockpos, p_9266_)); // Neo
              ItemStack itemstack = p_9268_.copy();
 -            if (!flag1) {
-+            if (event.getUseBlock().isTrue() || (event.getUseBlock().isDefault() && !flag1)) {
++            if (neoEvent.getUseBlock().isTrue() || (neoEvent.getUseBlock().isDefault() && !flag1)) {
                  ItemInteractionResult iteminteractionresult = blockstate.useItemOn(p_9266_.getItemInHand(p_9269_), p_9267_, p_9266_, p_9269_, p_9270_);
                  if (iteminteractionresult.consumesAction()) {
                      CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger(p_9266_, blockpos, itemstack);
@@ -325,8 +376,39 @@
  
 -            if (!p_9268_.isEmpty() && !p_9266_.getCooldowns().isOnCooldown(p_9268_.getItem())) {
 -                UseOnContext useoncontext = new UseOnContext(p_9266_, p_9269_, p_9270_);
-+            if (event.getUseItem().isTrue() || (!p_9268_.isEmpty() && !p_9266_.getCooldowns().isOnCooldown(p_9268_.getItem()))) {
-+                if (event.getUseItem().isFalse()) return InteractionResult.PASS;
++            if (neoEvent.getUseItem().isTrue() || (!p_9268_.isEmpty() && !this.interactResult)) { // add !interactResult SPIGOT-764
++                if (neoEvent.getUseItem().isFalse()) return InteractionResult.PASS;
                  InteractionResult interactionresult1;
                  if (this.isCreative()) {
                      int i = p_9268_.getCount();
+@@ -354,10 +_,30 @@
+ 
+                 return interactionresult1;
+             } else {
++                // Paper start - Properly cancel usable items; Cancel only if cancelled + if the interact result is different from default response
++                if (this.interactResult && this.interactResult != cancelledItem) {
++                    this.player.resyncUsingItem(this.player);
++                }
++                // Paper end - Properly cancel usable items
+                 return InteractionResult.PASS;
+             }
+         }
+     }
++    // Purpur start
++    public boolean shiftClickMended(ItemStack itemstack) {
++        /* Stellar start - fixme
++        if (this.player.level().purpurConfig.shiftRightClickRepairsMendingPoints > 0 && this.player.isShiftKeyDown() && this.player.getBukkitEntity().hasPermission("purpur.mending_shift_click")) {
++            int points = Math.min(this.player.totalExperience, this.player.level().purpurConfig.shiftRightClickRepairsMendingPoints);
++            if (points > 0 && itemstack.isDamaged() && net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.MENDING, itemstack) > 0) {
++                this.player.giveExperiencePoints(-points);
++                this.player.level().addFreshEntity(new net.minecraft.world.entity.ExperienceOrb(this.player.level(), this.player.getX(), this.player.getY(), this.player.getZ(), points, org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN, this.player, this.player));
++                return true;
++            }
++        }
++        */// Stellar end - fixme
++        return false;
++    }
++    // Purpur end
+ 
+     public void setLevel(ServerLevel p_9261_) {
+         this.level = p_9261_;

@@ -244,13 +244,14 @@ public class NeoDevPlugin implements Plugin<Project> {
                 manifest.attributes(Map.of("FML-System-Mods", "neoforge"));
                 manifest.attributes(Map.of("Build-Time", timestamp));
                 manifest.attributes(Map.of("Git-Commit", abbreviatedId));
-                manifest.attributes(Map.of("Brand-Id", "mohistmc:youer"));
-                manifest.attributes(Map.of("Specification-Title", "Youer"));
-                manifest.attributes(Map.of("Specification-Vendor", "MohistMC"));
+                manifest.attributes(Map.of("Brand-Id", "instellarmc:stellar")); // Stellar - must be lowercased
+                manifest.attributes(Map.of("Brand-Name", "Stellar")); // Stellar
+                manifest.attributes(Map.of("Specification-Title", "Stellar")); // Stellar
+                manifest.attributes(Map.of("Specification-Vendor", "InstellarMC")); // Stellar
                 manifest.attributes(Map.of("Specification-Version", minecraftVersion));
-                manifest.attributes(Map.of("Implementation-Title", "Youer"));
+                manifest.attributes(Map.of("Implementation-Title", "Stellar")); // Stellar
                 manifest.attributes(Map.of("Implementation-Version", minecraftVersion));
-                manifest.attributes(Map.of("Implementation-Vendor", "MohistMC"));
+                manifest.attributes(Map.of("Implementation-Vendor", "InstellarMC")); // Stellar
                 // These attributes are used from NeoForgeVersion.java to find the NF version without command line arguments.
                 manifest.attributes(
                         Map.of(

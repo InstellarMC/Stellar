@@ -1,5 +1,34 @@
 --- a/net/minecraft/world/entity/animal/horse/Horse.java
 +++ b/net/minecraft/world/entity/animal/horse/Horse.java
+@@ -45,6 +_,28 @@
+         super(p_30689_, p_30690_);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.horseRidableInWater;
++    }
++    // Purpur end
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.horseBreedingTicks;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.horseTakeDamageFromWater;
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.horseAlwaysDropExp;
++    }
++
+     @Override
+     protected void randomizeAttributes(RandomSource p_218815_) {
+         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue((double)generateMaxHealth(p_218815_::nextInt));
 @@ -118,7 +_,7 @@
      }
  

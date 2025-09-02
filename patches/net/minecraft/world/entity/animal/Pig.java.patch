@@ -8,6 +8,55 @@
  
  public class Pig extends Animal implements ItemSteerable, Saddleable {
      private static final EntityDataAccessor<Boolean> DATA_SADDLE_ID = SynchedEntityData.defineId(Pig.class, EntityDataSerializers.BOOLEAN);
+@@ -55,9 +_,48 @@
+         super(p_29462_, p_29463_);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean isRidable() {
++        return level().purpurConfig.pigRidable;
++    }
++
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.pigRidableInWater;
++    }
++
++    @Override
++    public boolean isControllable() {
++        return level().purpurConfig.pigControllable;
++    }
++    // Purpur end
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.pigMaxHealth);
++        this.getAttribute(Attributes.SCALE).setBaseValue(this.level().purpurConfig.pigScale);
++    }
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.pigBreedingTicks;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.pigTakeDamageFromWater;
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.pigAlwaysDropExp;
++    }
++
+     @Override
+     protected void registerGoals() {
+         this.goalSelector.addGoal(0, new FloatGoal(this));
++        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+         this.goalSelector.addGoal(1, new PanicGoal(this, 1.25));
+         this.goalSelector.addGoal(3, new BreedGoal(this, 1.0));
+         this.goalSelector.addGoal(4, new TemptGoal(this, 1.2, p_336182_ -> p_336182_.is(Items.CARROT_ON_A_STICK), false));
 @@ -119,7 +_,7 @@
      }
  

@@ -54,7 +54,7 @@
      private static final float START_HEALTH = 8.0F;
      private static final float TAME_HEALTH = 40.0F;
      private static final float ARMOR_REPAIR_UNIT = 0.125F;
-@@ -116,6 +_,68 @@
+@@ -116,12 +_,87 @@
          this.setPathfindingMalus(PathType.DANGER_POWDER_SNOW, -1.0F);
      }
  
@@ -79,6 +79,17 @@
 +        return level().purpurConfig.wolfControllable;
 +    }
 +    // Purpur end
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.wolfMaxHealth);
++        this.getAttribute(Attributes.SCALE).setBaseValue(this.level().purpurConfig.wolfScale);
++    }
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.wolfBreedingTicks;
++    }
 +
 +    public boolean isRabid() {
 +        return this.isRabid;
@@ -123,6 +134,28 @@
      @Override
      protected void registerGoals() {
          this.goalSelector.addGoal(1, new FloatGoal(this));
++        this.goalSelector.addGoal(1, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+         this.goalSelector.addGoal(1, new TamableAnimal.TamableAnimalPanicGoal(1.5, DamageTypeTags.PANIC_ENVIRONMENTAL_CAUSES));
+         this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
+         this.goalSelector.addGoal(3, new Wolf.WolfAvoidEntityGoal<>(this, Llama.class, 24.0F, 1.5, 1.5));
++        this.goalSelector.addGoal(3, new AvoidRabidWolfGoal(this, 24.0F, 1.5D, 1.5D)); // Purpur
+         this.goalSelector.addGoal(4, new LeapAtTargetGoal(this, 0.4F));
+         this.goalSelector.addGoal(5, new MeleeAttackGoal(this, 1.0, true));
+         this.goalSelector.addGoal(6, new FollowOwnerGoal(this, 1.0, 10.0F, 2.0F));
+@@ -130,11 +_,12 @@
+         this.goalSelector.addGoal(9, new BegGoal(this, 8.0F));
+         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 8.0F));
+         this.goalSelector.addGoal(10, new RandomLookAroundGoal(this));
++        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
+         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
+         this.targetSelector.addGoal(3, new HurtByTargetGoal(this).setAlertOthers());
+         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
+-        this.targetSelector.addGoal(5, new NonTameRandomTargetGoal<>(this, Animal.class, false, PREY_SELECTOR));
++        // this.targetSelector.addGoal(5, new NonTameRandomTargetGoal<>(this, Animal.class, false, PREY_SELECTOR)); // Purpur - moved to updatePathfinders()
+         this.targetSelector.addGoal(6, new NonTameRandomTargetGoal<>(this, Turtle.class, false, Turtle.BABY_ON_LAND_SELECTOR));
+         this.targetSelector.addGoal(7, new NearestAttackableTargetGoal<>(this, AbstractSkeleton.class, false));
+         this.targetSelector.addGoal(8, new ResetUniversalAngerTargetGoal<>(this, true));
 @@ -232,12 +_,12 @@
      }
  

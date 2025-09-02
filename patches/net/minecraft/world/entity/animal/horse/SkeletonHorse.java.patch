@@ -1,5 +1,34 @@
 --- a/net/minecraft/world/entity/animal/horse/SkeletonHorse.java
 +++ b/net/minecraft/world/entity/animal/horse/SkeletonHorse.java
+@@ -39,6 +_,28 @@
+         super(p_30894_, p_30895_);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean isTamed() {
++        return super.isTamed() || this.level().purpurConfig.skeletonHorseRidable;
++    }
++    // Purpur end
++
++    @Override
++    public int getPurpurBreedTime() {
++        return 6000;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.skeletonHorseTakeDamageFromWater;
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.skeletonHorseAlwaysDropExp;
++    }
++
+     public static AttributeSupplier.Builder createAttributes() {
+         return createBaseHorseAttributes().add(Attributes.MAX_HEALTH, 15.0).add(Attributes.MOVEMENT_SPEED, 0.2F);
+     }
 @@ -66,7 +_,7 @@
      }
  

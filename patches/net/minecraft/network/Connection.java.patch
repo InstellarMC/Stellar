@@ -565,13 +565,15 @@
              } else {
                  this.disconnectionHandled = true;
                  PacketListener packetlistener = this.getPacketListener();
-@@ -624,6 +_,30 @@
+@@ -624,6 +_,32 @@
                      );
                      packetlistener1.onDisconnect(disconnectiondetails);
                  }
++                // Neo start - ignore fakeplayers
 +                if (this.channel() instanceof EmbeddedChannel) {
 +                    return;
 +                }
++                // Neo end
 +                this.clearPacketQueue(); // Paper - Optimize network
 +                // Paper start - Add PlayerConnectionCloseEvent
 +                final PacketListener packetListener = this.getPacketListener();

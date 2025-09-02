@@ -76,6 +76,15 @@
      protected AbstractHorse(EntityType<? extends AbstractHorse> p_30531_, Level p_30532_) {
          super(p_30531_, p_30532_);
          this.createInventory();
+@@ -280,7 +_,7 @@
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
+         return !this.isVehicle();
+     }
+ 
 @@ -336,7 +_,7 @@
  
      public void createInventory() {

@@ -13,10 +13,22 @@
                  ServerPlayer serverplayer = (ServerPlayer)p_316889_;
                  if (serverplayer.getRespawnDimension() != p_316150_.dimension() || !p_316161_.equals(serverplayer.getRespawnPosition())) {
 -                    serverplayer.setRespawnPosition(p_316150_.dimension(), p_316161_, 0.0F, false, true);
-+                    serverplayer.setRespawnPosition(p_316150_.dimension(), p_316161_, 0.0F, false, true, org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.RESPAWN_ANCHOR); // CraftBukkit
++                    if (serverplayer.setRespawnPosition(p_316150_.dimension(), p_316161_, 0.0F, false, true, org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.RESPAWN_ANCHOR)) { // Paper - Add PlayerSetSpawnEvent
                      p_316150_.playSound(
                          null,
                          (double)p_316161_.getX() + 0.5,
+@@ -113,6 +_,11 @@
+                         1.0F
+                     );
+                     return InteractionResult.SUCCESS;
++                    // Paper start - Add PlayerSetSpawnEvent
++                    } else {
++                        return InteractionResult.FAIL;
++                    }
++                    // Paper end - Add PlayerSetSpawnEvent
+                 }
+             }
+ 
 @@ -146,6 +_,7 @@
      }
  

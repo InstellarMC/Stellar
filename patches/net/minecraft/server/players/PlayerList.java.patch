@@ -228,7 +228,7 @@
          servergamepacketlistenerimpl.send(new ClientboundUpdateRecipesPacket(this.server.getRecipeManager().getOrderedRecipes()));
          this.sendPlayerPermissionLevel(p_11263_);
          p_11263_.getStats().markAllDirty();
-@@ -214,25 +_,87 @@
+@@ -214,57 +_,173 @@
              mutablecomponent = Component.translatable("multiplayer.player.joined.renamed", p_11263_.getDisplayName(), s);
          }
  
@@ -249,23 +249,37 @@
 +        this.playersByName.put(p_11263_.getScoreboardName().toLowerCase(java.util.Locale.ROOT), p_11263_); // Spigot
          this.playersByUUID.put(p_11263_.getUUID(), p_11263_);
 -        this.broadcastAll(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(p_11263_)));
+-        this.sendLevelInfo(p_11263_, serverlevel1);
 +        // this.broadcastAll(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(p_11263_)));
 +
++        // Paper start - Fire PlayerJoinEvent when Player is actually ready; correctly register player BEFORE PlayerJoinEvent, so the entity is valid and doesn't require tick delay hacks
++        p_11263_.supressTrackerForLogin = true;
+         serverlevel1.addNewPlayer(p_11263_);
+-        this.server.getCustomBossEvents().onPlayerConnect(p_11263_);
++        this.server.getCustomBossEvents().onPlayerConnect(p_11263_); // see commented out section below worldserver.addPlayerJoin(entityplayer);
++        this.mountSavedVehicle(p_11263_, serverlevel1, optional1);
++        // Paper end - Fire PlayerJoinEvent when Player is actually ready
 +        // CraftBukkit start
 +        CraftPlayer bukkitPlayer = p_11263_.getBukkitEntity();
++
 +        // Ensure that player inventory is populated with its viewer
 +        p_11263_.containerMenu.transferTo(p_11263_.containerMenu, bukkitPlayer);
++
 +        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(bukkitPlayer, io.papermc.paper.adventure.PaperAdventure.asAdventure(joinMessage)); // Paper - Adventure
 +        cserver.getPluginManager().callEvent(playerJoinEvent);
++
 +        if (!p_11263_.connection.isAcceptingMessages()) {
 +            return;
 +        }
++
 +        final net.kyori.adventure.text.Component jm = playerJoinEvent.joinMessage();
++
 +        if (jm != null && !jm.equals(net.kyori.adventure.text.Component.empty())) { // Paper - Adventure
 +            joinMessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(jm); // Paper - Adventure
 +            this.server.getPlayerList().broadcastSystemMessage(joinMessage, false); // Paper - Adventure
 +        }
 +        // CraftBukkit end
++
 +        // CraftBukkit start - sendAll above replaced with this loop
 +        ClientboundPlayerInfoUpdatePacket packet = ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(p_11263_));
 +
@@ -294,72 +308,117 @@
 +        }
 +        // Paper end - Use single player info update packet on join
 +        p_11263_.sentListPacket = true;
++        p_11263_.supressTrackerForLogin = false; // Paper - Fire PlayerJoinEvent when Player is actually ready
++        ((ServerLevel)p_11263_.level()).getChunkSource().chunkMap.addEntity(p_11263_); // Paper - Fire PlayerJoinEvent when Player is actually ready; track entity now
 +        // CraftBukkit end
++
 +        // p_11263_.refreshEntityData(p_11263_); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
 +
-         this.sendLevelInfo(p_11263_, serverlevel1);
--        serverlevel1.addNewPlayer(p_11263_);
--        this.server.getCustomBossEvents().onPlayerConnect(p_11263_);
++        this.sendLevelInfo(p_11263_, serverlevel1);
 +
 +        // CraftBukkit start - Only add if the player wasn't moved in the event
 +        if (p_11263_.level() == serverlevel1 && !serverlevel1.players().contains(p_11263_)) {
 +            serverlevel1.addNewPlayer(p_11263_);
 +            this.server.getCustomBossEvents().onPlayerConnect(p_11263_);
 +        }
++
 +        serverlevel1 = p_11263_.serverLevel(); // CraftBukkit - Update in case join event changed it
 +        // CraftBukkit end
-+
          this.sendActivePlayerEffects(p_11263_);
-         if (optional1.isPresent() && optional1.get().contains("RootVehicle", 10)) {
-             CompoundTag compoundtag = optional1.get().getCompound("RootVehicle");
-+            net.minecraft.server.level.ServerLevel finalServerlevel = serverlevel1;
-             Entity entity = EntityType.loadEntityRecursive(
+-        if (optional1.isPresent() && optional1.get().contains("RootVehicle", 10)) {
+-            CompoundTag compoundtag = optional1.get().getCompound("RootVehicle");
+-            Entity entity = EntityType.loadEntityRecursive(
 -                compoundtag.getCompound("Entity"), serverlevel1, p_215603_ -> !serverlevel1.addWithUUID(p_215603_) ? null : p_215603_
-+                compoundtag.getCompound("Entity"), serverlevel1, p_215603_ -> {
-+                        p_215603_.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT; // Paper - Entity#getEntitySpawnReason
-+                        return !finalServerlevel.addWithUUID(p_215603_) ? null : p_215603_;
-+                    }
++        // Paper start - Fire PlayerJoinEvent when Player is actually ready; move vehicle into method so it can be called above - short circuit around that code
++        this.onPlayerJoinFinish(p_11263_, serverlevel1, s1);
++        // Paper start - Send empty chunk, so players aren't stuck in the world loading screen with our chunk system not sending chunks when dead
++        if (p_11263_.isDeadOrDying()) {
++            net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> plains = serverlevel1.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME)
++                .getHolderOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS);
++            p_11263_.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket(
++                new net.minecraft.world.level.chunk.EmptyLevelChunk(serverlevel1, p_11263_.chunkPosition(), plains),
++                serverlevel1.getLightEngine(), (java.util.BitSet)null, (java.util.BitSet) null) // Stellar TODO - supprt Paper Anti-xray
              );
++        }
++        // Paper end - Send empty chunk
++    }
++    private void mountSavedVehicle(ServerPlayer player, ServerLevel worldserver1, Optional<CompoundTag> optional) {
++        // Paper end - Fire PlayerJoinEvent when Player is actually ready
++        if (optional.isPresent() && ((CompoundTag) optional.get()).contains("RootVehicle", 10)) {
++            CompoundTag nbttagcompound = ((CompoundTag) optional.get()).getCompound("RootVehicle");
++            ServerLevel finalWorldServer = worldserver1; // CraftBukkit - decompile error
++            Entity entity = EntityType.loadEntityRecursive(nbttagcompound.getCompound("Entity"), worldserver1, (entity1) -> {
++                return !finalWorldServer.addWithUUID(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // CraftBukkit - decompile error // Paper - Entity#getEntitySpawnReason
++            });
++
              if (entity != null) {
                  UUID uuid;
-@@ -255,16 +_,38 @@
+-                if (compoundtag.hasUUID("Attach")) {
+-                    uuid = compoundtag.getUUID("Attach");
++
++                if (nbttagcompound.hasUUID("Attach")) {
++                    uuid = nbttagcompound.getUUID("Attach");
+                 } else {
+                     uuid = null;
+                 }
  
-                 if (!p_11263_.isPassenger()) {
-                     LOGGER.warn("Couldn't reattach entity to player");
++                Iterator iterator;
++                Entity entity1;
++
+                 if (entity.getUUID().equals(uuid)) {
+-                    p_11263_.startRiding(entity, true);
++                    player.startRiding(entity, true);
+                 } else {
+-                    for (Entity entity1 : entity.getIndirectPassengers()) {
++                    iterator = entity.getIndirectPassengers().iterator();
++
++                    while (iterator.hasNext()) {
++                        entity1 = (Entity) iterator.next();
+                         if (entity1.getUUID().equals(uuid)) {
+-                            p_11263_.startRiding(entity1, true);
++                            player.startRiding(entity1, true);
+                             break;
+                         }
+                     }
+                 }
+ 
+-                if (!p_11263_.isPassenger()) {
+-                    LOGGER.warn("Couldn't reattach entity to player");
 -                    entity.discard();
++                if (!player.isPassenger()) {
++                    PlayerList.LOGGER.warn("Couldn't reattach entity to player");
 +                    entity.discard(null); // CraftBukkit - add Bukkit remove cause
++                    iterator = entity.getIndirectPassengers().iterator();
  
-                     for (Entity entity2 : entity.getIndirectPassengers()) {
+-                    for (Entity entity2 : entity.getIndirectPassengers()) {
 -                        entity2.discard();
-+                        entity2.discard(null); // CraftBukkit - add Bukkit remove cause
++                    while (iterator.hasNext()) {
++                        entity1 = (Entity) iterator.next();
++                        entity1.discard(null); // CraftBukkit - add Bukkit remove cause
                      }
                  }
              }
          }
  
-         p_11263_.initInventoryMenu();
-+
+-        p_11263_.initInventoryMenu();
++        // Paper start - Fire PlayerJoinEvent when Player is actually ready
++    }
++    public void onPlayerJoinFinish(ServerPlayer player, ServerLevel worldserver1, String s1) {
++        // Paper end - Fire PlayerJoinEvent when Player is actually ready
++        player.initInventoryMenu();
++        // CraftBukkit - Moved from above, added world
 +        // Paper start - Configurable player collision; Add to collideRule team if needed
 +        final net.minecraft.world.scores.Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
 +        final PlayerTeam collideRuleTeam = scoreboard.getPlayerTeam(this.collideRuleTeamName);
-+        if (this.collideRuleTeamName != null && collideRuleTeam != null && p_11263_.getTeam() == null) {
-+            scoreboard.addPlayerToTeam(p_11263_.getScoreboardName(), collideRuleTeam);
++        if (this.collideRuleTeamName != null && collideRuleTeam != null && player.getTeam() == null) {
++            scoreboard.addPlayerToTeam(player.getScoreboardName(), collideRuleTeam);
 +        }
 +        // Paper end - Configurable player collision
 +
-+        net.neoforged.neoforge.attachment.AttachmentSync.syncInitialPlayerAttachments(p_11263_);
-+        net.neoforged.neoforge.event.EventHooks.firePlayerLoggedIn( p_11263_ );
-+        // CraftBukkit - Moved from above, added world
-+        org.purpurmc.purpur.task.BossBarTask.addToAll(p_11263_); // Purpur
-+        LOGGER.info(
-+                "{}[{}] logged in with entity id {} at ({}, {}, {})",
-+                p_11263_.getName().getString(),
-+                s1,
-+                p_11263_.getId(),
-+                p_11263_.getX(),
-+                p_11263_.getY(),
-+                p_11263_.getZ()
-+        );
++        net.neoforged.neoforge.attachment.AttachmentSync.syncInitialPlayerAttachments(player); // Neo
++        net.neoforged.neoforge.event.EventHooks.firePlayerLoggedIn(player); // Neo
++        org.purpurmc.purpur.task.BossBarTask.addToAll(player); // Purpur
++        PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.serverLevelData.getLevelName(), player.getX(), player.getY(), player.getZ());
      }
  
      public void updateEntireScoreboard(ServerScoreboard p_11274_, ServerPlayer p_11275_) {
@@ -416,7 +475,7 @@
          this.playerIo.save(p_11277_);
          ServerStatsCounter serverstatscounter = this.stats.get(p_11277_.getUUID());
          if (serverstatscounter != null) {
-@@ -350,39 +_,118 @@
+@@ -350,39 +_,117 @@
          }
      }
  
@@ -427,7 +486,6 @@
 -        if (p_11287_.isPassenger()) {
 -            Entity entity = p_11287_.getRootVehicle();
 +    public net.kyori.adventure.text.Component quitMessage;
-+    public net.kyori.adventure.text.Component remove$leaveMessage;
 +    public @Nullable net.kyori.adventure.text.Component remove(ServerPlayer player) { // CraftBukkit - return string // Paper - return Component
 +        // Paper start - Fix kick event leave message not being sent
 +        return this.remove(player, net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? player.getBukkitEntity().displayName() : io.papermc.paper.adventure.PaperAdventure.asAdventure(player.getDisplayName())));
@@ -485,8 +543,8 @@
 +                        }
 +                    }
 +                    // Paper end - Fix villager boat exploit
-+                    entity1.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER, org.bukkit.event.entity.EntityRemoveEvent.Cause.PLAYER_QUIT);
-+                }); // CraftBukkit - add Bukkit remove cause
++                    entity1.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER, org.bukkit.event.entity.EntityRemoveEvent.Cause.PLAYER_QUIT); // CraftBukkit - add Bukkit remove cause
++                });
              }
          }
  
@@ -719,7 +777,7 @@
 +        // CraftBukkit end
 +        if (dimensionTransition.missingRespawnBlock()) {
 +            newPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.NO_RESPAWN_BLOCK_AVAILABLE, 0.0F));
-+            newPlayer.setRespawnPosition(null, null, 0f, false, false); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed // Paper - PlayerSetSpawnEvent
++            newPlayer.setRespawnPosition(null, null, 0f, false, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed // Paper - PlayerSetSpawnEvent
 +        }
 +
 +        byte b0 = (byte)(flag ? 1 : 0);
@@ -1069,17 +1127,17 @@
  
 +    public void saveAll(int interval) {
 +        io.papermc.paper.util.MCUtil.ensureMain("Save Players" , () -> { // Paper - Ensure main
-+            int numSaved = 0;
-+            long now = MinecraftServer.currentTick;
-+            for (int i = 0; i < this.players.size(); ++i) {
-+                ServerPlayer entityplayer = this.players.get(i);
-+                if (interval == -1 || now - entityplayer.lastSave >= interval) {
-+                    this.save(entityplayer);
-+                    if (interval != -1 && ++numSaved >= io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick()) { break; }
-+                }
-+                // Paper end - Incremental chunk and player saving
++        int numSaved = 0;
++        long now = MinecraftServer.currentTick;
++        for (int i = 0; i < this.players.size(); ++i) {
++            ServerPlayer entityplayer = this.players.get(i);
++            if (interval == -1 || now - entityplayer.lastSave >= interval) {
++                this.save(entityplayer);
++                if (interval != -1 && ++numSaved >= io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick()) { break; }
 +            }
-+            return null; }); // Paper - ensure main
++            // Paper end - Incremental chunk and player saving
++        }
++        return null; }); // Paper - ensure main
 +    }
      public UserWhiteList getWhiteList() {
          return this.whitelist;
@@ -1171,7 +1229,7 @@
  
      public void broadcastSystemMessage(Component p_240618_, boolean p_240644_) {
          this.broadcastSystemMessage(p_240618_, p_215639_ -> p_240618_, p_240644_);
-@@ -776,20 +_,39 @@
+@@ -776,48 +_,70 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage p_243264_, ServerPlayer p_243234_, ChatType.Bound p_243204_) {
@@ -1180,6 +1238,10 @@
 -
 -    private void broadcastChatMessage(
 -        PlayerChatMessage p_249952_, Predicate<ServerPlayer> p_250784_, @Nullable ServerPlayer p_249623_, ChatType.Bound p_250276_
+-    ) {
+-        boolean flag = this.verifyChatTrusted(p_249952_);
+-        this.server.logChatMessage(p_249952_.decoratedContent(), p_250276_, flag ? null : "Not Secure");
+-        OutgoingChatMessage outgoingchatmessage = OutgoingChatMessage.create(p_249952_);
 +        // Paper start
 +        this.broadcastChatMessage(p_243264_, p_243234_, p_243204_, null);
 +    }
@@ -1189,44 +1251,46 @@
 +        this.broadcastChatMessage(p_243264_, p_243234_::shouldFilterMessageTo, p_243234_, p_243204_, unsignedFunction);
 +    }
 +
-+    // Youer start
-+    AtomicReference<Function<net.kyori.adventure.audience.Audience, Component>> broadcastChatMessage$unsignedFunction = new AtomicReference<>(null);
-+    public void broadcastChatMessage(
-+            PlayerChatMessage p_249952_, Predicate<ServerPlayer> p_250784_, @Nullable ServerPlayer p_249623_, ChatType.Bound p_250276_
-     ) {
++    private void broadcastChatMessage(PlayerChatMessage message, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer sender, ChatType.Bound params) {
++        // Paper start
++        this.broadcastChatMessage(message, shouldSendFiltered, sender, params, null);
++    }
++    public void broadcastChatMessage(PlayerChatMessage message, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer sender, ChatType.Bound params, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
 +        // Paper end
-         boolean flag = this.verifyChatTrusted(p_249952_);
--        this.server.logChatMessage(p_249952_.decoratedContent(), p_250276_, flag ? null : "Not Secure");
-+        Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction = broadcastChatMessage$unsignedFunction.getAndSet(null);
-+        this.server.logChatMessage((unsignedFunction == null ? p_249952_.decoratedContent() : unsignedFunction.apply(this.server.console)), p_250276_, flag ? null : "Not Secure"); // Paper
-         OutgoingChatMessage outgoingchatmessage = OutgoingChatMessage.create(p_249952_);
++        boolean flag = this.verifyChatTrusted(message);
++
++        this.server.logChatMessage((unsignedFunction == null ? message.decoratedContent() : unsignedFunction.apply(this.server.console)), params, flag ? null : "Not Secure"); // Paper
++        OutgoingChatMessage outgoingchatmessage = OutgoingChatMessage.create(message);
          boolean flag1 = false;
-+        Packet<?> disguised = p_249623_ != null && unsignedFunction == null ? new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(outgoingchatmessage.content(), p_250276_) : null; // Paper - don't send player chat packets from vanished players
  
-         for (ServerPlayer serverplayer : this.players) {
-             boolean flag2 = p_250784_.test(serverplayer);
+-        for (ServerPlayer serverplayer : this.players) {
+-            boolean flag2 = p_250784_.test(serverplayer);
 -            serverplayer.sendChatMessage(outgoingchatmessage, flag2, p_250276_);
+-            flag1 |= flag2 && p_249952_.isFullyFiltered();
++        boolean flag2;
++        Packet<?> disguised = sender != null && unsignedFunction == null ? new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(outgoingchatmessage.content(), params) : null; // Paper - don't send player chat packets from vanished players
++
++        for (Iterator iterator = this.players.iterator(); iterator.hasNext(); flag1 |= flag2 && message.isFullyFiltered()) {
++            ServerPlayer entityplayer1 = (ServerPlayer) iterator.next();
++
++            flag2 = shouldSendFiltered.test(entityplayer1);
 +            // Paper start - don't send player chat packets from vanished players
-+            if (p_249623_ != null && !serverplayer.getBukkitEntity().canSee(p_249623_.getBukkitEntity())) {
-+                serverplayer.connection.send(unsignedFunction != null
-+                        ? new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(unsignedFunction.apply(serverplayer.getBukkitEntity()), p_250276_)
-+                        : disguised);
++            if (sender != null && !entityplayer1.getBukkitEntity().canSee(sender.getBukkitEntity())) {
++                entityplayer1.connection.send(unsignedFunction != null
++                    ? new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(unsignedFunction.apply(entityplayer1.getBukkitEntity()), params)
++                    : disguised);
 +                continue;
 +            }
 +            // Paper end
-+            serverplayer.sendChatMessage(outgoingchatmessage, flag2, p_250276_, unsignedFunction == null ? null : unsignedFunction.apply(serverplayer.getBukkitEntity())); // Paper
-             flag1 |= flag2 && p_249952_.isFullyFiltered();
++            entityplayer1.sendChatMessage(outgoingchatmessage, flag2, params, unsignedFunction == null ? null : unsignedFunction.apply(entityplayer1.getBukkitEntity())); // Paper
          }
  
-@@ -797,27 +_,32 @@
-             p_249623_.sendSystemMessage(CHAT_FILTERED_FULL);
+-        if (flag1 && p_249623_ != null) {
+-            p_249623_.sendSystemMessage(CHAT_FILTERED_FULL);
++        if (flag1 && sender != null) {
++            sender.sendSystemMessage(PlayerList.CHAT_FILTERED_FULL);
          }
      }
-+    public void broadcastChatMessage(PlayerChatMessage p_249952_, Predicate<ServerPlayer> p_250784_, @Nullable ServerPlayer p_249623_, ChatType.Bound p_250276_, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
-+        broadcastChatMessage$unsignedFunction.set(unsignedFunction);
-+        broadcastChatMessage(p_249952_, p_250784_, p_249623_, p_250276_);
-+    }
-+    // Youer end
  
 -    private boolean verifyChatTrusted(PlayerChatMessage p_251384_) {
 +    public boolean verifyChatTrusted(PlayerChatMessage p_251384_) {  // Paper - private -> public
@@ -1239,7 +1303,7 @@
 +    // CraftBukkit start
 +    public ServerStatsCounter getPlayerStats(ServerPlayer p_11240_) {
 +        ServerStatsCounter serverstatisticmanager = p_11240_.getStats();
-+        return serverstatisticmanager == null ? getPlayerStats(p_11240_.getUUID(), p_11240_.getDisplayName().getString()) : serverstatisticmanager;
++        return serverstatisticmanager == null ? getPlayerStats(p_11240_.getUUID(), p_11240_.getGameProfile().getName()) : serverstatisticmanager; // Paper - use username and not display name
 +    }
 +
 +    public ServerStatsCounter getPlayerStats(UUID uuid, String displayName) {
@@ -1264,8 +1328,17 @@
          }
  
          return serverstatscounter;
-@@ -832,6 +_,8 @@
-             this.advancements.put(uuid, playeradvancements);
+@@ -825,13 +_,15 @@
+ 
+     public PlayerAdvancements getPlayerAdvancements(ServerPlayer p_11297_) {
+         UUID uuid = p_11297_.getUUID();
+-        PlayerAdvancements playeradvancements = this.advancements.get(uuid);
++        PlayerAdvancements playeradvancements = (PlayerAdvancements) p_11297_.getAdvancements(); // CraftBukkit
+         if (playeradvancements == null) {
+             Path path = this.server.getWorldPath(LevelResource.PLAYER_ADVANCEMENTS_DIR).resolve(uuid + ".json");
+             playeradvancements = new PlayerAdvancements(this.server.getFixerUpper(), this, this.server.getAdvancements(), path, p_11297_);
+-            this.advancements.put(uuid, playeradvancements);
++            // this.advancements.put(uuid, playeradvancements); // CraftBukkit
          }
  
 +        // Forge: don't overwrite active player with a fake one.
@@ -1282,46 +1355,44 @@
      }
  
      @Nullable
-@@ -876,6 +_,11 @@
-             playeradvancements.reload(this.server.getAdvancements());
-         }
+@@ -872,16 +_,33 @@
+     }
  
-+        for (ServerPlayer player: this.players) {
-+            player.getAdvancements().flushDirty(player); // CraftBukkit - trigger immediate flush of advancements
-+        }
-+
-+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.OnDatapackSyncEvent(this, null));
-         this.broadcastAll(new ClientboundUpdateTagsPacket(TagNetworkSerialization.serializeTagsToNetwork(this.registries)));
-         ClientboundUpdateRecipesPacket clientboundupdaterecipespacket = new ClientboundUpdateRecipesPacket(this.server.getRecipeManager().getOrderedRecipes());
- 
-@@ -883,6 +_,30 @@
-             serverplayer.connection.send(clientboundupdaterecipespacket);
-             serverplayer.getRecipeBook().sendInitialRecipeBook(serverplayer);
-         }
+     public void reloadResources() {
+-        for (PlayerAdvancements playeradvancements : this.advancements.values()) {
+-            playeradvancements.reload(this.server.getAdvancements());
+-        }
++        // Paper start - API for updating recipes on clients
++        this.reloadAdvancementData();
++        this.reloadTagData();
++        this.reloadRecipeData();
 +    }
-+
+ 
 +    public void reloadAdvancementData() {
++        // Paper end - API for updating recipes on clients
 +        for (ServerPlayer player : this.players) {
 +            player.getAdvancements().reload(this.server.getAdvancements());
 +            player.getAdvancements().flushDirty(player); // CraftBukkit - trigger immediate flush of advancements
 +        }
++        // Paper start - API for updating recipes on clients
 +    }
-+
 +    public void reloadTagData() {
 +        // Paper end - API for updating recipes on clients
 +        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.OnDatapackSyncEvent(this, null));
-+        this.broadcastAll(new ClientboundUpdateTagsPacket(TagNetworkSerialization.serializeTagsToNetwork(this.registries)));
+         this.broadcastAll(new ClientboundUpdateTagsPacket(TagNetworkSerialization.serializeTagsToNetwork(this.registries)));
+-        ClientboundUpdateRecipesPacket clientboundupdaterecipespacket = new ClientboundUpdateRecipesPacket(this.server.getRecipeManager().getOrderedRecipes());
 +        // Paper start - API for updating recipes on clients
 +    }
 +    public void reloadRecipeData() {
 +        // Paper end - API for updating recipes on clients
 +        ClientboundUpdateRecipesPacket packetplayoutrecipeupdate = new ClientboundUpdateRecipesPacket(this.server.getRecipeManager().getOrderedRecipes());
-+
+ 
+-        for (ServerPlayer serverplayer : this.players) {
+-            serverplayer.connection.send(clientboundupdaterecipespacket);
+-            serverplayer.getRecipeBook().sendInitialRecipeBook(serverplayer);
 +        for (ServerPlayer entityplayer : this.players) {
 +            entityplayer.connection.send(packetplayoutrecipeupdate);
 +            entityplayer.getRecipeBook().sendInitialRecipeBook(entityplayer);
-+        }
-+
+         }
      }
  
-     public boolean isAllowCommandsForAllPlayers() {

@@ -112,7 +112,7 @@
      protected int lerpSteps;
      protected double lerpX;
      protected double lerpY;
-@@ -251,13 +_,38 @@
+@@ -251,13 +_,39 @@
      private float swimAmount;
      private float swimAmountO;
      protected Brain<?> brain;
@@ -131,6 +131,7 @@
 +
 +    // CraftBukkit start
 +    public int expToDrop;
++    public java.util.ArrayList<DefaultDrop> drops = new java.util.ArrayList<>(); // Paper - Restore vanilla drops behavior
 +    public final CraftAttributeMap craftAttributes;
 +    public boolean collides = true;
 +    public Set<UUID> collidableExemptions = new HashSet<>();
@@ -153,7 +154,7 @@
          this.setHealth(this.getMaxHealth());
          this.blocksBuilding = true;
          this.rotA = (float)((Math.random() + 1.0) * 0.01F);
-@@ -267,6 +_,9 @@
+@@ -267,7 +_,12 @@
          this.yHeadRot = this.getYRot();
          NbtOps nbtops = NbtOps.INSTANCE;
          this.brain = this.makeBrain(new Dynamic<>(nbtops, nbtops.createMap(ImmutableMap.of(nbtops.createString("memories"), nbtops.emptyMap()))));
@@ -161,8 +162,11 @@
 +        // CraftBukkit - setHealth(getMaxHealth()) inlined and simplified to skip the instanceof check for EntityPlayer, as getBukkitEntity() is not initialized in constructor
 +        this.entityData.set(LivingEntity.DATA_HEALTH_ID, (float) this.getAttribute(Attributes.MAX_HEALTH).getValue());
      }
++
++    protected void initAttributes() {} // Purpur
  
      public Brain<?> getBrain() {
+         return this.brain;
 @@ -320,8 +_,11 @@
              .add(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE)
              .add(Attributes.WATER_MOVEMENT_EFFICIENCY)
@@ -1068,7 +1072,7 @@
          }
      }
  
-@@ -1326,6 +_,7 @@
+@@ -1326,9 +_,11 @@
      }
  
      public void die(DamageSource p_21014_) {
@@ -1076,16 +1080,63 @@
          if (!this.isRemoved() && !this.dead) {
              Entity entity = p_21014_.getEntity();
              LivingEntity livingentity = this.getKillCredit();
-@@ -1338,7 +_,7 @@
++            /* // Paper - move down to make death event cancellable - this is the awardKillScore below
+             if (this.deathScore >= 0 && livingentity != null) {
+                 livingentity.awardKillScore(this, this.deathScore, p_21014_);
+             }
+@@ -1338,12 +_,50 @@
              }
  
              if (!this.level().isClientSide && this.hasCustomName()) {
 -                LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString());
 +                if (org.spigotmc.SpigotConfig.logNamedDeaths) LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString());
              }
++            */ // Paper - move down to make death event cancellable - this is the awardKillScore below
  
              this.dead = true;
-@@ -1361,32 +_,55 @@
++            // Paper - moved into if below
++            Level world = this.level();
+             this.getCombatTracker().recheckStatus();
+             if (this.level() instanceof ServerLevel serverlevel) {
++                // Paper - move below into if for onKill
++
++                // Paper start
++                org.bukkit.event.entity.EntityDeathEvent deathEvent = this.dropAllDeathLoot(serverlevel, p_21014_);
++                if (deathEvent == null || !deathEvent.isCancelled()) {
++                    // if (this.deathScore >= 0 && entityliving != null) { // Paper - Fix item duplication and teleport issues; moved to be run earlier in #dropAllDeathLoot before destroying the drop items in CraftEventFactory#callEntityDeathEvent
++                    //     entityliving.awardKillScore(this, this.deathScore, damageSource);
++                    // }
++                    // Paper start - clear equipment if event is not cancelled
++                    if (this instanceof Mob) {
++                        for (EquipmentSlot slot : this.clearedEquipmentSlots) {
++                            this.setItemSlot(slot, ItemStack.EMPTY);
++                        }
++                        this.clearedEquipmentSlots.clear();
++                    }
++                    // Paper end
++
++                    if (this.isSleeping()) {
++                        this.stopSleeping();
++                    }
++
++                    if (!this.level().isClientSide && this.hasCustomName()) {
++                        if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
++                    }
++
++                    this.getCombatTracker().recheckStatus();
++                    if (entity != null) {
++                        entity.killedEntity((ServerLevel) this.level(), this);
++                    }
++                    this.gameEvent(GameEvent.ENTITY_DIE);
++                } else {
++                    this.dead = false;
++                    this.setHealth((float) deathEvent.getReviveHealth());
++                }
++                // Paper end
+                 if (entity == null || entity.killedEntity(serverlevel, this)) {
+                     this.gameEvent(GameEvent.ENTITY_DIE);
+                     this.dropAllDeathLoot(serverlevel, p_21014_);
+@@ -1361,36 +_,88 @@
          if (!this.level().isClientSide) {
              boolean flag = false;
              if (p_21269_ instanceof WitherBoss) {
@@ -1118,34 +1169,68 @@
          }
      }
  
-+    protected AtomicBoolean shouldDropExperience = new AtomicBoolean(true);
-     protected void dropAllDeathLoot(ServerLevel p_348524_, DamageSource p_21192_) {
-+        this.captureDrops(new java.util.ArrayList<>());
+-    protected void dropAllDeathLoot(ServerLevel p_348524_, DamageSource p_21192_) {
++    // Paper start
++    protected boolean clearEquipmentSlots = true;
++    protected Set<EquipmentSlot> clearedEquipmentSlots = new java.util.HashSet<>();
++    // Paper end
++    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(ServerLevel p_348524_, DamageSource p_21192_) {
++        this.captureDrops(new java.util.ArrayList<>()); // Neo
          boolean flag = this.lastHurtByPlayerTime > 0;
 -        if (this.shouldDropLoot() && p_348524_.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
++
++        this.dropEquipment(); // CraftBukkit - from below
 +        if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
++            if (!(p_21192_.is(net.minecraft.world.damagesource.DamageTypes.CRAMMING) && level().purpurConfig.disableDropsOnCrammingDeath)) { // Purpur
              this.dropFromLootTable(p_21192_, flag);
++            // Paper start
++            final boolean prev = this.clearEquipmentSlots;
++            this.clearEquipmentSlots = false;
++            this.clearedEquipmentSlots.clear();
++            // Paper end
              this.dropCustomDeathLoot(p_348524_, p_21192_, flag);
++            this.clearEquipmentSlots = prev; // Paper
++            } // Purpur
          }
- 
-         this.dropEquipment();
--        this.dropExperience(p_21192_.getEntity());
-+        if (this instanceof ServerPlayer) {
-+            if (shouldDropExperience.getAndSet(true)) {
-+                this.dropExperience(p_21192_.getEntity());
++        // CraftBukkit start - Call death event // Paper start - call advancement triggers with correct entity equipment
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = CraftEventFactory.callEntityDeathEvent(this, p_21192_, this.drops, () -> {
++            final LivingEntity entityliving = this.getKillCredit();
++            if (this.deathScore >= 0 && entityliving != null) {
++                entityliving.awardKillScore(this, this.deathScore, p_21192_);
 +            }
-+        } else {
-+            this.dropExperience(p_21192_.getEntity());
-+        }
++        }); // Paper end
++        this.postDeathDropItems(deathEvent); // Paper
++        this.drops = new java.util.ArrayList<>();
++        // CraftBukkit end
+ 
+-        this.dropEquipment();
++        // this.dropEquipment(); // CraftBukkit - moved up
+         this.dropExperience(p_21192_.getEntity());
 +
 +        Collection<ItemEntity> drops = captureDrops(null);
-+        EmeraldClose.init(this, drops); // Mohist
-+        CraftEventFactory.callEntityDeathEvent(this, p_21192_, drops);
 +        if (!net.neoforged.neoforge.common.CommonHooks.onLivingDrops(this, p_21192_, drops, lastHurtByPlayerTime > 0))
 +            drops.forEach(e -> level().addFreshEntity(e));
++        return deathEvent; // Paper
      }
  
      protected void dropEquipment() {
+     }
++    protected void postDeathDropItems(org.bukkit.event.entity.EntityDeathEvent event) {} // Paper - method for post death logic that cannot be ran before the event is potentially cancelled
++
++    public int getExpReward(@Nullable Entity entity) { // CraftBukkit
++        Level world = this.level();
++
++        if (world instanceof ServerLevel worldserver) {
++            if (!this.wasExperienceConsumed() && (this.isAlwaysExperienceDropper() || this.lastHurtByPlayerTime > 0 && this.shouldDropExperience() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT))) {
++                return this.getExperienceReward(worldserver, entity); // CraftBukkit
++            }
++        }
++
++        return 0; // CraftBukkit
++    }
+ 
+     protected void dropExperience(@Nullable Entity p_345346_) {
+         if (this.level() instanceof ServerLevel serverlevel
 @@ -1399,7 +_,8 @@
                  this.isAlwaysExperienceDropper()
                      || this.lastHurtByPlayerTime > 0 && this.shouldDropExperience() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)
@@ -1969,7 +2054,7 @@
                  ? false
                  : this.level().clip(new ClipContext(vec3, vec31, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS;
          }
-@@ -2913,13 +_,20 @@
+@@ -2913,13 +_,26 @@
  
      @Override
      public boolean isPickable() {
@@ -1981,7 +2066,13 @@
      public boolean isPushable() {
 -        return this.isAlive() && !this.isSpectator() && !this.onClimbable();
 -    }
-+        return this.isAlive() && !this.isSpectator() && !this.onClimbable() && this.collides; // CraftBukkit
++        return this.isCollidable(this.level().paperConfig().collisions.fixClimbingBypassingCrammingRule);
++    }
++
++    @Override
++    public boolean isCollidable(boolean ignoreClimbing) {
++        return this.isAlive() && !this.isSpectator() && (ignoreClimbing || !this.onClimbable()) && this.collides; // CraftBukkit
++        // Paper end - Climbing should not bypass cramming gamerule
 +    }
 +
 +    // CraftBukkit start - collidable API

@@ -35,6 +35,18 @@
  import java.util.function.BooleanSupplier;
  import java.util.function.Function;
  import java.util.function.Predicate;
+@@ -34,10 +_,7 @@
+ import java.util.stream.Stream;
+ import javax.annotation.Nonnull;
+ import javax.annotation.Nullable;
+-import net.minecraft.CrashReport;
+-import net.minecraft.CrashReportCategory;
+-import net.minecraft.ReportType;
+-import net.minecraft.Util;
++import net.minecraft.*;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.core.Holder;
 @@ -56,6 +_,11 @@
  import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
  import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
@@ -235,7 +247,7 @@
 +    }
 +
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
-+        return this.chunkSource.getChunk(x, z, false);
++        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
 +    }
 +
 +    // Paper start - optimise getPlayerByUUID
@@ -767,30 +779,29 @@
      }
  
      @Override
-@@ -340,12 +_,21 @@
+@@ -339,13 +_,21 @@
+         }
  
          int i = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
-         if (this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
-+            long j = this.levelData.getDayTime() + 24000L;
+-        if (this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
++        if (this.purpurConfig.playersSkipNight && this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
 +            // CraftBukkit start
++            long j = this.levelData.getDayTime() + 24000L;
 +            TimeSkipEvent event = new TimeSkipEvent(this.getWorld(), TimeSkipEvent.SkipReason.NIGHT_SKIP, net.neoforged.neoforge.event.EventHooks.onSleepFinished(this, j - j % 24000L, this.getDayTime()) - this.getDayTime());
              if (this.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
 -                long j = this.levelData.getDayTime() + 24000L;
 -                this.setDayTime(j - j % 24000L);
--            }
--
--            this.wakeUpAllPlayers();
 +                this.getCraftServer().getPluginManager().callEvent(event);
 +                if (!event.isCancelled()) {
 +                    this.setDayTime(this.getDayTime() + event.getSkipAmount());
 +                }
-+            }
-+
+             }
+ 
+-            this.wakeUpAllPlayers();
 +            if (!event.isCancelled()) {
 +                this.wakeUpAllPlayers();
 +            }
 +            // CraftBukkit end
-+
              if (this.getGameRules().getBoolean(GameRules.RULE_WEATHER_CYCLE) && this.isRaining()) {
                  this.resetWeatherCycle();
              }
@@ -811,7 +822,7 @@
          this.handlingTick = false;
          profilerfiller.pop();
 -        boolean flag1 = !this.players.isEmpty() || !this.getForcedChunks().isEmpty();
-+        boolean flag1 = !paperConfig().unsupportedSettings.disableWorldTickingWhenEmpty || !this.players.isEmpty()  || net.neoforged.neoforge.common.world.chunk.ForcedChunkManager.hasForcedChunks(this); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players // Paper - restore this // Neo: Replace vanilla's has forced chunk check with neo's that checks both the vanilla and neo added ones
++        boolean flag1 = !paperConfig().unsupportedSettings.disableWorldTickingWhenEmpty || !this.players.isEmpty() || net.neoforged.neoforge.common.world.chunk.ForcedChunkManager.hasForcedChunks(this); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players // Paper - restore this // Neo: Replace vanilla's has forced chunk check with neo's that checks both the vanilla and neo added ones
          if (flag1) {
              this.resetEmptyTime();
          }
@@ -836,7 +847,7 @@
                              Entity entity = p_308566_.getVehicle();
                              if (entity != null) {
                                  if (!entity.isRemoved() && entity.hasPassenger(p_308566_)) {
-@@ -412,7 +_,23 @@
+@@ -412,7 +_,25 @@
                              }
  
                              profilerfiller.push("tick");
@@ -849,11 +860,13 @@
 +                                } catch (Throwable throwable) { // Pufferfish - diff on change ServerLevel.tick
 +                                    if (throwable instanceof ThreadDeath) throw throwable; // Paper
 +                                    // Paper start - Prevent block entity and entity crashes
-+                                    final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
++                                    final String msg = String.format("Entity threw exception at %s:%s,%s,%s", p_308566_.level().getWorld().getName(), p_308566_.getX(), p_308566_.getY(), p_308566_.getZ());
 +                                    MinecraftServer.LOGGER.error(msg, throwable);
 +                                    getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
-+                                    entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Pufferfish - diff on change ServerLevel.tick
++                                    p_308566_.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Pufferfish - diff on change ServerLevel.tick
 +                                    // Paper end - Prevent block entity and entity crashes
++                                } finally {
++                                    TimeTracker.ENTITY_UPDATE.trackEnd(p_308566_);
 +                                }
 +                                // Pufferfish end // Stellar end - neo
 +                            }

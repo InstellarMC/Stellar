@@ -13,6 +13,68 @@
      static final Map<EntityType<?>, SoundEvent> MOB_SOUND_MAP = Util.make(Maps.newHashMap(), p_326764_ -> {
          p_326764_.put(EntityType.BLAZE, SoundEvents.PARROT_IMITATE_BLAZE);
          p_326764_.put(EntityType.BOGGED, SoundEvents.PARROT_IMITATE_BOGGED);
+@@ -129,6 +_,61 @@
+         this.setPathfindingMalus(PathType.COCOA, -1.0F);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean isRidable() {
++        return level().purpurConfig.parrotRidable;
++    }
++
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.parrotRidableInWater;
++    }
++
++    @Override
++    public boolean isControllable() {
++        return level().purpurConfig.parrotControllable;
++    }
++
++    @Override
++    public double getMaxY() {
++        return level().purpurConfig.parrotMaxY;
++    }
++
++    @Override
++    public void travel(Vec3 vec3) {
++        super.travel(vec3);
++        if (getRider() != null && this.isControllable() && !onGround) {
++            float speed = (float) getAttributeValue(Attributes.FLYING_SPEED) * 2;
++            setSpeed(speed);
++            Vec3 mot = getDeltaMovement();
++            move(net.minecraft.world.entity.MoverType.SELF, mot.multiply(speed, 0.25, speed));
++            setDeltaMovement(mot.scale(0.9D));
++        }
++    }
++    // Purpur end
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.parrotMaxHealth);
++        this.getAttribute(Attributes.SCALE).setBaseValue(this.level().purpurConfig.parrotScale);
++    }
++
++    @Override
++    public int getPurpurBreedTime() {
++        return 6000;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.parrotTakeDamageFromWater;
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.parrotAlwaysDropExp;
++    }
++
+     @Nullable
+     @Override
+     public SpawnGroupData finalizeSpawn(ServerLevelAccessor p_29389_, DifficultyInstance p_29390_, MobSpawnType p_29391_, @Nullable SpawnGroupData p_29392_) {
 @@ -257,7 +_,7 @@
              }
  
@@ -63,12 +125,14 @@
          return SoundEvents.PARROT_DEATH;
      }
  
-@@ -374,7 +_,7 @@
+@@ -373,8 +_,8 @@
+     }
  
      @Override
-     public boolean isPushable() {
+-    public boolean isPushable() {
 -        return true;
-+        return super.isPushable(); // CraftBukkit - collidable API
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
++        return super.isCollidable(ignoreClimbing); // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
      }
  
      @Override

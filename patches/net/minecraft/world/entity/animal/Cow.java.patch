@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/Cow.java
 +++ b/net/minecraft/world/entity/animal/Cow.java
-@@ -30,6 +_,8 @@
+@@ -30,24 +_,80 @@
  import net.minecraft.world.item.Items;
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.block.state.BlockState;
@@ -8,7 +8,80 @@
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
  
  public class Cow extends Animal {
++    private boolean isNaturallyAggressiveToPlayers; // Purpur
++
      private static final EntityDimensions BABY_DIMENSIONS = EntityType.COW.getDimensions().scale(0.5F).withEyeHeight(0.665F);
+ 
+     public Cow(EntityType<? extends Cow> p_28285_, Level p_28286_) {
+         super(p_28285_, p_28286_);
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean isRidable() {
++        return level().purpurConfig.cowRidable;
++    }
++
++    @Override
++    public boolean dismountsUnderwater() {
++        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.cowRidableInWater;
++    }
++
++    @Override
++    public boolean isControllable() {
++        return level().purpurConfig.cowControllable;
++    }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.cowMaxHealth);
++        this.getAttribute(Attributes.SCALE).setBaseValue(this.level().purpurConfig.cowScale);
++        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(this.level().purpurConfig.cowNaturallyAggressiveToPlayersDamage); // Purpur
++    }
++    // Purpur end
++
++    @Override
++    public int getPurpurBreedTime() {
++        return this.level().purpurConfig.cowBreedingTicks;
++    }
++
++    @Override
++    public boolean isSensitiveToWater() {
++        return this.level().purpurConfig.cowTakeDamageFromWater;
++    }
++
++    @Override
++    public net.minecraft.world.entity.SpawnGroupData finalizeSpawn(net.minecraft.world.level.ServerLevelAccessor world, net.minecraft.world.DifficultyInstance difficulty, net.minecraft.world.entity.MobSpawnType spawnReason, net.minecraft.world.entity.SpawnGroupData entityData) {
++        this.isNaturallyAggressiveToPlayers = world.getLevel().purpurConfig.cowNaturallyAggressiveToPlayersChance > 0.0D && random.nextDouble() <= world.getLevel().purpurConfig.cowNaturallyAggressiveToPlayersChance;
++        return super.finalizeSpawn(world, difficulty, spawnReason, entityData);
++    }
++
++    @Override
++    protected boolean isAlwaysExperienceDropper() {
++        return this.level().purpurConfig.cowAlwaysDropExp;
++    }
++
+     @Override
+     protected void registerGoals() {
+         this.goalSelector.addGoal(0, new FloatGoal(this));
++        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+         this.goalSelector.addGoal(1, new PanicGoal(this, 2.0));
++        this.goalSelector.addGoal(1, new net.minecraft.world.entity.ai.goal.MeleeAttackGoal(this, 1.2000000476837158D, true)); // Purpur
+         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
+-        this.goalSelector.addGoal(3, new TemptGoal(this, 1.25, p_335386_ -> p_335386_.is(ItemTags.COW_FOOD), false));
++        this.goalSelector.addGoal(3, new TemptGoal(this, 1.25, (itemstack) -> {
++            return level().purpurConfig.cowFeedMushrooms > 0 &&
++                (itemstack.is(net.minecraft.world.level.block.Blocks.RED_MUSHROOM.asItem())|| itemstack.is(net.minecraft.world.level.block.Blocks.BROWN_MUSHROOM.asItem()))
++                    || itemstack.is(ItemTags.COW_FOOD); // Purpur
++        }, false));
+         this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.25));
+         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0));
+         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
+         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
++        this.targetSelector.addGoal(0, new net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, target -> isNaturallyAggressiveToPlayers)); // Purpur
+     }
+ 
+     @Override
 @@ -70,7 +_,7 @@
      }
  
