@@ -24,7 +24,7 @@
 +    static final java.util.regex.Pattern PROP_PATTERN = java.util.regex.Pattern.compile("\\w{0,16}");
 +    // Spigot end
 +    // CraftBukkit start - add fields
-+    private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
++    private static final it.unimi.dsi.fastutil.objects.Object2LongMap<InetAddress> throttleTracker = new  it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>(); // Stellar
 +    private static int throttleCounter = 0;
 +    // CraftBukkit end
 +    private static final boolean BYPASS_HOSTCHECK = Boolean.getBoolean("Paper.bypassHostCheck"); // Paper
@@ -39,7 +39,7 @@
          switch (p_9975_.intention()) {
              case LOGIN:
                  this.beginLogin(p_9975_, false);
-@@ -50,22 +_,124 @@
+@@ -50,22 +_,118 @@
              default:
                  throw new UnsupportedOperationException("Invalid intention " + p_9975_.intention());
          }
@@ -60,7 +60,7 @@
 +                InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
 +
 +                synchronized (throttleTracker) {
-+                    if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
++                    if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.getLong(address) < connectionThrottle) { // Stellar
 +                        throttleTracker.put(address, currentTime);
 +                        net.minecraft.network.chat.Component chatmessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.connectionThrottle);
 +                        this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
@@ -74,13 +74,7 @@
 +                        throttleCounter = 0;
 +
 +                        // Cleanup stale entries
-+                        java.util.Iterator iter = throttleTracker.entrySet().iterator();
-+                        while (iter.hasNext()) {
-+                            java.util.Map.Entry<InetAddress, Long> entry = (java.util.Map.Entry) iter.next();
-+                            if (entry.getValue() > connectionThrottle) {
-+                                iter.remove();
-+                            }
-+                        }
++                        throttleTracker.object2LongEntrySet().removeIf(entry -> entry.getLongValue() > connectionThrottle); // Stellar
 +                    }
 +                }
 +            } // Paper - Unix domain socket support
