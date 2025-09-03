@@ -79,6 +79,26 @@
  
  public abstract class PlayerList {
      public static final File USERBANLIST_FILE = new File("banned-players.json");
+@@ -111,14 +_,16 @@
+     private static final int SEND_PLAYER_INFO_INTERVAL = 600;
+     private static final SimpleDateFormat BAN_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
+     private final MinecraftServer server;
+-    public final List<ServerPlayer> players = Lists.newArrayList();
++    public final List<ServerPlayer> players = new java.util.concurrent.CopyOnWriteArrayList<>(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
+     private final Map<UUID, ServerPlayer> playersByUUID = Maps.newHashMap();
+     private final UserBanList bans = new UserBanList(USERBANLIST_FILE);
+     private final IpBanList ipBans = new IpBanList(IPBANLIST_FILE);
+     private final ServerOpList ops = new ServerOpList(OPLIST_FILE);
+     private final UserWhiteList whitelist = new UserWhiteList(WHITELIST_FILE);
+-    private final Map<UUID, ServerStatsCounter> stats = Maps.newHashMap();
+-    private final Map<UUID, PlayerAdvancements> advancements = Maps.newHashMap();
++    // CraftBukkit start
++    // private final Map<UUID, ServerStatsCounter> stats = Maps.newHashMap();
++    // private final Map<UUID, PlayerAdvancements> advancements = Maps.newHashMap();
++    // CraftBukkit end
+     public final PlayerDataStorage playerIo;
+     private boolean doWhiteList;
+     private final LayeredRegistryAccess<RegistryLayer> registries;
 @@ -128,15 +_,56 @@
      private boolean allowCommandsForAllPlayers;
      private static final boolean ALLOW_LOGOUTIVATOR = false;
@@ -465,7 +485,7 @@
          } else {
              optional = this.playerIo.load(p_11225_);
          }
-@@ -338,6 +_,9 @@
+@@ -338,51 +_,132 @@
      }
  
      protected void save(ServerPlayer p_11277_) {
@@ -473,9 +493,16 @@
 +        if (p_11277_.connection == null) return;
 +        p_11277_.lastSave = MinecraftServer.currentTick; // Paper - Incremental chunk and player saving
          this.playerIo.save(p_11277_);
-         ServerStatsCounter serverstatscounter = this.stats.get(p_11277_.getUUID());
+-        ServerStatsCounter serverstatscounter = this.stats.get(p_11277_.getUUID());
++        ServerStatsCounter serverstatscounter = (ServerStatsCounter) p_11277_.getStats(); // CraftBukkit
          if (serverstatscounter != null) {
-@@ -350,39 +_,117 @@
+             serverstatscounter.save();
+         }
+ 
+-        PlayerAdvancements playeradvancements = this.advancements.get(p_11277_.getUUID());
++        PlayerAdvancements playeradvancements = (PlayerAdvancements) p_11277_.getAdvancements(); // CraftBukkit
+         if (playeradvancements != null) {
+             playeradvancements.save();
          }
      }
  
@@ -1191,7 +1218,7 @@
          this.doWhiteList = p_11276_;
      }
  
-@@ -751,10 +_,33 @@
+@@ -751,10 +_,35 @@
      }
  
      public void removeAll() {
@@ -1205,10 +1232,12 @@
 +
 +    public void removeAll(boolean isRestarting) {
 +        // Paper end
++        // CraftBukkit start - disconnect safely
 +        for (final ServerPlayer player : this.players) {
 +            if (isRestarting) player.connection.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.restartMessage), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN); else // Paper - kick event cause (cause is never used here)
 +            player.connection.disconnect(java.util.Objects.requireNonNullElseGet(this.server.server.shutdownMessage(), net.kyori.adventure.text.Component::empty)); // CraftBukkit - add custom shutdown message // Paper - Adventure
 +        }
++        // CraftBukkit end
 +
 +        // Paper start - Configurable player collision; Remove collideRule team if it exists
 +        if (this.collideRuleTeamName != null) {
@@ -1324,7 +1353,7 @@
  
              serverstatscounter = new ServerStatsCounter(this.server, file2);
 -            this.stats.put(uuid, serverstatscounter);
-+            this.stats.put(uuid, serverstatscounter);  // CraftBukkit
++            // this.stats.put(uuid, serverstatscounter);  // CraftBukkit
          }
  
          return serverstatscounter;
