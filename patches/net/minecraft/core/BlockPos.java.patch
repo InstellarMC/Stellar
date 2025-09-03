@@ -1,18 +1,84 @@
 --- a/net/minecraft/core/BlockPos.java
 +++ b/net/minecraft/core/BlockPos.java
-@@ -58,6 +_,12 @@
-     private static final int Z_OFFSET = PACKED_Y_LENGTH;
-     private static final int X_OFFSET = PACKED_Y_LENGTH + PACKED_Z_LENGTH;
- 
+@@ -48,15 +_,22 @@
+     };
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public static final BlockPos ZERO = new BlockPos(0, 0, 0);
+-    private static final int PACKED_X_LENGTH = 1 + Mth.log2(Mth.smallestEncompassingPowerOfTwo(30000000));
+-    private static final int PACKED_Z_LENGTH = PACKED_X_LENGTH;
+-    public static final int PACKED_Y_LENGTH = 64 - PACKED_X_LENGTH - PACKED_Z_LENGTH;
+-    private static final long PACKED_X_MASK = (1L << PACKED_X_LENGTH) - 1L;
+-    private static final long PACKED_Y_MASK = (1L << PACKED_Y_LENGTH) - 1L;
+-    private static final long PACKED_Z_MASK = (1L << PACKED_Z_LENGTH) - 1L;
+-    private static final int Y_OFFSET = 0;
+-    private static final int Z_OFFSET = PACKED_Y_LENGTH;
+-    private static final int X_OFFSET = PACKED_Y_LENGTH + PACKED_Z_LENGTH;
++    // Paper start - Optimize Bit Operations by inlining
++    private static final int PACKED_X_LENGTH = 26;
++    private static final int PACKED_Z_LENGTH = 26;
++    public static final int PACKED_Y_LENGTH = 12;
++    private static final long PACKED_X_MASK = 67108863;
++    private static final long PACKED_Y_MASK = 4095;
++    private static final long PACKED_Z_MASK = 67108863;
++    private static final int Z_OFFSET = 12;
++    private static final int X_OFFSET = 38;
++    // Paper end - Optimize Bit Operations by inlining
++
 +    // Purpur start
 +    public BlockPos(net.minecraft.world.entity.Entity entity) {
 +        super(entity.getBlockX(), entity.getBlockY(), entity.getBlockZ());
 +    }
 +    // Purpur end
-+
+ 
      public BlockPos(int p_121869_, int p_121870_, int p_121871_) {
          super(p_121869_, p_121870_, p_121871_);
+@@ -66,28 +_,29 @@
+         this(p_121877_.getX(), p_121877_.getY(), p_121877_.getZ());
      }
+ 
++    public static long getAdjacent(int baseX, int baseY, int baseZ, Direction direction) { return asLong(baseX + direction.getStepX(), baseY + direction.getStepY(), baseZ + direction.getStepZ()); } // Paper
+     public static long offset(long p_121916_, Direction p_121917_) {
+         return offset(p_121916_, p_121917_.getStepX(), p_121917_.getStepY(), p_121917_.getStepZ());
+     }
+ 
+     public static long offset(long p_121911_, int p_121912_, int p_121913_, int p_121914_) {
+-        return asLong(getX(p_121911_) + p_121912_, getY(p_121911_) + p_121913_, getZ(p_121911_) + p_121914_);
++        return asLong((int) (p_121911_ >> 38) + p_121912_, (int) ((p_121911_ << 52) >> 52) + p_121913_, (int) ((p_121911_ << 26) >> 38) + p_121914_); // Paper - simplify/inline
+     }
+ 
+     public static int getX(long p_121984_) {
+-        return (int)(p_121984_ << 64 - X_OFFSET - PACKED_X_LENGTH >> 64 - PACKED_X_LENGTH);
++        return (int)(p_121984_ >> 38); // Paper - simplify/inline
+     }
+ 
+     public static int getY(long p_122009_) {
+-        return (int)(p_122009_ << 64 - PACKED_Y_LENGTH >> 64 - PACKED_Y_LENGTH);
++        return (int)((p_122009_ << 52) >> 52); // Paper - simplify/inline
+     }
+ 
+     public static int getZ(long p_122016_) {
+-        return (int)(p_122016_ << 64 - Z_OFFSET - PACKED_Z_LENGTH >> 64 - PACKED_Z_LENGTH);
++        return (int)((p_122016_ << 26) >> 38); // Paper - simplify/inline
+     }
+ 
+     public static BlockPos of(long p_122023_) {
+-        return new BlockPos(getX(p_122023_), getY(p_122023_), getZ(p_122023_));
++        return new BlockPos((int)(p_122023_ >> 38), (int)((p_122023_ << 52) >> 52), (int)((p_122023_ << 26) >> 38)); // Paper - simplify/inline
+     }
+ 
+     public static BlockPos containing(double p_275310_, double p_275414_, double p_275737_) {
+@@ -115,10 +_,7 @@
+     }
+ 
+     public static long asLong(int p_121883_, int p_121884_, int p_121885_) {
+-        long i = 0L;
+-        i |= ((long)p_121883_ & PACKED_X_MASK) << X_OFFSET;
+-        i |= ((long)p_121884_ & PACKED_Y_MASK) << 0;
+-        return i | ((long)p_121885_ & PACKED_Z_MASK) << Z_OFFSET;
++        return (((long) p_121883_ & (long) 67108863) << 38) | (((long) p_121884_ & (long) 4095)) | (((long) p_121885_ & (long) 67108863) << 12); // Paper - inline constants and simplify
+     }
+ 
+     public static long getFlatIndex(long p_122028_) {
 @@ -156,55 +_,72 @@
      }
  
