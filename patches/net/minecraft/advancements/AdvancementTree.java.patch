@@ -1,0 +1,11 @@
+--- a/net/minecraft/advancements/AdvancementTree.java
++++ b/net/minecraft/advancements/AdvancementTree.java
+@@ -26,7 +_,7 @@
+             this.remove(advancementnode);
+         }
+ 
+-        LOGGER.info("Forgot about advancement {}", p_301231_.holder());
++        LOGGER.debug("Forgot about advancement {}", p_301231_.holder());
+         this.nodes.remove(p_301231_.holder().id());
+         if (p_301231_.parent() == null) {
+             this.roots.remove(p_301231_);

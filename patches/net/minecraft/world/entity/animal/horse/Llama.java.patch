@@ -101,6 +101,15 @@
      }
  
      @Override
+@@ -173,7 +_,7 @@
+         }
+ 
+         if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
+-            this.heal(f);
++            this.heal(f, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // Paper - Add missing regain reason
+             flag = true;
+         }
+ 
 @@ -256,7 +_,7 @@
      }
  

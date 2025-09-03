@@ -22,7 +22,7 @@
      private void setEncryption(ServerboundKeyPacket p_319860_, Cipher p_320550_, Cipher p_320442_) {
          this.switchState(ClientHandshakePacketListenerImpl.State.ENCRYPTING);
 -        this.connection.send(p_319860_, PacketSendListener.thenRun(() -> this.connection.setEncryptionKey(p_320550_, p_320442_)));
-+        this.connection.send(p_319860_, PacketSendListener.thenRun(() -> { try { this.connection.setupEncryption(this.secretkey); } catch (final Exception ignored) {} })); // Stellar
++        // this.connection.send(p_319860_, PacketSendListener.thenRun(() -> { try { this.connection.setupEncryption(this.secretkey); } catch (final Exception ignored) {} })); // Stellar
      }
  
      @Nullable

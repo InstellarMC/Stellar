@@ -185,6 +185,7 @@ dependencies {
     // Paper start - Use Velocity cipher
     libraries("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT") {
         setTransitive(false)
+        exclude(group: "io.netty")
     }
     // Paper end - Use Velocity cipher
 

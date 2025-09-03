@@ -16,7 +16,14 @@
  
  public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock {
      public static final MapCodec<BedBlock> CODEC = RecordCodecBuilder.mapCodec(
-@@ -108,16 +_,60 @@
+@@ -102,22 +_,67 @@
+                 p_49516_.explode(null, p_49516_.damageSources().badRespawnPointExplosion(vec3), null, vec3, 5.0F, true, Level.ExplosionInteraction.BLOCK);
+                 return InteractionResult.SUCCESS;
+             } else if (p_49515_.getValue(OCCUPIED)) {
++                if (!BedBlock.canSetSpawn(p_49516_)) return this.explodeBed(p_49515_, p_49516_, p_49517_); // Paper - check explode first
+                 if (!this.kickVillagerOutOfBed(p_49516_, p_49517_)) {
+                     p_49518_.displayClientMessage(Component.translatable("block.minecraft.bed.occupied"), true);
+                 }
  
                  return InteractionResult.SUCCESS;
              } else {

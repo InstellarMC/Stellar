@@ -553,7 +553,7 @@
                  }
              );
      }
-@@ -548,7 +_,7 @@
+@@ -548,13 +_,18 @@
          PacketUtils.ensureRunningOnSameThread(p_9911_, this, this.player.serverLevel());
          if (!this.server.isCommandBlockEnabled()) {
              this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
@@ -562,6 +562,18 @@
              this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock basecommandblock = null;
+             CommandBlockEntity commandblockentity = null;
+             BlockPos blockpos = p_9911_.getPos();
+-            BlockEntity blockentity = this.player.level().getBlockEntity(blockpos);
++            // Paper start - Prevent tile entity copies loading chunks
++            BlockEntity blockentity = null;
++            if (this.player.distanceToSqr(blockpos.getX(), blockpos.getY(), blockpos.getZ()) < 32 * 32 && this.player.serverLevel().isLoadedAndInBounds(blockpos)) {
++                blockentity = this.player.level().getBlockEntity(blockpos);
++            }
++            // Paper end - Prevent tile entity copies loading chunks
+             if (blockentity instanceof CommandBlockEntity) {
+                 commandblockentity = (CommandBlockEntity)blockentity;
+                 basecommandblock = commandblockentity.getCommandBlock();
 @@ -604,7 +_,7 @@
          PacketUtils.ensureRunningOnSameThread(p_9913_, this, this.player.serverLevel());
          if (!this.server.isCommandBlockEnabled()) {
@@ -1215,7 +1227,7 @@
              InteractionResult interactionresult = this.player.gameMode.useItem(this.player, serverlevel, itemstack, interactionhand);
              if (interactionresult.shouldSwing()) {
                  this.player.swing(interactionhand, true);
-@@ -1178,19 +_,48 @@
+@@ -1178,24 +_,54 @@
  
      @Override
      public void onDisconnect(DisconnectionDetails p_350554_) {
@@ -1267,6 +1279,12 @@
          this.player.getTextFilter().leave();
      }
  
+     public void ackBlockChangesUpTo(int p_215202_) {
+         if (p_215202_ < 0) {
++            this.disconnect(Component.literal("Expected packet sequence nr >= 0"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - Treat sequence violations like they should be
+             throw new IllegalArgumentException("Expected packet sequence nr >= 0");
+         } else {
+             this.ackBlockChangesUpTo = Math.max(p_215202_, this.ackBlockChangesUpTo);
 @@ -1205,7 +_,17 @@
      @Override
      public void handleSetCarriedItem(ServerboundSetCarriedItemPacket p_9909_) {
@@ -2444,11 +2462,13 @@
              } else {
                  try {
                      SignatureValidator signaturevalidator = this.server.getProfileKeySignatureValidator();
-@@ -1798,7 +_,7 @@
+@@ -1797,8 +_,8 @@
+ 
                      this.resetPlayerChatState(remotechatsession$data.validate(this.player.getGameProfile(), signaturevalidator));
                  } catch (ProfilePublicKey.ValidationException profilepublickey$validationexception) {
-                     LOGGER.error("Failed to validate profile key: {}", profilepublickey$validationexception.getMessage());
+-                    LOGGER.error("Failed to validate profile key: {}", profilepublickey$validationexception.getMessage());
 -                    this.disconnect(profilepublickey$validationexception.getComponent());
++                    // LOGGER.error("Failed to validate profile key: {}", profilepublickey$validationexception.getMessage());
 +                    this.disconnect(profilepublickey$validationexception.getComponent(), profilepublickey$validationexception.kickCause); // Paper - kick event causes
                  }
              }

@@ -100,11 +100,11 @@
                      }
                  } else if (this.isFood(itemstack) && this.getHealth() < this.getMaxHealth()) {
                      if (!this.level().isClientSide()) {
--                        this.usePlayerItem(p_28153_, p_28154_, itemstack);
--                        FoodProperties foodproperties = itemstack.get(DataComponents.FOOD);
 +                        FoodProperties foodproperties = itemstack.getFoodProperties(this);
-                         this.heal(foodproperties != null ? (float)foodproperties.nutrition() : 1.0F);
-+                        this.usePlayerItem(p_28153_, p_28154_, itemstack);
++                        this.heal(foodproperties != null ? (float)foodproperties.nutrition() : 1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // Paper - Add missing regain reason
+                         this.usePlayerItem(p_28153_, p_28154_, itemstack);
+-                        FoodProperties foodproperties = itemstack.get(DataComponents.FOOD);
+-                        this.heal(foodproperties != null ? (float)foodproperties.nutrition() : 1.0F);
                      }
  
                      return InteractionResult.sidedSuccess(this.level().isClientSide());

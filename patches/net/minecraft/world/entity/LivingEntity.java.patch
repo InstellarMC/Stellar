@@ -492,35 +492,41 @@
      public Collection<MobEffectInstance> getActiveEffects() {
          return this.activeEffects.values();
      }
-@@ -925,22 +_,60 @@
+@@ -925,22 +_,63 @@
      }
  
      public final boolean addEffect(MobEffectInstance p_21165_) {
 -        return this.addEffect(p_21165_, null);
-+        return this.addEffect(p_21165_, (Entity) null);
+-    }
+-
+-    public boolean addEffect(MobEffectInstance p_147208_, @Nullable Entity p_147209_) {
+-        if (!this.canBeAffected(p_147208_)) {
++        return this.addEffect(p_21165_, (Entity) null); // CraftBukkit
 +    }
 +
 +    // CraftBukkit start
-+    public boolean addEffect(MobEffectInstance pEffectInstance, EntityPotionEffectEvent.Cause cause) {
-+        return addEffect(pEffectInstance, (Entity) null, cause);
++    public boolean addEffect(MobEffectInstance effect, EntityPotionEffectEvent.Cause cause) {
++        return addEffect(effect, (Entity) null, cause);
 +    }
 +
-+    // Youer start
-+    private final AtomicReference<EntityPotionEffectEvent.Cause> addEffect$Cause = new AtomicReference<>(EntityPotionEffectEvent.Cause.UNKNOWN);
-+    private final AtomicBoolean addEffect$fireEvent = new AtomicBoolean(true);
-+
-+    public void AddEffect$fireEvent(boolean value) {
-+        this.addEffect$fireEvent.set(value);
++    public boolean addEffect(MobEffectInstance effect, @Nullable Entity source) {
++        return this.addEffect(effect, source, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
 +    }
 +
-+    public void addEffectCause(EntityPotionEffectEvent.Cause cause) {
-+        this.addEffect$Cause.set(cause);
-     }
- 
-     public boolean addEffect(MobEffectInstance p_147208_, @Nullable Entity p_147209_) {
--        if (!this.canBeAffected(p_147208_)) {
-+        boolean isAsync = AsyncCatcher.catchAsync();
-+        if (!net.neoforged.neoforge.common.CommonHooks.canMobEffectBeApplied(this, p_147208_, p_147209_)) {
++    public boolean addEffect(MobEffectInstance mobeffect, @Nullable Entity entity, EntityPotionEffectEvent.Cause cause) {
++        // Paper start - Don't fire sync event during generation
++        return this.addEffect(mobeffect, entity, cause, true);
++    }
++
++    public boolean addEffect(MobEffectInstance p_147208_, @Nullable Entity p_147209_, EntityPotionEffectEvent.Cause cause, boolean fireEvent) {
++        // Paper end - Don't fire sync event during generation
++        // org.spigotmc.AsyncCatcher.catchOp("effect add"); // Spigot // Paper - move to API // Stellar - See [CraftLivingEntity#addPotionEffect(org.bukkit.potion.PotionEffect;Z)]
++        if (this.isTickingEffects) {
++            this.effectsToProcess.add(new ProcessableEffect(p_147208_, cause));
++            return true;
++        }
++
++        if (!net.neoforged.neoforge.common.CommonHooks.canMobEffectBeApplied(this, p_147208_, p_147209_)) { // Neo
              return false;
          } else {
              MobEffectInstance mobeffectinstance = this.activeEffects.get(p_147208_.getEffect());
@@ -532,16 +538,16 @@
 +                override = new MobEffectInstance(mobeffectinstance).update(p_147208_);
 +            }
 +
-+            if (!isAsync && addEffect$fireEvent.getAndSet(true)) {
-+                org.bukkit.event.entity.EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, mobeffectinstance, p_147208_, addEffect$Cause.getAndSet(EntityPotionEffectEvent.Cause.UNKNOWN), override);
-+                override = event.isOverride(); // Paper - Don't fire sync event during generation
-+                if (event.isCancelled()) {
-+                    return false;
-+                }
++            if (fireEvent) { // Paper - Don't fire sync event during generation
++            org.bukkit.event.entity.EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, mobeffectinstance, p_147208_, cause, override);
++            override = event.isOverride(); // Paper - Don't fire sync event during generation
++            if (event.isCancelled()) {
++                return false;
 +            }
++            } // Paper - Don't fire sync event during generation
 +            // CraftBukkit end
 +
-+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added(this, mobeffectinstance, p_147208_, p_147209_));
++            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added(this, mobeffectinstance, p_147208_, p_147209_)); // Neo
              if (mobeffectinstance == null) {
                  this.activeEffects.put(p_147208_.getEffect(), p_147208_);
                  this.onEffectAdded(p_147208_, p_147209_);
@@ -549,29 +555,17 @@
                  p_147208_.onEffectAdded(this);
 -            } else if (mobeffectinstance.update(p_147208_)) {
 +                // CraftBukkit start
-+            } else if (override) {
++            } else if (override) { // Paper - Don't fire sync event during generation
 +                mobeffectinstance.update(p_147208_);
                  this.onEffectUpdated(mobeffectinstance, true, p_147209_);
 +                // CraftBukkit end
                  flag = true;
              }
  
-@@ -949,6 +_,26 @@
+@@ -949,6 +_,14 @@
          }
      }
  
-+    public boolean addEffect(MobEffectInstance mobeffect, @Nullable Entity entity, EntityPotionEffectEvent.Cause cause) {
-+        // Paper start - Don't fire sync event during generation
-+        return this.addEffect(mobeffect, entity, cause, true);
-+    }
-+
-+    public boolean addEffect(MobEffectInstance pEffectInstance, @Nullable Entity pEntity, EntityPotionEffectEvent.Cause cause, boolean fireEvent) {
-+        addEffect$Cause.set(cause);
-+        addEffect$fireEvent.set(fireEvent);
-+        return addEffect(pEffectInstance, pEntity);
-+    }
-+    // Youer end
-+
 +    /**
 +     * Neo: Override-Only. Call via {@link net.neoforged.neoforge.common.CommonHooks#canMobEffectBeApplied(LivingEntity, MobEffectInstance,Entity)}
 +     *
@@ -592,55 +586,56 @@
              MobEffectInstance mobeffectinstance = this.activeEffects.put(p_147216_.getEffect(), p_147216_);
              if (mobeffectinstance == null) {
                  this.onEffectAdded(p_147216_, p_147217_);
-@@ -977,12 +_,39 @@
+@@ -977,12 +_,33 @@
          return this.getType().is(EntityTypeTags.INVERTED_HEALING_AND_HARM);
      }
  
-+    // Youer start
-+    private AtomicReference<EntityPotionEffectEvent.Cause> removeEffectNoUpdateCause = new AtomicReference<>(EntityPotionEffectEvent.Cause.UNKNOWN);
-+    public void removeEffectNoUpdateCause(EntityPotionEffectEvent.Cause cause) {
-+        removeEffectNoUpdateCause.set(cause);
-+    }
++    // CraftBukkit start
      @Nullable
      public MobEffectInstance removeEffectNoUpdate(Holder<MobEffect> p_316233_) {
+-        return this.activeEffects.remove(p_316233_);
++        return this.removeEffectNoUpdate(p_316233_, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
++    }
++
++    @Nullable
++    public MobEffectInstance removeEffectNoUpdate(Holder<MobEffect> holder, EntityPotionEffectEvent.Cause cause) {
 +        if (isTickingEffects) {
-+            effectsToProcess.add(new ProcessableEffect(p_316233_, removeEffectNoUpdateCause.getAndSet(EntityPotionEffectEvent.Cause.UNKNOWN)));
++            effectsToProcess.add(new ProcessableEffect(holder, cause));
 +            return null;
 +        }
 +
-+        MobEffectInstance effect = this.activeEffects.get(p_316233_);
++        MobEffectInstance effect = this.activeEffects.get(holder);
 +        if (effect == null) {
 +            return null;
 +        }
 +
-+        EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, effect, null, removeEffectNoUpdateCause.getAndSet(EntityPotionEffectEvent.Cause.UNKNOWN));
++        EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, effect, null, cause);
 +        if (event.isCancelled()) {
 +            return null;
 +        }
-         return this.activeEffects.remove(p_316233_);
++        return this.activeEffects.remove(holder);
      }
  
-+    @Nullable
-+    public MobEffectInstance c(Holder<MobEffect> pEffect, EntityPotionEffectEvent.Cause cause) {
-+        removeEffectNoUpdateCause.set(cause);
-+        return removeEffectNoUpdate(pEffect);
-+    }
-+
-+
      public boolean removeEffect(Holder<MobEffect> p_316570_) {
 +        if (net.neoforged.neoforge.event.EventHooks.onEffectRemoved(this, p_316570_, null)) return false;
          MobEffectInstance mobeffectinstance = this.removeEffectNoUpdate(p_316570_);
          if (mobeffectinstance != null) {
              this.onEffectRemoved(mobeffectinstance);
-@@ -992,6 +_,12 @@
+@@ -992,6 +_,18 @@
          }
      }
  
-+    public boolean removeEffect(Holder<MobEffect> pEffect, EntityPotionEffectEvent.Cause cause) {
-+        removeEffectNoUpdateCause.set(cause);
-+        return removeEffect(pEffect);
++    public boolean removeEffect(Holder<MobEffect> holder, EntityPotionEffectEvent.Cause cause) {
++        MobEffectInstance mobeffect = this.removeEffectNoUpdate(holder, cause);
++        // CraftBukkit end
++
++        if (mobeffect != null) {
++            this.onEffectRemoved(mobeffect);
++            return true;
++        } else {
++            return false;
++        }
 +    }
-+    // Youer end
 +
      protected void onEffectAdded(MobEffectInstance p_147190_, @Nullable Entity p_147191_) {
          this.effectsDirty = true;
@@ -1037,7 +1032,7 @@
 +            event.setCancelled(itemstack == null);
 +            this.level().getCraftServer().getPluginManager().callEvent(event);
 +            if (!event.isCancelled()) {
-+                if (!itemstack1.isEmpty()) {
++                if (!itemstack1.isEmpty() && itemstack != null) { // Paper - only reduce item if actual totem was found
                      itemstack1.shrink(1);
 -                    break;
                  }
