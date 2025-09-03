@@ -514,7 +514,7 @@
          this.setYRot(p_19916_ % 360.0F);
          this.setXRot(p_19917_ % 360.0F);
      }
-@@ -416,10 +_,28 @@
+@@ -416,11 +_,30 @@
      }
  
      public void tick() {
@@ -541,8 +541,10 @@
 +            this.discard();
 +        }
          this.level().getProfiler().push("entityBaseTick");
++        if (firstTick && this instanceof net.minecraft.world.entity.NeutralMob neutralMob) neutralMob.tickInitialPersistentAnger(level); // Paper - Prevent entity loading causing async lookups
          this.inBlockState = null;
          if (this.isPassenger() && this.getVehicle().isRemoved()) {
+             this.stopRiding();
 @@ -433,7 +_,7 @@
          this.walkDistO = this.walkDist;
          this.xRotO = this.getXRot();
