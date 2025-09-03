@@ -439,7 +439,7 @@
          long i = this.level.getGameTime();
          long j = i - this.lastInhabitedUpdate;
          this.lastInhabitedUpdate = i;
-@@ -331,39 +_,95 @@
+@@ -331,39 +_,94 @@
              ProfilerFiller profilerfiller = this.level.getProfiler();
              profilerfiller.push("pollingChunks");
              profilerfiller.push("filteringLoadedChunks");
@@ -531,7 +531,6 @@
                      LevelChunk levelchunk1 = serverchunkcache$chunkandholder.chunk;
                      ChunkPos chunkpos = levelchunk1.getPos();
 -                    if (this.level.isNaturalSpawningAllowed(chunkpos) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkpos)) {
-+                    this.chunkMap.reducedRange.set(true); // Youer
 +                    if ((true && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkpos)) || this.distanceManager.shouldForceTicks(chunkpos.toLong())) { // Paper - rewrite chunk system // TODO(Sayakie): forceTicks
                          levelchunk1.incrementInhabitedTime(j);
 -                        if (flag1 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkpos)) {
