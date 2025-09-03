@@ -792,6 +792,15 @@
      public boolean isInWorldBounds(BlockPos p_46740_) {
          return !this.isOutsideBuildHeight(p_46740_) && isInWorldBoundsHorizontal(p_46740_);
      }
+@@ -184,7 +_,7 @@
+     }
+ 
+     public LevelChunk getChunkAt(BlockPos p_46746_) {
+-        return this.getChunk(SectionPos.blockToSectionCoord(p_46746_.getX()), SectionPos.blockToSectionCoord(p_46746_.getZ()));
++        return this.getChunk(p_46746_.getX() >> 4, p_46746_.getZ() >> 4); // Stellar - inline
+     }
+ 
+     public LevelChunk getChunk(int p_46727_, int p_46728_) {
 @@ -193,6 +_,48 @@
  
      @Nullable
@@ -1072,6 +1081,17 @@
      }
  
      public void updateNeighborsAtExceptFromFacing(BlockPos p_46591_, Block p_46592_, Direction p_46593_) {
+@@ -321,8 +_,8 @@
+     public int getHeight(Heightmap.Types p_46571_, int p_46572_, int p_46573_) {
+         int i;
+         if (p_46572_ >= -30000000 && p_46573_ >= -30000000 && p_46572_ < 30000000 && p_46573_ < 30000000) {
+-            if (this.hasChunk(SectionPos.blockToSectionCoord(p_46572_), SectionPos.blockToSectionCoord(p_46573_))) {
+-                i = this.getChunk(SectionPos.blockToSectionCoord(p_46572_), SectionPos.blockToSectionCoord(p_46573_))
++            if (this.hasChunk(p_46572_ >> 4, p_46573_ >> 4)) { // Stellar - inline
++                i = this.getChunk(p_46572_ >> 4, p_46573_ >> 4) // Stellar - inline
+                         .getHeight(p_46571_, p_46572_ & 15, p_46573_ & 15)
+                     + 1;
+             } else {
 @@ -340,14 +_,39 @@
          return this.getChunkSource().getLightEngine();
      }
