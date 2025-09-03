@@ -12,6 +12,19 @@
      public GameProfileCache(GameProfileRepository p_10974_, File p_10975_) {
          this.profileRepository = p_10974_;
          this.file = p_10975_;
+@@ -64,10 +_,12 @@
+     }
+ 
+     private void safeAdd(GameProfileCache.GameProfileInfo p_10980_) {
++        try { this.stateLock.lock(); // Paper - Fix GameProfileCache concurrency
+         GameProfile gameprofile = p_10980_.getProfile();
+         p_10980_.setLastAccess(this.getNextOperation());
+         this.profilesByName.put(gameprofile.getName().toLowerCase(Locale.ROOT), p_10980_);
+         this.profilesByUUID.put(gameprofile.getId(), p_10980_);
++        } finally { this.stateLock.unlock(); } // Paper - Fix GameProfileCache concurrency
+     }
+ 
+     private static Optional<GameProfile> lookupGameProfile(GameProfileRepository p_10994_, String p_10995_) {
 @@ -86,6 +_,8 @@
                      atomicreference.set(null);
                  }
@@ -30,12 +43,12 @@
      }
  
      public void add(GameProfile p_10992_) {
-@@ -111,13 +_,26 @@
+@@ -111,15 +_,29 @@
          Date date = calendar.getTime();
          GameProfileCache.GameProfileInfo gameprofilecache$gameprofileinfo = new GameProfileCache.GameProfileInfo(p_10992_, date);
          this.safeAdd(gameprofilecache$gameprofileinfo);
 -        this.save();
-+        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.save(); // Spigot - skip saving if disabled
++        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.save(true); // Spigot - skip saving if disabled // Paper - Perf: Async GameProfileCache saving
      }
  
      private long getNextOperation() {
@@ -57,31 +70,123 @@
 +
      public Optional<GameProfile> get(String p_10997_) {
          String s = p_10997_.toLowerCase(Locale.ROOT);
++        boolean stateLocked = true; try { this.stateLock.lock(); // Paper - Fix GameProfileCache concurrency
          GameProfileCache.GameProfileInfo gameprofilecache$gameprofileinfo = this.profilesByName.get(s);
-@@ -141,7 +_,7 @@
+         boolean flag = false;
+         if (gameprofilecache$gameprofileinfo != null && new Date().getTime() >= gameprofilecache$gameprofileinfo.expirationDate.getTime()) {
+@@ -133,19 +_,24 @@
+         if (gameprofilecache$gameprofileinfo != null) {
+             gameprofilecache$gameprofileinfo.setLastAccess(this.getNextOperation());
+             optional = Optional.of(gameprofilecache$gameprofileinfo.getProfile());
++            stateLocked = false; this.stateLock.unlock(); // Paper - Fix GameProfileCache concurrency
+         } else {
+-            optional = lookupGameProfile(this.profileRepository, s);
++            stateLocked = false; this.stateLock.unlock(); // Paper - Fix GameProfileCache concurrency
++            try { this.lookupLock.lock(); // Paper - Fix GameProfileCache concurrency
++            optional = lookupGameProfile(this.profileRepository, s); // CraftBukkit - use correct case for offline players
++            } finally { this.lookupLock.unlock(); } // Paper - Fix GameProfileCache concurrency
+             if (optional.isPresent()) {
+                 this.add(optional.get());
+                 flag = false;
              }
          }
  
 -        if (flag) {
+-            this.save();
 +        if (flag && !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) { // Spigot - skip saving if disabled
-             this.save();
++            this.save(true); // Paper - Perf: Async GameProfileCache saving
          }
  
+         return optional;
++        } finally { if (stateLocked) {  this.stateLock.unlock(); } } // Paper - Fix GameProfileCache concurrency
+     }
+ 
+     public CompletableFuture<Optional<GameProfile>> getAsync(String p_143968_) {
 @@ -157,7 +_,7 @@
                  return completablefuture;
              } else {
                  CompletableFuture<Optional<GameProfile>> completablefuture1 = CompletableFuture.<Optional<GameProfile>>supplyAsync(
 -                        () -> this.get(p_143968_), Util.backgroundExecutor()
-+                        () -> this.get(p_143968_), Util.PROFILE_EXECUTOR
++                        () -> this.get(p_143968_), Util.PROFILE_EXECUTOR // Paper - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
                      )
                      .whenCompleteAsync((p_143965_, p_143966_) -> this.requests.remove(p_143968_), this.executor);
                  this.requests.put(p_143968_, completablefuture1);
-@@ -216,7 +_,7 @@
+@@ -167,6 +_,7 @@
+     }
+ 
+     public Optional<GameProfile> get(UUID p_11003_) {
++        try { this.stateLock.lock(); // Paper - Fix GameProfileCache concurrency
+         GameProfileCache.GameProfileInfo gameprofilecache$gameprofileinfo = this.profilesByUUID.get(p_11003_);
+         if (gameprofilecache$gameprofileinfo == null) {
+             return Optional.empty();
+@@ -174,6 +_,7 @@
+             gameprofilecache$gameprofileinfo.setLastAccess(this.getNextOperation());
+             return Optional.of(gameprofilecache$gameprofileinfo.getProfile());
+         }
++        } finally { this.stateLock.unlock(); } // Paper - Fix GameProfileCache concurrency
+     }
+ 
+     public void setExecutor(Executor p_143975_) {
+@@ -206,6 +_,11 @@
+ 
+             return (List<GameProfileCache.GameProfileInfo>)object;
+         } catch (FileNotFoundException filenotfoundexception) {
++        // Spigot Start
++        } catch (com.google.gson.JsonSyntaxException | NullPointerException ex) {
++            GameProfileCache.LOGGER.warn( "Usercache.json is corrupted or has bad formatting. Deleting it to prevent further issues." );
++            this.file.delete();
++        // Spigot End
+         } catch (JsonParseException | IOException ioexception) {
+             LOGGER.warn("Failed to load profile cache {}", this.file, ioexception);
+         }
+@@ -214,23 +_,44 @@
+     }
+ 
      public void save() {
++        save(false); // Stellar - Compatibility
++    }
++
++    public void save(boolean asyncSave) { // Paper - Perf: Async GameProfileCache saving
          JsonArray jsonarray = new JsonArray();
          DateFormat dateformat = createDateFormat();
 -        this.getTopMRUProfiles(1000).forEach(p_143962_ -> jsonarray.add(writeGameProfile(p_143962_, dateformat)));
-+        this.getTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach(p_143962_ -> jsonarray.add(writeGameProfile(p_143962_, dateformat))); // Spigot
++        this.listTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach(p_143962_ -> jsonarray.add(writeGameProfile(p_143962_, dateformat))); // Spigot // Paper - Fix GameProfileCache concurrency
          String s = this.gson.toJson((JsonElement)jsonarray);
  
++        Runnable save = () -> { // Paper - Perf: Async GameProfileCache saving
          try (Writer writer = Files.newWriter(this.file, StandardCharsets.UTF_8)) {
+             writer.write(s);
+         } catch (IOException ioexception) {
+         }
++        // Paper start - Perf: Async GameProfileCache saving
++        };
++        if (asyncSave) {
++            io.papermc.paper.util.MCUtil.scheduleAsyncTask(save);
++        } else {
++            save.run();
++        }
++        // Paper end - Perf: Async GameProfileCache saving
+     }
+ 
+     private Stream<GameProfileCache.GameProfileInfo> getTopMRUProfiles(int p_10978_) {
+-        return ImmutableList.copyOf(this.profilesByUUID.values())
+-            .stream()
+-            .sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed())
+-            .limit((long)p_10978_);
+-    }
++        // Paper start - Fix GameProfileCache concurrency
++        return this.listTopMRUProfiles(p_10978_).stream();
++    }
++
++    private List<GameProfileCache.GameProfileInfo> listTopMRUProfiles(int limit) {
++        try {
++            this.stateLock.lock();
++            return this.profilesByUUID.values().stream().sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed()).limit(limit).toList();
++        } finally {
++            this.stateLock.unlock();
++        }
++    }
++    // Paper end - Fix GameProfileCache concurrency
+ 
+     private static JsonElement writeGameProfile(GameProfileCache.GameProfileInfo p_10982_, DateFormat p_10983_) {
+         JsonObject jsonobject = new JsonObject();

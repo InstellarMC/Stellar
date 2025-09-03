@@ -165,7 +165,7 @@
 +        this.server.spark.enableEarlyIfRequested(); // Paper - spark
 +        // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
 +        if (this.convertOldUsers()) {
-+            this.getProfileCache().save(); // Paper
++            this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
 +        }
 +        this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
 +        // Paper end - fix converting txt to json file
