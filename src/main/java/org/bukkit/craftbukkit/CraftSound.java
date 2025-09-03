@@ -13,6 +13,12 @@ public class CraftSound {
     public static Sound minecraftToBukkit(SoundEvent minecraft) {
         Preconditions.checkArgument(minecraft != null);
 
+        // Stellar start
+        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().compatibility.ignorePixelmonDeathSound && "pixelmon".equals(minecraft.getLocation().getNamespace())) {
+            return null;
+        }
+        // Stellar end
+
         net.minecraft.core.Registry<SoundEvent> registry = CraftRegistry.getMinecraftRegistry(Registries.SOUND_EVENT);
         var resourceLocation = registry.getResourceKey(minecraft).orElseThrow().location();
         Sound bukkit = Registry.SOUNDS.get(CraftNamespacedKey.fromMinecraft(resourceLocation));

@@ -46,6 +46,14 @@ public final class GlobalConfiguration extends ConfigurationPart {
         public boolean asyncPlayerJoin = false;
     }
 
+    public Compatibility compatibility;
+
+    public class Compatibility extends ConfigurationPart {
+
+        @Comment("If enabled, the server will not play Pixelmon death sounds.")
+        public boolean ignorePixelmonDeathSound = true;
+    }
+
     public Verbosity verbosity;
 
     public class Verbosity extends ConfigurationPart {
