@@ -99,3 +99,37 @@
      }
  
      public BlockPos relative(Direction p_121948_, int p_121949_) {
+@@ -541,9 +_,9 @@
+         }
+ 
+         public BlockPos.MutableBlockPos set(int p_122179_, int p_122180_, int p_122181_) {
+-            this.setX(p_122179_);
+-            this.setY(p_122180_);
+-            this.setZ(p_122181_);
++            this.x = p_122179_; // Paper - Perf: Manually inline methods in BlockPosition
++            this.y = p_122180_; // Paper - Perf: Manually inline methods in BlockPosition
++            this.z = p_122181_; // Paper - Perf: Manually inline methods in BlockPosition
+             return this;
+         }
+ 
+@@ -611,17 +_,17 @@
+         }
+ 
+         public BlockPos.MutableBlockPos setX(int p_175341_) {
+-            super.setX(p_175341_);
++            this.x = p_175341_; // Paper - Perf: Manually inline methods in BlockPosition
+             return this;
+         }
+ 
+         public BlockPos.MutableBlockPos setY(int p_175343_) {
+-            super.setY(p_175343_);
++            this.y = p_175343_; // Paper - Perf: Manually inline methods in BlockPosition
+             return this;
+         }
+ 
+         public BlockPos.MutableBlockPos setZ(int p_175345_) {
+-            super.setZ(p_175345_);
++            this.z = p_175345_; // Paper - Perf: Manually inline methods in BlockPosition
+             return this;
+         }
+ 
