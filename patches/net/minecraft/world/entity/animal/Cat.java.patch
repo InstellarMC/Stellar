@@ -82,6 +82,15 @@
          return SoundEvents.CAT_DEATH;
      }
  
+@@ -341,7 +_,7 @@
+         TagKey<CatVariant> tagkey = flag ? CatVariantTags.FULL_MOON_SPAWNS : CatVariantTags.DEFAULT_SPAWNS;
+         BuiltInRegistries.CAT_VARIANT.getRandomElementOf(tagkey, p_28134_.getRandom()).ifPresent(this::setVariant);
+         ServerLevel serverlevel = p_28134_.getLevel();
+-        if (serverlevel.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK).isValid()) {
++        if (serverlevel.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, p_28134_).isValid()) { // Paper - Fix swamp hut cat generation deadlock
+             this.setVariant(BuiltInRegistries.CAT_VARIANT.getHolderOrThrow(CatVariant.ALL_BLACK));
+             this.setPersistenceRequired();
+         }
 @@ -358,6 +_,13 @@
                  if (item instanceof DyeItem dyeitem) {
                      DyeColor dyecolor = dyeitem.getDyeColor();
