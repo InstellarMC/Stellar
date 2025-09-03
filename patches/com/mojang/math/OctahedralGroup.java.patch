@@ -1,0 +1,30 @@
+--- a/com/mojang/math/OctahedralGroup.java
++++ b/com/mojang/math/OctahedralGroup.java
+@@ -106,6 +_,7 @@
+         this.permutation = p_56514_;
+         this.transformation = new Matrix3f().scaling(p_56515_ ? -1.0F : 1.0F, p_56516_ ? -1.0F : 1.0F, p_56517_ ? -1.0F : 1.0F);
+         this.transformation.mul(p_56514_.transformation());
++        this.initializeRotationDirections(); // Paper - Avoid Lazy Initialization for Enum Fields
+     }
+ 
+     private BooleanList packInversions() {
+@@ -134,7 +_,7 @@
+         return this.name;
+     }
+ 
+-    public Direction rotate(Direction p_56529_) {
++    public void initializeRotationDirections() { // Paper - Avoid Lazy Initialization for Enum Fields
+         if (this.rotatedDirections == null) {
+             this.rotatedDirections = Maps.newEnumMap(Direction.class);
+             Direction.Axis[] adirection$axis = Direction.Axis.values();
+@@ -149,6 +_,10 @@
+             }
+         }
+ 
++    // Paper start - Avoid Lazy Initialization for Enum Fields
++    }
++    public Direction rotate(Direction p_56529_) {
++    // Paper end - Avoid Lazy Initialization for Enum Fields
+         return this.rotatedDirections.get(p_56529_);
+     }
+ 
