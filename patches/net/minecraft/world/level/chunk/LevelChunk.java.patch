@@ -558,7 +558,7 @@
      class BoundTickingBlockEntity<T extends BlockEntity> implements TickingBlockEntity {
          private final T blockEntity;
          private final BlockEntityTicker<T> ticker;
-@@ -679,20 +_,26 @@
+@@ -679,28 +_,39 @@
                  if (LevelChunk.this.isTicking(blockpos)) {
                      try {
                          ProfilerFiller profilerfiller = LevelChunk.this.level.getProfiler();
@@ -596,16 +596,18 @@
                          }
  
                          profilerfiller.pop();
-@@ -700,7 +_,13 @@
-                         CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking block entity");
-                         CrashReportCategory crashreportcategory = crashreport.addCategory("Block entity being ticked");
-                         this.blockEntity.fillCrashReportCategory(crashreportcategory);
+                     } catch (Throwable throwable) {
+-                        CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking block entity");
+-                        CrashReportCategory crashreportcategory = crashreport.addCategory("Block entity being ticked");
+-                        this.blockEntity.fillCrashReportCategory(crashreportcategory);
 -                        throw new ReportedException(crashreport);
++                        if (throwable instanceof ThreadDeath) throw throwable; // Paper
++                        // Paper start - Prevent block entity and entity crashes
 +                        final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
-+                        LOGGER.error(msg, throwable);
-+                        blockEntity.setRemoved();
++                        net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
 +                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
-+                        LevelChunk.this.removeBlockEntity(blockEntity.getBlockPos());
++                        LevelChunk.this.removeBlockEntity(this.getPos());
++                        // Paper end - Prevent block entity and entity crashes
 +                    } finally {
 +                        net.neoforged.neoforge.server.timings.TimeTracker.BLOCK_ENTITY_UPDATE.trackEnd(blockEntity);
                      }

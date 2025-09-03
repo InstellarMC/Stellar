@@ -387,7 +387,7 @@
              writer.write(String.format(Locale.ROOT, "sync-chunk-writes=%s%n", dedicatedserverproperties.syncChunkWrites));
              writer.write(String.format(Locale.ROOT, "gamemode=%s%n", dedicatedserverproperties.gamemode));
              writer.write(String.format(Locale.ROOT, "spawn-monsters=%s%n", dedicatedserverproperties.spawnMonsters));
-@@ -289,33 +_,85 @@
+@@ -289,33 +_,84 @@
          }
  
          if (this.rconThread != null) {
@@ -397,7 +397,6 @@
  
          if (this.queryThreadGs4 != null) {
 -            this.queryThreadGs4.stop();
--        }
 +            // this.remoteStatusListener.stop(); // Paper - don't wait for remote connections
 +        }
 +
@@ -409,12 +408,11 @@
 +        // Neo end
 +
 +        hasFullyShutdown = true; // Paper
-+        System.exit(this.abnormalExit ? 70 : 0); // CraftBukkit // Paper
-+        // if (ServerAPI.yes_steve_model()) {
-+        //     System.exit(0);
-+        // } else {
-+        //     Runtime.getRuntime().halt(0);
-+        // }
++        if (ServerAPI.yes_steve_model()) {
++            System.exit(0);
++        } else {
++            Runtime.getRuntime().halt(this.abnormalExit ? 70 : 0); // CraftBukkit // Paper // Stellar
+         }
      }
  
      @Override

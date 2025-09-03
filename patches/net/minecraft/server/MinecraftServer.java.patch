@@ -213,7 +213,7 @@
 +    public static final long startTimeMillis = System.currentTimeMillis();
 +    public Queue<Runnable> processQueue = new ConcurrentLinkedQueue<Runnable>();
 +    public int autosavePeriod;
-+    public boolean forceTicks;
++    public boolean forceTicks; // Paper - Improved watchdog support
 +    // CraftBukkit end
 +    private long nextTickTime = 0; // Youer Add fake tickField worldedit need this
 +
@@ -344,13 +344,14 @@
              this.services = p_236729_;
              if (p_236729_.profileCache() != null) {
                  p_236729_.profileCache().setExecutor(this);
-@@ -315,7 +_,11 @@
+@@ -315,7 +_,12 @@
              this.structureTemplateManager = new StructureTemplateManager(p_236726_.resourceManager(), p_236724_, p_236728_, holdergetter);
              this.serverThread = p_236723_;
              this.executor = Util.backgroundExecutor();
 -            this.potionBrewing = PotionBrewing.bootstrap(this.worldData.enabledFeatures());
 +            this.potionBrewing = PotionBrewing.bootstrap(this.worldData.enabledFeatures(), this.registryAccess());
 +
++            io.papermc.paper.util.LogManagerShutdownThread.unhook(); // Paper
 +            Runtime.getRuntime().addShutdownHook(new ServerShutdownThread(this));
 +            this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
 +            this.stellarConfigurations = services.stellarConfigurations(); // Stellar - add stellar configuration files
@@ -1001,7 +1002,7 @@
              this.nextTickTimeNanos = Util.getNanos() + TimeUtil.NANOSECONDS_PER_MILLISECOND;
  
              for (ServerLevel serverlevel1 : this.getAllLevels()) {
-@@ -615,26 +_,46 @@
+@@ -615,26 +_,41 @@
              this.waitUntilNextTick();
          }
  
@@ -1039,22 +1040,17 @@
 +            this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
 +        }
 +        // Spigot end
++        // Paper end - Improved watchdog support; move final shutdown items here
 +        ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.deinit(); // Paper - rewrite chunk system
-+        LOGGER.info("ThreadedAnvilChunkStorage: All IO threads closed");
 +        // Paper start - move final shutdown items here
 +        Util.shutdownExecutors();
-+        LOGGER.info("Shutdown executors");
 +        try {
 +            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
 +        } catch (final Exception ignored) {
 +        }
-+        LOGGER.info("Terminal console appender closed");
 +        io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
-+        LOGGER.info("Loggers reset");
 +        ServerLifecycleHooks.handleServerStopped(this); // Neo
-+        LOGGER.info("Server stopped");
 +        this.onServerExit();
-+        LOGGER.info("Server exit complete");
 +        // Paper end - Improved watchdog support
      }
  
@@ -1302,18 +1298,14 @@
      }
  
      @Override
-@@ -826,6 +_,16 @@
+@@ -826,6 +_,12 @@
      }
  
      public TickTask wrapRunnable(Runnable p_129852_) {
 +        // Paper start - anything that does try to post to main during watchdog crash, run on watchdog
 +        if (this.hasStopped && Thread.currentThread().equals(shutdownThread)) {
 +            p_129852_.run();
-+            p_129852_ = new Runnable() {
-+                @Override
-+                public void run() {
-+                }
-+            };
++            p_129852_ = () -> {};
 +        }
 +        // Paper end
          return new TickTask(this.tickCount, p_129852_);
