@@ -203,7 +203,7 @@
      }
  
      @VisibleForDebug
-@@ -133,44 +_,52 @@
+@@ -133,44 +_,53 @@
          );
      }
  
@@ -233,6 +233,7 @@
 -        int i = p_47042_.getY();
 -        BlockState blockstate = p_47041_.getBlockState(p_47042_);
 -        if (!blockstate.isRedstoneConductor(p_47041_, p_47042_)) {
++        // Paper end - Optional per player mob spawns
 +        StructureManager structuremanager = world.structureManager();
 +        ChunkGenerator chunkgenerator = world.getChunkSource().getGenerator();
 +        int i = pos.getY();

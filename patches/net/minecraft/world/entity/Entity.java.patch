@@ -591,7 +591,7 @@
              this.onBelowWorld();
          }
      }
-@@ -517,14 +_,45 @@
+@@ -517,15 +_,46 @@
  
      public void lavaHurt() {
          if (!this.fireImmune()) {
@@ -619,26 +619,28 @@
          }
      }
  
-+    public boolean igniteForSeconds$callEvent = true;
-+    public final void igniteForSeconds(float f, boolean callEvent) {
-+        igniteForSeconds$callEvent = callEvent;
-+        this.igniteForSeconds(f);
-+    }
      public final void igniteForSeconds(float p_345382_) {
-+        if (igniteForSeconds$callEvent) {
-+            EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), p_345382_);
+-        this.igniteForTicks(Mth.floor(p_345382_ * 20.0F));
++        // CraftBukkit start
++        this.igniteForSeconds(p_345382_, true);
++    }
++
++    public final void igniteForSeconds(float f, boolean callEvent) {
++        if (callEvent) {
++            EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), f);
 +            this.level.getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (event.isCancelled()) {
 +                return;
 +            }
 +
-+            p_345382_ = event.getDuration();
++            f = event.getDuration();
 +        }
 +        // CraftBukkit end
-         this.igniteForTicks(Mth.floor(p_345382_ * 20.0F));
++        this.igniteForTicks(Mth.floor(f * 20.0F));
      }
  
+     public void igniteForTicks(int p_320711_) {
 @@ -547,7 +_,7 @@
      }
  
