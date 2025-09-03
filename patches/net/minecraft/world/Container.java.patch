@@ -37,7 +37,7 @@
 +        return Collections.emptyList();
 +    }
 +
-+    default org.bukkit.inventory.InventoryHolder getOwner() {
++    default @org.jetbrains.annotations.Nullable org.bukkit.inventory.InventoryHolder getOwner() { // Paper - annotation
 +        return this instanceof BlockEntity blockEntity ? InventoryOwner.get(blockEntity) : null;
 +    }
 +

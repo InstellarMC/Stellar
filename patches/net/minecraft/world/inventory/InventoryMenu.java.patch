@@ -17,8 +17,14 @@
  
  public class InventoryMenu extends RecipeBookMenu<CraftingInput, CraftingRecipe> {
      public static final int CONTAINER_ID = 0;
-@@ -48,11 +_,20 @@
-     private final ResultContainer resultSlots = new ResultContainer();
+@@ -44,15 +_,26 @@
+         EMPTY_ARMOR_SLOT_HELMET
+     );
+     private static final EquipmentSlot[] SLOT_IDS = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+-    private final CraftingContainer craftSlots = new TransientCraftingContainer(this, 2, 2);
+-    private final ResultContainer resultSlots = new ResultContainer();
++    private final TransientCraftingContainer craftSlots;
++    private final ResultContainer resultSlots;
      public final boolean active;
      private final Player owner;
 +    // CraftBukkit start
@@ -30,10 +36,12 @@
          super(null, 0);
          this.active = p_39707_;
          this.owner = p_39708_;
-+        ((TransientCraftingContainer)this.craftSlots).resultInventory = this.resultSlots; // CraftBukkit - let InventoryCrafting know about its result slot
-+        ((TransientCraftingContainer)this.craftSlots).setOwner(p_39706_.player);
++        // CraftBukkit start
++        this.resultSlots = new ResultContainer(); // CraftBukkit - moved to before InventoryCrafting construction
++        this.craftSlots = new TransientCraftingContainer(this, 2, 2, p_39706_.player); // CraftBukkit - pass player
++        this.craftSlots.resultInventory = this.resultSlots; // CraftBukkit - let InventoryCrafting know about its result slot
 +        this.player = p_39706_; // CraftBukkit - save player
-+        setTitle(Component.translatable("container.crafting")); // SPIGOT-4722: Allocate title for player inventory
++        this.setTitle(Component.translatable("container.crafting")); // SPIGOT-4722: Allocate title for player inventory
 +        // CraftBukkit end
          this.addSlot(new ResultSlot(p_39706_.player, this.craftSlots, this.resultSlots, 0, 154, 28));
  
