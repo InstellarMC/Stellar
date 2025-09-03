@@ -54,6 +54,44 @@
              }
          }
  
+@@ -88,13 +_,20 @@
+     public <I extends RecipeInput, T extends Recipe<I>> Optional<RecipeHolder<T>> getRecipeFor(
+         RecipeType<T> p_220249_, I p_345826_, Level p_220251_, @Nullable RecipeHolder<T> p_346407_
+     ) {
++        // Paper start - fix upstream's complete screw up of checking last used recipe
+         if (p_345826_.isEmpty()) {
+             return Optional.empty();
++        } else if (p_346407_ != null && p_346407_.value().matches(p_345826_, p_220251_)) {
++            return Optional.of(p_346407_);
+         } else {
+-            return p_346407_ != null && p_346407_.value().matches(p_345826_, p_220251_)
+-                ? Optional.of(p_346407_)
+-                : this.byType(p_220249_).stream().filter(p_344413_ -> p_344413_.value().matches(p_345826_, p_220251_)).findFirst();
++            // CraftBukkit start
++            List<RecipeHolder<T>> list = this.byType(p_220249_).stream().filter((recipeholder1) -> {
++                return recipeholder1.value().matches(p_345826_, p_220251_);
++            }).toList();
++            return list.isEmpty() ? Optional.empty() : Optional.of(list.getLast()); // CraftBukkit - SPIGOT-4638: last recipe gets priority
++            // CraftBukkit end
+         }
++        // Paper end
+     }
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> List<RecipeHolder<T>> getAllRecipesFor(RecipeType<T> p_44014_) {
+@@ -114,7 +_,12 @@
+     }
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> p_44070_, I p_345118_, Level p_44072_) {
+-        Optional<RecipeHolder<T>> optional = this.getRecipeFor(p_44070_, p_345118_, p_44072_);
++        // Paper start - Perf: improve performance of mass crafts
++        return this.getRemainingItemsFor(p_44070_, p_345118_, p_44072_, null);
++    }
++    public <I extends RecipeInput, T extends Recipe<I>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> p_44070_, I p_345118_, Level p_44072_, @Nullable RecipeHolder<T> previousRecipe) {
++        Optional<RecipeHolder<T>> optional = this.getRecipeFor(p_44070_, p_345118_, p_44072_, previousRecipe);
++        // Paper end - Perf: improve performance of mass crafts
+         if (optional.isPresent()) {
+             return optional.get().value().getRemainingItems(p_345118_);
+         } else {
 @@ -193,5 +_,54 @@
  
      public interface CachedCheck<I extends RecipeInput, T extends Recipe<I>> {

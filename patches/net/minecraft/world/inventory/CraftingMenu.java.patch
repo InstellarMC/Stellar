@@ -52,7 +52,11 @@
          this.access = p_39358_;
          this.player = p_39357_.player;
          this.addSlot(new ResultSlot(p_39357_.player, this.craftSlots, this.resultSlots, 0, 124, 35));
-@@ -73,16 +_,20 @@
+@@ -70,19 +_,24 @@
+             CraftingInput craftinginput = p_150550_.asCraftInput();
+             ServerPlayer serverplayer = (ServerPlayer)p_150549_;
+             ItemStack itemstack = ItemStack.EMPTY;
++            if (p_345124_ == null) p_345124_ = p_150550_.getCurrentRecipe(); // Paper - Perf: Improve mass crafting; check last recipe used first
              Optional<RecipeHolder<CraftingRecipe>> optional = p_150548_.getServer()
                  .getRecipeManager()
                  .getRecipeFor(RecipeType.CRAFTING, craftinginput, p_150548_, p_345124_);
