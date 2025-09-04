@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -1,13 +_,11 @@
+@@ -1,42 +_,38 @@
  package net.minecraft.server.level;
  
 +import com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent;
@@ -13,9 +13,10 @@
  import com.mojang.datafixers.DataFixer;
 -import com.mojang.datafixers.util.Pair;
  import com.mojang.logging.LogUtils;
++import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
  import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
  import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-@@ -15,28 +_,25 @@
+ import it.unimi.dsi.fastutil.longs.Long2ByteMap;
  import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
  import it.unimi.dsi.fastutil.longs.Long2LongMap;
  import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
@@ -120,7 +121,8 @@
 +    public final AtomicInteger tickingGenerated = new AtomicInteger(); // Paper - public
      private final String storageName;
      private final PlayerMap playerMap = new PlayerMap();
-     public final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap = new Int2ObjectOpenHashMap<>();
+-    public final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap = new Int2ObjectOpenHashMap<>();
++    public final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap = new Int2ObjectLinkedOpenHashMap<>();
      private final Long2ByteMap chunkTypeCache = new Long2ByteOpenHashMap();
      private final Long2LongMap chunkSaveCooldowns = new Long2LongOpenHashMap();
 -    private final Queue<Runnable> unloadQueue = Queues.newConcurrentLinkedQueue();
