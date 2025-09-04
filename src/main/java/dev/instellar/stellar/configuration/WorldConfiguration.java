@@ -66,7 +66,7 @@ public class WorldConfiguration extends ConfigurationPart {
             @Comment("""
                     Configurates whether farmland should turn to dirt
                     when above is solid block or occasionally trampled by a player.
-                    
+
                     When enabled, ignores all events do firing from either neoforge or paper.""")
             public boolean turnToDirt = true;
 
@@ -80,6 +80,14 @@ public class WorldConfiguration extends ConfigurationPart {
             @Constraints.Max(7)
             public int smoothAccumulationStep = 0;
         }
+    }
+
+    public GameplayMechanics gameplayMechanics;
+
+    public class GameplayMechanics extends ConfigurationPart {
+
+        @Comment("Prevent entities random strolling into non-ticking chunks")
+        public boolean entitiesCanRandomStrollIntoNonTickingChunks = true;
     }
 
     public Misc misc;
