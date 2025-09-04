@@ -1,4 +1,4 @@
-package io.papermc.paper.event.player;
+package com.destroystokyo.paper.event.player;
 
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;

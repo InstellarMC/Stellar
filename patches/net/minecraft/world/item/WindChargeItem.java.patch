@@ -1,5 +1,15 @@
 --- a/net/minecraft/world/item/WindChargeItem.java
 +++ b/net/minecraft/world/item/WindChargeItem.java
+@@ -1,8 +_,8 @@
+ package net.minecraft.world.item;
+ 
++import com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent;
+ import net.minecraft.core.Direction;
+ import net.minecraft.core.Position;
+-import net.minecraft.core.dispenser.BlockSource;
+ import net.minecraft.sounds.SoundEvents;
+ import net.minecraft.sounds.SoundSource;
+ import net.minecraft.stats.Stats;
 @@ -25,26 +_,41 @@
  
      @Override
@@ -11,7 +21,7 @@
              windcharge.shootFromRotation(p_326042_, p_326042_.getXRot(), p_326042_.getYRot(), 0.0F, 1.5F, 1.0F);
 -            p_326306_.addFreshEntity(windcharge);
 +            // Paper start - PlayerLaunchProjectileEvent
-+            io.papermc.paper.event.player.PlayerLaunchProjectileEvent event = new io.papermc.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) p_326042_.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) windcharge.getBukkitEntity());
++            PlayerLaunchProjectileEvent event = new PlayerLaunchProjectileEvent((org.bukkit.entity.Player) p_326042_.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) windcharge.getBukkitEntity());
 +            if (!event.callEvent() || !p_326306_.addFreshEntity(windcharge)) {
 +                p_326042_.containerMenu.sendAllDataToRemote();
 +                if (p_326042_ instanceof net.minecraft.server.level.ServerPlayer player) {

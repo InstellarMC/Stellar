@@ -1,5 +1,14 @@
 --- a/net/minecraft/world/item/TridentItem.java
 +++ b/net/minecraft/world/item/TridentItem.java
+@@ -1,6 +_,8 @@
+ package net.minecraft.world.item;
+ 
+ import java.util.List;
++
++import com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.core.Holder;
 @@ -12,6 +_,7 @@
  import net.minecraft.util.Mth;
  import net.minecraft.world.InteractionHand;
@@ -34,7 +43,7 @@
 -                                if (!player.hasInfiniteMaterials()) {
 +                                // CraftBukkit start
 +                                // Paper start - PlayerLaunchProjectileEvent
-+                                io.papermc.paper.event.player.PlayerLaunchProjectileEvent event = new io.papermc.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(p_43394_), (org.bukkit.entity.Projectile) throwntrident.getBukkitEntity());
++                                PlayerLaunchProjectileEvent event = new PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(p_43394_), (org.bukkit.entity.Projectile) throwntrident.getBukkitEntity());
 +                                if (!event.callEvent() || !p_43395_.addFreshEntity(throwntrident)) {
 +                                    // Paper end - PlayerLaunchProjectileEvent
 +                                    if (player instanceof net.minecraft.server.level.ServerPlayer) {
