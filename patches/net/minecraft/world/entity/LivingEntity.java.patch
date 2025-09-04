@@ -223,6 +223,19 @@
              this.extinguishFire();
          }
  
+@@ -499,10 +_,10 @@
+     }
+ 
+     protected void tryAddFrost() {
+-        if (!this.getBlockStateOnLegacy().isAir()) {
++        if (false && !this.getBlockStateOnLegacy().isAir()) { // Stellar - lithium(fast_powder_snow_check)
+             int i = this.getTicksFrozen();
+             if (i > 0) {
+-                AttributeInstance attributeinstance = this.getAttribute(Attributes.MOVEMENT_SPEED);
++                AttributeInstance attributeinstance = this.getBlockStateOnLegacy().isAir() ? null : this.getAttribute(Attributes.MOVEMENT_SPEED); // Stellar - lithium(fast_powder_snow_check)
+                 if (attributeinstance == null) {
+                     return;
+                 }
 @@ -542,7 +_,7 @@
          this.deathTime++;
          if (this.deathTime >= 20 && !this.level().isClientSide() && !this.isRemoved()) {
