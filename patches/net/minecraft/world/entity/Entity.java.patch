@@ -1111,10 +1111,14 @@
      }
  
      public final void setOldPosAndRot() {
-@@ -1478,6 +_,7 @@
+@@ -1476,8 +_,10 @@
+     }
+ 
      public void push(Entity p_20293_) {
++        if (!p_20293_.noPhysics && !this.noPhysics) {// Stellar(Akarin) - collision physics check before vehicle check
          if (!this.isPassengerOfSameVehicle(p_20293_)) {
-             if (!p_20293_.noPhysics && !this.noPhysics) {
+-            if (!p_20293_.noPhysics && !this.noPhysics) {
++            // if (!p_20293_.noPhysics && !this.noPhysics) {
 +                if (this.level.paperConfig().collisions.onlyPlayersCollide && !(p_20293_ instanceof ServerPlayer || this instanceof ServerPlayer)) return; // Paper - Collision option for requiring a player participant
                  double d0 = p_20293_.getX() - this.getX();
                  double d1 = p_20293_.getZ() - this.getZ();
