@@ -2080,6 +2080,15 @@
          }
      }
  
+@@ -2609,7 +_,7 @@
+     }
+ 
+     public boolean canChangeDimensions(Level p_352904_, Level p_352909_) {
+-        return true;
++        return this.isAlive() && this.valid; // Paper - Fix item duplication and teleport issues
+     }
+ 
+     public float getBlockExplosionResistance(
 @@ -2667,6 +_,7 @@
          return this.stringUUID;
      }
