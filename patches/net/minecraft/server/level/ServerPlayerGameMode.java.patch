@@ -7,7 +7,7 @@
  import com.mojang.logging.LogUtils;
  import java.util.Objects;
  import javax.annotation.Nullable;
-@@ -15,7 +_,6 @@
+@@ -15,13 +_,11 @@
  import net.minecraft.world.ItemInteractionResult;
  import net.minecraft.world.MenuProvider;
  import net.minecraft.world.entity.EquipmentSlot;
@@ -15,15 +15,31 @@
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.item.context.UseOnContext;
  import net.minecraft.world.item.enchantment.EnchantmentHelper;
-@@ -27,11 +_,14 @@
+ import net.minecraft.world.level.GameType;
+ import net.minecraft.world.level.Level;
+-import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.GameMasterBlock;
+ import net.minecraft.world.level.block.entity.BlockEntity;
  import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.phys.BlockHitResult;
+@@ -29,9 +_,24 @@
  import net.minecraft.world.phys.Vec3;
-+import org.bukkit.GameMode;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.event.player.PlayerGameModeChangeEvent;
  import org.slf4j.Logger;
  
++// Stellar start
++import java.util.ArrayList;
++
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.Blocks;
++
++import net.neoforged.neoforge.common.CommonHooks;
++
++import org.bukkit.GameMode;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.block.BlockBreakEvent;
++import org.bukkit.event.player.PlayerGameModeChangeEvent;
++// Stellar end
++
  public class ServerPlayerGameMode {
      private static final Logger LOGGER = LogUtils.getLogger();
 -    protected ServerLevel level;
@@ -259,54 +275,173 @@
              }
          }
      }
-@@ -238,38 +_,58 @@
+@@ -238,38 +_,157 @@
  
      public boolean destroyBlock(BlockPos p_9281_) {
          BlockState blockstate1 = this.level.getBlockState(p_9281_);
 -        if (!this.player.getMainHandItem().getItem().canAttackBlock(blockstate1, this.level, p_9281_, this.player)) {
-+        var event = net.neoforged.neoforge.common.CommonHooks.fireBlockBreak(level, gameModeForPlayer, player, p_9281_, blockstate1);
-+        if (event.isCanceled()) {
++        if (CommonHooks.fireBlockBreak(level, gameModeForPlayer, player, p_9281_, blockstate1).isCanceled()) {
++            return false;
++        }
++
++        // CraftBukkit start - fire BlockBreakEvent
++        org.bukkit.block.Block bblock = CraftBlock.at(this.level, p_9281_);
++        BlockBreakEvent event = null;
++
++        if (this.player instanceof ServerPlayer) {
++            // Sword + Creative mode pre-cancel
++            boolean isSwordNoBreak = !this.player.getMainHandItem().getItem().canAttackBlock(blockstate1, this.level, p_9281_, this.player);
++
++            // Tell client the block is gone immediately then process events
++            // Don't tell the client if its a creative sword break because its not broken!
++            if (false && this.level.getBlockEntity(p_9281_) == null && !isSwordNoBreak) { // Paper - Don't resync block
++                ClientboundBlockUpdatePacket packet = new ClientboundBlockUpdatePacket(p_9281_, Blocks.AIR.defaultBlockState());
++                this.player.connection.send(packet);
++            }
++
++            event = new BlockBreakEvent(bblock, this.player.getBukkitEntity());
++
++            // Sword + Creative mode pre-cancel
++            event.setCancelled(isSwordNoBreak);
++
++            // Calculate default block experience
++            BlockState nmsData = this.level.getBlockState(p_9281_);
++            Block nmsBlock = nmsData.getBlock();
++
++            ItemStack itemstack = this.player.getItemBySlot(EquipmentSlot.MAINHAND);
++
++            if (nmsBlock != null && !event.isCancelled() && !this.isCreative() && blockstate1.canHarvestBlock(this.level, p_9281_, this.player)) { // Stellar - compatible layer
++                event.setExpToDrop(nmsBlock.getExpDrop(nmsData, this.level, p_9281_, itemstack, true));
++            }
++
++            this.level.getCraftServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                if (isSwordNoBreak) {
++                    return false;
++                }
++                // Paper start - Don't resync blocks
++                // Let the client know the block still exists
++                // this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, p_9281_));
++
++                // Brute force all possible updates
++                // for (Direction dir : Direction.values()) {
++                //     this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, p_9281_.relative(dir)));
++                // }
++                // Paper end - Don't resync blocks
++
++                // Update any tile entity data for this block
++                if (!captureSentBlockEntities) { // Paper - Send block entities after destroy prediction
++                BlockEntity tileentity = this.level.getBlockEntity(p_9281_);
++                if (tileentity != null) {
++                    this.player.connection.send(tileentity.getUpdatePacket());
++                }
++                } else {capturedBlockEntity = true;} // Paper - Send block entities after destroy prediction
++                return false;
++            }
++            // if (this.player.level().purpurConfig.slabHalfBreak && this.player.isShiftKeyDown() && blockstate1.getBlock() instanceof net.minecraft.world.level.block.SlabBlock && ((net.minecraft.world.level.block.SlabBlock) blockstate1.getBlock()).halfBreak(blockstate1, p_9281_, this.player)) return true; // Purpur // Stellar TODO
++        }
++        // CraftBukkit end
++
++        if (false && !this.player.getMainHandItem().getItem().canAttackBlock(blockstate1, this.level, p_9281_, this.player)) { // CraftBukkit - false
++            return false;
++        }
++
++        blockstate1 = this.level.getBlockState(p_9281_); // CraftBukkit - update state from plugins
++        if (blockstate1.isAir()) return false; // CraftBukkit - A plugin set block to air without cancelling
++        BlockEntity tileentity = this.level.getBlockEntity(p_9281_);
++        Block block = blockstate1.getBlock();
++
++        if (block instanceof GameMasterBlock && !this.player.canUseGameMasterBlocks() && !(block instanceof net.minecraft.world.level.block.CommandBlock && (this.player.isCreative() && this.player.getBukkitEntity().hasPermission("minecraft.commandblock")))) { // Paper - command block permission
++            this.level.sendBlockUpdated(p_9281_, blockstate1, blockstate1, 3);
++            return false;
++        } else if (this.player.blockActionRestricted(this.level, p_9281_, this.gameModeForPlayer)) {
              return false;
          } else {
-             BlockEntity blockentity = this.level.getBlockEntity(p_9281_);
-             Block block = blockstate1.getBlock();
+-            BlockEntity blockentity = this.level.getBlockEntity(p_9281_);
+-            Block block = blockstate1.getBlock();
 -            if (block instanceof GameMasterBlock && !this.player.canUseGameMasterBlocks()) {
-+            if (block instanceof GameMasterBlock && !this.player.canUseGameMasterBlocks() && !(block instanceof net.minecraft.world.level.block.CommandBlock && (this.player.isCreative() && this.player.getBukkitEntity().hasPermission("minecraft.commandblock")))) { // Paper - command block permission
-                 this.level.sendBlockUpdated(p_9281_, blockstate1, blockstate1, 3);
-                 return false;
-             } else if (this.player.blockActionRestricted(this.level, p_9281_, this.gameModeForPlayer)) {
-                 return false;
+-                this.level.sendBlockUpdated(p_9281_, blockstate1, blockstate1, 3);
+-                return false;
+-            } else if (this.player.blockActionRestricted(this.level, p_9281_, this.gameModeForPlayer)) {
+-                return false;
++            // CraftBukkit start
++            org.bukkit.block.BlockState state = bblock.getState();
++            this.level.captureDrops = new ArrayList<>();
++            // CraftBukkit end
++            BlockState blockstate = block.playerWillDestroy(this.level, p_9281_, blockstate1, this.player);
++            boolean flag = this.level.removeBlock(p_9281_, false);
++
++            if (flag) {
++                block.destroy(this.level, p_9281_, blockstate1);
++            }
++
++            ItemStack mainHandStack = null; // Paper - Trigger bee_nest_destroyed trigger in the correct place
++            boolean isCorrectTool = false; // Paper - Trigger bee_nest_destroyed trigger in the correct place
++            if (this.isCreative()) {
++                // removeBlock(p_9281_, blockstate, false);
++                // return true; // CraftBukkit
              } else {
-                 BlockState blockstate = block.playerWillDestroy(this.level, p_9281_, blockstate1, this.player);
+-                BlockState blockstate = block.playerWillDestroy(this.level, p_9281_, blockstate1, this.player);
 -                boolean flag1 = this.level.removeBlock(p_9281_, false);
 -                if (flag1) {
 -                    block.destroy(this.level, p_9281_, blockstate);
 -                }
- 
-                 if (this.isCreative()) {
-+                    removeBlock(p_9281_, blockstate, false);
-                     return true;
-                 } else {
-                     ItemStack itemstack = this.player.getMainHandItem();
-                     ItemStack itemstack1 = itemstack.copy();
+-
+-                if (this.isCreative()) {
+-                    return true;
+-                } else {
+-                    ItemStack itemstack = this.player.getMainHandItem();
+-                    ItemStack itemstack1 = itemstack.copy();
 -                    boolean flag = this.player.hasCorrectToolForDrops(blockstate);
-+                    boolean flag1 = blockstate.canHarvestBlock(this.level, p_9281_, this.player); // previously player.hasCorrectToolForDrops(blockstate)
-                     itemstack.mineBlock(this.level, blockstate, p_9281_, this.player);
+-                    itemstack.mineBlock(this.level, blockstate, p_9281_, this.player);
 -                    if (flag1 && flag) {
-+                    boolean flag = removeBlock(p_9281_, blockstate, flag1);
+-                        block.playerDestroy(this.level, this.player, p_9281_, blockstate, blockentity, itemstack1);
+-                    }
+-
+-                    return true;
+-                }
+-            }
++                ItemStack itemstack = this.player.getMainHandItem();
++                ItemStack itemstack1 = itemstack.copy();
++                boolean flag1 = blockstate.canHarvestBlock(this.level, p_9281_, this.player); // Stellar - compatible layer
++                mainHandStack = itemstack1; // Paper - Trigger bee_nest_destroyed trigger in the correct place
++                isCorrectTool = flag1; // Paper - Trigger bee_nest_destroyed trigger in the correct place
 +
-+                    if (flag1 && flag && event.isDropItems()) {
-                         block.playerDestroy(this.level, this.player, p_9281_, blockstate, blockentity, itemstack1);
-                     }
- 
-+                    // Neo: Fire the PlayerDestroyItemEvent if the tool was broken at any point during the break process
-+                    if (itemstack.isEmpty() && !itemstack1.isEmpty()) {
-+                        net.neoforged.neoforge.event.EventHooks.onPlayerDestroyItem(this.player, itemstack1, InteractionHand.MAIN_HAND);
-+                    }
++                itemstack.mineBlock(this.level, blockstate, p_9281_, this.player);
++                if (flag1 && flag /*&& event.isDropItems()*/) { // CraftBukkit - Check if block should drop items // Paper - fix drops not preventing stats/food exhaustion
++                    block.playerDestroy(this.level, this.player, p_9281_, blockstate, tileentity, itemstack1, event.isDropItems(), false); // Paper - fix drops not preventing stats/food exhaustion
++                }
 +
-                     return true;
-                 }
-             }
++                // Neo: Fire the PlayerDestroyItemEvent if the tool was broken at any point during the break process
++                if (itemstack.isEmpty() && !itemstack1.isEmpty()) {
++                    net.neoforged.neoforge.event.EventHooks.onPlayerDestroyItem(this.player, itemstack1, InteractionHand.MAIN_HAND);
++                }
++
++                // return true; // CraftBukkit
++            }
++            // CraftBukkit start
++            java.util.List<net.minecraft.world.entity.item.ItemEntity> itemsToDrop = this.level.captureDrops; // Paper - capture all item additions to the world
++            this.level.captureDrops = null; // Paper - capture all item additions to the world; Remove this earlier so that we can actually drop stuff
++            if (event.isDropItems()) {
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, state, this.player, itemsToDrop); // Paper - capture all item additions to the world
++            }
++            // this.level.captureDrops = null; // Paper - capture all item additions to the world; move up
++
++            // Drop event experience
++            if (flag && event != null) {
++                blockstate1.getBlock().popExperience(this.level, p_9281_, event.getExpToDrop(), this.player); // Paper
++            }
++            // Paper start - Trigger bee_nest_destroyed trigger in the correct place (check impls of block#playerDestroy)
++            if (mainHandStack != null) {
++                if (flag && isCorrectTool && event.isDropItems() && block instanceof net.minecraft.world.level.block.BeehiveBlock && tileentity instanceof net.minecraft.world.level.block.entity.BeehiveBlockEntity beehiveBlockEntity) { // simulates the guard on block#playerDestroy above
++                    CriteriaTriggers.BEE_NEST_DESTROYED.trigger(player, blockstate1, mainHandStack, beehiveBlockEntity.getOccupantCount());
++                }
++            }
++            // Paper end - Trigger bee_nest_destroyed trigger in the correct place
++
++            return true;
++            // CraftBukkit end
          }
 +    }
 +

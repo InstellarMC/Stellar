@@ -76,6 +76,7 @@ public class BlockEventDispatcher {
         }
     }
 
+    /* Stellar start
     @SubscribeEvent(receiveCanceled = true)
     public void onBlockDrops(BlockDropsEvent event) {
         org.bukkit.block.Block block = CraftBlock.at(event.getLevel(), event.getPos());
@@ -98,6 +99,7 @@ public class BlockEventDispatcher {
             }
         }
     }
+    */// Stellar end
 
     @SubscribeEvent(receiveCanceled = true)
     public void onBlockPlace(BlockEvent.EntityPlaceEvent event) {

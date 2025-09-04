@@ -38,9 +38,6 @@ public class BlockDropsEvent extends BlockEvent implements ICancellableEvent {
     private final Entity breaker;
     private final ItemStack tool;
     private int experience;
-    @Getter
-    @Setter
-    private BlockPos papersource;
 
     /**
      * Constructs a new BlockDropsEvent

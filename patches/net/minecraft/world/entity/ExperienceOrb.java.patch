@@ -163,7 +163,32 @@
          }
  
          if (this.level() instanceof ServerLevel) {
-@@ -156,7 +_,7 @@
+@@ -145,18 +_,27 @@
+     }
+ 
+     public static void award(ServerLevel p_147083_, Vec3 p_147084_, int p_147085_) {
+-        while (p_147085_ > 0) {
+-            int i = getExperienceValue(p_147085_);
+-            p_147085_ -= i;
+-            if (!tryMergeToExisting(p_147083_, p_147084_, i)) {
+-                p_147083_.addFreshEntity(new ExperienceOrb(p_147083_, p_147084_.x(), p_147084_.y(), p_147084_.z(), i));
++        // Paper start - add reasons for orbs
++        award(p_147083_, p_147084_, p_147085_, null, null, null);
++    }
++    public static void award(ServerLevel world, Vec3 pos, int amount, org.bukkit.entity.ExperienceOrb.SpawnReason reason, Entity triggerId) {
++        award(world, pos, amount, reason, triggerId, null);
++    }
++    public static void award(ServerLevel world, Vec3 pos, int amount, org.bukkit.entity.ExperienceOrb.SpawnReason reason, Entity triggerId, Entity sourceId) {
++        // Paper end - add reasons for orbs
++        while (amount > 0) {
++            int i = getExperienceValue(amount);
++
++            amount -= i;
++            if (!tryMergeToExisting(world, pos, i)) {
++                world.addFreshEntity(new ExperienceOrb(world, pos.x(), pos.y(), pos.z(), i, reason, triggerId, sourceId)); // Paper - add reason
+             }
+         }
+     }
  
      private static boolean tryMergeToExisting(ServerLevel p_147097_, Vec3 p_147098_, int p_147099_) {
          AABB aabb = AABB.ofSize(p_147098_, 1.0, 1.0, 1.0);

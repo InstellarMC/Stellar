@@ -1,15 +1,25 @@
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
-@@ -8,6 +_,8 @@
+@@ -6,8 +_,10 @@
+ import com.google.common.collect.ImmutableMap;
+ import com.mojang.logging.LogUtils;
  import com.mojang.serialization.MapCodec;
- import it.unimi.dsi.fastutil.objects.Object2ByteLinkedOpenHashMap;
+-import it.unimi.dsi.fastutil.objects.Object2ByteLinkedOpenHashMap;
++import io.papermc.paper.event.block.BlockBreakBlockEvent;import it.unimi.dsi.fastutil.objects.Object2ByteLinkedOpenHashMap;
  import java.util.List;
 +import java.util.concurrent.atomic.AtomicBoolean;
 +import java.util.concurrent.atomic.AtomicReference;
  import java.util.function.Function;
  import java.util.function.Supplier;
  import javax.annotation.Nullable;
-@@ -65,7 +_,7 @@
+@@ -59,13 +_,13 @@
+ import net.minecraft.world.phys.shapes.BooleanOp;
+ import net.minecraft.world.phys.shapes.Shapes;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+-import org.slf4j.Logger;
++import net.neoforged.neoforge.common.NeoForge;import net.neoforged.neoforge.event.level.BlockDropsEvent;import org.bukkit.craftbukkit.block.CraftBlock;import org.bukkit.craftbukkit.inventory.CraftItemStack;import org.slf4j.Logger;
+ 
+ public class Block extends BlockBehaviour implements ItemLike, net.neoforged.neoforge.common.extensions.IBlockExtension {
      public static final MapCodec<Block> CODEC = simpleCodec(Block::new);
      private static final Logger LOGGER = LogUtils.getLogger();
      private final Holder.Reference<Block> builtInRegistryHolder = BuiltInRegistries.BLOCK.createIntrusiveHolder(this);
@@ -70,7 +80,7 @@
      }
  
      public void animateTick(BlockState p_220827_, Level p_220828_, BlockPos p_220829_, RandomSource p_220830_) {
-@@ -281,24 +_,39 @@
+@@ -281,25 +_,70 @@
  
      public static void dropResources(BlockState p_49951_, Level p_49952_, BlockPos p_49953_) {
          if (p_49952_ instanceof ServerLevel) {
@@ -87,16 +97,41 @@
 +            beginCapturingDrops();
              getDrops(p_49893_, (ServerLevel)p_49894_, p_49895_, p_49896_).forEach(p_49859_ -> popResource((ServerLevel)p_49894_, p_49895_, p_49859_));
 -            p_49893_.spawnAfterBreak((ServerLevel)p_49894_, p_49895_, ItemStack.EMPTY, true);
+-        }
+-    }
 +            List<ItemEntity> captured = stopCapturingDrops();
 +            net.neoforged.neoforge.common.CommonHooks.handleBlockDrops((ServerLevel) p_49894_, p_49895_, p_49893_, p_49896_, captured, null, ItemStack.EMPTY);
-         }
-     }
++        }
++    }
 +
-+    // Paper start - Add BlockBreakBlockEvent TODO Youer hook neoforge event
-+    public static AtomicReference<BlockPos> dropResources$paperSource = new AtomicReference<>(null);
++    // Paper start - Add BlockBreakBlockEvent
 +    public static boolean dropResources(BlockState p_49893_, LevelAccessor p_49894_, BlockPos p_49895_, @Nullable BlockEntity p_49896_, BlockPos source) {
-+        dropResources$paperSource.set(source);
-+        dropResources(p_49893_, p_49894_, p_49895_, p_49896_);
++        if (p_49894_ instanceof ServerLevel serverLevel) {
++            // Stellar start - respect neo
++            beginCapturingDrops();
++            getDrops(p_49893_, serverLevel, p_49895_, p_49896_).forEach(p_49859_ -> popResource(serverLevel, p_49895_, p_49859_));
++            List<ItemEntity> captured = stopCapturingDrops();
++            BlockDropsEvent event = new BlockDropsEvent(serverLevel, p_49895_, p_49893_, p_49896_, captured, null, ItemStack.EMPTY);
++            if (NeoForge.EVENT_BUS.post(event).isCanceled()) {
++                return true;
++            }
++            // Stellar end - respect neo
++
++            List<org.bukkit.inventory.ItemStack> items = new java.util.ArrayList<>();
++            for (ItemEntity itementity : captured) { // Stellar - respect neo
++                items.add(CraftItemStack.asBukkitCopy(itementity.getItem()));
++            }
++
++            Block block = p_49893_.getBlock(); // Paper - Properly handle xp dropping
++            BlockBreakBlockEvent eventCB = new BlockBreakBlockEvent(CraftBlock.at(p_49894_, p_49895_), CraftBlock.at(p_49894_, source), items);
++            eventCB.setExpToDrop(event.getDroppedExperience()); // Paper - Properly handle xp dropping // Stellar - respect neo
++            eventCB.callEvent();
++            for (org.bukkit.inventory.ItemStack drop : eventCB.getDrops()) {
++                popResource(serverLevel, p_49895_, CraftItemStack.asNMSCopy(drop));
++            }
++            p_49893_.spawnAfterBreak(serverLevel, p_49895_, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
++            block.popExperience(serverLevel, p_49895_, eventCB.getExpToDrop()); // Paper - Properly handle xp dropping
++        }
 +        return true;
 +    }
 +    // Paper end - Add BlockBreakBlockEvent
@@ -105,16 +140,27 @@
 -        BlockState p_49882_, Level p_49883_, BlockPos p_49884_, @Nullable BlockEntity p_49885_, @Nullable Entity p_49886_, ItemStack p_49887_
 +            BlockState p_49882_, Level p_49883_, BlockPos p_49884_, @Nullable BlockEntity p_49885_, @Nullable Entity p_49886_, ItemStack p_49887_
      ) {
-         if (p_49883_ instanceof ServerLevel) {
-+            beginCapturingDrops();
-             getDrops(p_49882_, (ServerLevel)p_49883_, p_49884_, p_49885_, p_49886_, p_49887_).forEach(p_49944_ -> popResource(p_49883_, p_49884_, p_49944_));
+-        if (p_49883_ instanceof ServerLevel) {
+-            getDrops(p_49882_, (ServerLevel)p_49883_, p_49884_, p_49885_, p_49886_, p_49887_).forEach(p_49944_ -> popResource(p_49883_, p_49884_, p_49944_));
 -            p_49882_.spawnAfterBreak((ServerLevel)p_49883_, p_49884_, p_49887_, true);
-+            List<ItemEntity> captured = stopCapturingDrops();
-+            net.neoforged.neoforge.common.CommonHooks.handleBlockDrops((ServerLevel) p_49883_, p_49884_, p_49882_, p_49885_, captured, p_49886_, p_49887_);
-         }
+-        }
++    // Paper start - Properly handle xp dropping
++        dropResources(p_49882_, p_49883_, p_49884_, p_49885_, p_49886_, p_49887_, true);
++    }
++    public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool, boolean dropExperience) {
++    // Paper end - Properly handle xp dropping
++        /* // Stellar start - moved up
++        if (world instanceof ServerLevel) {
++            Block.getDrops(state, (ServerLevel) world, pos, blockEntity, entity, tool).forEach((itemstack1) -> {
++                Block.popResource(world, pos, itemstack1);
++            });
++            state.spawnAfterBreak((ServerLevel) world, pos, tool, dropExperience); // Paper - Properly handle xp dropping
++        } */// Stellar end - moved up
++        dropResources(state, world, pos, blockEntity);
      }
  
-@@ -326,19 +_,26 @@
+     public static void popResource(Level p_49841_, BlockPos p_49842_, ItemStack p_49843_) {
+@@ -326,19 +_,38 @@
      }
  
      private static void popResource(Level p_152441_, Supplier<ItemEntity> p_152442_, ItemStack p_152443_) {
@@ -123,11 +169,18 @@
              ItemEntity itementity = p_152442_.get();
              itementity.setDefaultPickUpDelay();
 -            p_152441_.addFreshEntity(itementity);
++            boolean consumed = false; // Stellar
 +            // Neo: Add drops to the captured list if capturing is enabled.
 +            if (capturedDrops != null) {
 +                capturedDrops.add(itementity);
++                consumed = true; // Stellar
 +            }
-+            else {
++            // Stellar start
++            if (p_152441_.captureDrops != null) {
++                p_152441_.captureDrops.add(itementity);
++                consumed = true;
++            }
++            if (!consumed) { // Stellar end
 +                p_152441_.addFreshEntity(itementity);
 +            }
          }
@@ -135,8 +188,14 @@
  
      public void popExperience(ServerLevel p_49806_, BlockPos p_49807_, int p_49808_) {
 -        if (p_49806_.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS)) {
-+        if (p_49806_.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS) && !p_49806_.restoringBlockSnapshots) {
-             ExperienceOrb.award(p_49806_, Vec3.atCenterOf(p_49807_), p_49808_);
+-            ExperienceOrb.award(p_49806_, Vec3.atCenterOf(p_49807_), p_49808_);
++        // Paper start - add entity parameter
++        popExperience(p_49806_, p_49807_, p_49808_, null);
++    }
++    public void popExperience(ServerLevel world, BlockPos pos, int size, net.minecraft.world.entity.Entity entity) {
++        // Paper end - add entity parameter
++        if (world.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS) && !world.restoringBlockSnapshots) {
++            ExperienceOrb.award(world, Vec3.atCenterOf(pos), size, org.bukkit.entity.ExperienceOrb.SpawnReason.BLOCK_BREAK, entity); // Paper
          }
      }
  
@@ -144,20 +203,31 @@
      public float getExplosionResistance() {
          return this.explosionResistance;
      }
-@@ -356,12 +_,23 @@
- 
-     public void playerDestroy(Level p_49827_, Player p_49828_, BlockPos p_49829_, BlockState p_49830_, @Nullable BlockEntity p_49831_, ItemStack p_49832_) {
-         p_49828_.awardStat(Stats.BLOCK_MINED.get(this));
--        p_49828_.causeFoodExhaustion(0.005F);
-+        // CraftBukkit start - EntityExhaustionEvent
-+        p_49828_.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED);
-+        // CraftBukkit end
-         dropResources(p_49830_, p_49827_, p_49829_, p_49831_, p_49828_, p_49832_);
+@@ -354,14 +_,31 @@
+         return this.defaultBlockState();
      }
  
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - fix drops not preventing stats/food exhaustion
+     public void playerDestroy(Level p_49827_, Player p_49828_, BlockPos p_49829_, BlockState p_49830_, @Nullable BlockEntity p_49831_, ItemStack p_49832_) {
+-        p_49828_.awardStat(Stats.BLOCK_MINED.get(this));
+-        p_49828_.causeFoodExhaustion(0.005F);
+-        dropResources(p_49830_, p_49827_, p_49829_, p_49831_, p_49828_, p_49832_);
+-    }
++        // Paper start - fix drops not preventing stats/food exhaustion
++        playerDestroy(p_49827_, p_49828_, p_49829_, p_49830_, p_49831_, p_49832_, true, true);
++    }
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) {
++        // Paper end - fix drops not preventing stats/food exhaustion
++        player.awardStat(Stats.BLOCK_MINED.get(this));
++        player.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
++        if (includeDrops) { // Paper - fix drops not preventing stats/food exhaustion
++        Block.dropResources(state, world, pos, blockEntity, player, tool, dropExp); // Paper - Properly handle xp dropping
++        } // Paper - fix drops not preventing stats/food exhaustion
++    }
++
 +    // Purpur start
 +    @Nullable protected LivingEntity placer = null;
-+
+ 
      public void setPlacedBy(Level p_49847_, BlockPos p_49848_, BlockState p_49849_, @Nullable LivingEntity p_49850_, ItemStack p_49851_) {
 -    }
 +        this.placer = p_49850_;
@@ -187,6 +257,15 @@
      public ItemStack getCloneItemStack(LevelReader p_304395_, BlockPos p_49824_, BlockState p_49825_) {
          return new ItemStack(this);
      }
+@@ -409,7 +_,7 @@
+ 
+     public BlockState playerWillDestroy(Level p_49852_, BlockPos p_49853_, BlockState p_49854_, Player p_49855_) {
+         this.spawnDestroyParticles(p_49852_, p_49855_, p_49853_, p_49854_);
+-        if (p_49854_.is(BlockTags.GUARDED_BY_PIGLINS)) {
++        if (p_49852_.paperConfig().entities.behavior.piglinsGuardChests && p_49854_.is(BlockTags.GUARDED_BY_PIGLINS)) { // Stellar - Early test for piglin guarding
+             PiglinAi.angerNearbyPiglins(p_49855_, false);
+         }
+ 
 @@ -420,6 +_,7 @@
      public void handlePrecipitation(BlockState p_152450_, Level p_152451_, BlockPos p_152452_, Biome.Precipitation p_152453_) {
      }

@@ -88,15 +88,15 @@
      protected abstract boolean canConvertToSource(Level p_256009_);
  
      protected void spreadTo(LevelAccessor p_76005_, BlockPos p_76006_, BlockState p_76007_, Direction p_76008_, FluidState p_76009_) {
-@@ -245,6 +_,7 @@
+@@ -245,13 +_,14 @@
              ((LiquidBlockContainer)p_76007_.getBlock()).placeLiquid(p_76005_, p_76006_, p_76007_, p_76009_);
          } else {
              if (!p_76007_.isAir()) {
-+                Block.dropResources$paperSource.set(p_76006_.relative(p_76008_.getOpposite())); // Paper - Add BlockBreakBlockEvent
-                 this.beforeDestroyingBlock(p_76005_, p_76006_, p_76007_);
+-                this.beforeDestroyingBlock(p_76005_, p_76006_, p_76007_);
++                this.beforeDestroyingBlock(p_76005_, p_76006_, p_76007_, p_76006_.relative(p_76008_.getOpposite())); // Paper - Add BlockBreakBlockEvent
              }
  
-@@ -252,6 +_,7 @@
+             p_76005_.setBlock(p_76006_, p_76009_.createLegacyBlock(), 3);
          }
      }
  
