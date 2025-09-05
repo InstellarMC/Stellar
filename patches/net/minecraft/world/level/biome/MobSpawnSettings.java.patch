@@ -9,9 +9,19 @@
  
      MobSpawnSettings(
          float p_196689_,
-@@ -60,24 +_,66 @@
+@@ -58,26 +_,75 @@
+         Map<EntityType<?>, MobSpawnSettings.MobSpawnCost> p_196691_
+     ) {
          this.creatureGenerationProbability = p_196689_;
-         this.spawners = ImmutableMap.copyOf(p_196690_);
+-        this.spawners = ImmutableMap.copyOf(p_196690_);
++        // Stellar start - lithium: Uses custom hashset/list combination for faster mob spawn checks
++        // Initialize the spawn category lists with a much faster backing collection type for enum keys. This provides
++        // a modest speed-up for mob spawning as {@link MobSpawnSettings#getMobs(MobCategory)} is a rather hot method.
++        Map<MobCategory, WeightedRandomList<MobSpawnSettings.SpawnerData>> spawns = Maps.newEnumMap(MobCategory.class);
++        spawns.putAll(p_196690_);
++
++        this.spawners = spawns;
++        // Stellar end - lithium: Uses custom hashset/list combination for faster mob spawn checks
          this.mobSpawnCosts = ImmutableMap.copyOf(p_196691_);
 +        this.typesView = java.util.Collections.unmodifiableSet(this.spawners.keySet());
 +        this.costView = java.util.Collections.unmodifiableSet(this.mobSpawnCosts.keySet());
