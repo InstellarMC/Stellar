@@ -72,6 +72,14 @@
      private final EntityType<?> type;
      private int id = ENTITY_COUNTER.incrementAndGet();
      public boolean blocksBuilding;
+@@ -168,6 +_,7 @@
+     private float xRot;
+     public float yRotO;
+     public float xRotO;
++    private boolean boundingBoxChanged = false; // Stellar(VMP) - skip entity move if movement is zero
+     private AABB bb = INITIAL_AABB;
+     public boolean onGround;
+     public boolean horizontalCollision;
 @@ -194,8 +_,10 @@
      public int tickCount;
      public int remainingFireTicks = -this.getFireImmuneTicks();
@@ -650,7 +658,7 @@
      }
  
      public boolean isFree(double p_20230_, double p_20231_, double p_20232_) {
-@@ -598,12 +_,52 @@
+@@ -598,12 +_,58 @@
          return this.onGround;
      }
  
@@ -680,6 +688,12 @@
 +    // Paper end - detailed watchdog information
 +
      public void move(MoverType p_19973_, Vec3 p_19974_) {
++        // Stellar start - VMP: skip entity move if movement is zero
++        if (!this.boundingBoxChanged && Vec3.ZERO.equals(p_19974_)) {
++            this.boundingBoxChanged = false;
++            return;
++        }
++        // Stellar end - VMP: skip entity move if movement is zero
 +        final Vec3 originalMovement = p_19974_; // Paper - Expose pre-collision velocity
 +        // Paper start - detailed watchdog information
 +        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread("Cannot move an entity off-main");
@@ -2132,11 +2146,16 @@
          this.dimensions = entitydimensions1;
          this.eyeHeight = entitydimensions1.eyeHeight();
          this.reapplyPosition();
-@@ -2849,7 +_,26 @@
+@@ -2849,7 +_,31 @@
      }
  
      public final void setBoundingBox(AABB p_20012_) {
 -        this.bb = p_20012_;
++        // Stellar start - VMP: skip entity move if movement is zero
++        if (!this.bb.equals(p_20012_)) {
++            this.boundingBoxChanged = true;
++        }
++        // Stellar end - VMP: skip entity move if movement is zero
 +        // CraftBukkit start - block invalid bounding boxes
 +        double minX = p_20012_.minX,
 +                minY = p_20012_.minY,
