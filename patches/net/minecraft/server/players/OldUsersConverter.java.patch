@@ -9,3 +9,11 @@
              p_11087_.getProfileRepository().findProfilesByNames(astring, p_11089_);
          } else {
              for (String s : astring) {
+@@ -358,6 +_,7 @@
+     }
+ 
+     public static boolean serverReadyAfterUserconversion(MinecraftServer p_11107_) {
++        if (true) return true; // Stellar - Disable old user conversion checks
+         boolean flag = areOldUserlistsRemoved();
+         return flag && areOldPlayersConverted(p_11107_);
+     }
