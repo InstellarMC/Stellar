@@ -324,7 +324,7 @@
 +            long l = k * k;
 +            int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
 +            int j1 = this.getCoprime(i1);
-+            int k1 = RandomSource.create().nextInt(i1);
++            int k1 = worldserver.random.nextInt(i1); // Stellar(Patina) - Reduce RandomSource instances
 +
 +            for (int l1 = 0; l1 < i1; ++l1) {
 +                int i2 = (k1 + j1 * l1) % i1;
@@ -344,6 +344,15 @@
  
      @Override
      public BlockPos adjustSpawnLocation(ServerLevel p_352206_, BlockPos p_352202_) {
+@@ -308,7 +_,7 @@
+             long l = k * k;
+             int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int)l;
+             int j1 = this.getCoprime(i1);
+-            int k1 = RandomSource.create().nextInt(i1);
++            int k1 = p_352206_.random.nextInt(i1); // Stellar(Patina) - Reduce RandomSource instances
+ 
+             for (int l1 = 0; l1 < i1; l1++) {
+                 int i2 = (k1 + j1 * l1) % i1;
 @@ -357,11 +_,20 @@
          if (p_9131_.contains("recipeBook", 10)) {
              this.recipeBook.fromNbt(p_9131_.getCompound("recipeBook"), this.server.getRecipeManager());

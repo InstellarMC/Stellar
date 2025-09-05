@@ -17,6 +17,15 @@
          CommandSourceStack p_138703_,
          Vec2 p_138704_,
          float p_138705_,
+@@ -118,7 +_,7 @@
+         if (p_138707_ < i) {
+             throw ERROR_INVALID_MAX_HEIGHT.create(p_138707_, i);
+         } else {
+-            RandomSource randomsource = RandomSource.create();
++            RandomSource randomsource = p_138703_.getLevel().random; // Stellar(Patina) - Reduce RandomSource instances
+             double d0 = (double)(p_138704_.x - p_138706_);
+             double d1 = (double)(p_138704_.y - p_138706_);
+             double d2 = (double)(p_138704_.x + p_138706_);
 @@ -259,15 +_,22 @@
                  spreadplayerscommand$position = p_138732_[i++];
              }

@@ -7,7 +7,7 @@
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
  import com.mojang.datafixers.util.Pair;
-@@ -38,6 +_,9 @@
+@@ -38,13 +_,16 @@
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.HitResult;
  import net.minecraft.world.phys.Vec3;
@@ -17,6 +17,14 @@
  
  public class Explosion {
      private static final ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
+     private static final int MAX_DROPS_PER_COMBINED_STACK = 16;
+     private final boolean fire;
+     private final Explosion.BlockInteraction blockInteraction;
+-    private final RandomSource random = RandomSource.create();
++    private final RandomSource random; // Stellar(Patina) - Reduce RandomSource instances
+     private final Level level;
+     private final double x;
+     private final double y;
 @@ -59,6 +_,252 @@
      private final Holder<SoundEvent> explosionSound;
      private final ObjectArrayList<BlockPos> toBlow = new ObjectArrayList<>();
@@ -270,8 +278,11 @@
  
      public static DamageSource getDefaultDamageSource(Level p_312716_, @Nullable Entity p_312608_) {
          return p_312716_.damageSources().explosion(p_312608_, getIndirectSourceEntityInternal(p_312608_));
-@@ -154,7 +_,7 @@
+@@ -152,9 +_,10 @@
+         ParticleOptions p_311904_,
+         Holder<SoundEvent> p_320270_
      ) {
++        this.random = p_46024_ == null || p_46024_.random == null ? RandomSource.create() : p_46024_.random; // Stellar(Patina) - Reduce RandomSource instances
          this.level = p_46024_;
          this.source = p_46025_;
 -        this.radius = p_46029_;

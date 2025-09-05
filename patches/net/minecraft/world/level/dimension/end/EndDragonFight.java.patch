@@ -116,7 +116,7 @@
      private void spawnNewGateway() {
          if (!this.gateways.isEmpty()) {
              int i = this.gateways.remove(this.gateways.size() - 1);
-@@ -398,7 +_,7 @@
+@@ -398,13 +_,13 @@
          }
      }
  
@@ -125,7 +125,14 @@
          this.level.levelEvent(3000, p_64090_, 0);
          this.level
              .registryAccess()
-@@ -416,7 +_,11 @@
+             .registry(Registries.CONFIGURED_FEATURE)
+             .flatMap(p_258993_ -> p_258993_.getHolder(EndFeatures.END_GATEWAY_DELAYED))
+-            .ifPresent(p_256486_ -> p_256486_.value().place(this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), p_64090_));
++            .ifPresent(p_256486_ -> p_256486_.value().place(this.level, this.level.getChunkSource().getGenerator(), this.level.random, p_64090_)); // Stellar(Patina) - Reduce RandomSource instances
+     }
+ 
+     public void spawnExitPortal(boolean p_64094_) {
+@@ -416,9 +_,13 @@
                  this.portalLocation = this.portalLocation.below();
              }
          }
@@ -136,8 +143,11 @@
 +        }
 +        // Paper end - Prevent "softlocked" exit portal generation
          if (endpodiumfeature.place(
-             FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation
+-            FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation
++            FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), this.level.random, this.portalLocation // Stellar(Patina) - Reduce RandomSource instances
          )) {
+             int i = Mth.positiveCeilDiv(4, 16);
+             this.level.getChunkSource().chunkMap.waitForLightBeforeSending(new ChunkPos(this.portalLocation), i);
 @@ -438,6 +_,7 @@
              );
              this.level.addFreshEntity(enderdragon);

@@ -26,7 +26,8 @@
  
  public class FishingHook extends Projectile {
      private static final Logger LOGGER = LogUtils.getLogger();
-     private final RandomSource syncronizedRandom = RandomSource.create();
+-    private final RandomSource syncronizedRandom = RandomSource.create();
++    private final RandomSource syncronizedRandom; // Stellar(Patina) - Reduce RandomSource instances
      private boolean biting;
 -    private int outOfWaterTime;
 +    public int outOfWaterTime;
@@ -42,7 +43,7 @@
      private boolean openWater = true;
      @Nullable
      public Entity hookedIn;
-@@ -66,11 +_,27 @@
+@@ -66,11 +_,28 @@
      private final int luck;
      private final int lureSpeed;
  
@@ -60,6 +61,7 @@
 +
      private FishingHook(EntityType<? extends FishingHook> p_150141_, Level p_150142_, int p_150143_, int p_150144_) {
          super(p_150141_, p_150142_);
++        this.syncronizedRandom = p_150142_.random; // Stellar(Patina) - Reduce RandomSource instances
          this.noCulling = true;
          this.luck = Math.max(0, p_150143_);
          this.lureSpeed = Math.max(0, p_150144_);

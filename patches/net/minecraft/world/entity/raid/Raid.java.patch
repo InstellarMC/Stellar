@@ -8,7 +8,7 @@
  
  public class Raid {
      private static final int SECTION_RADIUS_FOR_FINDING_NEW_VILLAGE_CENTER = 2;
-@@ -96,7 +_,7 @@
+@@ -96,16 +_,22 @@
      public int raidOmenLevel;
      private boolean active;
      private int groupsSpawned;
@@ -16,8 +16,9 @@
 +    public final ServerBossEvent raidEvent = new ServerBossEvent(RAID_NAME_COMPONENT, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
      private int postRaidTicks;
      private int raidCooldownTicks;
-     private final RandomSource random = RandomSource.create();
-@@ -104,6 +_,11 @@
+-    private final RandomSource random = RandomSource.create();
++    private final RandomSource random; // Stellar(Patina) - Reduce RandomSource instances
+     public final int numGroups;
      private Raid.RaidStatus status;
      private int celebrationTicks;
      private Optional<BlockPos> waveSpawnPos = Optional.empty();
@@ -28,7 +29,18 @@
 +    // Paper end
  
      public Raid(int p_37692_, ServerLevel p_37693_, BlockPos p_37694_) {
++        this.random = p_37693_.random; // Stellar(Patina) - Reduce RandomSource instances
          this.id = p_37692_;
+         this.level = p_37693_;
+         this.active = true;
+@@ -118,6 +_,7 @@
+ 
+     public Raid(ServerLevel p_37696_, CompoundTag p_37697_) {
+         this.level = p_37696_;
++        this.random = p_37696_.random; // Stellar(Patina) - Reduce RandomSource instances
+         this.id = p_37697_.getInt("Id");
+         this.started = p_37697_.getBoolean("Started");
+         this.active = p_37697_.getBoolean("Active");
 @@ -136,6 +_,11 @@
                  this.heroesOfTheVillage.add(NbtUtils.loadUUID(tag));
              }
