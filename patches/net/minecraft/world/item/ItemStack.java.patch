@@ -507,6 +507,23 @@
      @Deprecated
      public static boolean listMatches(List<ItemStack> p_331725_, List<ItemStack> p_331113_) {
          if (p_331725_.size() != p_331113_.size()) {
+@@ -581,10 +_,15 @@
+     }
+ 
+     public static boolean isSameItem(ItemStack p_287761_, ItemStack p_287676_) {
+-        return p_287761_.is(p_287676_.getItem());
++        return p_287761_ == p_287676_ || p_287761_.is(p_287676_.getItem()); // Stellar - Optimize identical item checks
+     }
+ 
+     public static boolean isSameItemSameComponents(ItemStack p_150943_, ItemStack p_150944_) {
++        // Stellar start - Optimize identical item checks
++        if (p_150943_ == p_150944_) {
++            return true;
++        }
++        // Stellar end - Optimize identical item checks
+         if (!p_150943_.is(p_150944_.getItem())) {
+             return false;
+         } else {
 @@ -606,6 +_,7 @@
          }
      }
