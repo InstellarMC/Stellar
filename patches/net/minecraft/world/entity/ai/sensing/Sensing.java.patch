@@ -1,0 +1,13 @@
+--- a/net/minecraft/world/entity/ai/sensing/Sensing.java
++++ b/net/minecraft/world/entity/ai/sensing/Sensing.java
+@@ -7,8 +_,8 @@
+ 
+ public class Sensing {
+     private final Mob mob;
+-    private final IntSet seen = new IntOpenHashSet();
+-    private final IntSet unseen = new IntOpenHashSet();
++    private final IntSet seen = new IntOpenHashSet(2); // Stellar(Gale) - Initialize line of sight cache with low capacity
++    private final IntSet unseen = new IntOpenHashSet(2); // Stellar(Gale) - Initialize line of sight cache with low capacity
+ 
+     public Sensing(Mob p_26788_) {
+         this.mob = p_26788_;
