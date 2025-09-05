@@ -8,7 +8,15 @@
  
      public Advancement(
          Optional<ResourceLocation> p_300893_,
-@@ -68,7 +_,7 @@
+@@ -61,14 +_,14 @@
+         AdvancementRequirements p_301002_,
+         boolean p_286478_
+     ) {
+-        this(p_300893_, p_301147_, p_286389_, Map.copyOf(p_286635_), p_301002_, p_286478_, p_301147_.map(Advancement::decorateName));
++        this(p_300893_, p_301147_, p_286389_, p_286635_, p_301002_, p_286478_, p_301147_.map(Advancement::decorateName)); // Stellar - Skip cloning advancement criteria
+     }
+ 
+     private static DataResult<Advancement> validate(Advancement p_312433_) {
          return p_312433_.requirements().validate(p_312433_.criteria().keySet()).map(p_311382_ -> p_312433_);
      }
  
