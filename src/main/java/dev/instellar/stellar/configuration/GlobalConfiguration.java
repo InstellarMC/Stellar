@@ -44,6 +44,7 @@ public final class GlobalConfiguration extends ConfigurationPart {
     public class Performance extends ConfigurationPart {
 
         public boolean asyncPlayerJoin = false;
+        public int updateEntityLineOfSight = 4;
     }
 
     public Compatibility compatibility;

@@ -1,13 +1,87 @@
 --- a/net/minecraft/world/entity/ai/sensing/Sensing.java
 +++ b/net/minecraft/world/entity/ai/sensing/Sensing.java
-@@ -7,8 +_,8 @@
+@@ -1,41 +_,75 @@
+ package net.minecraft.world.entity.ai.sensing;
+ 
+-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+-import it.unimi.dsi.fastutil.ints.IntSet;
++import dev.instellar.stellar.configuration.GlobalConfiguration;
++import it.unimi.dsi.fastutil.ints.*;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.Mob;
++import org.jspecify.annotations.NonNull;
++import org.jspecify.annotations.Nullable;
  
  public class Sensing {
      private final Mob mob;
 -    private final IntSet seen = new IntOpenHashSet();
 -    private final IntSet unseen = new IntOpenHashSet();
-+    private final IntSet seen = new IntOpenHashSet(2); // Stellar(Gale) - Initialize line of sight cache with low capacity
-+    private final IntSet unseen = new IntOpenHashSet(2); // Stellar(Gale) - Initialize line of sight cache with low capacity
++    // private final IntSet seen = new IntOpenHashSet(2); // Stellar(Gale) - Initialize line of sight cache with low capacity
++    private final Int2IntMap seen = new Int2IntOpenHashMap(2); // Stellar(Gale) - Initialize line of sight cache with low capacity
++    // Stellar start - Petal: reduce line of sight updates - expiring entity id lists
++    private final @NonNull IntList @Nullable[] expiring;
++    private int currentCacheAddIndex = 0;
++    private int nextToExpireIndex = 1;
++    // Stellar end - Petal: reduce line of sight updates - expiring entity id lists
  
      public Sensing(Mob p_26788_) {
          this.mob = p_26788_;
++        // Stellar start - Petal: reduce line of sight updates - expiring entity id lists
++        int updateLOSInterval = GlobalConfiguration.get().performance.updateEntityLineOfSight;
++        if (updateLOSInterval <= 1) {
++            this.expiring = null;
++        } else {
++            this.expiring = new IntList[updateLOSInterval - 1];
++            for (int i = 0; i < this.expiring.length; i++) {
++                this.expiring[i] = new IntArrayList(2); // Stellar(Gale) - Initialize each list with low capacity
++            }
++        }
++        // Stellar end - Petal: reduce line of sight updates - expiring entity id lists
+     }
+ 
+     public void tick() {
++        // Stellar start - Petal: reduce line of sight updates
++        if (this.expiring == null) {
+         this.seen.clear();
+-        this.unseen.clear();
++        } else {
++            var expiringNow = this.expiring[this.nextToExpireIndex];
++            expiringNow.forEach(this.seen::remove);
++            expiringNow.clear();
++            this.currentCacheAddIndex = ++this.currentCacheAddIndex % this.expiring.length;
++            this.nextToExpireIndex = ++this.nextToExpireIndex % this.expiring.length;
++        }
++        // Stellar end - Petal: reduce line of sight updates
+     }
+ 
+     public boolean hasLineOfSight(Entity p_148307_) {
+         int i = p_148307_.getId();
+-        if (this.seen.contains(i)) {
++        // Stellar start - Petal: reduce line of sight cache lookups - merge sets
++        int cached = this.seen.get(i);
++        if (cached == 1) {
+             return true;
+-        } else if (this.unseen.contains(i)) {
++        } else if (cached == 2) {
+             return false;
+         } else {
+             this.mob.level().getProfiler().push("hasLineOfSight");
+             boolean flag = this.mob.hasLineOfSight(p_148307_);
+             this.mob.level().getProfiler().pop();
+             if (flag) {
+-                this.seen.add(i);
++                this.seen.put(i, 1);
+             } else {
+-                this.unseen.add(i);
++                this.seen.put(i, 2);
++            }
++
++            if (this.expiring != null) {
++                this.expiring[this.currentCacheAddIndex].add(i);
+             }
+ 
+             return flag;
+         }
++        // Stellar end - Petal: reduce line of sight cache lookups - merge sets
+     }
+ }
