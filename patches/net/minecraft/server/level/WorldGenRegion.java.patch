@@ -37,7 +37,7 @@
      public WorldGenRegion(ServerLevel p_143484_, StaticCache2D<GenerationChunkHolder> p_347548_, ChunkStep p_347626_, ChunkAccess p_347663_) {
          this.generatingStep = p_347626_;
          this.cache = p_347548_;
-@@ -149,6 +_,20 @@
+@@ -149,9 +_,23 @@
          return i < this.generatingStep.directDependencies().size();
      }
  
@@ -57,7 +57,11 @@
 +
      @Override
      public BlockState getBlockState(BlockPos p_9587_) {
-         return this.getChunk(SectionPos.blockToSectionCoord(p_9587_.getX()), SectionPos.blockToSectionCoord(p_9587_.getZ())).getBlockState(p_9587_);
+-        return this.getChunk(SectionPos.blockToSectionCoord(p_9587_.getX()), SectionPos.blockToSectionCoord(p_9587_.getZ())).getBlockState(p_9587_);
++        return this.getChunk(p_9587_.getX() >> 4, p_9587_.getZ() >> 4).getBlockState(p_9587_);
+     }
+ 
+     @Override
 @@ -196,7 +_,7 @@
          if (blockstate.isAir()) {
              return false;
