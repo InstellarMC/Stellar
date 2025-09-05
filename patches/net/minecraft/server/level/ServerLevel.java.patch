@@ -1534,7 +1534,7 @@
          p_8713_.clearAllBlockEntities();
          p_8713_.unregisterTickContainerFromLevel(this);
      }
-@@ -933,13 +_,53 @@
+@@ -933,15 +_,57 @@
          p_143262_.remove(p_143263_);
      }
  
@@ -1573,6 +1573,8 @@
 +        }
 +        // Paper end - Add BlockBreakProgressUpdateEvent
 +
++        ClientboundBlockDestructionPacket packet = new ClientboundBlockDestructionPacket(p_8612_, p_8613_, p_8614_); // Stellar - Reduce block destruction packet allocations
++
          for (ServerPlayer serverplayer : this.server.getPlayerList().getPlayers()) {
              if (serverplayer != null && serverplayer.level() == this && serverplayer.getId() != p_8612_) {
                  double d0 = (double)p_8613_.getX() - serverplayer.getX();
@@ -1586,8 +1588,11 @@
 +                // CraftBukkit end
 +
                  if (d0 * d0 + d1 * d1 + d2 * d2 < 1024.0) {
-                     serverplayer.connection.send(new ClientboundBlockDestructionPacket(p_8612_, p_8613_, p_8614_));
+-                    serverplayer.connection.send(new ClientboundBlockDestructionPacket(p_8612_, p_8613_, p_8614_));
++                    serverplayer.connection.send(packet); // Stellar - Reduce block destruction packet allocations
                  }
+             }
+         }
 @@ -959,6 +_,14 @@
          float p_263390_,
          long p_263403_
