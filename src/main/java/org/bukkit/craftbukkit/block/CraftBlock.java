@@ -331,7 +331,7 @@ public class CraftBlock implements Block {
 
     @Override
     public BlockState getState() {
-        return CraftBlockStates.getBlockState(this);
+        return CraftBlockStates.getBlockState(this, false); // Stellar - Don't use snapshot by default
     }
 
     // Paper start
