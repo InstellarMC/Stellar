@@ -1,5 +1,38 @@
 --- a/net/minecraft/world/entity/ai/Brain.java
 +++ b/net/minecraft/world/entity/ai/Brain.java
+@@ -15,7 +_,8 @@
+ import com.mojang.serialization.MapCodec;
+ import com.mojang.serialization.MapLike;
+ import com.mojang.serialization.RecordBuilder;
+-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
++import it.unimi.dsi.fastutil.objects.*;
++
+ import java.util.Collection;
+ import java.util.List;
+ import java.util.Map;
+@@ -25,6 +_,7 @@
+ import java.util.function.Supplier;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
++
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.server.level.ServerLevel;
+@@ -46,11 +_,11 @@
+     static final Logger LOGGER = LogUtils.getLogger();
+     private final Supplier<Codec<Brain<E>>> codec;
+     private static final int SCHEDULE_UPDATE_DELAY = 20;
+-    private final Map<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>> memories = Maps.newHashMap();
+-    private final Map<SensorType<? extends Sensor<? super E>>, Sensor<? super E>> sensors = Maps.newLinkedHashMap();
++    private final Reference2ObjectMap<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>> memories = new Reference2ObjectOpenHashMap<>(); // Stellar - lithium: Use fastutil
++    private final Map<SensorType<? extends Sensor<? super E>>, Sensor<? super E>> sensors = new Reference2ReferenceLinkedOpenHashMap<>(); // Stellar - lithium: Use fastutil
+     private final Map<Integer, Map<Activity, Set<BehaviorControl<? super E>>>> availableBehaviorsByPriority = Maps.newTreeMap();
+     private Schedule schedule = Schedule.EMPTY;
+-    private final Map<Activity, Set<Pair<MemoryModuleType<?>, MemoryStatus>>> activityRequirements = Maps.newHashMap();
++    private final Map<Activity, Set<Pair<MemoryModuleType<?>, MemoryStatus>>> activityRequirements = new Object2ObjectOpenHashMap<>(); // Stellar - lithium: Use fastutil
+     private final Map<Activity, Set<MemoryModuleType<?>>> activityMemoriesToEraseWhenStopped = Maps.newHashMap();
+     private Set<Activity> coreActivities = Sets.newHashSet();
+     private final Set<Activity> activeActivities = Sets.newHashSet();
 @@ -195,7 +_,7 @@
      public <U> Optional<U> getMemory(MemoryModuleType<U> p_21953_) {
          Optional<? extends ExpirableValue<?>> optional = this.memories.get(p_21953_);
@@ -9,3 +42,12 @@
          } else {
              return (Optional<U>)optional.map(ExpirableValue::getValue);
          }
+@@ -413,7 +_,7 @@
+     }
+ 
+     private void forgetOutdatedMemories() {
+-        for (Entry<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>> entry : this.memories.entrySet()) {
++        for (Entry<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>> entry : this.memories.reference2ObjectEntrySet()) { // Stellar - lithium: Use fastutil
+             if (entry.getValue().isPresent()) {
+                 ExpirableValue<?> expirablevalue = (ExpirableValue<?>)entry.getValue().get();
+                 if (expirablevalue.hasExpired()) {
