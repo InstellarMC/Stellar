@@ -53,7 +53,7 @@
  import net.minecraft.world.item.ElytraItem;
  import net.minecraft.world.item.Equipable;
  import net.minecraft.world.item.Item;
-@@ -126,11 +_,25 @@
+@@ -126,11 +_,27 @@
  import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
  import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
  import net.minecraft.world.phys.AABB;
@@ -62,7 +62,9 @@
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.PlayerTeam;
  import net.minecraft.world.scores.Scoreboard;
++import net.neoforged.neoforge.common.CommonHooks;
 +import net.neoforged.neoforge.event.EventHooks;
++import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.CraftEquipmentSlot;
 +import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
@@ -71,7 +73,7 @@
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.event.entity.ArrowBodyCountChangeEvent;
-+import org.bukkit.event.entity.EntityPotionEffectEvent;
++import org.bukkit.event.entity.EntityDamageEvent;import org.bukkit.event.entity.EntityPotionEffectEvent;
 +import org.bukkit.event.entity.EntityRegainHealthEvent;
 +import org.bukkit.event.player.PlayerItemConsumeEvent;
  import org.slf4j.Logger;
@@ -724,7 +726,7 @@
          this.entityData.set(DATA_HEALTH_ID, Mth.clamp(p_21154_, 0.0F, this.getMaxHealth()));
      }
  
-@@ -1080,76 +_,138 @@
+@@ -1080,76 +_,121 @@
      }
  
      @Override
@@ -742,57 +744,52 @@
 +        } else if (source.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
              return false;
          } else {
-+            this.damageContainers.push(new net.neoforged.neoforge.common.damagesource.DamageContainer(source, amount)); // Neo
-+            if (net.neoforged.neoforge.common.CommonHooks.onEntityIncomingDamage(this, this.damageContainers.peek())) return false; // Neo
              if (this.isSleeping() && !this.level().isClientSide) {
                  this.stopSleeping();
              }
  
 +            // Purpur start
-+            if (source.getEntity() instanceof net.minecraft.world.entity.player.Player player && source.getEntity().level().purpurConfig.creativeOnePunch && !source.is(DamageTypeTags.IS_PROJECTILE)) {
-+                if (player.isCreative()) {
-+                    org.apache.commons.lang3.mutable.MutableDouble attackDamage = new org.apache.commons.lang3.mutable.MutableDouble();
-+                    player.getMainHandItem().forEachModifier(EquipmentSlot.MAINHAND, (attributeHolder, attributeModifier) -> {
-+                        if (attributeModifier.operation() == AttributeModifier.Operation.ADD_VALUE) {
-+                            attackDamage.addAndGet(attributeModifier.amount());
-+                        }
-+                    });
-+
-+                    if (attackDamage.doubleValue() == 0.0D) {
-+                        // One punch!
-+                        // amount = 9999F; // Stellar
-+                        this.damageContainers.peek().setNewDamage(Integer.MAX_VALUE); // Neo // Stellar - respect neo
++            if (source.getEntity() != null && source.getEntity().level().purpurConfig.creativeOnePunch
++                && source.getEntity() instanceof net.minecraft.world.entity.player.Player player && player.isCreative() && !source.is(DamageTypeTags.IS_PROJECTILE)) {
++                org.apache.commons.lang3.mutable.MutableDouble attackDamage = new org.apache.commons.lang3.mutable.MutableDouble();
++                player.getMainHandItem().forEachModifier(EquipmentSlot.MAINHAND, (attributeHolder, attributeModifier) -> {
++                    if (attributeModifier.operation() == AttributeModifier.Operation.ADD_VALUE) {
++                        attackDamage.add(attributeModifier.amount());
 +                    }
++                });
++
++                if (attackDamage.doubleValue() == 0.0D) {
++                    // One punch!
++                    amount = 9999F;
 +                }
 +            }
 +            // Purpur end
 +
              this.noActionTime = 0;
 -            float f = p_21017_;
-+            amount = this.damageContainers.peek().getNewDamage(); // Neo: enforce damage container as source of truth for damage amount
+-            boolean flag = false;
 +            float f = amount;
-             boolean flag = false;
++            boolean flag = amount > 0.0F && this.isDamageSourceBlocked(source); // CraftBukkit - Copied from below // Stellar - respect neo
              float f1 = 0.0F;
 -            if (p_21017_ > 0.0F && this.isDamageSourceBlocked(p_21016_)) {
 -                this.hurtCurrentlyUsedShield(p_21017_);
 -                f1 = p_21017_;
 -                p_21017_ = 0.0F;
 -                if (!p_21016_.is(DamageTypeTags.IS_PROJECTILE) && p_21016_.getDirectEntity() instanceof LivingEntity livingentity) {
-+            net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent ev;
-+            if (Integer.MAX_VALUE > amount && amount > 0.0F && (ev = net.neoforged.neoforge.common.CommonHooks.onDamageBlock(this, this.damageContainers.peek(), this.isDamageSourceBlocked(source))).getBlocked()) { // Neo // Stellar - respect Purpur's one-punch
-+                this.damageContainers.peek().setBlockedDamage(ev); // Neo
-+                if(ev.shieldDamage() > 0) {
-+                    this.hurtCurrentlyUsedShield(ev.shieldDamage());
-+                }
-+                f1 = ev.getBlockedDamage();
-+                amount = ev.getDamageContainer().getNewDamage();
++
++            //<editor-fold desc="CraftBukkit: Disabled vanilla shield code">
++            if (false) { // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) for get f and actuallyHurt(DamageSource, float, EntityDamageEvent) for handle damage
++            if (amount > 0.0F && this.isDamageSourceBlocked(source)) {
++                this.hurtCurrentlyUsedShield(amount);
++                f1 = amount;
++                amount = 0.0F;
 +                if (!source.is(DamageTypeTags.IS_PROJECTILE) && source.getDirectEntity() instanceof LivingEntity livingentity) {
                      this.blockUsingShield(livingentity);
                  }
  
--                flag = true;
--            }
--
+                 flag = true;
+             }
+ 
 -            if (p_21016_.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
 -                p_21017_ *= 5.0F;
 -            }
@@ -801,24 +798,19 @@
 -                this.hurtHelmet(p_21016_, p_21017_);
 -                p_21017_ *= 0.75F;
 -            }
-+                flag = amount <= 0;
-+            }
-+
-+            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) for get f
-+            if (false && source.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
++            if (source.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
 +                amount *= 5.0F;
 +            }
 +
-+            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) for get f
-+            if (false && source.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
++            if (source.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
 +                this.hurtHelmet(source, amount);
 +                amount *= 0.75F;
 +            }
-+
-+            this.damageContainers.peek().setNewDamage(amount); // Neo: update container with vanilla changes
++            }
++            //</editor-fold>
 +
 +            // CraftBukkit start
-+            org.bukkit.event.entity.EntityDamageEvent event; // Paper - move this into the actual invuln check....
++            EntityDamageEvent event; // Paper - move this into the actual invuln check....
 +            // CraftBukkit end
  
              this.walkAnimation.setSpeed(1.5F);
@@ -832,43 +824,35 @@
 -                this.lastHurt = p_21017_;
 +            if ((float) this.invulnerableTime > (float) this.invulnerableDuration / 2.0F && !source.is(DamageTypeTags.BYPASSES_COOLDOWN)) { // CraftBukkit - restore use of maxNoDamageTicks
 +                if (amount <= this.lastHurt) {
-+                    this.damageContainers.pop(); // Neo
 +                    return false;
 +                }
 +
-+                amount = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek()); // Neo // Stellar
 +                // Paper start - only call damage event when actuallyHurt will be called - move call logic down
 +                event = this.handleEntityDamage(source, amount);
 +                amount = computeAmountFromEntityDamageEvent(event);
 +                // Paper end - only call damage event when actuallyHurt will be called - move call logic down
-+                // this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.INVULNERABILITY, amount); // Neo // Stellar - this.lastHurt -> amount
-+                // amount = this.damageContainers.peek().getNewDamage(); // Neo // Stellar - update local with container value
 +
 +                // CraftBukkit start
-+                if (!this.actuallyHurt(source, amount - this.lastHurt, event)) {
++                if (!this.actuallyHurt(source, (float) event.getFinalDamage() - this.lastHurt, event)) {
 +                    return false;
 +                }
++                if (this instanceof ServerPlayer && event.getDamage() == 0 && f == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event.
 +                // CraftBukkit end
-+                if (this instanceof ServerPlayer && (event.getDamage() == 0 || amount == 0) && this.damageContainers.peek().getOriginalDamage() == 0) return false; // Neo // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event. // Stellar
 +                this.lastHurt = amount;
                  flag1 = false;
              } else {
 -                this.lastHurt = p_21017_;
 -                this.invulnerableTime = 20;
 -                this.actuallyHurt(p_21016_, p_21017_);
-+                amount = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek()); // Neo // Stellar
 +                // Paper start - only call damage event when actuallyHurt will be called - move call logic down
 +                event = this.handleEntityDamage(source, amount);
 +                amount = computeAmountFromEntityDamageEvent(event);
 +                // Paper end - only call damage event when actuallyHurt will be called - move call logic down
-+                // this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.INVULNERABILITY, amount); // Neo // Stellar - this.lastHurt -> amount
-+                // amount = this.damageContainers.peek().getNewDamage(); // Neo // Stellar - update local with container value
-+
 +                // CraftBukkit start
 +                if (!this.actuallyHurt(source, (float) event.getFinalDamage(), event)) {
 +                    return false;
 +                }
-+                if (this instanceof ServerPlayer && (event.getDamage() == 0 || amount == 0) && this.damageContainers.peek().getOriginalDamage() == 0) return false; // Neo // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event. // Stellar
++                if (this instanceof ServerPlayer && event.getDamage() == 0 && f == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event. // Stellar
 +                this.lastHurt = amount;
 +                this.invulnerableTime = this.invulnerableDuration; // CraftBukkit - restore use of maxNoDamageTicks
 +                // CraftBukkit end
@@ -877,7 +861,6 @@
              }
  
 -            Entity entity = p_21016_.getEntity();
-+            amount = this.damageContainers.peek().getNewDamage(); // Neo: update local with container value
 +            Entity entity = source.getEntity();
              if (entity != null) {
                  if (entity instanceof LivingEntity livingentity1
@@ -946,7 +929,7 @@
                      if (!flag) {
                          this.indicateDamage(d0, d1);
                      }
-@@ -1188,48 +_,62 @@
+@@ -1188,48 +_,61 @@
              }
  
              if (this.isDeadOrDying()) {
@@ -994,7 +977,6 @@
 +                CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer)entity, this, source, f, amount, flag);
              }
  
-+            this.damageContainers.pop(); // Neo
              return flag2;
          }
      }
@@ -1630,7 +1612,7 @@
 +            }
 +            // CraftBukkit end
 +
-+            net.neoforged.neoforge.common.CommonHooks.onLivingDamagePost(this, this.damageContainers.peek()); // Neo
++            // net.neoforged.neoforge.common.CommonHooks.onLivingDamagePost(this, this.damageContainers.peek()); // Neo
 +            // CraftBukkit start
 +            if (amount > 0 || !human) {
 +                if (human) {

@@ -701,7 +701,7 @@
  
          this.getScoreboard().forAllObjectives(ObjectiveCriteria.DEATH_COUNT, this, ScoreAccess::increment);
          LivingEntity livingentity = this.getKillCredit();
-@@ -755,15 +_,15 @@
+@@ -755,15 +_,25 @@
      }
  
      @Override
@@ -713,6 +713,16 @@
          } else {
 -            boolean flag = this.server.isDedicatedServer() && this.isPvpAllowed() && p_9037_.is(DamageTypeTags.IS_FALL);
 -            if (!flag && this.spawnInvulnerableTime > 0 && !p_9037_.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
++            // Purpur start
++            if (source.is(DamageTypeTags.IS_FALL)) { // Purpur
++                if (getRootVehicle() instanceof net.minecraft.world.entity.vehicle.AbstractMinecart && level().purpurConfig.minecartControllable && !level().purpurConfig.minecartControllableFallDamage) {
++                    return false;
++                }
++                if (getRootVehicle() instanceof net.minecraft.world.entity.vehicle.Boat && !level().purpurConfig.boatsDoFallDamage) {
++                    return false;
++                }
++            }
++            // Purpur end
 +            boolean flag = this.server.isDedicatedServer() && this.isPvpAllowed() && source.is(DamageTypeTags.IS_FALL);
 +            if (!flag && this.spawnInvulnerableTime > 0 && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
                  return false;
@@ -740,25 +750,18 @@
              }
          }
      }
-@@ -783,30 +_,68 @@
+@@ -783,30 +_,62 @@
      }
  
      private boolean isPvpAllowed() {
 -        return this.server.isPvpAllowed();
--    }
--
 +        // CraftBukkit - this.server.isPvpAllowed() -> this.world.pvpMode
 +        return this.level().pvpMode;
-+    }
-+
-+    public PlayerRespawnEvent.RespawnReason reason = null;
-+    public DimensionTransition findRespawnPositionAndUseSpawnBlock(boolean p_348590_, DimensionTransition.PostDimensionTransition p_352261_, PlayerRespawnEvent.RespawnReason reason) {
-+        this.reason = reason;
-+        return this.findRespawnPositionAndUseSpawnBlock(p_348590_, p_352261_);
-+    }
-+
+     }
+ 
+-    public DimensionTransition findRespawnPositionAndUseSpawnBlock(boolean p_348590_, DimensionTransition.PostDimensionTransition p_352261_) {
 +    // CraftBukkit start
-     public DimensionTransition findRespawnPositionAndUseSpawnBlock(boolean p_348590_, DimensionTransition.PostDimensionTransition p_352261_) {
++    public DimensionTransition findRespawnPositionAndUseSpawnBlock(boolean p_348590_, DimensionTransition.PostDimensionTransition p_352261_, PlayerRespawnEvent.RespawnReason reason) {
 +        DimensionTransition dimensionTransition;
 +        boolean isBedSpawn = false;
 +        boolean isAnchorSpawn = false;
@@ -830,7 +833,7 @@
          } else if (block instanceof BedBlock && BedBlock.canSetSpawn(p_348505_)) {
              return BedBlock.findStandUpPosition(EntityType.PLAYER, p_348505_, p_348607_, blockstate.getValue(BedBlock.FACING), p_348481_)
 -                .map(p_348148_ -> ServerPlayer.RespawnPosAngle.of(p_348148_, p_348607_));
-+                .map(p_348148_ -> RespawnPosAngle.of(p_348148_, p_348607_, true, false));
++                .map(p_348148_ -> RespawnPosAngle.of(p_348148_, p_348607_, true, false)); // CraftBukkit
          } else if (!p_348513_) {
 -            return Optional.empty();
 +            return blockstate.getRespawnPosition(EntityType.PLAYER, p_348505_, p_348607_, p_348481_);

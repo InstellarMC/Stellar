@@ -2310,7 +2310,7 @@
      }
  
      public int countPlayerPassengers() {
-@@ -3110,70 +_,157 @@
+@@ -3110,70 +_,158 @@
          return Mth.lerp(p_352259_, this.yRotO, this.yRot);
      }
  
@@ -2321,7 +2321,7 @@
 +            return false;
 +        }
 +        // Neo start
-+        if(p_204032_ == FluidTags.WATER) return this.isInFluidType(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
++        if (p_204032_ == FluidTags.WATER) return this.isInFluidType(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
 +        else if (p_204032_ == FluidTags.LAVA) return this.isInFluidType(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value());
 +        else return false;
 +    }
@@ -2356,9 +2356,10 @@
 +            int maxBlockZ = Mth.ceil(aabb.maxZ);
 +            // Pufferfish end
              double d0 = 0.0;
-             boolean flag = this.isPushedByFluid();
-             boolean flag1 = false;
+-            boolean flag = this.isPushedByFluid();
+-            boolean flag1 = false;
 -            Vec3 vec3 = Vec3.ZERO;
++            // boolean flag = this.isPushedByFluid(); // Stellar - respect neo; moved down
 +            Vec3 vec3d = Vec3.ZERO;
              int k1 = 0;
              BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
@@ -2371,9 +2372,15 @@
 -                        if (fluidstate.is(p_204032_)) {
 -                            double d1 = (double)((float)i2 + fluidstate.getHeight(this.level(), blockpos$mutableblockpos));
 -                            if (d1 >= aabb.minY) {
+-                                flag1 = true;
+-                                d0 = Math.max(d1 - aabb.minY, d0);
+-                                if (flag) {
+-                                    Vec3 vec31 = fluidstate.getFlow(this.level(), blockpos$mutableblockpos);
+-                                    if (d0 < 0.4) {
+-                                        vec31 = vec31.scale(d0);
 +            // Pufferfish start - based off CollisionUtil.getCollisionsForBlocksOrWorldBorder
-+            final int minSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(this.level());
-+            final int maxSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMaxSection(this.level());
++            final int minSection = this.level().getMinBuildHeight() >> 4; // Stellar - inline
++            final int maxSection = (this.level().getMaxBuildHeight() - 1) >> 4; // Stellar - inline
 +            final int minBlock = minSection << 4;
 +            final int maxBlock = (maxSection << 4) | 15;
 +
@@ -2429,18 +2436,14 @@
 +                            double d2 = (double) ((float) currY + fluid.getHeight(this.level(), blockpos$mutableblockpos));
 +
 +                            if (d2 >= aabb.minY) {
-                                 flag1 = true;
--                                d0 = Math.max(d1 - aabb.minY, d0);
-+                                d0 = Math.max(d2 - aabb.minY, d0);
 +                                if (interimCalcs == null) interimCalcs = new it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap<>(); // Neo
-                                 if (flag) {
--                                    Vec3 vec31 = fluidstate.getFlow(this.level(), blockpos$mutableblockpos);
--                                    if (d0 < 0.4) {
--                                        vec31 = vec31.scale(d0);
++                                InterimCalculation interim = interimCalcs.computeIfAbsent(fluidType, t -> new InterimCalculation());
++                                interim.fluidHeight = Math.max(d2 - aabb.minY, interim.fluidHeight);
++                                if (this.isPushedByFluid(fluidType)) { // Stellar - respect neo
 +                                    Vec3 vec3d1 = fluid.getFlow(this.level(), blockpos$mutableblockpos);
 +
-+                                    if (d0 < 0.4D) {
-+                                        vec3d1 = vec3d1.scale(d0);
++                                    if (interim.fluidHeight < 0.4D) {
++                                        vec3d1 = vec3d1.scale(interim.fluidHeight);
                                      }
  
 -                                    vec3 = vec3.add(vec31);
@@ -2466,7 +2469,7 @@
 -            if (vec3.length() > 0.0) {
 -                if (k1 > 0) {
 -                    vec3 = vec3.scale(1.0 / (double)k1);
-+            if(interimCalcs != null) {
++            if (interimCalcs != null) {
 +            interimCalcs.forEach((fluidType, interim) -> {
 +            if (interim.flowVector.length() > 0.0D) {
 +                if (interim.blockCount > 0) {
@@ -2496,8 +2499,10 @@
 -            return flag1;
 +            this.setFluidTypeHeight(fluidType, interim.fluidHeight);
 +            });
++            interimCalcs = null; // Stellar - free map
++            return true; // Stellar
 +            }
-+            return flag;
++            return false; // Stellar
          }
      }
  

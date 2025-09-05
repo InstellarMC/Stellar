@@ -458,7 +458,7 @@
      @Override
      public void readAdditionalSaveData(CompoundTag p_36215_) {
          super.readAdditionalSaveData(p_36215_);
-@@ -858,35 +_,45 @@
+@@ -858,35 +_,41 @@
      }
  
      @Override
@@ -478,18 +478,15 @@
 -                if (!this.level().isClientSide) {
 -                    this.removeEntitiesOnShoulder();
 -                }
--
--                if (p_36154_.scalesWithDifficulty()) {
 +                // if (!this.level().isClientSide) { // Stellar
 +                    // this.removeEntitiesOnShoulder(); // CraftBukkit - moved down
 +                // } // Stellar
-+
-+                amount = Math.max(0.0F, source.type().scaling().getScalingFunction().scaleDamage(source, this, amount, this.level().getDifficulty()));
-+
-+                if (false && source.scalesWithDifficulty()) {
+ 
+-                if (p_36154_.scalesWithDifficulty()) {
++                if (source.scalesWithDifficulty()) {
                      if (this.level().getDifficulty() == Difficulty.PEACEFUL) {
 -                        p_36155_ = 0.0F;
-+                        amount = 0.0F;
++                        return false; // CraftBukkit - f = 0.0f -> return false
                      }
  
                      if (this.level().getDifficulty() == Difficulty.EASY) {
@@ -504,15 +501,13 @@
                  }
  
 -                return p_36155_ == 0.0F ? false : super.hurt(p_36154_, p_36155_);
-+                // CraftBukkit start - Don't filter out 0 damage // Stellar start - respect neo
-+                if (amount != 0.0F && super.hurt(source, amount)) {
-+                    if (!this.level().isClientSide) {
-+                        this.removeEntitiesOnShoulder();
-+                    }
-+                    return true;
++                // CraftBukkit start - Don't filter out 0 damage
++                boolean damaged = super.hurt(source, amount);
++                if (damaged) {
++                    this.removeEntitiesOnShoulder();
 +                }
-+                return false;
-+                // CraftBukkit end // Stellar end - respect neo
++                return damaged;
++                // CraftBukkit end
              }
          }
      }
