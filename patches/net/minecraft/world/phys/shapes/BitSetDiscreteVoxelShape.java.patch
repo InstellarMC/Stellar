@@ -21,6 +21,33 @@
  
      public BitSetDiscreteVoxelShape(int p_82588_, int p_82589_, int p_82590_) {
          super(p_82588_, p_82589_, p_82590_);
+@@ -101,12 +_,24 @@
+ 
+     @Override
+     public int firstFull(Direction.Axis p_82674_) {
+-        return p_82674_.choose(this.xMin, this.yMin, this.zMin);
++        // Stellar start - Simplify and inline
++        return switch (p_82674_) {
++            case X -> this.xMin;
++            case Y -> this.yMin;
++            case Z -> this.zMin;
++        };
++        // Stellar end - Simplify and inline
+     }
+ 
+     @Override
+     public int lastFull(Direction.Axis p_82680_) {
+-        return p_82680_.choose(this.xMax, this.yMax, this.zMax);
++        // Stellar start - Simplify and inline
++        return switch (p_82680_) {
++            case X -> this.xMax;
++            case Y -> this.yMax;
++            case Z -> this.zMax;
++        };
++        // Stellar end - Simplify and inline
+     }
+ 
+     static BitSetDiscreteVoxelShape join(
 @@ -152,47 +_,109 @@
          return bitsetdiscretevoxelshape;
      }

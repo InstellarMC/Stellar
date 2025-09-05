@@ -178,6 +178,62 @@
              return this;
          }
  
+@@ -568,7 +_,20 @@
+         }
+ 
+         public BlockPos.MutableBlockPos setWithOffset(Vec3i p_122160_, Direction p_122161_) {
+-            return this.set(p_122160_.getX() + p_122161_.getStepX(), p_122160_.getY() + p_122161_.getStepY(), p_122160_.getZ() + p_122161_.getStepZ());
++            // Stellar start - Simplify and inline
++            int x = p_122160_.getX();
++            int y = p_122160_.getY();
++            int z = p_122160_.getZ();
++            switch (p_122161_) {
++                case WEST -> --x;
++                case EAST -> ++x;
++                case DOWN -> --y;
++                case UP -> ++y;
++                case NORTH -> --z;
++                case SOUTH -> ++z;
++            }
++            return this.set(x, y, z);
++            // Stellar end - Simplify and inline
+         }
+ 
+         public BlockPos.MutableBlockPos setWithOffset(Vec3i p_122155_, int p_122156_, int p_122157_, int p_122158_) {
+@@ -580,13 +_,29 @@
+         }
+ 
+         public BlockPos.MutableBlockPos move(Direction p_122174_) {
+-            return this.move(p_122174_, 1);
++            // Stellar start - Simplify and inline
++            return switch (p_122174_) {
++                case UP -> this.setY(this.getY() + 1);
++                case DOWN -> this.setY(this.getY() - 1);
++                case NORTH -> this.setZ(this.getZ() - 1);
++                case SOUTH -> this.setZ(this.getZ() + 1);
++                case EAST -> this.setX(this.getX() + 1);
++                case WEST -> this.setX(this.getX() - 1);
++            };
++            // Stellar end - Simplify and inline
+         }
+ 
+         public BlockPos.MutableBlockPos move(Direction p_122176_, int p_122177_) {
+-            return this.set(
+-                this.getX() + p_122176_.getStepX() * p_122177_, this.getY() + p_122176_.getStepY() * p_122177_, this.getZ() + p_122176_.getStepZ() * p_122177_
+-            );
++            // Stellar start - Simplify and inline
++            return switch (p_122176_) {
++                case UP -> this.setY(this.getY() + p_122177_);
++                case DOWN -> this.setY(this.getY() - p_122177_);
++                case NORTH -> this.setZ(this.getZ() - p_122177_);
++                case SOUTH -> this.setZ(this.getZ() + p_122177_);
++                case EAST -> this.setX(this.getX() + p_122177_);
++                case WEST -> this.setX(this.getX() - p_122177_);
++            };
++            // Stellar end - Simplify and inline
+         }
+ 
+         public BlockPos.MutableBlockPos move(int p_122185_, int p_122186_, int p_122187_) {
 @@ -611,17 +_,17 @@
          }
  

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/phys/shapes/SliceShape.java
 +++ b/net/minecraft/world/phys/shapes/SliceShape.java
-@@ -12,6 +_,7 @@
+@@ -12,18 +_,17 @@
          super(makeSlice(p_83173_.shape, p_83174_, p_83175_));
          this.delegate = p_83173_;
          this.axis = p_83174_;
@@ -8,3 +8,22 @@
      }
  
      private static DiscreteVoxelShape makeSlice(DiscreteVoxelShape p_83177_, Direction.Axis p_83178_, int p_83179_) {
+-        return new SubShape(
+-            p_83177_,
+-            p_83178_.choose(p_83179_, 0, 0),
+-            p_83178_.choose(0, p_83179_, 0),
+-            p_83178_.choose(0, 0, p_83179_),
+-            p_83178_.choose(p_83179_ + 1, p_83177_.xSize, p_83177_.xSize),
+-            p_83178_.choose(p_83177_.ySize, p_83179_ + 1, p_83177_.ySize),
+-            p_83178_.choose(p_83177_.zSize, p_83177_.zSize, p_83179_ + 1)
+-        );
++        // Stellar start - Simplify and inline
++        return switch (p_83178_) {
++            case X -> new SubShape(p_83177_, p_83179_, 0, 0, p_83179_ + 1, p_83177_.getYSize(), p_83177_.getZSize());
++            case Y -> new SubShape(p_83177_, 0, p_83179_, 0, p_83177_.getXSize(), p_83179_ + 1, p_83177_.getZSize());
++            case Z -> new SubShape(p_83177_, 0, 0, p_83179_, p_83177_.getXSize(), p_83177_.getYSize(), p_83179_ + 1);
++        };
++        // Stellar end - Simplify and inline
+     }
+ 
+     @Override

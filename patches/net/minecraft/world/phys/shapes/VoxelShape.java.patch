@@ -793,3 +793,36 @@
      }
  
      protected double collideX(AxisCycle p_83246_, AABB p_83247_, double p_83248_) {
+@@ -239,9 +_,29 @@
+             return 0.0;
+         } else {
+             AxisCycle axiscycle = p_83246_.inverse();
+-            Direction.Axis direction$axis = axiscycle.cycle(Direction.Axis.X);
+-            Direction.Axis direction$axis1 = axiscycle.cycle(Direction.Axis.Y);
+-            Direction.Axis direction$axis2 = axiscycle.cycle(Direction.Axis.Z);
++            // Stellar start - Simplify and inline
++            Direction.Axis direction$axis;
++            Direction.Axis direction$axis1;
++            Direction.Axis direction$axis2;
++            switch (p_83246_) {
++                case NONE -> {
++                    direction$axis = Direction.Axis.X;
++                    direction$axis1 = Direction.Axis.Y;
++                    direction$axis2 = Direction.Axis.Z;
++                }
++                case FORWARD -> {
++                    direction$axis = Direction.Axis.Y;
++                    direction$axis1 = Direction.Axis.Z;
++                    direction$axis2 = Direction.Axis.X;
++                }
++                case BACKWARD -> {
++                    direction$axis = Direction.Axis.Z;
++                    direction$axis1 = Direction.Axis.X;
++                    direction$axis2 = Direction.Axis.Y;
++                }
++                default -> throw new IncompatibleClassChangeError();
++            }
++            // Stellar end - Simplify and inline
+             double d0 = p_83247_.max(direction$axis);
+             double d1 = p_83247_.min(direction$axis);
+             int i = this.findIndex(direction$axis, d1 + 1.0E-7);

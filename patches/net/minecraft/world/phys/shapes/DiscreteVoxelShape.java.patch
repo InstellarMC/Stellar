@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/phys/shapes/DiscreteVoxelShape.java
 +++ b/net/minecraft/world/phys/shapes/DiscreteVoxelShape.java
-@@ -3,11 +_,78 @@
+@@ -3,12 +_,79 @@
  import net.minecraft.core.AxisCycle;
  import net.minecraft.core.Direction;
  
@@ -10,7 +10,7 @@
      protected final int xSize;
      protected final int ySize;
      protected final int zSize;
-+
+ 
 +    // Paper start - optimise collisions
 +    // ignore race conditions on field read/write: the shape is static, so it doesn't matter
 +    private ca.spottedleaf.moonrise.patches.collisions.shape.CachedShapeData cachedShapeData;
@@ -77,6 +77,257 @@
 +        );
 +    }
 +    // Paper end - optimise collisions
- 
++
      protected DiscreteVoxelShape(int p_82787_, int p_82788_, int p_82789_) {
          if (p_82787_ >= 0 && p_82788_ >= 0 && p_82789_ >= 0) {
+             this.xSize = p_82787_;
+@@ -20,11 +_,13 @@
+     }
+ 
+     public boolean isFullWide(AxisCycle p_82823_, int p_82824_, int p_82825_, int p_82826_) {
+-        return this.isFullWide(
+-            p_82823_.cycle(p_82824_, p_82825_, p_82826_, Direction.Axis.X),
+-            p_82823_.cycle(p_82824_, p_82825_, p_82826_, Direction.Axis.Y),
+-            p_82823_.cycle(p_82824_, p_82825_, p_82826_, Direction.Axis.Z)
+-        );
++        // Stellar start - Simplify and inline
++        return switch (p_82823_) {
++            case NONE -> this.isFullWide(p_82824_, p_82825_, p_82826_);
++            case FORWARD -> this.isFullWide(p_82826_, p_82824_, p_82825_);
++            case BACKWARD -> this.isFullWide(p_82825_, p_82826_, p_82824_);
++        };
++        // Stellar end - Simplify and inline
+     }
+ 
+     public boolean isFullWide(int p_82847_, int p_82848_, int p_82849_) {
+@@ -36,11 +_,13 @@
+     }
+ 
+     public boolean isFull(AxisCycle p_82836_, int p_82837_, int p_82838_, int p_82839_) {
+-        return this.isFull(
+-            p_82836_.cycle(p_82837_, p_82838_, p_82839_, Direction.Axis.X),
+-            p_82836_.cycle(p_82837_, p_82838_, p_82839_, Direction.Axis.Y),
+-            p_82836_.cycle(p_82837_, p_82838_, p_82839_, Direction.Axis.Z)
+-        );
++        // Stellar start - Simplify and inline
++        return switch (p_82836_) {
++            case NONE -> this.isFull(p_82837_, p_82838_, p_82839_);
++            case FORWARD -> this.isFull(p_82839_, p_82837_, p_82838_);
++            case BACKWARD -> this.isFull(p_82838_, p_82839_, p_82837_);
++        };
++        // Stellar end - Simplify and inline
+     }
+ 
+     public abstract boolean isFull(int p_82829_, int p_82830_, int p_82831_);
+@@ -67,7 +_,13 @@
+             Direction.Axis direction$axis = AxisCycle.FORWARD.cycle(p_165995_);
+             Direction.Axis direction$axis1 = AxisCycle.BACKWARD.cycle(p_165995_);
+             if (p_165996_ < this.getSize(direction$axis) && p_165997_ < this.getSize(direction$axis1)) {
+-                AxisCycle axiscycle = AxisCycle.between(Direction.Axis.X, p_165995_);
++                // Stellar start - inline
++                AxisCycle axiscycle = switch (p_165995_) {
++                    case X -> AxisCycle.NONE;
++                    case Y -> AxisCycle.FORWARD;
++                    case Z -> AxisCycle.BACKWARD;
++                };
++                // Stellar end - inline
+ 
+                 for (int j = 0; j < i; j++) {
+                     if (this.isFull(axiscycle, j, p_165996_, p_165997_)) {
+@@ -90,7 +_,13 @@
+             Direction.Axis direction$axis1 = AxisCycle.BACKWARD.cycle(p_82842_);
+             if (p_82843_ < this.getSize(direction$axis) && p_82844_ < this.getSize(direction$axis1)) {
+                 int i = this.getSize(p_82842_);
+-                AxisCycle axiscycle = AxisCycle.between(Direction.Axis.X, p_82842_);
++                // Stellar start - inline
++                AxisCycle axiscycle = switch (p_82842_) {
++                    case X -> AxisCycle.NONE;
++                    case Y -> AxisCycle.FORWARD;
++                    case Z -> AxisCycle.BACKWARD;
++                };
++                // Stellar end - inline
+ 
+                 for (int j = i - 1; j >= 0; j--) {
+                     if (this.isFull(axiscycle, j, p_82843_, p_82844_)) {
+@@ -108,19 +_,25 @@
+     }
+ 
+     public int getSize(Direction.Axis p_82851_) {
+-        return p_82851_.choose(this.xSize, this.ySize, this.zSize);
++        // Stellar start - Simplify and inline
++        return switch (p_82851_) {
++            case X -> this.xSize;
++            case Y -> this.ySize;
++            case Z -> this.zSize;
++        };
++        // Stellar end - Simplify and inline
+     }
+ 
+     public int getXSize() {
+-        return this.getSize(Direction.Axis.X);
++        return this.xSize; // Stellar - Simplify and inline
+     }
+ 
+     public int getYSize() {
+-        return this.getSize(Direction.Axis.Y);
++        return this.ySize; // Stellar - Simplify and inline
+     }
+ 
+     public int getZSize() {
+-        return this.getSize(Direction.Axis.Z);
++        return this.zSize; // Stellar - Simplify and inline
+     }
+ 
+     public void forAllEdges(DiscreteVoxelShape.IntLineConsumer p_82820_, boolean p_82821_) {
+@@ -131,9 +_,29 @@
+ 
+     private void forAllAxisEdges(DiscreteVoxelShape.IntLineConsumer p_82816_, AxisCycle p_82817_, boolean p_82818_) {
+         AxisCycle axiscycle = p_82817_.inverse();
+-        int j = this.getSize(axiscycle.cycle(Direction.Axis.X));
+-        int k = this.getSize(axiscycle.cycle(Direction.Axis.Y));
+-        int l = this.getSize(axiscycle.cycle(Direction.Axis.Z));
++        // Stellar start - Simplify and inline
++        int j;
++        int k;
++        int l;
++        switch (p_82817_) {
++            case NONE -> {
++                j = this.getXSize();
++                k = this.getYSize();
++                l = this.getZSize();
++            }
++            case FORWARD -> {
++                j = this.getYSize();
++                k = this.getZSize();
++                l = this.getXSize();
++            }
++            case BACKWARD -> {
++                j = this.getZSize();
++                k = this.getXSize();
++                l = this.getYSize();
++            }
++            default -> throw new IncompatibleClassChangeError();
++        }
++        // Stellar end - Simplify and inline
+ 
+         for (int i1 = 0; i1 <= j; i1++) {
+             for (int j1 = 0; j1 <= k; j1++) {
+@@ -158,24 +_,22 @@
+                                 i = k1;
+                             }
+                         } else {
+-                            p_82816_.consume(
+-                                axiscycle.cycle(i1, j1, k1, Direction.Axis.X),
+-                                axiscycle.cycle(i1, j1, k1, Direction.Axis.Y),
+-                                axiscycle.cycle(i1, j1, k1, Direction.Axis.Z),
+-                                axiscycle.cycle(i1, j1, k1 + 1, Direction.Axis.X),
+-                                axiscycle.cycle(i1, j1, k1 + 1, Direction.Axis.Y),
+-                                axiscycle.cycle(i1, j1, k1 + 1, Direction.Axis.Z)
+-                            );
++                            // Stellar start - Simplify and inline
++                            switch (p_82817_) {
++                                case NONE -> p_82816_.consume(i1, j1, k1, i1, j1, k1 + 1);
++                                case FORWARD -> p_82816_.consume(k1, i1, j1, k1 + 1, i1, j1);
++                                case BACKWARD -> p_82816_.consume(j1, k1, i1, j1, k1 + 1, i1);
++                            }
++                            // Stellar end - Simplify and inline
+                         }
+                     } else if (i != -1) {
+-                        p_82816_.consume(
+-                            axiscycle.cycle(i1, j1, i, Direction.Axis.X),
+-                            axiscycle.cycle(i1, j1, i, Direction.Axis.Y),
+-                            axiscycle.cycle(i1, j1, i, Direction.Axis.Z),
+-                            axiscycle.cycle(i1, j1, k1, Direction.Axis.X),
+-                            axiscycle.cycle(i1, j1, k1, Direction.Axis.Y),
+-                            axiscycle.cycle(i1, j1, k1, Direction.Axis.Z)
+-                        );
++                        // Stellar start - Simplify and inline
++                        switch (p_82817_) {
++                            case NONE -> p_82816_.consume(i1, j1, i, i1, j1, k1);
++                            case FORWARD -> p_82816_.consume(i, i1, j1, k1, i1, j1);
++                            case BACKWARD -> p_82816_.consume(j1, i, i1, j1, k1, i1);
++                        }
++                        // Stellar end - Simplify and inline
+                         i = -1;
+                     }
+                 }
+@@ -195,12 +_,37 @@
+ 
+     private void forAllAxisFaces(DiscreteVoxelShape.IntFaceConsumer p_82813_, AxisCycle p_82814_) {
+         AxisCycle axiscycle = p_82814_.inverse();
+-        Direction.Axis direction$axis = axiscycle.cycle(Direction.Axis.Z);
+-        int i = this.getSize(axiscycle.cycle(Direction.Axis.X));
+-        int j = this.getSize(axiscycle.cycle(Direction.Axis.Y));
+-        int k = this.getSize(direction$axis);
+-        Direction direction = Direction.fromAxisAndDirection(direction$axis, Direction.AxisDirection.NEGATIVE);
+-        Direction direction1 = Direction.fromAxisAndDirection(direction$axis, Direction.AxisDirection.POSITIVE);
++        // Stellar start - Simplify and inline
++        int i;
++        int j;
++        int k;
++        Direction direction;
++        Direction direction1;
++        switch (p_82814_) {
++            case NONE -> {
++                i = this.getXSize();
++                j = this.getYSize();
++                k = this.getZSize();
++                direction = Direction.SOUTH;
++                direction1 = Direction.NORTH;
++            }
++            case FORWARD -> {
++                i = this.getYSize();
++                j = this.getZSize();
++                k = this.getXSize();
++                direction = Direction.EAST;
++                direction1 = Direction.WEST;
++            }
++            case BACKWARD -> {
++                i = this.getZSize();
++                j = this.getXSize();
++                k = this.getYSize();
++                direction = Direction.UP;
++                direction1 = Direction.DOWN;
++            }
++            default -> throw new IncompatibleClassChangeError();
++        }
++        // Stellar end - Simplify and inline
+ 
+         for (int l = 0; l < i; l++) {
+             for (int i1 = 0; i1 < j; i1++) {
+@@ -209,21 +_,23 @@
+                 for (int j1 = 0; j1 <= k; j1++) {
+                     boolean flag1 = j1 != k && this.isFull(axiscycle, l, i1, j1);
+                     if (!flag && flag1) {
+-                        p_82813_.consume(
+-                            direction,
+-                            axiscycle.cycle(l, i1, j1, Direction.Axis.X),
+-                            axiscycle.cycle(l, i1, j1, Direction.Axis.Y),
+-                            axiscycle.cycle(l, i1, j1, Direction.Axis.Z)
+-                        );
++                        // Stellar start - Simplify and inline
++                        switch (p_82814_) {
++                            case NONE -> p_82813_.consume(direction1, l, i1, j1);
++                            case FORWARD -> p_82813_.consume(direction1, j1, l, i1);
++                            case BACKWARD -> p_82813_.consume(direction1, i1, j1, l);
++                        }
++                        // Stellar end - Simplify and inline
+                     }
+ 
+                     if (flag && !flag1) {
+-                        p_82813_.consume(
+-                            direction1,
+-                            axiscycle.cycle(l, i1, j1 - 1, Direction.Axis.X),
+-                            axiscycle.cycle(l, i1, j1 - 1, Direction.Axis.Y),
+-                            axiscycle.cycle(l, i1, j1 - 1, Direction.Axis.Z)
+-                        );
++                        // Stellar start - Simplify and inline
++                        switch (p_82814_) {
++                            case NONE -> p_82813_.consume(direction, l, i1, j1 - 1);
++                            case FORWARD -> p_82813_.consume(direction, j1 - 1, l, i1);
++                            case BACKWARD -> p_82813_.consume(direction, i1, j1 - 1, l);
++                        }
++                        // Stellar end - Simplify and inline
+                     }
+ 
+                     flag = flag1;

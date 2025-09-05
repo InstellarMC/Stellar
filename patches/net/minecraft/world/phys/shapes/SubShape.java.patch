@@ -1,0 +1,30 @@
+--- a/net/minecraft/world/phys/shapes/SubShape.java
++++ b/net/minecraft/world/phys/shapes/SubShape.java
+@@ -44,8 +_,25 @@
+     }
+ 
+     private int clampToShape(Direction.Axis p_166057_, int p_166058_) {
+-        int i = p_166057_.choose(this.startX, this.startY, this.startZ);
+-        int j = p_166057_.choose(this.endX, this.endY, this.endZ);
++        // Stellar start - Simplify and inline
++        int i;
++        int j;
++        switch (p_166057_) {
++            case X -> {
++                i = this.startX;
++                j = this.endX;
++            }
++            case Y -> {
++                i = this.startY;
++                j = this.endY;
++            }
++            case Z -> {
++                i = this.startZ;
++                j = this.endZ;
++            }
++            default -> throw new IncompatibleClassChangeError();
++        }
++        // Stellar end - Simplify and inline
+         return Mth.clamp(p_166058_, i, j) - i;
+     }
+ }

@@ -32,3 +32,21 @@
          }
  
          @Override
+@@ -77,6 +_,16 @@
+     public abstract AxisCycle inverse();
+ 
+     public static AxisCycle between(Direction.Axis p_121800_, Direction.Axis p_121801_) {
+-        return VALUES[Math.floorMod(p_121801_.ordinal() - p_121800_.ordinal(), 3)];
++        // Stellar start - Simplify and inline
++        if (p_121800_ == p_121801_) {
++            return NONE;
++        }
++        int delta = p_121801_.ordinal() - p_121800_.ordinal();
++        if (delta == 1 || delta == -2) {
++            return FORWARD;
++        }
++
++        return BACKWARD;
++        // Stellar end - Simplify and inline
+     }
+ }

@@ -63,3 +63,24 @@
          return this.z;
      }
  
+@@ -224,12 +_,18 @@
+     }
+ 
+     public int get(Direction.Axis p_123305_) {
+-        return p_123305_.choose(this.x, this.y, this.z);
++        // Stellar start - Simplify and inline
++        return switch (p_123305_) {
++            case X -> this.x;
++            case Y -> this.y;
++            case Z -> this.z;
++        };
++        // Stellar end - Simplify and inline
+     }
+ 
+     @Override
+     public String toString() {
+-        return MoreObjects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString();
++        return this.getClass().getSimpleName() + "{x=" + this.getX() + ", y=" + this.getY() + ", z=" + this.getZ() + "}"; // Stellar - Simplify
+     }
+ 
+     public String toShortString() {

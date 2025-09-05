@@ -1,0 +1,17 @@
+--- a/net/minecraft/world/phys/Vec3.java
++++ b/net/minecraft/world/phys/Vec3.java
+@@ -244,7 +_,13 @@
+     }
+ 
+     public double get(Direction.Axis p_82508_) {
+-        return p_82508_.choose(this.x, this.y, this.z);
++        // Stellar start - Simplify and inline
++        return switch (p_82508_) {
++            case X -> this.x;
++            case Y -> this.y;
++            case Z -> this.z;
++        };
++        // Stellar end - Simplify and inline
+     }
+ 
+     public Vec3 with(Direction.Axis p_193104_, double p_193105_) {
