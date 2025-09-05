@@ -2228,18 +2228,81 @@
  
      public float rotate(Rotation p_20004_) {
          float f = Mth.wrapDegrees(this.getYRot());
-@@ -2980,7 +_,17 @@
+@@ -2965,22 +_,77 @@
+         return false;
+     }
+ 
++    // Stellar start - lithium: Avoid stream allocation
++    private void addPassengersDeep(ArrayList<Entity> passengers) {
++        ImmutableList<Entity> list = this.passengers;
++        for (int i = 0, listSize = list.size(); i < listSize; i++) {
++            Entity passenger = list.get(i);
++            passengers.add(passenger);
++            passenger.addPassengersDeep(passengers);
++        }
++    }
++
++    private void addPassengersDeepFirst(ArrayList<Entity> passengers) {
++        ImmutableList<Entity> list = this.passengers;
++        for (int i = 0, listSize = list.size(); i < listSize; i++) {
++            Entity passenger = list.get(i);
++            passenger.addPassengersDeep(passengers);
++            passengers.add(passenger);
++        }
++    }
++    // Stellar end - lithium: Avoid stream allocation
++
+     private Stream<Entity> getIndirectPassengersStream() {
+-        return this.passengers.stream().flatMap(Entity::getSelfAndPassengers);
++        // Stellar start - lithium: Avoid stream allocation
++        if (this.passengers.isEmpty()) {
++            return Stream.empty();
++        }
++        ArrayList<Entity> passengers = new ArrayList<>();
++        this.addPassengersDeep(passengers);
++
++        return passengers.stream();
++        // Stellar end - lithium: Avoid stream allocation
+     }
+ 
+     @Override
+     public Stream<Entity> getSelfAndPassengers() {
+-        return Stream.concat(Stream.of(this), this.getIndirectPassengersStream());
++        // Stellar start - lithium: Avoid stream allocation
++        if (this.passengers.isEmpty()) {
++            return Stream.of(this);
++        }
++        ArrayList<Entity> passengers = new ArrayList<>();
++        passengers.add(this);
++        this.addPassengersDeep(passengers);
++
++        return passengers.stream();
++        // Stellar end - lithium: Avoid stream allocation
+     }
+ 
+     @Override
+     public Stream<Entity> getPassengersAndSelf() {
+-        return Stream.concat(this.passengers.stream().flatMap(Entity::getPassengersAndSelf), Stream.of(this));
++        // Stellar start - lithium: Avoid stream allocation
++        if (this.passengers.isEmpty()) {
++            return Stream.of(this);
++        }
++        ArrayList<Entity> passengers = new ArrayList<>();
++        this.addPassengersDeepFirst(passengers);
++        passengers.add(this);
++        return passengers.stream();
++        // Stellar end - lithium: Avoid stream allocation
      }
  
      public Iterable<Entity> getIndirectPassengers() {
 -        return () -> this.getIndirectPassengersStream().iterator();
++        // Stellar start - lithium: Avoid stream allocation
++        if (this.passengers.isEmpty()) {
++            return java.util.Collections.emptyList();
++        }
++        // Stellar end - lithium: Avoid stream allocation
 +        // Paper start - optimise entity tracker
 +        final List<Entity> ret = new ArrayList<>();
-+
-+        if (this.passengers.isEmpty()) {
-+            return ret;
-+        }
-+
 +        collectIndirectPassengers(ret, this.passengers);
 +
 +        return ret;
