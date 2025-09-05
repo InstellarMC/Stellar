@@ -37,7 +37,14 @@
      }
  
      @Nullable
-@@ -140,4 +_,11 @@
+@@ -134,10 +_,17 @@
+                     if (attributeinstance != null) {
+                         attributeinstance.load(compoundtag);
+                     }
+-                }, () -> LOGGER.warn("Ignoring unknown attribute '{}'", resourcelocation));
++                }, () -> LOGGER.debug("Ignoring unknown attribute '{}'", resourcelocation)); // Stellar
+             } else {
+                 LOGGER.warn("Ignoring malformed attribute '{}'", s);
              }
          }
      }
