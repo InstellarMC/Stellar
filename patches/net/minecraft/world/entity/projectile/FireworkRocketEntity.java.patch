@@ -141,3 +141,15 @@
          return new ItemStack(Items.FIREWORK_ROCKET);
      }
  
+@@ -317,4 +_,11 @@
+         double d1 = p_345239_.position().z - this.position().z;
+         return DoubleDoubleImmutablePair.of(d0, d1);
+     }
++
++    // Stellar start
++    @Override
++    public boolean shouldBeSaved() {
++        return false;
++    }
++    // Stellar end
+ }
