@@ -1,5 +1,14 @@
 --- a/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
 +++ b/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+@@ -14,7 +_,7 @@
+ import java.util.function.Predicate;
+ import java.util.function.Supplier;
+ import javax.annotation.Nullable;
+-import net.minecraft.SharedConstants;
++import dev.instellar.stellar.configuration.GlobalConfiguration;import net.minecraft.SharedConstants;
+ import net.minecraft.Util;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Holder;
 @@ -78,7 +_,7 @@
          return CompletableFuture.supplyAsync(Util.wrapThreadWithTaskName("init_biomes", () -> {
              this.doCreateBiomes(p_224300_, p_224299_, p_224301_, p_224302_);
@@ -9,6 +18,40 @@
      }
  
      private void doCreateBiomes(Blender p_224292_, RandomState p_224293_, StructureManager p_224294_, ChunkAccess p_224295_) {
+@@ -320,6 +_,8 @@
+         }
+     }
+ 
++    public static boolean USE_NOISIUM_WORLDGEN; // Stellar - Noisium: Optimize noise chunk generation
++
+     @Override
+     public CompletableFuture<ChunkAccess> fillFromNoise(Blender p_224313_, RandomState p_224314_, StructureManager p_224315_, ChunkAccess p_224316_) {
+         NoiseSettings noisesettings = this.settings.value().noiseSettings().clampToHeightAccessor(p_224316_.getHeightAccessorForGeneration());
+@@ -327,6 +_,24 @@
+         int j = Mth.floorDiv(i, noisesettings.getCellHeight());
+         int k = Mth.floorDiv(noisesettings.height(), noisesettings.getCellHeight());
+         return k <= 0 ? CompletableFuture.completedFuture(p_224316_) : CompletableFuture.supplyAsync(Util.wrapThreadWithTaskName("wgen_fill_noise", () -> {
++            // Stellar start - Noisium: Optimize noise chunk generation
++            if (USE_NOISIUM_WORLDGEN) {
++                int l = p_224316_.getSectionIndex(k * noisesettings.getCellHeight() - 1 + i);
++                int i1 = p_224316_.getSectionIndex(i);
++
++                var set = p_224316_.getSections();
++                for (int j1 = l; j1 >= i1; --j1) set[j1].acquire();
++
++                ChunkAccess chunkaccess;
++                try {
++                    chunkaccess = this.doFill(p_224313_, p_224315_, p_224314_, p_224316_, j, k);
++                } finally {
++                    for (int j1 = l; j1 >= i1; --j1) set[j1].release();
++                }
++
++                return chunkaccess;
++            }
++            // Stellar end - Noisium: Optimize noise chunk generation
+             int l = p_224316_.getSectionIndex(k * noisesettings.getCellHeight() - 1 + i);
+             int i1 = p_224316_.getSectionIndex(i);
+             Set<LevelChunkSection> set = Sets.newHashSet();
 @@ -347,7 +_,7 @@
              }
  
@@ -18,3 +61,36 @@
      }
  
      private ChunkAccess doFill(Blender p_224285_, StructureManager p_224286_, RandomState p_224287_, ChunkAccess p_224288_, int p_224289_, int p_224290_) {
+@@ -405,7 +_,31 @@
+ 
+                                 blockstate = this.debugPreliminarySurfaceLevel(noisechunk, l3, l2, k4, blockstate);
+                                 if (blockstate != AIR && !SharedConstants.debugVoidTerrain(p_224288_.getPos())) {
+-                                    levelchunksection.setBlockState(i4, i3, l4, blockstate, false);
++                                    // Stellar start - Noisium: Optimize noise chunk generation
++                                    if (USE_NOISIUM_WORLDGEN) {
++                                        ++levelchunksection.nonEmptyBlockCount;
++                                        if (!blockstate.getFluidState().isEmpty()) ++levelchunksection.tickingFluidCount;
++                                        if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isSpecialCollidingBlock(blockstate))
++                                            ++levelchunksection.specialCollidingBlocks;
++
++                                        if (!blockstate.isRandomlyTicking()) {
++                                            ++levelchunksection.tickingBlockCount;
++                                            levelchunksection.tickingBlocks.remove(i4, i3, l4);
++                                            levelchunksection.tickingBlocks.add(i4, i3, l4, blockstate);
++                                        }
++
++                                        levelchunksection.states.data.storage().set(
++                                            levelchunksection.states.strategy.getIndex(i4, i3, l4),
++                                            levelchunksection.states.data.palette().idFor(blockstate)
++                                        );
++                                    } else
++                                    { // Stellar start - Noisium(lithium-compat)
++                                        // Set the blockstate in the palette storage directly to improve performance
++                                        levelchunksection.states.data.storage().set(
++                                                levelchunksection.states.strategy.getIndex(i4, i3, l4),
++                                               levelchunksection.states.data.palette().idFor(blockstate)
++                                        );
++                                    } // Stellar end - Noisium(lithium-compat)
+                                     heightmap.update(i4, l2, l4, blockstate);
+                                     heightmap1.update(i4, l2, l4, blockstate);
+                                     if (aquifer.shouldScheduleFluidUpdate() && !blockstate.getFluidState().isEmpty()) {

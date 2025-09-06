@@ -1,11 +1,14 @@
 package dev.instellar.stellar.configuration;
 
 import com.mohistmc.org.spongepowered.configurate.objectmapping.meta.Comment;
+import com.mohistmc.org.spongepowered.configurate.objectmapping.meta.PostProcess;
+import com.mohistmc.org.spongepowered.configurate.objectmapping.meta.Setting;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.ConfigurationPart;
 import io.papermc.paper.configuration.NestedSetting;
 import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.type.number.IntOr;
+import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import org.slf4j.Logger;
 
 public final class GlobalConfiguration extends ConfigurationPart {
@@ -37,6 +40,21 @@ public final class GlobalConfiguration extends ConfigurationPart {
         @Constraints.Min(1)
         @NestedSetting({"map", "update-interval"})
         public IntOr.Default mapUpdateInterval = IntOr.Default.USE_DEFAULT;
+    }
+
+
+    @Setting("world-generation")
+    public WorldGeneration levelgen;
+
+    public class WorldGeneration extends ConfigurationPart {
+
+        @Comment("If enabled, the server will use Noisium for world generation instead of the default Minecraft world generator.")
+        public boolean useNoisiumWorldGen = false;
+
+        @PostProcess
+        private void postProcess() {
+            NoiseBasedChunkGenerator.USE_NOISIUM_WORLDGEN = this.useNoisiumWorldGen;
+        }
     }
 
     public Performance performance;

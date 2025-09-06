@@ -227,16 +227,30 @@
      }
  
      public void readBiomes(FriendlyByteBuf p_275669_) {
-@@ -176,6 +_,12 @@
-     public Holder<Biome> getNoiseBiome(int p_204434_, int p_204435_, int p_204436_) {
+@@ -177,14 +_,22 @@
          return this.biomes.get(p_204434_, p_204435_, p_204436_);
      }
-+
+ 
 +    // CraftBukkit start
 +    public void setBiome(int i, int j, int k, Holder<Biome> biome) {
 +        this.biomes.recreate().set(i, j, k, biome);
 +    }
 +    // CraftBukkit end
- 
++
      public void fillBiomesFromNoise(BiomeResolver p_282075_, Climate.Sampler p_283084_, int p_282310_, int p_281510_, int p_283057_) {
          PalettedContainer<Holder<Biome>> palettedcontainer = this.biomes.recreate();
+         int i = 4;
+ 
+-        for (int j = 0; j < 4; j++) {
+-            for (int k = 0; k < 4; k++) {
+-                for (int l = 0; l < 4; l++) {
+-                    palettedcontainer.getAndSetUnchecked(j, k, l, p_282075_.getNoiseBiome(p_282310_ + j, p_281510_ + k, p_283057_ + l, p_283084_));
++        // Stellar start - Noisium: Axis order micro-optimization (xyz) -> (yzx)
++        for (int y = 0; y < 4; y++) { // Stellar - readable name
++            for (int z = 0; z < 4; z++) { // Stellar - readable name
++                for (int x = 0; x < 4; x++) { // Stellar - readable name
++                    palettedcontainer.getAndSetUnchecked(x, y, z, p_282075_.getNoiseBiome(p_282310_ + x, p_281510_ + y, p_283057_ + z, p_283084_));
++                    // Stellar end - Noisium: Axis order micro-optimization (xyz) -> (yzx)
+                 }
+             }
+         }

@@ -1,0 +1,46 @@
+--- a/net/minecraft/world/level/levelgen/NoiseSettings.java
++++ b/net/minecraft/world/level/levelgen/NoiseSettings.java
+@@ -2,15 +_,13 @@
+ 
+ import com.mojang.serialization.Codec;
+ import com.mojang.serialization.DataResult;
+-import com.mojang.serialization.DataResult.Error;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
+-import com.mojang.serialization.codecs.RecordCodecBuilder.Instance;
+ import java.util.function.Function;
+ import net.minecraft.core.QuartPos;
+ import net.minecraft.world.level.LevelHeightAccessor;
+ import net.minecraft.world.level.dimension.DimensionType;
+ 
+-public record NoiseSettings(int minY, int height, int noiseSizeHorizontal, int noiseSizeVertical) {
++public record NoiseSettings(int minY, int height, int noiseSizeHorizontal, int noiseSizeVertical, int horizontalCellBlockCount, int verticalCellBlockCount) {
+     public static final Codec<NoiseSettings> CODEC = RecordCodecBuilder.<NoiseSettings>create(
+             p_64536_ -> p_64536_.group(
+                         Codec.intRange(DimensionType.MIN_Y, DimensionType.MAX_Y).fieldOf("min_y").forGetter(NoiseSettings::minY),
+@@ -46,11 +_,11 @@
+     }
+ 
+     public int getCellHeight() {
+-        return QuartPos.toBlock(this.noiseSizeVertical());
++        return this.verticalCellBlockCount; // Stellar - Noisium: Caching cell block counts
+     }
+ 
+     public int getCellWidth() {
+-        return QuartPos.toBlock(this.noiseSizeHorizontal());
++        return this.horizontalCellBlockCount; // Stellar - Noisium: Caching cell block counts
+     }
+ 
+     public NoiseSettings clampToHeightAccessor(LevelHeightAccessor p_224531_) {
+@@ -58,4 +_,12 @@
+         int j = Math.min(this.minY + this.height, p_224531_.getMaxBuildHeight()) - i;
+         return new NoiseSettings(i, j, this.noiseSizeHorizontal, this.noiseSizeVertical);
+     }
++
++    // Stellar start - Noisium: Caching cell block counts
++    // Caches the horizontalCellBlockCount and verticalCellBlockCount, so it doesn't have to convert
++    // from biome coordinates to block coordinates every time.
++    public NoiseSettings(int minY, int height, int noiseSizeHorizontal, int noiseSizeVertical) {
++        this(minY, height, noiseSizeHorizontal, noiseSizeVertical, QuartPos.toBlock(noiseSizeHorizontal), QuartPos.toBlock(noiseSizeVertical));
++    }
++    // Stellar end - Noisium: Caching cell block counts
+ }
