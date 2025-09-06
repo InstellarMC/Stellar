@@ -191,7 +191,7 @@
      @Nullable
      private KeyPair keyPair;
      @Nullable
-@@ -254,18 +_,49 @@
+@@ -254,18 +_,64 @@
      public final Executor executor;
      @Nullable
      private String serverId;
@@ -234,6 +234,21 @@
 +    public volatile boolean abnormalExit = false; // Paper
 +    public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
 +    public gg.pufferfish.pufferfish.util.AsyncExecutor mobSpawnExecutor = new gg.pufferfish.pufferfish.util.AsyncExecutor("MobSpawning"); // Pufferfish - optimize mob spawning
++
++    // Stellar start - allow setting server port from CLI with error handling
++    private static final int CLI_PORT = Util.make(() -> {
++        int port = -1;
++        String portStr = System.getProperty("stellar.server-port");
++        if (portStr != null) {
++            try {
++                port = Integer.parseInt(portStr);
++            } catch (NumberFormatException e) {
++                LOGGER.warn("Invalid port number specified in 'stellar.server-port' system property: {}", portStr);
++            }
++        }
++        return port;
++    });
++    // Stellar end - allow setting server port from CLI with error handling
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> p_129873_) {
          AtomicReference<S> atomicreference = new AtomicReference<>();
@@ -1595,6 +1610,18 @@
      }
  
      public KeyPair getKeyPair() {
+@@ -1160,6 +_,11 @@
+     }
+ 
+     public int getPort() {
++        // Stellar start - Allow port override from command line
++        if (CLI_PORT != -1) {
++            return CLI_PORT;
++        }
++        // Stellar end - Allow port override from command line
+         return this.port;
+     }
+ 
 @@ -1198,13 +_,24 @@
          }
      }
