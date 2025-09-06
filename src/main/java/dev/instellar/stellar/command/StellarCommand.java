@@ -1,5 +1,6 @@
 package dev.instellar.stellar.command;
 
+import dev.instellar.stellar.command.subcommands.HeapDumpCommand;
 import dev.instellar.stellar.command.subcommands.ReloadCommand;
 import io.papermc.paper.command.CommandUtil;
 import io.papermc.paper.command.PaperSubcommand;
@@ -27,6 +28,7 @@ public final class StellarCommand extends Command {
         final Map<Set<String>, PaperSubcommand> commands = new HashMap<>();
 
         commands.put(Set.of("reload"), new ReloadCommand());
+        commands.put(Set.of("heapdump", "heap"), new HeapDumpCommand());
 
         return commands.entrySet().stream()
                 .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
