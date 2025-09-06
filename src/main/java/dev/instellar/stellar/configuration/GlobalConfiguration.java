@@ -71,6 +71,9 @@ public final class GlobalConfiguration extends ConfigurationPart {
 
         @Comment("If enabled, the server will not play Pixelmon death sounds.")
         public boolean ignorePixelmonDeathSound = true;
+
+        @Comment("If enabled, the server will convert old playerdata to the new format.")
+        public boolean convertOldUsers = false;
     }
 
     public Verbosity verbosity;

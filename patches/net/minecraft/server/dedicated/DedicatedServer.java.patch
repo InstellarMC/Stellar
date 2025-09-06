@@ -164,7 +164,7 @@
 +        // Paper end - detect running as root
 +        this.server.spark.enableEarlyIfRequested(); // Paper - spark
 +        // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
-+        if (this.convertOldUsers()) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().compatibility.convertOldUsers && this.convertOldUsers()) { // Stellar - only convert if enabled
 +            this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
 +        }
 +        this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
