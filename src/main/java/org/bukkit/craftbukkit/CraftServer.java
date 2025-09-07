@@ -3341,4 +3341,12 @@ public final class CraftServer implements Server {
         return getServer().lagging;
     }
     // Purpur end
+
+    // Stellar start
+    private final dev.instellar.stellar.sql.StellarSqlManager sqlManager = new dev.instellar.stellar.sql.StellarSqlManager();
+    @Override
+    public dev.instellar.stellar.sql.StellarSqlManager sqlManager() {
+        return this.sqlManager;
+    }
+    // Stellar end
 }

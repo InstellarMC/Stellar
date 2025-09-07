@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
-@@ -1,27 +_,26 @@
+@@ -1,27 +_,23 @@
  package net.minecraft.server.players;
  
 -import com.google.common.collect.Lists;
@@ -10,11 +10,9 @@
  import com.mojang.authlib.GameProfile;
  import com.mojang.logging.LogUtils;
  import com.mojang.serialization.Dynamic;
-+import io.papermc.paper.console.TerminalConsoleCommandSender;
++import dev.instellar.stellar.configuration.GlobalConfiguration;import dev.instellar.stellar.world.storage.StellarPlayerDataStorage;import io.papermc.paper.console.TerminalConsoleCommandSender;
 +import io.papermc.paper.event.server.WhitelistToggleEvent;
  import java.io.File;
-+import java.net.InetAddress;
-+import java.net.InetSocketAddress;
  import java.net.SocketAddress;
  import java.nio.file.Path;
  import java.text.SimpleDateFormat;
@@ -26,7 +24,6 @@
 -import java.util.Set;
 -import java.util.UUID;
 +import java.util.*;
-+import java.util.concurrent.atomic.AtomicReference;
  import java.util.function.Function;
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
@@ -35,7 +32,7 @@
  import net.minecraft.commands.CommandSourceStack;
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.LayeredRegistryAccess;
-@@ -67,22 +_,24 @@
+@@ -67,22 +_,23 @@
  import net.minecraft.server.PlayerAdvancements;
  import net.minecraft.server.RegistryLayer;
  import net.minecraft.server.ServerScoreboard;
@@ -46,7 +43,6 @@
 -import net.minecraft.server.network.CommonListenerCookie;
 +import net.minecraft.server.level.TicketType;import net.minecraft.server.network.CommonListenerCookie;
  import net.minecraft.server.network.ServerGamePacketListenerImpl;
-+import net.minecraft.server.network.ServerLoginPacketListenerImpl;
  import net.minecraft.sounds.SoundEvents;
  import net.minecraft.sounds.SoundSource;
  import net.minecraft.stats.ServerStatsCounter;
@@ -79,7 +75,7 @@
  
  public abstract class PlayerList {
      public static final File USERBANLIST_FILE = new File("banned-players.json");
-@@ -111,14 +_,16 @@
+@@ -111,15 +_,18 @@
      private static final int SEND_PLAYER_INFO_INTERVAL = 600;
      private static final SimpleDateFormat BAN_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
      private final MinecraftServer server;
@@ -97,9 +93,11 @@
 +    // private final Map<UUID, PlayerAdvancements> advancements = Maps.newHashMap();
 +    // CraftBukkit end
      public final PlayerDataStorage playerIo;
++    public final StellarPlayerDataStorage stellarPlayerIo; // Stellar
      private boolean doWhiteList;
      private final LayeredRegistryAccess<RegistryLayer> registries;
-@@ -128,15 +_,56 @@
+     public int maxPlayers;
+@@ -128,15 +_,58 @@
      private boolean allowCommandsForAllPlayers;
      private static final boolean ALLOW_LOGOUTIVATOR = false;
      private int sendAllPlayerInfoIn;
@@ -118,6 +116,7 @@
          this.registries = p_251844_;
          this.maxPlayers = p_203845_;
          this.playerIo = p_203844_;
++        this.stellarPlayerIo = new StellarPlayerDataStorage(p_203844_); // Stellar
      }
 +    public void loadAndSaveFiles() {
 +
@@ -125,11 +124,12 @@
 +
 +    private static final Component DISCONNECT_REASON_CONNECT_FAILED = Component.translatable("multiplayer.status.cannot_connect");
 +    private static final Component DISCONNECT_REASON_SERVER_CLOSED = Component.translatable("multiplayer.disconnect.server_shutdown");
++    private static final java.util.concurrent.ExecutorService PLAYER_IO_POOL = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
  
      public void placeNewPlayer(Connection p_11262_, ServerPlayer p_11263_, CommonListenerCookie p_301988_) {
 +        // Stellar start - async player join
 +        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.asyncPlayerJoin) {
-+            java.util.concurrent.CompletableFuture.supplyAsync(() -> this.load(p_11263_), dev.instellar.stellar.Stellar.BACKEND_EXECUTOR)
++            java.util.concurrent.CompletableFuture.supplyAsync(() -> this.load(p_11263_), PLAYER_IO_POOL)
 +            .exceptionallyAsync(e -> {
 +                LOGGER.error("Failed to load player data for {}", p_11263_.getGameProfile().getName(), e);
 +                p_11262_.disconnect(DISCONNECT_REASON_CONNECT_FAILED);
@@ -477,14 +477,16 @@
              }
  
              @Override
-@@ -330,6 +_,7 @@
+@@ -330,7 +_,9 @@
              optional = Optional.of(compoundtag);
              p_11225_.load(compoundtag);
              LOGGER.debug("loading single player");
 +            net.neoforged.neoforge.event.EventHooks.firePlayerLoadingEvent(p_11225_, this.playerIo, p_11225_.getUUID().toString());
          } else {
++            if (GlobalConfiguration.get().sql.enabled && GlobalConfiguration.get().sql.useAsPlayerIO) optional = this.stellarPlayerIo.load(p_11225_); else // Stellar
              optional = this.playerIo.load(p_11225_);
          }
+ 
 @@ -338,51 +_,132 @@
      }
  

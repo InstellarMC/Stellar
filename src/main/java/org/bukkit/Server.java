@@ -2644,4 +2644,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     void clearBlockHighlights();
     // Purpur end
+
+    // Stellar start
+    dev.instellar.stellar.sql.SqlManager sqlManager();
+    // Stellar end
 }

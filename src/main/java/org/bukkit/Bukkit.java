@@ -3024,4 +3024,10 @@ public final class Bukkit {
         server.clearBlockHighlights();
     }
     // Purpur end
+
+    // Stellar start
+    public static dev.instellar.stellar.sql.SqlManager sqlManager() {
+        return server.sqlManager();
+    }
+    // Stellar end
 }

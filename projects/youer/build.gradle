@@ -312,19 +312,35 @@ dependencies {
     libraries "org.jspecify:jspecify:1.0.0"
     libraries 'net.md-5:bungeecord-chat:1.20-R0.2-deprecated+build.18'
     libraries "net.neoforged:srgutils:1.0.0"
-    stellar("net.kyori:adventure-api:4.17.0")
-    stellar("net.kyori:adventure-key:4.17.0")
+    stellar("net.kyori:adventure-api:4.17.0") {
+        exclude(module: "adventure-bom")
+        exclude(module: "checker-qual")
+        exclude(module: "annotations")
+    }
+    stellar("net.kyori:adventure-key:4.17.0") {
+        exclude(module: "adventure-bom")
+        exclude(module: "checker-qual")
+        exclude(module: "annotations")
+    }
     stellar("net.kyori:adventure-text-logger-slf4j:4.17.0") {
         exclude(group: "org.slf4j") // Stellar
     }
     stellar("net.kyori:adventure-text-serializer-ansi:4.17.0")
     stellar("net.kyori:adventure-text-minimessage:4.17.0")
     stellar("net.kyori:adventure-text-serializer-gson:4.17.0") {
-        exclude(group: "com.google.code.gson", module: "gson") // Stellar
+        exclude(module: "adventure-bom")
+        exclude(module: "adventure-api")
+        exclude(module: "gson") // Stellar
     }
     stellar("net.kyori:adventure-text-serializer-json:4.17.0")
-    stellar("net.kyori:adventure-text-serializer-legacy:4.17.0")
-    stellar("net.kyori:adventure-text-serializer-plain:4.17.0")
+    stellar("net.kyori:adventure-text-serializer-legacy:4.17.0") {
+        exclude(module: "adventure-bom")
+        exclude(module: "adventure-api")
+    }
+    stellar("net.kyori:adventure-text-serializer-plain:4.17.0") {
+        exclude(module: "adventure-bom")
+        exclude(module: "adventure-api")
+    }
     stellar("net.kyori:ansi:1.0.3")
     stellar("net.kyori:examination-api:1.3.0")
     stellar("net.kyori:examination-string:1.3.0")
@@ -369,9 +385,12 @@ dependencies {
     libraries("com.zaxxer:HikariCP:7.0.0") {
         exclude(module: "slf4j-api")
     }
+    libraries("com.h2database:h2:2.3.232")
     libraries("org.mariadb.jdbc:mariadb-java-client:3.4.1")
 
     libraries("com.github.luben:zstd-jni:1.5.7-4")
+
+    implementation("pixelmon:Pixelmon-${project.minecraft_version}-${project.pixelmon_version}-server:${project.pixelmon_version}")
     // Stellar end
 }
 
