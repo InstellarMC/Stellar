@@ -412,11 +412,12 @@
      private boolean noBlocksAround(Entity p_9794_) {
          return p_9794_.level()
              .getBlockStates(p_9794_.getBoundingBox().inflate(0.0625).expandTowards(0.0, -0.55, 0.0))
-@@ -473,7 +_,7 @@
+@@ -473,7 +_,8 @@
          PacketUtils.ensureRunningOnSameThread(p_9835_, this, this.player.serverLevel());
          if (p_9835_.getId() == this.awaitingTeleport) {
              if (this.awaitingPositionFromClient == null) {
 -                this.disconnect(Component.translatable("multiplayer.disconnect.invalid_player_movement"));
++                ServerGamePacketListenerImpl.LOGGER.warn("Disconnected on accept teleport packet. Was not expecting position data from client at this time"); // Purpur - Add more logger output for invalid movement kicks
 +                this.disconnect(Component.translatable("multiplayer.disconnect.invalid_player_movement"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PLAYER_MOVEMENT); // Paper - kick event cause
                  return;
              }
@@ -661,7 +662,7 @@
          }
      }
  
-@@ -833,28 +_,42 @@
+@@ -833,28 +_,50 @@
          }
      }
  
@@ -674,8 +675,17 @@
      @Override
      public void handleMovePlayer(ServerboundMovePlayerPacket p_9874_) {
          PacketUtils.ensureRunningOnSameThread(p_9874_, this, this.player.serverLevel());
-         if (containsInvalidValues(p_9874_.getX(0.0), p_9874_.getY(0.0), p_9874_.getZ(0.0), p_9874_.getYRot(0.0F), p_9874_.getXRot(0.0F))) {
+-        if (containsInvalidValues(p_9874_.getX(0.0), p_9874_.getY(0.0), p_9874_.getZ(0.0), p_9874_.getYRot(0.0F), p_9874_.getXRot(0.0F))) {
 -            this.disconnect(Component.translatable("multiplayer.disconnect.invalid_player_movement"));
++        // Purpur start - Add more logger output for invalid movement kicks
++        boolean invalidX = Double.isNaN(p_9874_.getX(0.0));
++        boolean invalidY = Double.isNaN(p_9874_.getY(0.0));
++        boolean invalidZ = Double.isNaN(p_9874_.getZ(0.0));
++        boolean invalidYaw = !Floats.isFinite(p_9874_.getYRot(0.0F));
++        boolean invalidPitch = !Floats.isFinite(p_9874_.getXRot(0.0F));
++        if (invalidX || invalidY || invalidZ || invalidYaw || invalidPitch) {
++            ServerGamePacketListenerImpl.LOGGER.warn(String.format("Disconnected on move player packet. Invalid data: x=%b, y=%b, z=%b, yaw=%b, pitch=%b", invalidX, invalidY, invalidZ, invalidYaw, invalidPitch));
++            // Purpur end - Add more logger output for invalid movement kicks
 +            this.disconnect(Component.translatable("multiplayer.disconnect.invalid_player_movement"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PLAYER_MOVEMENT); // Paper - kick event cause
          } else {
              ServerLevel serverlevel = this.player.serverLevel();
@@ -1177,7 +1187,7 @@
          this.ackBlockChangesUpTo(p_9932_.getSequence());
          ServerLevel serverlevel = this.player.serverLevel();
          InteractionHand interactionhand = p_9932_.getHand();
-@@ -1147,6 +_,49 @@
+@@ -1147,6 +_,50 @@
                  this.player.absRotateTo(f, f1);
              }
  
@@ -1200,6 +1210,7 @@
 +
 +            boolean cancelled;
 +            if (movingobjectposition == null || movingobjectposition.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) {
++                if (this.player.gameMode.shiftClickMended(itemstack)) return; // Purpur - Shift right click to use exp for mending
 +                org.bukkit.event.player.PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, org.bukkit.event.block.Action.RIGHT_CLICK_AIR, itemstack, interactionhand);
 +                cancelled = event.useItemInHand() == org.bukkit.event.Event.Result.DENY;
 +            } else {
@@ -1797,12 +1808,13 @@
          this.player.resetLastActionTime();
          this.player.setShiftKeyDown(p_9866_.isUsingSecondaryAction());
          if (entity != null) {
-@@ -1532,14 +_,51 @@
+@@ -1532,14 +_,52 @@
              }
  
              AABB aabb = entity.getBoundingBox();
 -            if (this.player.canInteractWithEntity(aabb, 1.0)) {
 +            if (this.player.canInteractWithEntity(aabb, io.papermc.paper.configuration.GlobalConfiguration.get().misc.clientInteractionLeniencyDistance.or(1.0D))) { // Paper - configurable lenience value for interact range
++                if (entity instanceof net.minecraft.world.entity.Mob mob) mob.ticksSinceLastInteraction = 0; // Purpur - Entity lifespan
                  p_9866_.dispatch(
                      new ServerboundInteractPacket.Handler() {
 -                        private void performInteraction(InteractionHand p_143679_, ServerGamePacketListenerImpl.EntityInteraction p_143680_) {

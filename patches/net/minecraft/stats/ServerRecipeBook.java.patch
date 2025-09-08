@@ -25,11 +25,12 @@
          p_12803_.connection.send(new ClientboundRecipePacket(p_12802_, p_12804_, Collections.emptyList(), this.getBookSettings()));
      }
  
-@@ -102,7 +_,7 @@
+@@ -102,7 +_,8 @@
                  ResourceLocation resourcelocation = ResourceLocation.parse(s);
                  Optional<RecipeHolder<?>> optional = p_12800_.byKey(resourcelocation);
                  if (optional.isEmpty()) {
 -                    LOGGER.error("Tried to load unrecognized recipe: {} removed now.", resourcelocation);
++                    if (!org.purpurmc.purpur.PurpurConfig.loggerSuppressUnrecognizedRecipeErrors) // Purpur - Logger settings (suppressing pointless logs)
 +                    LOGGER.debug("Tried to load unrecognized recipe: {} removed now.", resourcelocation); // Stellar
                  } else {
                      p_12799_.accept(optional.get());

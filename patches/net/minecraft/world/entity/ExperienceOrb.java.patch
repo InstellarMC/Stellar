@@ -231,7 +231,7 @@
          p_20796_.putInt("Count", this.count);
      }
  
-@@ -220,24 +_,26 @@
+@@ -220,35 +_,48 @@
      public void readAdditionalSaveData(CompoundTag p_20788_) {
          this.health = p_20788_.getShort("Health");
          this.age = p_20788_.getShort("Age");
@@ -263,8 +263,11 @@
                  }
              }
          }
-@@ -247,8 +_,19 @@
-         Optional<EnchantedItemInUse> optional = EnchantmentHelper.getRandomItemWith(EnchantmentEffectComponents.REPAIR_WITH_XP, p_344821_, ItemStack::isDamaged);
+     }
+ 
+     private int repairPlayerItems(ServerPlayer p_344821_, int p_147094_) {
+-        Optional<EnchantedItemInUse> optional = EnchantmentHelper.getRandomItemWith(EnchantmentEffectComponents.REPAIR_WITH_XP, p_344821_, ItemStack::isDamaged);
++        Optional<EnchantedItemInUse> optional = level().purpurConfig.useBetterMending ? EnchantmentHelper.getMostDamagedItemWith(EnchantmentEffectComponents.REPAIR_WITH_XP, p_344821_) : EnchantmentHelper.getRandomItemWith(EnchantmentEffectComponents.REPAIR_WITH_XP, p_344821_, ItemStack::isDamaged);
          if (optional.isPresent()) {
              ItemStack itemstack = optional.get().itemStack();
 -            int i = EnchantmentHelper.modifyDurabilityToRepairFromXp(p_344821_.serverLevel(), itemstack, p_147094_);

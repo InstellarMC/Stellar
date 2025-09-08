@@ -1,12 +1,19 @@
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -1,5 +_,6 @@
+@@ -1,11 +_,13 @@
  package net.minecraft.server.level;
  
 +import com.mohistmc.youer.plugins.ban.bans.BanItem;
  import com.mojang.logging.LogUtils;
  import java.util.Objects;
  import javax.annotation.Nullable;
+ import net.minecraft.advancements.CriteriaTriggers;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
++import net.minecraft.core.registries.Registries;
+ import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
+ import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+ import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 @@ -15,13 +_,11 @@
  import net.minecraft.world.ItemInteractionResult;
  import net.minecraft.world.MenuProvider;
@@ -556,7 +563,7 @@
 +                && !(p_9266_.getMainHandItem().doesSneakBypassUse(p_9267_, blockpos, p_9266_) && p_9266_.getOffhandItem().doesSneakBypassUse(p_9267_, blockpos, p_9266_)); // Neo
              ItemStack itemstack = p_9268_.copy();
 -            if (!flag1) {
-+            if (neoEvent.getUseBlock().isTrue() || (neoEvent.getUseBlock().isDefault() && !flag1)) {
++            if (neoEvent.getUseBlock().isTrue() || (neoEvent.getUseBlock().isDefault() && !flag1)|| (player.level().purpurConfig.composterBulkProcess && blockstate.is(net.minecraft.world.level.block.Blocks.COMPOSTER))) { // Purpur - Sneak to bulk process composter
                  ItemInteractionResult iteminteractionresult = blockstate.useItemOn(p_9266_.getItemInHand(p_9269_), p_9267_, p_9266_, p_9269_, p_9270_);
                  if (iteminteractionresult.consumesAction()) {
                      CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger(p_9266_, blockpos, itemstack);
@@ -571,7 +578,7 @@
                  InteractionResult interactionresult1;
                  if (this.isCreative()) {
                      int i = p_9268_.getCount();
-@@ -354,10 +_,30 @@
+@@ -354,10 +_,28 @@
  
                  return interactionresult1;
              } else {
@@ -586,16 +593,14 @@
      }
 +    // Purpur start
 +    public boolean shiftClickMended(ItemStack itemstack) {
-+        /* Stellar start - fixme
 +        if (this.player.level().purpurConfig.shiftRightClickRepairsMendingPoints > 0 && this.player.isShiftKeyDown() && this.player.getBukkitEntity().hasPermission("purpur.mending_shift_click")) {
 +            int points = Math.min(this.player.totalExperience, this.player.level().purpurConfig.shiftRightClickRepairsMendingPoints);
-+            if (points > 0 && itemstack.isDamaged() && net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.MENDING, itemstack) > 0) {
++            if (points > 0 && itemstack.isDamaged() && net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(this.player.registryAccess().lookup(Registries.ENCHANTMENT).orElseThrow().getOrThrow(net.minecraft.world.item.enchantment.Enchantments.MENDING), itemstack) > 0) {
 +                this.player.giveExperiencePoints(-points);
 +                this.player.level().addFreshEntity(new net.minecraft.world.entity.ExperienceOrb(this.player.level(), this.player.getX(), this.player.getY(), this.player.getZ(), points, org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN, this.player, this.player));
 +                return true;
 +            }
 +        }
-+        */// Stellar end - fixme
 +        return false;
 +    }
 +    // Purpur end

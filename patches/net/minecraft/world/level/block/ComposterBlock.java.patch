@@ -42,15 +42,62 @@
      }
  
      @Override
-@@ -234,7 +_,7 @@
+@@ -234,7 +_,28 @@
          ItemStack p_316332_, BlockState p_316118_, Level p_316624_, BlockPos p_316660_, Player p_316715_, InteractionHand p_316472_, BlockHitResult p_316606_
      ) {
          int i = p_316118_.getValue(LEVEL);
 -        if (i < 8 && COMPOSTABLES.containsKey(p_316332_.getItem())) {
 +        if (i < 8 && getValue(p_316332_) > 0) {
++            // Purpur start - sneak to bulk process composter
++            BlockState newState = process(i, p_316715_, p_316118_, p_316624_, p_316660_, p_316332_);
++            if (newState == null) {
++                return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
++            }
++            if (p_316624_.purpurConfig.composterBulkProcess && p_316715_.isShiftKeyDown() && newState != p_316118_) {
++                BlockState oldState;
++                int oldCount, newCount, oldLevel, newLevel;
++                do {
++                    oldState = newState;
++                    oldCount = p_316332_.getCount();
++                    oldLevel = oldState.getValue(ComposterBlock.LEVEL);
++                    newState = process(oldLevel, p_316715_, oldState, p_316624_, p_316660_, p_316332_);
++                    if (newState == null) {
++                        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
++                    }
++                    newCount = p_316332_.getCount();
++                    newLevel = newState.getValue(ComposterBlock.LEVEL);
++                } while (newCount > 0 && (newCount != oldCount || newLevel != oldLevel || newState != oldState));
++            }
++            // Purpur end - Sneak to bulk process composter
              if (i < 7 && !p_316624_.isClientSide) {
                  BlockState blockstate = addItem(p_316715_, p_316118_, p_316624_, p_316660_, p_316332_);
                  p_316624_.levelEvent(1500, p_316660_, p_316118_ != blockstate ? 1 : 0);
+@@ -248,6 +_,25 @@
+         }
+     }
+ 
++    // Purpur start - sneak to bulk process composter
++    private static @Nullable BlockState process(int levelValue, Player player, BlockState state, Level level, BlockPos pos, ItemStack stack) {
++        if (levelValue < 7 && !level.isClientSide) {
++            BlockState iblockdata1 = ComposterBlock.addItem(player, state, level, pos, stack);
++            // Paper start - handle cancelled events
++            if (iblockdata1 == null) {
++                return null;
++            }
++            // Paper end
++
++            level.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
++            player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
++            stack.consume(1, player);
++            return iblockdata1;
++        }
++        return state;
++    }
++    // Purpur end - Sneak to bulk process composter
++
+     @Override
+     protected InteractionResult useWithoutItem(BlockState p_316361_, Level p_316271_, BlockPos p_316647_, Player p_316633_, BlockHitResult p_316555_) {
+         int i = p_316361_.getValue(LEVEL);
 @@ -261,8 +_,15 @@
  
      public static BlockState insertItem(Entity p_270919_, BlockState p_270087_, ServerLevel p_270284_, ItemStack p_270253_, BlockPos p_270678_) {
