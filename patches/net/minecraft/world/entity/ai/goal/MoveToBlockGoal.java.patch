@@ -16,7 +16,20 @@
      @Override
      public void tick() {
          BlockPos blockpos = this.getMoveToTarget();
-@@ -113,8 +_,10 @@
+@@ -102,19 +_,22 @@
+         return this.reachedTarget;
+     }
+ 
++    private final BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos(); // Stellar - Added to reduce allocation
+     protected boolean findNearestBlock() {
+         int i = this.searchRange;
+         int j = this.verticalSearchRange;
+         BlockPos blockpos = this.mob.blockPosition();
+-        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
++        // BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos(); // Stellar - Moved to class level to reduce allocation
+ 
+         for (int k = this.verticalSearchStart; k <= j; k = k > 0 ? -k : 1 - k) {
+             for (int l = 0; l < i; l++) {
                  for (int i1 = 0; i1 <= l; i1 = i1 > 0 ? -i1 : 1 - i1) {
                      for (int j1 = i1 < l && i1 > -l ? l : 0; j1 <= l; j1 = j1 > 0 ? -j1 : 1 - j1) {
                          blockpos$mutableblockpos.setWithOffset(blockpos, i1, k - 1, j1);
