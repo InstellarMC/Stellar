@@ -5,35 +5,28 @@ CREATE TABLE `player` (
   `pl_mc_uuid` BINARY(16) NOT NULL,
   `pl_mc_name` VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   `pl_nickname` VARCHAR(32) NOT NULL,
-  `pl_first_seen` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  `pl_last_seen` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  `pl_latest_data` INT UNSIGNED NULL
+  `pl_first_seen` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `pl_last_seen` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `pl_latest` INT UNSIGNED NULL
 ) DEFAULT CHARSET = utf8mb4;
 CREATE UNIQUE INDEX `pl_mc_uuid` ON `player` (pl_mc_uuid);
 CREATE INDEX `pl_last_seen` ON `player` (pl_last_seen);
 
-CREATE TABLE `player_data` (
-  `pd_id` BIGINT UNSIGNED AUTO_INCREMENT,
-  `pd_player` INT UNSIGNED NOT NULL,
-  `pd_created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  `pd_month` INT AS (YEAR(pd_created_at) * 100 + MONTH(pd_created_at)) PERSISTENT,
-  `pd_parent` BIGINT UNSIGNED NULL,
-  `pd_hash` BINARY(32) NOT NULL,
-  PRIMARY KEY (pd_month, pd_id)
-)
-PARTITION BY RANGE (pd_month) (
-  PARTITION p202508 VALUES LESS THAN (202509),
-  PARTITION pMax VALUES LESS THAN MAXVALUE
+CREATE TABLE `player_revision` (
+  `pL_rev_id` BIGINT UNSIGNED AUTO_INCREMENT,
+  `pL_rev_player` INT UNSIGNED NOT NULL,
+  `pL_rev_created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `pL_rev_parent_id` BIGINT UNSIGNED DEFAULT NULL,
+  `pL_rev_hash` BINARY(32) DEFAULT '' NOT NULL,
+  PRIMARY KEY (`pl_rev_id`)
 );
-CREATE UNIQUE INDEX `pd_player_month_hash` ON `player_data` (pd_player, pd_month, pd_hash);
-CREATE INDEX `pd_player_created` ON `player_data` (pd_player, pd_created_at);
-CREATE INDEX `pd_player_hash` ON `player_data` (pd_player, pd_hash);
+CREATE INDEX `pl_rev_player_created` ON `player_revision` (pl_rev_player, pl_rev_created_at);
 
 CREATE TABLE `player_vanilla_data` (
   `pvd_id` BIGINT UNSIGNED,
   `pvd_type` SMALLINT UNSIGNED NOT NULL, -- 0: inventory, 1: ender chest
   `pvd_data` MEDIUMBLOB NOT NULL,
-  PRIMARY KEY (pvd_id, pvd_type)
+  PRIMARY KEY (`pvd_id`, `pvd_type`)
 ) DEFAULT CHARSET = utf8mb4;
 
 CREATE TABLE player_party_data (
