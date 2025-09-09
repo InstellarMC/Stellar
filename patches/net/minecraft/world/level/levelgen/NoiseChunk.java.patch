@@ -1,0 +1,54 @@
+--- a/net/minecraft/world/level/levelgen/NoiseChunk.java
++++ b/net/minecraft/world/level/levelgen/NoiseChunk.java
+@@ -30,7 +_,7 @@
+     private final int firstCellZ;
+     final int firstNoiseX;
+     final int firstNoiseZ;
+-    final List<NoiseChunk.NoiseInterpolator> interpolators;
++    final it.unimi.dsi.fastutil.objects.ObjectArrayList<NoiseChunk.NoiseInterpolator> interpolators; // Stellar - perf: changed to fastutil list
+     final List<NoiseChunk.CacheAllInCell> cellCaches;
+     private final Map<DensityFunction, DensityFunction> wrapped = new HashMap<>();
+     private final Long2IntMap preliminarySurfaceLevel = new Long2IntOpenHashMap();
+@@ -112,7 +_,7 @@
+         this.cellNoiseMinY = Mth.floorDiv(p_224347_.minY(), this.cellHeight);
+         this.firstCellX = Math.floorDiv(p_224345_, this.cellWidth);
+         this.firstCellZ = Math.floorDiv(p_224346_, this.cellWidth);
+-        this.interpolators = Lists.newArrayList();
++        this.interpolators = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
+         this.cellCaches = Lists.newArrayList();
+         this.firstNoiseX = QuartPos.fromBlock(p_224345_);
+         this.firstNoiseZ = QuartPos.fromBlock(p_224346_);
+@@ -297,18 +_,30 @@
+ 
+     public void updateForY(int p_209192_, double p_209193_) {
+         this.inCellY = p_209192_ - this.cellStartBlockY;
+-        this.interpolators.forEach(p_209238_ -> p_209238_.updateForY(p_209193_));
++        // Stellar start - perf: micro optimization for interpolation iteration
++        for (final NoiseChunk.NoiseInterpolator interpolator : this.interpolators.elements()) {
++            interpolator.updateForY(p_209193_);
++        }
++        // Stellar end - perf: micro optimization for interpolation iteration
+     }
+ 
+     public void updateForX(int p_209231_, double p_209232_) {
+         this.inCellX = p_209231_ - this.cellStartBlockX;
+-        this.interpolators.forEach(p_209229_ -> p_209229_.updateForX(p_209232_));
++        // Stellar start - perf: micro optimization for interpolation iteration
++        for (final NoiseChunk.NoiseInterpolator interpolator : this.interpolators.elements()) {
++            interpolator.updateForX(p_209232_);
++        }
++        // Stellar end - perf: micro optimization for interpolation iteration
+     }
+ 
+     public void updateForZ(int p_209242_, double p_209243_) {
+         this.inCellZ = p_209242_ - this.cellStartBlockZ;
+         this.interpolationCounter++;
+-        this.interpolators.forEach(p_209188_ -> p_209188_.updateForZ(p_209243_));
++        // Stellar start - perf: micro optimization for interpolation iteration
++        for (final NoiseChunk.NoiseInterpolator interpolator : this.interpolators.elements()) {
++            interpolator.updateForZ(p_209243_);
++        }
++        // Stellar end - perf: micro optimization for interpolation iteration
+     }
+ 
+     public void stopInterpolation() {

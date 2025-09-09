@@ -1,0 +1,53 @@
+--- a/net/minecraft/world/level/levelgen/SurfaceRules.java
++++ b/net/minecraft/world/level/levelgen/SurfaceRules.java
+@@ -570,11 +_,16 @@
+         KeyDispatchDataCodec<? extends SurfaceRules.RuleSource> codec();
+     }
+ 
+-    static record SequenceRule(List<SurfaceRules.SurfaceRule> rules) implements SurfaceRules.SurfaceRule {
++    static record SequenceRule(List<SurfaceRules.SurfaceRule> rules, SurfaceRules.SurfaceRule[] rulesArray) implements SurfaceRules.SurfaceRule { // Stellar start - Use array for iteration
++
++        SequenceRule(List<SurfaceRules.SurfaceRule> rules) {
++            this(rules, rules.toArray(SurfaceRules.SurfaceRule[]::new));
++        } // Stellar end - Use array for iteration
++
+         @Nullable
+         @Override
+         public BlockState tryApply(int p_189694_, int p_189695_, int p_189696_) {
+-            for (SurfaceRules.SurfaceRule surfacerules$surfacerule : this.rules) {
++            for (SurfaceRules.SurfaceRule surfacerules$surfacerule : this.rulesArray) { // Stellar - Use array for iteration
+                 BlockState blockstate = surfacerules$surfacerule.tryApply(p_189694_, p_189695_, p_189696_);
+                 if (blockstate != null) {
+                     return blockstate;
+@@ -585,21 +_,27 @@
+         }
+     }
+ 
+-    static record SequenceRuleSource(List<SurfaceRules.RuleSource> sequence) implements SurfaceRules.RuleSource {
++    static record SequenceRuleSource(List<SurfaceRules.RuleSource> sequence, SurfaceRules.RuleSource[] sequenceArray, boolean isSingleOrNoElement, @Nullable SurfaceRules.RuleSource firstElement) implements SurfaceRules.RuleSource { // Stellar start - Optimize lookup
+         static final KeyDispatchDataCodec<SurfaceRules.SequenceRuleSource> CODEC = KeyDispatchDataCodec.of(
+             SurfaceRules.RuleSource.CODEC.listOf().xmap(SurfaceRules.SequenceRuleSource::new, SurfaceRules.SequenceRuleSource::sequence).fieldOf("sequence")
+         );
+ 
++        private static final SurfaceRules.SurfaceRule EMPTY = new SurfaceRules.SequenceRule(List.of());
++        SequenceRuleSource(List<SurfaceRules.RuleSource> sequence) {
++            this(sequence, sequence.toArray(SurfaceRules.RuleSource[]::new), sequence.size() <= 1, sequence.isEmpty() ? null : sequence.getFirst());
++        } // Stellar end - Optimize lookup
++
+         @Override
+         public KeyDispatchDataCodec<? extends SurfaceRules.RuleSource> codec() {
+             return CODEC;
+         }
+ 
+         public SurfaceRules.SurfaceRule apply(SurfaceRules.Context p_189704_) {
+-            if (this.sequence.size() == 1) {
+-                return this.sequence.get(0).apply(p_189704_);
++            // Stellar start - Optimize lookup
++            if (this.isSingleOrNoElement) {
++                return this.firstElement != null ? this.firstElement.apply(p_189704_) : EMPTY;
+             } else {
+-                Builder<SurfaceRules.SurfaceRule> builder = ImmutableList.builder();
++                Builder<SurfaceRules.SurfaceRule> builder = ImmutableList.builderWithExpectedSize(this.sequenceArray.length); // Stellar end - Optimize lookup
+ 
+                 for (SurfaceRules.RuleSource surfacerules$rulesource : this.sequence) {
+                     builder.add(surfacerules$rulesource.apply(p_189704_));

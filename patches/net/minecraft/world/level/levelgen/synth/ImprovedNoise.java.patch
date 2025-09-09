@@ -39,9 +39,9 @@
 -        double d4 = d1 - (double)j;
 -        double d5 = d2 - (double)k;
 +        // Stellar start - optimize noise generation - remove frequent type conversions
-+        double i = Mth.floor(d0);
-+        double j = Mth.floor(d1);
-+        double k = Mth.floor(d2);
++        double i = Math.floor(d0);
++        double j = Math.floor(d1);
++        double k = Math.floor(d2);
 +        double d3 = d0 - i;
 +        double d4 = d1 - j;
 +        double d5 = d2 - k;
@@ -75,9 +75,9 @@
 -        double d5 = d2 - (double)k;
 -        return this.sampleWithDerivative(i, j, k, d3, d4, d5, p_164316_);
 +        // Stellar start - optimize noise generation - remove frequent type conversions
-+        double i = Mth.floor(d0);
-+        double j = Mth.floor(d1);
-+        double k = Mth.floor(d2);
++        double i = Math.floor(d0);
++        double j = Math.floor(d1);
++        double k = Math.floor(d2);
 +        double d3 = d0 - i;
 +        double d4 = d1 - j;
 +        double d5 = d2 - k;
