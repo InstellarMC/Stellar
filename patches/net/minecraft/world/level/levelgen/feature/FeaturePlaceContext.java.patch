@@ -1,0 +1,73 @@
+--- a/net/minecraft/world/level/levelgen/feature/FeaturePlaceContext.java
++++ b/net/minecraft/world/level/levelgen/feature/FeaturePlaceContext.java
+@@ -54,4 +_,70 @@
+     public FC config() {
+         return this.config;
+     }
++
++    // Stellar start - Reduce allocations - object pooling for FeaturePlaceContext
++    static final class PooledFeaturePlaceContext<FC extends FeatureConfiguration> extends FeaturePlaceContext<FC> {
++
++        public static final ThreadLocal<dev.instellar.stellar.util.SimpleObjectPool<@org.jspecify.annotations.NonNull PooledFeaturePlaceContext<?>>> POOL = ThreadLocal.withInitial(() -> new dev.instellar.stellar.util.SimpleObjectPool<>(unused -> new PooledFeaturePlaceContext<>(), PooledFeaturePlaceContext::reInit, PooledFeaturePlaceContext::reInit, 2048));
++
++        private @org.jspecify.annotations.Nullable Optional<ConfiguredFeature<?, ?>> feature;
++        private @org.jspecify.annotations.Nullable WorldGenLevel level;
++        private @org.jspecify.annotations.Nullable ChunkGenerator generator;
++        private @org.jspecify.annotations.Nullable RandomSource random;
++        private @org.jspecify.annotations.Nullable BlockPos origin;
++        private @org.jspecify.annotations.Nullable FC config;
++
++        public PooledFeaturePlaceContext() {
++            super(null, null, null, null, null, null);
++        }
++
++        public void reInit(Optional<ConfiguredFeature<?, ?>> feature, WorldGenLevel level, ChunkGenerator generator, RandomSource random, BlockPos origin, FC config) {
++            this.feature = feature;
++            this.level = level;
++            this.generator = generator;
++            this.random = random;
++            this.origin = origin;
++            this.config = config;
++        }
++
++        public void reInit() {
++            this.feature = null;
++            this.level = null;
++            this.generator = null;
++            this.random = null;
++            this.origin = null;
++            this.config = null;
++        }
++
++        @Override
++        public @org.jspecify.annotations.Nullable Optional<ConfiguredFeature<?, ?>> topFeature() {
++            return this.feature;
++        }
++
++        @Override
++        public @org.jspecify.annotations.Nullable WorldGenLevel level() {
++            return this.level;
++        }
++
++        @Override
++        public @org.jspecify.annotations.Nullable ChunkGenerator chunkGenerator() {
++            return this.generator;
++        }
++
++        @Override
++        public @org.jspecify.annotations.Nullable RandomSource random() {
++            return this.random;
++        }
++
++        @Override
++        public @org.jspecify.annotations.Nullable BlockPos origin() {
++            return this.origin;
++        }
++
++        @Override
++        public @org.jspecify.annotations.Nullable FC config() {
++            return this.config;
++        }
++    }
++    // Stellar end - Reduce allocations - object pooling for FeaturePlaceContext
+ }

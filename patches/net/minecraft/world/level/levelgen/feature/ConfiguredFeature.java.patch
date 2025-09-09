@@ -1,0 +1,23 @@
+--- a/net/minecraft/world/level/levelgen/feature/ConfiguredFeature.java
++++ b/net/minecraft/world/level/levelgen/feature/ConfiguredFeature.java
+@@ -22,7 +_,19 @@
+     public static final Codec<HolderSet<ConfiguredFeature<?, ?>>> LIST_CODEC = RegistryCodecs.homogeneousList(Registries.CONFIGURED_FEATURE, DIRECT_CODEC);
+ 
+     public boolean place(WorldGenLevel p_224954_, ChunkGenerator p_224955_, RandomSource p_224956_, BlockPos p_224957_) {
+-        return this.feature.place(this.config, p_224954_, p_224955_, p_224956_, p_224957_);
++        // Stellar start - Reduce allocations
++        if (!p_224954_.ensureCanWrite(p_224957_)) {
++            return false;
++        }
++        final dev.instellar.stellar.util.SimpleObjectPool<net.minecraft.world.level.levelgen.feature.FeaturePlaceContext.@org.jspecify.annotations.NonNull PooledFeaturePlaceContext<FC>> pool = net.minecraft.world.level.levelgen.feature.FeaturePlaceContext.PooledFeaturePlaceContext.POOL.get();
++        final net.minecraft.world.level.levelgen.feature.FeaturePlaceContext.PooledFeaturePlaceContext<FC> context = pool.alloc();
++        try {
++            context.reInit(java.util.Optional.empty(), p_224954_, p_224955_, p_224956_, p_224957_, this.config());
++            return this.feature.place(context);
++        } finally {
++            pool.release(context);
++        }
++        // Stellar end - Reduce allocations
+     }
+ 
+     public Stream<ConfiguredFeature<?, ?>> getFeatures() {

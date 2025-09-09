@@ -71,14 +71,20 @@
                  BlockEntity blockentity = blockstate.hasBlockEntity() ? this.getBlockEntity(p_9550_) : null;
                  Block.dropResources(blockstate, this.level, p_9550_, blockentity, p_9552_, ItemStack.EMPTY);
              }
-@@ -240,6 +_,7 @@
+@@ -240,10 +_,11 @@
          }
      }
  
 +    private boolean hasSetFarWarned = false; // Paper - Buffer OOB setBlock calls
      @Override
      public boolean ensureCanWrite(BlockPos p_181031_) {
-         int i = SectionPos.blockToSectionCoord(p_181031_.getX());
+-        int i = SectionPos.blockToSectionCoord(p_181031_.getX());
+-        int j = SectionPos.blockToSectionCoord(p_181031_.getZ());
++        int i = p_181031_.getX() >> 4; // Stellar - inline
++        int j = p_181031_.getZ() >> 4; // Stellar - inline
+         ChunkPos chunkpos = this.getCenter();
+         int k = Math.abs(chunkpos.x - i);
+         int l = Math.abs(chunkpos.z - j);
 @@ -257,6 +_,9 @@
  
              return true;
