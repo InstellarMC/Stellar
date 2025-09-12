@@ -1,0 +1,24 @@
+--- a/net/minecraft/world/effect/WeavingMobEffect.java
++++ b/net/minecraft/world/effect/WeavingMobEffect.java
+@@ -26,11 +_,11 @@
+     public void onMobRemoved(LivingEntity p_338209_, int p_338446_, Entity.RemovalReason p_338624_) {
+         if (p_338624_ == Entity.RemovalReason.KILLED
+             && (p_338209_ instanceof Player || p_338209_.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) {
+-            this.spawnCobwebsRandomlyAround(p_338209_.level(), p_338209_.getRandom(), p_338209_.getOnPos());
++            this.spawnCobwebsRandomlyAround(p_338209_, p_338209_.level(), p_338209_.getRandom(), p_338209_.getOnPos()); // Paper - Fire EntityChangeBlockEvent in more places
+         }
+     }
+ 
+-    private void spawnCobwebsRandomlyAround(Level p_338396_, RandomSource p_338709_, BlockPos p_338472_) {
++    private void spawnCobwebsRandomlyAround(LivingEntity entity, Level p_338396_, RandomSource p_338709_, BlockPos p_338472_) { // Paper - Fire EntityChangeBlockEvent in more places
+         Set<BlockPos> set = Sets.newHashSet();
+         int i = this.maxCobwebs.applyAsInt(p_338709_);
+ 
+@@ -47,6 +_,7 @@
+         }
+ 
+         for (BlockPos blockpos2 : set) {
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockPos3, Blocks.COBWEB.defaultBlockState())) continue; // Paper - Fire EntityChangeBlockEvent in more places
+             p_338396_.setBlock(blockpos2, Blocks.COBWEB.defaultBlockState(), 3);
+             p_338396_.levelEvent(3018, blockpos2, 0);
+         }

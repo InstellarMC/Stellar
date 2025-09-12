@@ -10,14 +10,14 @@
  
  public class SimpleContainer implements Container, StackedContentsCompatible {
      private final int size;
-@@ -19,9 +_,73 @@
+@@ -19,9 +_,76 @@
      @Nullable
      private List<ContainerListener> listeners;
  
 +    // CraftBukkit start - add fields and methods
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 +    private int maxStack = MAX_STACK;
-+    protected org.bukkit.inventory.InventoryHolder bukkitOwner;
++    protected @Nullable org.bukkit.inventory.InventoryHolder bukkitOwner; // Paper - annotation
 +
 +    public List<ItemStack> getContents() {
 +        return this.items;
@@ -45,7 +45,12 @@
 +    }
 +
 +    public org.bukkit.inventory.InventoryHolder getOwner() {
-+        return bukkitOwner;
++        // Paper start - Add missing InventoryHolders
++        if (this.bukkitOwner == null && this.bukkitOwnerCreator != null) {
++            this.bukkitOwner = this.bukkitOwnerCreator.get();
++        }
++        // Paper end - Add missing InventoryHolders
++        return this.bukkitOwner;
 +    }
 +
 +    @Override
@@ -71,9 +76,9 @@
 +    }
 +
      public SimpleContainer(int p_19150_) {
-         this.size = p_19150_;
-         this.items = NonNullList.withSize(p_19150_, ItemStack.EMPTY);
-+        this.bukkitOwner = null;
+-        this.size = p_19150_;
+-        this.items = NonNullList.withSize(p_19150_, ItemStack.EMPTY);
++        this(p_19150_, null);
 +    }
 +
 +    public SimpleContainer(int i, org.bukkit.inventory.InventoryHolder owner) {

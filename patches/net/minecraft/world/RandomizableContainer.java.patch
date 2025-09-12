@@ -14,7 +14,7 @@
      void setLootTable(@Nullable ResourceKey<LootTable> p_335578_);
  
 -    default void setLootTable(ResourceKey<LootTable> p_335762_, long p_335967_) {
-+    default void setLootTable(@Nullable ResourceKey<LootTable> p_335762_, long p_335967_) {
++    default void setLootTable(@Nullable ResourceKey<LootTable> p_335762_, long p_335967_) { // Paper - add nullable
          this.setLootTable(p_335762_);
          this.setLootTableSeed(p_335967_);
      }
@@ -34,7 +34,7 @@
          } else {
              return false;
          }
-@@ -69,28 +_,44 @@
+@@ -69,28 +_,46 @@
              return false;
          } else {
              p_309634_.putString("LootTable", resourcekey.location().toString());
@@ -52,6 +52,9 @@
 +    AtomicBoolean unpackLootTable$forceClearLootTable = new AtomicBoolean(false);
      default void unpackLootTable(@Nullable Player p_309628_) {
 +        // Paper start - LootTable API
++        this.unpackLootTable(p_309628_, false);
++    }
++    default void unpackLootTable(final @Nullable Player p_309628_, final boolean forceClearLootTable) {
 +        // Paper end - LootTable API
          Level level = this.getLevel();
          BlockPos blockpos = this.getBlockPos();
@@ -59,7 +62,6 @@
 -        if (resourcekey != null && level != null && level.getServer() != null) {
 +        // Paper start - LootTable API
 +        lootReplenish: if (resourcekey != null && level != null && level.getServer() != null) {
-+            boolean forceClearLootTable = unpackLootTable$forceClearLootTable.getAndSet(false);
 +            if (this.lootableData() != null && !this.lootableData().shouldReplenish(this, PaperLootableInventoryData.CONTAINER, p_309628_)) {
 +                if (forceClearLootTable) {
 +                    this.setLootTable(null);
@@ -84,14 +86,10 @@
              if (p_309628_ != null) {
                  lootparams$builder.withLuck(p_309628_.getLuck()).withParameter(LootContextParams.THIS_ENTITY, p_309628_);
              }
-@@ -98,4 +_,20 @@
+@@ -98,4 +_,16 @@
              loottable.fill(this, lootparams$builder.create(LootContextParamSets.CHEST), this.getLootTableSeed());
          }
      }
-+    default void unpackLootTable(@Nullable final Player p_309628_, final boolean forceClearLootTable) {
-+        unpackLootTable$forceClearLootTable.set(forceClearLootTable);
-+        unpackLootTable(p_309628_);
-+    }
 +
 +    // Paper start - LootTable API
 +    @Nullable @org.jetbrains.annotations.Contract(pure = true)

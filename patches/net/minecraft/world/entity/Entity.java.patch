@@ -89,7 +89,12 @@
      private AABB bb = INITIAL_AABB;
      public boolean onGround;
      public boolean horizontalCollision;
-@@ -194,9 +_,11 @@
+@@ -190,13 +_,15 @@
+     public double yOld;
+     public double zOld;
+     public boolean noPhysics;
+-    public final RandomSource random = RandomSource.create();
++    public final RandomSource random;
      public int tickCount;
      public int remainingFireTicks = -this.getFireImmuneTicks();
      public boolean wasTouchingWater;
@@ -111,7 +116,7 @@
      private float eyeHeight;
      public boolean isInPowderSnow;
      public boolean wasInPowderSnow;
-@@ -243,6 +_,237 @@
+@@ -243,14 +_,326 @@
      public boolean hasVisualFire;
      @Nullable
      private BlockState inBlockState = null;
@@ -122,6 +127,81 @@
 +        return tag.contains("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
 +    }
 +
++    // Paper start - Share random for entities to make them more random
++    public static RandomSource SHARED_RANDOM = new RandomRandomSource();
++    private static final class RandomRandomSource extends java.util.Random implements net.minecraft.world.level.levelgen.BitRandomSource {
++        private boolean locked = false;
++
++        @Override
++        public synchronized void setSeed(long seed) {
++            if (locked) {
++                LOGGER.error("Ignoring setSeed on Entity.SHARED_RANDOM", new Throwable());
++            } else {
++                super.setSeed(seed);
++                locked = true;
++            }
++        }
++
++        @Override
++        public RandomSource fork() {
++            return new net.minecraft.world.level.levelgen.LegacyRandomSource(this.nextLong());
++        }
++
++        @Override
++        public net.minecraft.world.level.levelgen.PositionalRandomFactory forkPositional() {
++            return new net.minecraft.world.level.levelgen.LegacyRandomSource.LegacyPositionalRandomFactory(this.nextLong());
++        }
++
++        // these below are added to fix reobf issues that I don't wanna deal with right now
++        @Override
++        public int next(int bits) {
++            return super.next(bits);
++        }
++
++        @Override
++        public int nextInt(int origin, int bound) {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt(origin, bound);
++        }
++
++        @Override
++        public long nextLong() {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextLong();
++        }
++
++        @Override
++        public int nextInt() {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt();
++        }
++
++        @Override
++        public int nextInt(int bound) {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt(bound);
++        }
++
++        @Override
++        public boolean nextBoolean() {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextBoolean();
++        }
++
++        @Override
++        public float nextFloat() {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextFloat();
++        }
++
++        @Override
++        public double nextDouble() {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextDouble();
++        }
++
++        @Override
++        public double nextGaussian() {
++            return super.nextGaussian();
++        }
++    }
++    // Paper end - Share random for entities to make them more random
++    public CreatureSpawnEvent.SpawnReason spawnReason;  // Paper - Entity#getEntitySpawnReason
++
++    public boolean collisionLoadChunks = false; // Paper
 +    private CraftEntity bukkitEntity;
 +
 +    public CraftEntity getBukkitEntity() {
@@ -175,8 +255,6 @@
 +    // Main use case currently is for SPIGOT-7487, preventing dropping of leash when leash is removed
 +    public boolean pluginRemoved = false;
 +
-+    // Paper end - Share random for entities to make them more random
-+    public CreatureSpawnEvent.SpawnReason spawnReason;  // Paper - Entity#getEntitySpawnReason
 +    public void spawnReason(CreatureSpawnEvent.SpawnReason spawnReason) {
 +        this.spawnReason =  spawnReason;
 +    }
@@ -348,8 +426,10 @@
 +    // Purpur end - copied from Mob - API for any mob to burn daylight
  
      public Entity(EntityType<?> p_19870_, Level p_19871_) {
++        this.random  = p_19871_ == null || p_19871_.purpurConfig.entitySharedRandom ? SHARED_RANDOM : RandomSource.create(); // Paper - Share random for entities to make them more random // Purpur
          this.type = p_19870_;
-@@ -251,6 +_,13 @@
+         this.level = p_19871_;
+         this.dimensions = p_19870_.getDimensions();
          this.position = Vec3.ZERO;
          this.blockPosition = BlockPos.ZERO;
          this.chunkPosition = ChunkPos.ZERO;
