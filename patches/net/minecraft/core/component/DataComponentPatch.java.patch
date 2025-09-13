@@ -7,7 +7,7 @@
 -            p_330633_.streamCodec().encode(p_331735_, (T)p_331089_);
 +            // Paper start - codec errors of random anonymous classes are useless
 +            try {
-+                p_330633_.streamCodec().encode(p_331735_, (T) p_331089_); // CraftBukkit - decompile error
++            p_330633_.streamCodec().encode(p_331735_, (T) p_331089_); // CraftBukkit - decompile error
 +            } catch (final Exception e) {
 +                throw new RuntimeException("Error encoding component " + p_330633_, e);
 +            }

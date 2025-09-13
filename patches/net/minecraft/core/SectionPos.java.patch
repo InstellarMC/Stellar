@@ -9,7 +9,7 @@
      }
  
      public static SectionPos of(ChunkPos p_123197_, int p_123198_) {
-@@ -54,19 +_,28 @@
+@@ -54,19 +_,27 @@
      }
  
      public static SectionPos of(long p_123185_) {
@@ -29,7 +29,6 @@
 +        return (((long) (x + enumdirection.getStepX()) & 4194303L) << 42) | (((long) ((y) + enumdirection.getStepY()) & 1048575L)) | (((long) (z + enumdirection.getStepZ()) & 4194303L) << 20);
 +    }
 +    // Paper end
-+
      public static long offset(long p_123192_, Direction p_123193_) {
          return offset(p_123192_, p_123193_.getStepX(), p_123193_.getStepY(), p_123193_.getStepZ());
      }

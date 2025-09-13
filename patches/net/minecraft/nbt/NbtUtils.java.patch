@@ -1,0 +1,15 @@
+--- a/net/minecraft/nbt/NbtUtils.java
++++ b/net/minecraft/nbt/NbtUtils.java
+@@ -149,8 +_,10 @@
+         if (!p_250775_.contains("Name", 8)) {
+             return Blocks.AIR.defaultBlockState();
+         } else {
+-            ResourceLocation resourcelocation = ResourceLocation.parse(p_250775_.getString("Name"));
+-            Optional<? extends Holder<Block>> optional = p_256363_.get(ResourceKey.create(Registries.BLOCK, resourcelocation));
++            // Paper start - Validate resource location
++            ResourceLocation resourceLocation = ResourceLocation.tryParse(p_250775_.getString("Name"));
++            Optional<? extends Holder<Block>> optional = resourceLocation != null ? p_256363_.get(ResourceKey.create(Registries.BLOCK, resourceLocation)) : Optional.empty();
++            // Paper end - Validate resource location
+             if (optional.isEmpty()) {
+                 return Blocks.AIR.defaultBlockState();
+             } else {

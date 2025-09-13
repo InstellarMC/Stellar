@@ -5,7 +5,7 @@
  
      private void checkPermissions(CommandSourceStack p_121169_) throws CommandSyntaxException {
 -        if (this.usesSelector && !p_121169_.hasPermission(2)) {
-+        if (!p_121169_.bypassSelectorPermissions && this.usesSelector && !net.neoforged.neoforge.common.CommonHooks.canUseEntitySelectors(p_121169_)) {
++        if (!p_121169_.bypassSelectorPermissions && this.usesSelector && (!net.neoforged.neoforge.common.CommonHooks.canUseEntitySelectors(p_121169_) || !p_121169_.hasPermission(2, "minecraft.command.selector"))) { // Neo // CraftBukkit // Paper - add bypass for selector perms
              throw EntityArgument.ERROR_SELECTORS_NOT_ALLOWED.create();
          }
      }
@@ -29,6 +29,20 @@
                      return List.of(serverplayer3);
                  }
  
+@@ -211,11 +_,12 @@
+                 List<ServerPlayer> list;
+                 if (this.isWorldLimited()) {
+                     list = p_121167_.getLevel().getPlayers(predicate, i);
++                    list.removeIf(entityplayer3 -> !canSee(p_121167_, entityplayer3)); // Purpur - Hide hidden players from entity selector
+                 } else {
+                     list = new ObjectArrayList<>();
+ 
+                     for (ServerPlayer serverplayer : p_121167_.getServer().getPlayerList().getPlayers()) {
+-                        if (predicate.test(serverplayer)) {
++                        if (predicate.test(serverplayer) && canSee(p_121167_, serverplayer)) { // Purpur
+                             list.add(serverplayer);
+                             if (list.size() >= i) {
+                                 return list;
 @@ -274,4 +_,10 @@
      public static Component joinNames(List<? extends Entity> p_175104_) {
          return ComponentUtils.formatList(p_175104_, Entity::getDisplayName);

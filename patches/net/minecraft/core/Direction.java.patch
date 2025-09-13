@@ -54,11 +54,11 @@
          this.axisDirection = p_122360_;
          this.normal = p_122362_;
 +
-+        // Stellar start - lithium: math.fast_blockpos - Avoid indirection to aid inlining
++        // Stellar start - lithium: math.fast_blockpos - Avoid indirection to aid inlining // Paper start - Perf: Inline shift direction fields
 +        this.offsetX = p_122362_.getX();
 +        this.offsetY = p_122362_.getY();
 +        this.offsetZ = p_122362_.getZ();
-+        // Stellar end - lithium: math.fast_blockpos - Avoid indirection to aid inlining
++        // Stellar end - lithium: math.fast_blockpos - Avoid indirection to aid inlining // Paper end - Perf: Inline shift direction fields
      }
  
      public static Direction[] orderedByNearest(Entity p_122383_) {
@@ -110,15 +110,15 @@
 -    public int getStepZ() {
 -        return this.normal.getZ();
 +    public final int getStepX() { // Stellar - Perf: Final for inline
-+        return this.offsetX; // Stellar - lithium: math.fast_blockpos - Avoid indirection to aid inlining
++        return this.offsetX; // Stellar - lithium: math.fast_blockpos - Avoid indirection to aid inlining // Paper - Perf: Inline shift direction fields
 +    }
 +
 +    public final int getStepY() { // Stellar - Perf: Final for inline
-+        return this.offsetY; // Stellar - lithium: math.fast_blockpos - Avoid indirection to aid inlining
++        return this.offsetY; // Stellar - lithium: math.fast_blockpos - Avoid indirection to aid inlining // Paper - Perf: Inline shift direction fields
 +    }
 +
 +    public final int getStepZ() { // Stellar - Perf: Final for inline
-+        return this.offsetZ; // Stellar - lithium: math.fast_blockpos - Avoid indirection to aid inlining
++        return this.offsetZ; // Stellar - lithium: math.fast_blockpos - Avoid indirection to aid inlining // Paper - Perf: Inline shift direction fields
      }
  
      public Vector3f step() {

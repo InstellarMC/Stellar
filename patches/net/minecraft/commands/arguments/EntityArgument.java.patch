@@ -46,7 +46,7 @@
                  p_91483_,
                  p_91457_ -> {
 -                    Collection<String> collection = sharedsuggestionprovider.getOnlinePlayerNames();
-+                    // Stellar start - Make CommandSourceStack respect hidden players
++                    // Paper start - tell clients to ask server for suggestions for EntityArguments
 +                    final Collection<String> collection;
 +                    if (sharedsuggestionprovider instanceof CommandSourceStack commandSourceStack && commandSourceStack.getEntity() instanceof ServerPlayer sourcePlayer) {
 +                        collection = new java.util.ArrayList<>();
@@ -58,7 +58,7 @@
 +                    } else {
 +                        collection = sharedsuggestionprovider.getOnlinePlayerNames();
 +                    }
-+                    // Stellar end - Make CommandSourceStack respect hidden players
++                    // Paper end - tell clients to ask server for suggestions for EntityArguments
                      Iterable<String> iterable = (Iterable<String>)(this.playersOnly
                          ? collection
                          : Iterables.concat(collection, sharedsuggestionprovider.getSelectedEntities()));

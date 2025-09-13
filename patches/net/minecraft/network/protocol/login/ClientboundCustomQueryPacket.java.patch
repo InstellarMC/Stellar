@@ -9,3 +9,18 @@
          return readUnknownPayload(p_295267_, p_295117_);
      }
  
+@@ -46,4 +_,14 @@
+     public void handle(ClientLoginPacketListener p_134754_) {
+         p_134754_.handleCustomQuery(this);
+     }
++
++    // Paper start - MC Utils - default query payloads
++    public static record PlayerInfoChannelPayload(ResourceLocation id, FriendlyByteBuf buffer) implements CustomQueryPayload {
++
++        @Override
++        public void write(final FriendlyByteBuf buf) {
++            buf.writeBytes(this.buffer.copy());
++        }
++    }
++    // Paper end - MC Utils - default query payloads
+ }

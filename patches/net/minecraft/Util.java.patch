@@ -43,7 +43,7 @@
 -    private static ExecutorService makeExecutor(String p_137478_) {
 -        int i = Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, getMaxThreads());
 -        ExecutorService executorservice;
-+    private static ExecutorService makeExecutor(String p_137478_, int priorityModifier) {
++    private static ExecutorService makeExecutor(String p_137478_, int priorityModifier) { // Paper - Pref: add priority
 +        // Paper start - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
 +        int cpus = Runtime.getRuntime().availableProcessors() / 2;
 +        int i;

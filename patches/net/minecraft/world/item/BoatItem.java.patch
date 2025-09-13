@@ -38,12 +38,13 @@
                      return InteractionResultHolder.fail(itemstack);
                  } else {
                      if (!p_40622_.isClientSide) {
+-                        p_40622_.addFreshEntity(boat);
 +                        // CraftBukkit start
 +                        if (CraftEventFactory.callEntityPlaceEvent(p_40622_, hitresult.getBlockPos(), hitresult.getDirection(), p_40623_, boat, p_40624_).isCancelled()) {
 +                            return InteractionResultHolder.fail(itemstack);
 +                        }
-                         p_40622_.addFreshEntity(boat);
-+                        if (!p_40622_.canAddFreshEntity()) {
++
++                        if (!p_40622_.addFreshEntity(boat)) {
 +                            return InteractionResultHolder.pass(itemstack);
 +                        }
 +                        // CraftBukkit end

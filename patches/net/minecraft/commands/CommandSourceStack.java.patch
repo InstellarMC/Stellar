@@ -5,7 +5,7 @@
  import java.util.stream.Stream;
  import javax.annotation.Nullable;
 +
-+import com.mojang.brigadier.tree.CommandNode;
++import com.mojang.brigadier.tree.CommandNode; // CraftBukkit
  import net.minecraft.ChatFormatting;
  import net.minecraft.commands.arguments.EntityAnchorArgument;
  import net.minecraft.commands.execution.TraceCallbacks;
@@ -16,7 +16,7 @@
 +import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
  
 -public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, net.neoforged.neoforge.common.extensions.ICommandSourceStackExtension {
-+public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, net.neoforged.neoforge.common.extensions.ICommandSourceStackExtension, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Paper - Brigadier API
++public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, net.neoforged.neoforge.common.extensions.ICommandSourceStackExtension, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Neo // Paper - Brigadier API
      public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
      public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
      public final CommandSource source;
@@ -60,7 +60,7 @@
      public CommandSourceStack withRotation(Vec2 p_81347_) {
          return this.rotation.equals(p_81347_)
              ? this
-@@ -388,9 +_,47 @@
+@@ -388,9 +_,55 @@
  
      @Override
      public boolean hasPermission(int p_81370_) {
@@ -99,11 +99,19 @@
 +        return hasBukkitPerm.getAsBoolean();
 +        // Paper end - Fix permission levels for command blocks
 +    }
-+    // CraftBukkit end
-+    public org.bukkit.command.CommandSender getBukkitSender() {
-+        return source.getBukkitSender(this);
++
++    // Purpur start
++    public boolean testPermission(int i, String bukkitPermission) {
++        if (hasPermission(i, bukkitPermission)) {
++            return true;
++        }
++        net.kyori.adventure.text.Component permissionMessage = getLevel().getServer().server.permissionMessage();
++        if (!permissionMessage.equals(net.kyori.adventure.text.Component.empty())) {
++            sendFailure(io.papermc.paper.adventure.PaperAdventure.asVanilla(permissionMessage.replaceText(net.kyori.adventure.text.TextReplacementConfig.builder().matchLiteral("<permission>").replacement(bukkitPermission).build())));
++        }
++        return false;
 +    }
-+    // CraftBukkit end
++    // Purpur end
 +
      public Vec3 getPosition() {
          return this.worldPosition;
@@ -163,7 +171,7 @@
          }
      }
  
-@@ -591,4 +_,11 @@
+@@ -591,4 +_,32 @@
      public boolean isSilent() {
          return this.silent;
      }
@@ -174,4 +182,25 @@
 +        return this;
 +    }
 +    // Paper end
++    // CraftBukkit end
++    public org.bukkit.command.CommandSender getBukkitSender() {
++        return source.getBukkitSender(this);
++    }
++    // CraftBukkit end
++    // Paper start - tell clients to ask server for suggestions for EntityArguments
++    @Override
++    public Collection<String> getSelectedEntities() {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && this.source instanceof ServerPlayer player) {
++            final Entity cameraEntity = player.getCamera();
++            final double pickDistance = player.entityInteractionRange();
++            final Vec3 min = cameraEntity.getEyePosition(1.0F);
++            final Vec3 viewVector = cameraEntity.getViewVector(1.0F);
++            final Vec3 max = min.add(viewVector.x * pickDistance, viewVector.y * pickDistance, viewVector.z * pickDistance);
++            final net.minecraft.world.phys.AABB aabb = cameraEntity.getBoundingBox().expandTowards(viewVector.scale(pickDistance)).inflate(1.0D, 1.0D, 1.0D);
++            final net.minecraft.world.phys.EntityHitResult hitResult = net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(cameraEntity, min, max, aabb, (e) -> !e.isSpectator() && e.isPickable(), pickDistance * pickDistance);
++            return hitResult != null ? java.util.Collections.singletonList(hitResult.getEntity().getStringUUID()) : SharedSuggestionProvider.super.getSelectedEntities();
++        }
++        return SharedSuggestionProvider.super.getSelectedEntities();
++    }
++    // Paper end - tell clients to ask server for suggestions for EntityArguments
  }

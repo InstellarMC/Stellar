@@ -33,7 +33,7 @@
          ServerLevel serverlevel = p_302443_.level();
 +        // CraftBukkit start
 +        org.bukkit.block.Block bukkitBlock = CraftBlock.at(serverlevel, p_302443_.pos());
-+        CraftItemStack craftItem = CraftItemStack.asCraftMirror(p_123581_);
++        CraftItemStack craftItem = CraftItemStack.asCraftMirror(p_123581_); // Paper - ignore stack size on damageable items
 +
 +        BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
 +        if (!DispenserBlock.eventFired) {

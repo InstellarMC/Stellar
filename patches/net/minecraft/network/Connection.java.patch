@@ -25,7 +25,21 @@
  import org.slf4j.Logger;
  import org.slf4j.Marker;
  import org.slf4j.MarkerFactory;
-@@ -86,9 +_,14 @@
+@@ -75,20 +_,25 @@
+     public static final Marker PACKET_RECEIVED_MARKER = Util.make(MarkerFactory.getMarker("PACKET_RECEIVED"), p_202562_ -> p_202562_.add(PACKET_MARKER));
+     public static final Marker PACKET_SENT_MARKER = Util.make(MarkerFactory.getMarker("PACKET_SENT"), p_202557_ -> p_202557_.add(PACKET_MARKER));
+     public static final Supplier<NioEventLoopGroup> NETWORK_WORKER_GROUP = Suppliers.memoize(
+-        () -> new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Client IO #%d").setDaemon(true).build())
++        () -> new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()) // Paper
+     );
+     public static final Supplier<EpollEventLoopGroup> NETWORK_EPOLL_WORKER_GROUP = Suppliers.memoize(
+-        () -> new EpollEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).build())
++        () -> new EpollEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()) // Paper
+     );
+     public static final Supplier<DefaultEventLoopGroup> LOCAL_WORKER_GROUP = Suppliers.memoize(
+-        () -> new DefaultEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Local Client IO #%d").setDaemon(true).build())
++        () -> new DefaultEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Local Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()) // Paper
+     );
      private static final ProtocolInfo<ServerHandshakePacketListener> INITIAL_PROTOCOL = HandshakeProtocols.SERVERBOUND;
      private final PacketFlow receiving;
      private volatile boolean sendLoginDisconnect = true;
@@ -41,14 +55,13 @@
      @Nullable
      private volatile PacketListener disconnectListener;
      @Nullable
-@@ -107,6 +_,50 @@
+@@ -107,6 +_,49 @@
      private volatile DisconnectionDetails delayedDisconnect;
      @Nullable
      BandwidthDebugMonitor bandwidthDebugMonitor;
 +    public String hostname = ""; // CraftBukkit - add field
 +    @Nullable
 +    private ProtocolInfo<?> inboundProtocol;
-+    private volatile boolean mohist$isClosing; //mohist
 +    // Paper start - NetworkClient implementation
 +    public int protocolVersion;
 +    public java.net.InetSocketAddress virtualHost;
@@ -131,8 +144,7 @@
          } else {
              boolean flag = !this.handlingFault;
              this.handlingFault = true;
--            if (this.channel.isOpen()) {
-+            if (this.channel.isOpen() && !this.mohist$isClosing) {
+             if (this.channel.isOpen()) {
 +                net.minecraft.server.level.ServerPlayer player = this.getPlayer(); // Paper - Add API for quit reason
                  if (p_129534_ instanceof TimeoutException) {
                      LOGGER.debug("Timeout", p_129534_);
@@ -164,7 +176,7 @@
                              Packet<?> packet = (Packet<?>)(this.sendLoginDisconnect
                                  ? new ClientboundLoginDisconnectPacket(component)
                                  : new ClientboundDisconnectPacket(component));
-@@ -167,18 +_,69 @@
+@@ -167,6 +_,7 @@
                  }
              }
          }
@@ -172,9 +184,7 @@
      }
  
      protected void channelRead0(ChannelHandlerContext p_129487_, Packet<?> p_129488_) {
--        if (this.channel.isOpen()) {
-+        if (this.channel.isOpen() && !this.mohist$isClosing) {
-             PacketListener packetlistener = this.packetListener;
+@@ -175,10 +_,60 @@
              if (packetlistener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
              } else {

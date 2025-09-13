@@ -72,8 +72,8 @@
 +                        return;
 +                    }
 +                    if (event.getProjectile() == projectile.getBukkitEntity()) {
-+                        p_346125_.addFreshEntity(projectile);
-+                        if (!p_346125_.canAddFreshEntity()) {
++                        ;
++                        if (!p_346125_.addFreshEntity(projectile)) {
 +                            if (p_331167_ instanceof net.minecraft.server.level.ServerPlayer) {
 +                                ((net.minecraft.server.level.ServerPlayer) p_331167_).getBukkitEntity().updateInventory();
 +                            }

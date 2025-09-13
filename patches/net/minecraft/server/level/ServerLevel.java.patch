@@ -1367,11 +1367,10 @@
      }
  
      public <T extends Entity> List<? extends T> getEntities(EntityTypeTest<Entity, T> p_143281_, Predicate<? super T> p_143282_) {
-@@ -870,22 +_,53 @@
-         return list.isEmpty() ? null : list.get(this.random.nextInt(list.size()));
+@@ -871,21 +_,44 @@
      }
  
--    @Override
+     @Override
 -    public boolean addFreshEntity(Entity p_8837_) {
 -        return this.addEntity(p_8837_);
 -    }
@@ -1383,15 +1382,6 @@
 -    public void addDuringTeleport(Entity p_143335_) {
 -        if (p_143335_ instanceof ServerPlayer serverplayer) {
 -            this.addPlayer(serverplayer);
-+    // Mohist start
-+    public AtomicBoolean canaddFreshEntity = new AtomicBoolean(false);
-+
-+    public boolean canAddFreshEntity() {
-+        return canaddFreshEntity.getAndSet(false);
-+    }
-+    // Mohist end
-+
-+    @Override
 +    public boolean addFreshEntity(Entity entity) {
 +        // CraftBukkit start
 +        return this.addFreshEntity(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);

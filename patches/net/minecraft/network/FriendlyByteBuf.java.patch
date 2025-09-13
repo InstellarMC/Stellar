@@ -8,7 +8,7 @@
      public static final short MAX_STRING_LENGTH = 32767;
      public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
      private static final int PUBLIC_KEY_SIZE = 256;
-@@ -78,6 +_,7 @@
+@@ -78,20 +_,24 @@
      private static final Gson GSON = new Gson();
  
      public FriendlyByteBuf(ByteBuf p_130051_) {
@@ -16,6 +16,23 @@
          this.source = p_130051_;
      }
  
++    /** @deprecated */
+     @Deprecated
+     public <T> T readWithCodecTrusted(DynamicOps<Tag> p_295347_, Codec<T> p_296304_) {
+         return this.readWithCodec(p_295347_, p_296304_, NbtAccounter.unlimitedHeap());
+     }
+ 
++    /** @deprecated */
+     @Deprecated
+     public <T> T readWithCodec(DynamicOps<Tag> p_266903_, Codec<T> p_267107_, NbtAccounter p_295027_) {
+         Tag tag = this.readNbt(p_295027_);
+         return p_267107_.parse(p_266903_, tag).getOrThrow(p_339398_ -> new DecoderException("Failed to decode: " + p_339398_ + " " + tag));
+     }
+ 
++    /** @deprecated */
+     @Deprecated
+     public <T> FriendlyByteBuf writeWithCodec(DynamicOps<Tag> p_266702_, Codec<T> p_267245_, T p_266783_) {
+         Tag tag = p_267245_.encodeStart(p_266702_, p_266783_).getOrThrow(p_339400_ -> new EncoderException("Failed to encode: " + p_339400_ + " " + p_266783_));
 @@ -106,8 +_,12 @@
      }
  

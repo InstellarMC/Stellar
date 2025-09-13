@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/DefaultDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/DefaultDispenseItemBehavior.java
-@@ -6,10 +_,24 @@
+@@ -6,27 +_,55 @@
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.block.DispenserBlock;
@@ -10,6 +10,8 @@
 +import org.bukkit.event.block.BlockDispenseEvent;
  
  public class DefaultDispenseItemBehavior implements DispenseItemBehavior {
++    private Direction direction; // Paper - cache facing direction
++
      private static final int DEFAULT_ACCURACY = 6;
  
 +    // CraftBukkit start
@@ -20,13 +22,21 @@
 +    }
 +    // CraftBukkit end
 +
-+    public DefaultDispenseItemBehavior() {} // Youer fix decompile
++    public DefaultDispenseItemBehavior() {} // Youer - fix decompile
 +
      @Override
      public final ItemStack dispense(BlockSource p_302432_, ItemStack p_123392_) {
++        direction = p_302432_.state().getValue(DispenserBlock.FACING); // Paper - cache facing direction
          ItemStack itemstack = this.execute(p_302432_, p_123392_);
-@@ -22,11 +_,61 @@
-         Direction direction = p_302420_.state().getValue(DispenserBlock.FACING);
+         this.playSound(p_302432_);
+-        this.playAnimation(p_302432_, p_302432_.state().getValue(DispenserBlock.FACING));
++        this.playAnimation(p_302432_, direction); // Paper - use cached facing direction
+         return itemstack;
+     }
+ 
+     protected ItemStack execute(BlockSource p_302420_, ItemStack p_123386_) {
+-        Direction direction = p_302420_.state().getValue(DispenserBlock.FACING);
++        // Paper - cached enum direction
          Position position = DispenserBlock.getDispensePosition(p_302420_);
          ItemStack itemstack = p_123386_.split(1);
 -        spawnItem(p_302420_.level(), itemstack, 6, direction, position);
@@ -42,6 +52,20 @@
 +        // CraftBukkit start
 +        ItemEntity entityitem = DefaultDispenseItemBehavior.prepareItem(p_123379_, p_123380_, p_123381_, p_123382_, p_123383_);
 +        p_123379_.addFreshEntity(entityitem);
++    }
++
++    private static ItemEntity prepareItem(Level p_123379_, ItemStack p_123380_, int p_123381_, Direction p_123382_, Position p_123383_) {
++        // CraftBukkit end
+         double d0 = p_123383_.x();
+         double d1 = p_123383_.y();
+         double d2 = p_123383_.z();
+@@ -43,7 +_,47 @@
+             p_123379_.random.triangle(0.2, 0.0172275 * (double)p_123381_),
+             p_123379_.random.triangle((double)p_123382_.getStepZ() * d3, 0.0172275 * (double)p_123381_)
+         );
+-        p_123379_.addFreshEntity(itementity);
++        // CraftBukkit start
++        return itementity;
 +    }
 +
 +    // CraftBukkit - void -> boolean return, IPosition -> ISourceBlock last argument, dropper
@@ -81,18 +105,6 @@
 +
 +        return true;
 +        // CraftBukkit end
-+    }
-+
-+    private static ItemEntity prepareItem(Level p_123379_, ItemStack p_123380_, int p_123381_, Direction p_123382_, Position p_123383_) {
-+        // CraftBukkit end
-         double d0 = p_123383_.x();
-         double d1 = p_123383_.y();
-         double d2 = p_123383_.z();
-@@ -44,6 +_,7 @@
-             p_123379_.random.triangle((double)p_123382_.getStepZ() * d3, 0.0172275 * (double)p_123381_)
-         );
-         p_123379_.addFreshEntity(itementity);
-+        return itementity;
      }
  
      protected void playSound(BlockSource p_302471_) {
