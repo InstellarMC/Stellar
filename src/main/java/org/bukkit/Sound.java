@@ -2,8 +2,8 @@ package org.bukkit;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import net.minecraft.resources.ResourceLocation;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import com.google.common.collect.BiMap;import com.google.common.collect.HashBiMap;import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -1629,7 +1629,7 @@ public enum Sound implements Keyed, net.kyori.adventure.sound.Sound.Type { // Pa
     WEATHER_RAIN_ABOVE("weather.rain.above");
 
     private final NamespacedKey key;
-    public static final Map<ResourceLocation, Sound> MODD_SOUNDS = new ConcurrentHashMap<>();
+    public static final BiMap<SoundEvent, Sound> MODD_SOUNDS = HashBiMap.create();
 
     private Sound(String key) {
         if (key.contains(":")) {
@@ -1658,8 +1658,4 @@ public enum Sound implements Keyed, net.kyori.adventure.sound.Sound.Type { // Pa
         return this.key;
     }
     // Paper end
-
-    public static Sound lookForModSounds(ResourceLocation key) {
-        return MODD_SOUNDS.get(key);
-    }
 }
