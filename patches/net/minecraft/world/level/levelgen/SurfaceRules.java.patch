@@ -1,5 +1,53 @@
 --- a/net/minecraft/world/level/levelgen/SurfaceRules.java
 +++ b/net/minecraft/world/level/levelgen/SurfaceRules.java
+@@ -231,7 +_,7 @@
+         }
+     }
+ 
+-    interface Condition {
++    public interface Condition { // Paper - public
+         boolean test();
+     }
+ 
+@@ -257,7 +_,7 @@
+         KeyDispatchDataCodec<? extends SurfaceRules.ConditionSource> codec();
+     }
+ 
+-    protected static final class Context {
++    public static final class Context { // Paper - public
+         private static final int HOW_FAR_BELOW_PRELIMINARY_SURFACE_LEVEL_TO_BUILD_SURFACE = 8;
+         private static final int SURFACE_CELL_BITS = 4;
+         private static final int SURFACE_CELL_SIZE = 16;
+@@ -267,16 +_,16 @@
+         final SurfaceRules.Condition steep = new SurfaceRules.Context.SteepMaterialCondition(this);
+         final SurfaceRules.Condition hole = new SurfaceRules.Context.HoleCondition(this);
+         final SurfaceRules.Condition abovePreliminarySurface = new SurfaceRules.Context.AbovePreliminarySurfaceCondition();
+-        final RandomState randomState;
++        public final RandomState randomState; // Paper - public
+         final ChunkAccess chunk;
+         private final NoiseChunk noiseChunk;
+         private final Function<BlockPos, Holder<Biome>> biomeGetter;
+-        final WorldGenerationContext context;
++        public final WorldGenerationContext context; // Paper - public
+         private long lastPreliminarySurfaceCellOrigin = Long.MAX_VALUE;
+         private final int[] preliminarySurfaceCache = new int[4];
+         long lastUpdateXZ = -9223372036854775807L;
+-        int blockX;
+-        int blockZ;
++        public int blockX; // Paper - public
++        public int blockZ; // Paper - public
+         int surfaceDepth;
+         private long lastSurfaceDepth2Update = this.lastUpdateXZ - 1L;
+         private double surfaceSecondary;
+@@ -285,7 +_,7 @@
+         long lastUpdateY = -9223372036854775807L;
+         final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+         Supplier<Holder<Biome>> biome;
+-        int blockY;
++        public int blockY; // Paper - public
+         int waterHeight;
+         int stoneDepthBelow;
+         int stoneDepthAbove;
 @@ -403,14 +_,14 @@
                  ChunkAccess chunkaccess = this.context.chunk;
                  int i1 = chunkaccess.getHeight(Heightmap.Types.WORLD_SURFACE_WG, i, k);
@@ -16,6 +64,15 @@
 +                    return Math.abs(i2 - j2) >= 4; // Stellar - fix MC-258859
                  }
              }
+         }
+@@ -485,7 +_,7 @@
+         }
+     }
+ 
+-    abstract static class LazyYCondition extends SurfaceRules.LazyCondition {
++    public abstract static class LazyYCondition extends SurfaceRules.LazyCondition { // Paper - public
+         protected LazyYCondition(SurfaceRules.Context p_189625_) {
+             super(p_189625_);
          }
 @@ -570,11 +_,16 @@
          KeyDispatchDataCodec<? extends SurfaceRules.RuleSource> codec();

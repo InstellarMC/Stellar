@@ -8,7 +8,7 @@
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
  import net.minecraft.server.level.ServerLevel;
-@@ -13,8 +_,29 @@
+@@ -13,8 +_,10 @@
  import net.minecraft.world.level.block.StainedGlassBlock;
  import net.minecraft.world.level.block.StainedGlassPaneBlock;
  import net.minecraft.world.level.block.state.BlockState;
@@ -16,37 +16,31 @@
  
  public class SpawnUtil {
 +
-+    // Youer start
-+    private static final AtomicReference<SpawnReason> trySpawnMob$reason = new AtomicReference<>(SpawnReason.DEFAULT);
-+    private static final AtomicReference<Runnable> trySpawnMob$onAbort = new AtomicReference<>(null);
-+
-+    public static void trySpawnMob$reason(SpawnReason reason) {
-+        trySpawnMob$reason.set(reason);
-+    }
-+
-+    public static void setTrySpawnMob$onAbort(Runnable onAbort) {
-+        trySpawnMob$onAbort.set(onAbort);
-+    }
-+
-+    public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> pEntityType, MobSpawnType pSpawnType, ServerLevel pLevel, BlockPos pPos, int pAttempts, int p_216409_, int pYOffset, SpawnUtil.Strategy pStrategy, SpawnReason reason, @javax.annotation.Nullable Runnable onAbort) { // Paper
-+        trySpawnMob$reason(reason);
-+        trySpawnMob$onAbort.set(onAbort);
-+        return trySpawnMob(pEntityType, pSpawnType, pLevel, pPos, pAttempts, p_216409_, pYOffset, pStrategy);
-+    }
-+    // Youer end
-+
      public static <T extends Mob> Optional<T> trySpawnMob(
          EntityType<T> p_216404_,
          MobSpawnType p_216405_,
-@@ -26,17 +_,34 @@
+@@ -25,6 +_,20 @@
+         int p_216410_,
          SpawnUtil.Strategy p_216411_
      ) {
++        // CraftBukkit start
++        return SpawnUtil.trySpawnMob(p_216404_, p_216405_, p_216406_, p_216407_, p_216408_, p_216409_, p_216410_, p_216411_, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT, null); // Paper
++    }
++    public static <T extends Mob> Optional<T> trySpawnMob(
++        EntityType<T> p_216404_,
++        MobSpawnType p_216405_,
++        ServerLevel p_216406_,
++        BlockPos p_216407_,
++        int p_216408_,
++        int p_216409_,
++        int p_216410_,
++        SpawnUtil.Strategy p_216411_, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason, @javax.annotation.Nullable Runnable onAbort // Paper
++    ) {
++        // CraftBukkit end
          BlockPos.MutableBlockPos blockpos$mutableblockpos = p_216407_.mutable();
--
-+        org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason = trySpawnMob$reason.getAndSet(SpawnReason.DEFAULT);
+ 
          for (int i = 0; i < p_216408_; i++) {
-             int j = Mth.randomBetweenInclusive(p_216406_.random, -p_216409_, p_216409_);
-             int k = Mth.randomBetweenInclusive(p_216406_.random, -p_216409_, p_216409_);
+@@ -33,14 +_,30 @@
              blockpos$mutableblockpos.setWithOffset(p_216407_, j, p_216410_, k);
              if (p_216406_.getWorldBorder().isWithinBounds(blockpos$mutableblockpos)
                  && moveToPossibleSpawnPosition(p_216406_, p_216410_, blockpos$mutableblockpos, p_216411_)) {
@@ -57,7 +51,6 @@
 +                        reason
 +                );
 +                if (!event.callEvent()) {
-+                    Runnable onAbort = trySpawnMob$onAbort.getAndSet(null);
 +                    if (event.shouldAbortSpawn()) {
 +                        if (onAbort != null) {
 +                            onAbort.run();
@@ -76,3 +69,8 @@
                          return Optional.of(t);
                      }
  
+-                    t.discard();
++                    t.discard(null); // CraftBukkit - add Bukkit remove cause
+                 }
+             }
+         }

@@ -19,7 +19,7 @@
  import net.minecraft.network.DisconnectionDetails;
  import net.minecraft.network.PacketSendListener;
  import net.minecraft.network.chat.Component;
-@@ -20,36 +_,101 @@
+@@ -20,36 +_,106 @@
  import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
  import net.minecraft.network.protocol.common.ServerboundPongPacket;
  import net.minecraft.network.protocol.common.ServerboundResourcePackPacket;
@@ -42,6 +42,11 @@
  
 -public abstract class ServerCommonPacketListenerImpl implements ServerCommonPacketListener {
 +public abstract class ServerCommonPacketListenerImpl implements ServerCommonPacketListener, CraftPlayer.TransferCookieConnection {
++
++    @Override
++    public boolean isTransferred() {
++        return this.transferred;
++    }
 +
 +    @Override
 +    public ConnectionProtocol getProtocol() {
@@ -425,7 +430,7 @@
          if (p_295099_.isTerminal()) {
              this.close();
          }
-@@ -158,15 +_,134 @@
+@@ -158,15 +_,130 @@
          }
      }
  
@@ -557,10 +562,6 @@
 +    }
 +
 +    public abstract void disconnectAsync(DisconnectionDetails disconnectionInfo);
-+
-+    public boolean isTransferred() {
-+        return this.transferred;
-+    }
 +
 +    public abstract io.papermc.paper.connection.PaperCommonConnection<?> paperConnection();
 +    // Paper end - add proper async disconnect

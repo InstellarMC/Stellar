@@ -805,7 +805,7 @@
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
 +    }
 +
-+    public void setServerViewDistance(int p_295758_) {
++    public void setServerViewDistance(int p_295758_) { // Paper - public
 +        // Paper start - rewrite chunk system
 +        final int clamped = Mth.clamp(p_295758_, 2, ca.spottedleaf.moonrise.common.util.MoonriseConstants.MAX_VIEW_DISTANCE);
 +        if (clamped == this.serverViewDistance) {
@@ -1378,11 +1378,11 @@
  
          public TrackedEntity(Entity p_140478_, int p_140479_, int p_140480_, boolean p_140481_) {
 -            this.serverEntity = new ServerEntity(ChunkMap.this.level, p_140478_, p_140480_, p_140481_, this::broadcast);
-+            this.serverEntity = new ServerEntity(ChunkMap.this.level, p_140478_, p_140480_, p_140481_, this::broadcast).seenBy(this.seenBy); // CraftBukkit
++            this.serverEntity = new ServerEntity(ChunkMap.this.level, p_140478_, p_140480_, p_140481_, this::broadcast, this.seenBy); // CraftBukkit
              this.entity = p_140478_;
              this.range = p_140479_;
              this.lastSectionPos = SectionPos.of(p_140478_);
-@@ -1272,18 +_,41 @@
+@@ -1272,18 +_,42 @@
          }
  
          public void updatePlayer(ServerPlayer p_140498_) {
@@ -1427,6 +1427,7 @@
 +                            this.serverEntity.addPairing(p_140498_);
 +                        }
 +                        // Paper end - entity tracking events
++                        this.serverEntity.onPlayerAdd(); // Paper - fix desync when a player is added to the tracker
                      }
                  } else if (this.seenBy.remove(p_140498_.connection)) {
                      this.serverEntity.removePairing(p_140498_);

@@ -107,7 +107,14 @@
      public int invulnerableTime;
      protected boolean firstTick = true;
      protected final SynchedEntityData entityData;
-@@ -231,7 +_,7 @@
+@@ -225,13 +_,13 @@
+     public PortalProcessor portalProcess;
+     public int portalCooldown;
+     private boolean invulnerable;
+-    protected UUID uuid = Mth.createInsecureUUID(this.random);
++    protected UUID uuid;
+     protected String stringUUID = this.uuid.toString();
+     private boolean hasGlowingTag;
      private final Set<String> tags = Sets.newHashSet();
      private final double[] pistonDeltas = new double[]{0.0, 0.0, 0.0};
      private long pistonDeltasGameTime;
@@ -116,7 +123,7 @@
      private float eyeHeight;
      public boolean isInPowderSnow;
      public boolean wasInPowderSnow;
-@@ -243,14 +_,326 @@
+@@ -243,14 +_,327 @@
      public boolean hasVisualFire;
      @Nullable
      private BlockState inBlockState = null;
@@ -427,6 +434,7 @@
  
      public Entity(EntityType<?> p_19870_, Level p_19871_) {
 +        this.random  = p_19871_ == null || p_19871_.purpurConfig.entitySharedRandom ? SHARED_RANDOM : RandomSource.create(); // Paper - Share random for entities to make them more random // Purpur
++        this.uuid = Mth.createInsecureUUID(this.random);
          this.type = p_19870_;
          this.level = p_19871_;
          this.dimensions = p_19870_.getDimensions();

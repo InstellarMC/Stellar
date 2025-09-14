@@ -41,6 +41,8 @@ public class WorldConfiguration extends ConfigurationPart {
         are updated every X ticks. With an interval of 20, reduces roughly 3ms per tick on a server w/ 80 players.""")
         public int intervalToTickActionStatistics = 20;
 
+        public boolean disableDropItem = false;
+
     }
 
     public Chunks chunks;

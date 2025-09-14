@@ -18,6 +18,24 @@
      }
  
      private void doCreateBiomes(Blender p_224292_, RandomState p_224293_, StructureManager p_224294_, ChunkAccess p_224295_) {
+@@ -231,7 +_,7 @@
+     @Override
+     public void buildSurface(WorldGenRegion p_224232_, StructureManager p_224233_, RandomState p_224234_, ChunkAccess p_224235_) {
+         if (!SharedConstants.debugVoidTerrain(p_224235_.getPos())) {
+-            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, p_224232_);
++            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, p_224232_, p_224232_.getMinecraftWorld()); // Paper - Flat bedrock generator settings
+             this.buildSurface(
+                 p_224235_,
+                 worldgenerationcontext,
+@@ -288,7 +_,7 @@
+         NoiseChunk noisechunk = p_224229_.getOrCreateNoiseChunk(p_224250_ -> this.createNoiseChunk(p_224250_, p_224228_, Blender.of(p_224224_), p_224226_));
+         Aquifer aquifer = noisechunk.aquifer();
+         CarvingContext carvingcontext = new CarvingContext(
+-            this, p_224224_.registryAccess(), p_224229_.getHeightAccessorForGeneration(), noisechunk, p_224226_, this.settings.value().surfaceRule()
++            this, p_224224_.registryAccess(), p_224229_.getHeightAccessorForGeneration(), noisechunk, p_224226_, this.settings.value().surfaceRule(), p_224224_.getMinecraftWorld() // Paper - Flat bedrock generator settings
+         );
+         CarvingMask carvingmask = ((ProtoChunk)p_224229_).getOrCreateCarvingMask(p_224230_);
+ 
 @@ -320,6 +_,8 @@
          }
      }

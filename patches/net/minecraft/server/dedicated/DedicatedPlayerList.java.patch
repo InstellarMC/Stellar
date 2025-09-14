@@ -12,3 +12,31 @@
          this.loadUserBanList();
          this.saveUserBanList();
          this.loadIpBanList();
+@@ -54,19 +_,19 @@
+     }
+ 
+     private void saveIpBanList() {
+-        try {
++        // try { // Stellar start - Save JsonList async
+             this.getIpBans().save();
+-        } catch (IOException ioexception) {
+-            LOGGER.warn("Failed to save ip banlist: ", (Throwable)ioexception);
+-        }
++        // } catch (IOException ioexception) {
++        //     LOGGER.warn("Failed to save ip banlist: ", (Throwable)ioexception);
++        // } // Stellar end - Save JsonList async
+     }
+ 
+     private void saveUserBanList() {
+-        try {
++        // try { // Stellar start - Save JsonList async
+             this.getBans().save();
+-        } catch (IOException ioexception) {
+-            LOGGER.warn("Failed to save user banlist: ", (Throwable)ioexception);
+-        }
++        // } catch (IOException ioexception) {
++        //     LOGGER.warn("Failed to save user banlist: ", (Throwable)ioexception);
++        // } // Stellar end - Save JsonList async
+     }
+ 
+     private void loadIpBanList() {

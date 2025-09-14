@@ -18,7 +18,7 @@
      );
      private static final SuggestionProvider<CommandSourceStack> SUGGEST_SCHEDULE = (p_138424_, p_138425_) -> SharedSuggestionProvider.suggest(
 -            p_138424_.getSource().getServer().getWorldData().overworldData().getScheduledEvents().getEventsIds(), p_138425_
-+            p_138424_.getSource().getLevel().K.getScheduledEvents().getEventsIds(), p_138425_
++            p_138424_.getSource().getLevel().K.getScheduledEvents().getEventsIds(), p_138425_ // Paper - Make schedule command per-world
          );
  
      public static void register(CommandDispatcher<CommandSourceStack> p_138420_) {
@@ -36,7 +36,7 @@
  
      private static int remove(CommandSourceStack p_138434_, String p_138435_) throws CommandSyntaxException {
 -        int i = p_138434_.getServer().getWorldData().overworldData().getScheduledEvents().remove(p_138435_);
-+        int i = p_138434_.getLevel().K.getScheduledEvents().remove(p_138435_);
++        int i = p_138434_.getLevel().K.getScheduledEvents().remove(p_138435_); // Paper - Make schedule command per-world
          if (i == 0) {
              throw ERROR_CANT_REMOVE.create(p_138435_);
          } else {

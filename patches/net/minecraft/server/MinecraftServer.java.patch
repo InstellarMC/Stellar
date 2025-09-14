@@ -101,7 +101,7 @@
  import net.minecraft.world.entity.ai.village.VillageSiege;
  import net.minecraft.world.entity.npc.CatSpawner;
  import net.minecraft.world.entity.npc.WanderingTraderSpawner;
-@@ -149,26 +_,40 @@
+@@ -149,30 +_,45 @@
  import net.minecraft.world.level.chunk.storage.ChunkIOErrorReporter;
  import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
  import net.minecraft.world.level.dimension.LevelStem;
@@ -147,16 +147,23 @@
 +import org.bukkit.event.world.WorldLoadEvent;
 +import org.bukkit.plugin.PluginLoadOrder;
  import org.slf4j.Logger;
-+import org.spigotmc.SpigotConfig;
- 
+-
 -public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource, AutoCloseable {
++import org.spigotmc.SpigotConfig;
++
 +public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource, AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer { // Paper - rewrite chunk system
++
 +    private static MinecraftServer SERVER; // Paper
      public static final Logger LOGGER = LogUtils.getLogger();
 +    public static final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(LOGGER.getName()); // Paper
      public static final String VANILLA_BRAND = "vanilla";
      private static final float AVERAGE_TICK_TIME_SMOOTHING = 0.8F;
      private static final int TICK_STATS_SPAN = 100;
+-    private static final long OVERLOADED_THRESHOLD_NANOS = 20L * TimeUtil.NANOSECONDS_PER_SECOND / 20L;
++    private static final long OVERLOADED_THRESHOLD_NANOS = 20L * TimeUtil.NANOSECONDS_PER_SECOND / 20L; // CraftBukkit
+     private static final int OVERLOADED_TICKS_THRESHOLD = 20;
+     private static final long OVERLOADED_WARNING_INTERVAL_NANOS = 10L * TimeUtil.NANOSECONDS_PER_SECOND;
+     private static final int OVERLOADED_TICKS_WARNING_INTERVAL = 100;
 @@ -198,7 +_,7 @@
      };
      private boolean willStartRecordingMetrics;
@@ -174,7 +181,7 @@
      private boolean stopped;
      private int tickCount;
      private int ticksUntilAutosave = 6000;
-@@ -223,10 +_,15 @@
+@@ -223,10 +_,17 @@
      private boolean pvp;
      private boolean allowFlight;
      @Nullable
@@ -184,8 +191,10 @@
      private final long[] tickTimesNanos = new long[100];
      private long aggregatedTickTimesNanos = 0L;
 +    // Paper start - Add tick times API and /mspt command
++    public final TickTimes tickTimes1s = new TickTimes(20); // Stellar - Add more granular tick times
 +    public final TickTimes tickTimes5s = new TickTimes(100);
 +    public final TickTimes tickTimes10s = new TickTimes(200);
++    public final TickTimes tickTimes30s = new TickTimes(600); // Stellar - Add more granular tick times
 +    public final TickTimes tickTimes60s = new TickTimes(1200);
 +    // Paper end - Add tick times API and /mspt command
      @Nullable
@@ -213,10 +222,10 @@
 +    public static final long startTimeMillis = System.currentTimeMillis();
 +    public Queue<Runnable> processQueue = new ConcurrentLinkedQueue<Runnable>();
 +    public int autosavePeriod;
++    // Paper - don't store the vanilla dispatcher
 +    public boolean forceTicks; // Paper - Improved watchdog support
 +    // CraftBukkit end
-+    private long nextTickTime = 0; // Youer Add fake tickField worldedit need this
-+
++    private long nextTickTime = 0; // Youer - Add fake tickField worldedit need this
 +    // Spigot start
 +    public static final int TPS = 20;
 +    public static final int TICK_TIME = 1000000000 / TPS;
@@ -1419,13 +1428,15 @@
          this.profiler.push("tallying");
          long j = Util.getNanos() - i;
          int k = this.tickCount % 100;
-@@ -925,8 +_,15 @@
+@@ -925,8 +_,17 @@
          this.aggregatedTickTimesNanos += j;
          this.tickTimesNanos[k] = j;
          this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float)j / (float)TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
 +        // Paper start - Add tick times API and /mspt command
++        this.tickTimes1s.add(this.tickCount, j); // Stellar - Add more granular tick times
 +        this.tickTimes5s.add(this.tickCount, j);
 +        this.tickTimes10s.add(this.tickCount, j);
++        this.tickTimes30s.add(this.tickCount, j); // Stellar - Add more granular tick times
 +        this.tickTimes60s.add(this.tickCount, j);
 +        // Paper end - Add tick times API and /mspt command
          this.logTickMethodTime(i);
@@ -1477,7 +1488,7 @@
              ObjectArrayList<GameProfile> objectarraylist = new ObjectArrayList<>(j);
              int k = Mth.nextInt(this.random, 0, list.size() - j);
  
-@@ -992,19 +_,68 @@
+@@ -992,37 +_,99 @@
  
      public void tickChildren(BooleanSupplier p_129954_) {
          this.getPlayerList().getPlayers().forEach(p_341570_ -> p_341570_.connection.suspendFlushing());
@@ -1547,8 +1558,19 @@
 +            EventHooks.fireLevelTickPre(serverlevel, p_129954_);
  
              try {
++                long measure = Util.getNanos();
                  serverlevel.tick(p_129954_);
-@@ -1013,16 +_,19 @@
++                long elapsed = Util.getNanos() - measure;
++
++                // Stellar start - Port SparklyPaper patches; Track World specific MSPT
++                serverlevel.tickTimes1s.add(this.tickCount, elapsed);
++                serverlevel.tickTimes5s.add(this.tickCount, elapsed);
++                serverlevel.tickTimes10s.add(this.tickCount, elapsed);
++                serverlevel.tickTimes30s.add(this.tickCount, elapsed);
++                serverlevel.tickTimes60s.add(this.tickCount, elapsed);
++                // Stellar end - Port SparklyPaper patches; Track World specific MSPT
+             } catch (Throwable throwable) {
+                 CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
                  serverlevel.fillReportDetails(crashreport);
                  throw new ReportedException(crashreport);
              }

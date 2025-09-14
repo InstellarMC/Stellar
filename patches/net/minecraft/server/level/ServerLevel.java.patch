@@ -170,7 +170,7 @@
      private final GameEventDispatcher gameEventDispatcher;
      public boolean noSave;
      private final SleepStatus sleepStatus;
-@@ -199,86 +_,450 @@
+@@ -199,86 +_,458 @@
      private final List<CustomSpawner> customSpawners;
      @Nullable
      private EndDragonFight dragonFight;
@@ -188,6 +188,14 @@
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasRidableMoveEvent = false; // Purpur
++
++    // Stellar start - Port SparklyPaper patches; Track World specific MSPT
++    public final MinecraftServer.TickTimes tickTimes1s = new MinecraftServer.TickTimes(20); // Stellar - Add more granular tick times
++    public final MinecraftServer.TickTimes tickTimes5s = new MinecraftServer.TickTimes(100);
++    public final MinecraftServer.TickTimes tickTimes10s = new MinecraftServer.TickTimes(200);
++    public final MinecraftServer.TickTimes tickTimes30s = new MinecraftServer.TickTimes(600); // Stellar - Add more granular tick times
++    public final MinecraftServer.TickTimes tickTimes60s = new MinecraftServer.TickTimes(1200);
++    // Stellar end - Port SparklyPaper patches; Track World specific MSPT
 +
 +    @Override
 +    public ResourceKey<LevelStem> getTypeKey() {
@@ -853,9 +861,9 @@
                              profilerfiller.push("tick");
 -                            this.guardEntityTick(this::tickNonPassenger, p_308566_);
 +                            if (!p_308566_.isRemoved() && !(p_308566_ instanceof net.neoforged.neoforge.entity.PartEntity)) {
-+                                // Pufferfish start - copied from this.guardEntityTick // Stellar start - neo
++                                // Pufferfish start - copied from this.guardEntityTick
 +                                try {
-+                                    TimeTracker.ENTITY_UPDATE.trackStart(p_308566_);
++                                    TimeTracker.ENTITY_UPDATE.trackStart(p_308566_); // Neo
 +                                    this.tickNonPassenger(p_308566_);
 +                                } catch (Throwable throwable) { // Pufferfish - diff on change ServerLevel.tick
 +                                    if (throwable instanceof ThreadDeath) throw throwable; // Paper
@@ -866,9 +874,9 @@
 +                                    p_308566_.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Pufferfish - diff on change ServerLevel.tick
 +                                    // Paper end - Prevent block entity and entity crashes
 +                                } finally {
-+                                    TimeTracker.ENTITY_UPDATE.trackEnd(p_308566_);
++                                    TimeTracker.ENTITY_UPDATE.trackEnd(p_308566_); // Neo
 +                                }
-+                                // Pufferfish end // Stellar end - neo
++                                // Pufferfish end
 +                            }
 +                            this.moonrise$midTickTasks(); // Paper - rewrite chunk system
                              profilerfiller.pop();

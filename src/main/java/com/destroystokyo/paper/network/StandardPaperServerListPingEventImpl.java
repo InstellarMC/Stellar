@@ -15,6 +15,7 @@ import net.minecraft.network.protocol.status.ServerStatus;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.craftbukkit.util.CraftIconCache;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 public final class StandardPaperServerListPingEventImpl extends PaperServerListPingEventImpl {
 
@@ -63,6 +64,11 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
         return profiles;
     }
 
+    // Stellar start
+    private static @Nullable ServerStatus cachedStatus;
+    private static long lastCacheTime = 0;
+    private static long CACHE_PERIOD = Integer.getInteger("stellar.pingCachePeriod", 1000);
+    // Stellar end
     public static void processRequest(MinecraftServer server, Connection networkManager) {
         StandardPaperServerListPingEventImpl event = new StandardPaperServerListPingEventImpl(server, networkManager, server.getStatus());
         server.server.getPluginManager().callEvent(event);
@@ -74,6 +80,13 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
         }
 
         // Setup response
+
+        // Stellar start
+        if (cachedStatus != null && System.currentTimeMillis() - lastCacheTime < CACHE_PERIOD) {
+            networkManager.send(new ClientboundStatusResponsePacket(cachedStatus));
+            return;
+        }
+        // Stellar end
 
         // Description
         final Component description = new AdventureComponent(event.motd());
@@ -97,6 +110,7 @@ public final class StandardPaperServerListPingEventImpl extends PaperServerListP
             favicon = Optional.empty();
         }
         final ServerStatus ping = new ServerStatus(description, players, Optional.of(version), favicon, server.enforceSecureProfile());
+        cachedStatus = ping; // Stellar - cache the status
 
         // Send response
         networkManager.send(new ClientboundStatusResponsePacket(ping));

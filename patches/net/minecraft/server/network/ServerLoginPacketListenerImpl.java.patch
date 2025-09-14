@@ -40,7 +40,7 @@
  import net.minecraft.network.protocol.login.ClientboundGameProfilePacket;
  import net.minecraft.network.protocol.login.ClientboundHelloPacket;
  import net.minecraft.network.protocol.login.ClientboundLoginCompressionPacket;
-@@ -35,40 +_,87 @@
+@@ -35,42 +_,85 @@
  import net.minecraft.network.protocol.login.ServerboundHelloPacket;
  import net.minecraft.network.protocol.login.ServerboundKeyPacket;
  import net.minecraft.network.protocol.login.ServerboundLoginAcknowledgedPacket;
@@ -99,16 +99,16 @@
 +    public String requestedUsername; // Paper
      @Nullable
 -    private GameProfile authenticatedProfile;
-+    public GameProfile authenticatedProfile;
++    public GameProfile authenticatedProfile; // Paper - public
      private final String serverId = "";
 -    private final boolean transferred;
 +    public final boolean transferred; // Paper
++    private ServerPlayer player; // CraftBukkit
 +    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
 +    private int velocityLoginMessageId = -1; // Paper - Add Velocity IP Forwarding Support
 +    public @Nullable java.util.UUID requestedUuid; // Paper
 +    private final io.papermc.paper.connection.PaperPlayerLoginConnection paperLoginConnection; // Paper - Config API
 +    private volatile boolean disconnecting = false; // Paper - Fix disconnect still ticking login
-+    private ServerPlayer player; // CraftBukkit
  
      public ServerLoginPacketListenerImpl(MinecraftServer p_10027_, Connection p_10028_, boolean p_320815_) {
          this.server = p_10027_;
@@ -128,16 +128,14 @@
 +            return;
 +        }
 +        // Paper end - login cookie API
-+        // Paper start - Do not allow logins while the server is shutting down
-+        // Stellar TODO - should remove this?
-+        if (!MinecraftServer.getServer().isRunning()) {
-+            this.disconnect(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(org.spigotmc.SpigotConfig.restartMessage)[0]);
-+            return;
-+        }
-+        // Paper end - Do not allow logins while the server is shutting down
++
          if (this.state == ServerLoginPacketListenerImpl.State.VERIFYING) {
++            if (this.connection.isConnected()) { // Paper - prevent logins to be processed even though disconnect was called
              this.verifyLoginAndFinishConnectionSetup(Objects.requireNonNull(this.authenticatedProfile));
++            } // Paper - prevent logins to be processed even though disconnect was called
          }
+ 
+         if (this.state == ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT
 @@ -78,6 +_,10 @@
              this.finishLoginAndWaitForClient(this.authenticatedProfile);
          }
@@ -329,7 +327,7 @@
                  }
              }
  
-@@ -220,18 +_,131 @@
+@@ -220,18 +_,113 @@
                      ? ((InetSocketAddress)socketaddress).getAddress()
                      : null;
              }
@@ -440,24 +438,6 @@
 +        }
 +        // Paper end - Add Velocity IP Forwarding Support
          this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
-+    }
-+
-+    private void fixFabricNetworkingIssue() {
-+        try {
-+            Class<?> extClass = Class.forName("net.fabricmc.fabric.impl.networking.NetworkHandlerExtensions");
-+            Method getAddon = extClass.getMethod("getAddon");
-+            Object addon = getAddon.invoke(this);
-+
-+            Class<?> addonClass = Class.forName("net.fabricmc.fabric.impl.networking.server.ServerLoginNetworkAddon");
-+            Field channelsField = addonClass.getDeclaredField("channels");
-+            channelsField.setAccessible(true);
-+
-+            @SuppressWarnings("unchecked") Map<Integer, ResourceLocation> channels = (Map<Integer, ResourceLocation>) channelsField.get(addon);
-+            channels.remove(velocityLoginMessageId);
-+        } catch (ClassNotFoundException | NoSuchMethodException | NoSuchFieldException | IllegalAccessException |
-+                 InvocationTargetException e) {
-+            this.disconnect(Component.literal("Server encountered an error applying the Fabric Networking API workaround.\nThis is a server-side issue. Please contact an administrator."));
-+        }
      }
  
      @Override

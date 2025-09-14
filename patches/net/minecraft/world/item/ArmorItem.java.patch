@@ -11,14 +11,31 @@
  
  public class ArmorItem extends Item implements Equipable {
      public static final DispenseItemBehavior DISPENSE_ITEM_BEHAVIOR = new DefaultDispenseItemBehavior() {
-@@ -49,8 +_,36 @@
+@@ -38,7 +_,13 @@
+     protected final Holder<ArmorMaterial> material;
+     private final Supplier<ItemAttributeModifiers> defaultModifiers;
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+     public static boolean dispenseArmor(BlockSource p_302421_, ItemStack p_40400_) {
++        // Paper start
++        return dispenseArmor(p_302421_, p_40400_, null);
++    }
++    public static boolean dispenseArmor(BlockSource p_302421_, ItemStack p_40400_, @javax.annotation.Nullable DispenseItemBehavior currentBehavior) {
++        // Paper end
+         BlockPos blockpos = p_302421_.pos().relative(p_302421_.state().getValue(DispenserBlock.FACING));
+         List<LivingEntity> list = p_302421_.level()
+             .getEntitiesOfClass(
+@@ -48,14 +_,44 @@
+             return false;
          } else {
              LivingEntity livingentity = list.get(0);
-             EquipmentSlot equipmentslot = livingentity.getEquipmentSlotForItem(p_40400_);
+-            EquipmentSlot equipmentslot = livingentity.getEquipmentSlotForItem(p_40400_);
+-            ItemStack itemstack = p_40400_.split(1);
+-            livingentity.setItemSlot(equipmentslot, itemstack);
++            EquipmentSlot equipmentslot = p_302421_.level().purpurConfig.dispenserApplyCursedArmor ? livingentity.getEquipmentSlotForItem(p_40400_) : livingentity.getEquipmentSlotForDispenserItem(p_40400_); if (equipmentslot == null) return false; // Purpur - Dispenser curse of binding protection
 +            // Neo: Respect IItemExtension#canEquip in dispenseArmor
 +            if (!p_40400_.canEquip(equipmentslot, livingentity)) return false;
-             ItemStack itemstack = p_40400_.split(1);
--            livingentity.setItemSlot(equipmentslot, itemstack);
++            ItemStack itemstack = p_40400_.copyWithCount(1); // Paper - shrink below and single item in event
 +            // CraftBukkit start
 +            Level world = p_302421_.level();
 +            org.bukkit.block.Block block = CraftBlock.at(world, p_302421_.pos());
@@ -29,16 +46,17 @@
 +            }
 +
 +            if (event.isCancelled()) {
-+                itemstack.grow(1);
++                // itemstack.grow(1); // Paper - shrink below
 +                return false;
 +            }
 +
++            boolean shrink = true;
 +            if (!event.getItem().equals(craftItem)) {
-+                itemstack.grow(1);
++                shrink = false; // Paper - shrink below
 +                // Chain to handler for new item
 +                ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
 +                DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
-+                if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != ArmorItem.DISPENSE_ITEM_BEHAVIOR) {
++                if (idispensebehavior != DispenseItemBehavior.NOOP && (currentBehavior == null || idispensebehavior != currentBehavior)) { // Paper - fix possible StackOverflowError
 +                    idispensebehavior.dispense(p_302421_, eventStack);
 +                    return true;
 +                }
@@ -49,3 +67,9 @@
              if (livingentity instanceof Mob) {
                  ((Mob)livingentity).setDropChance(equipmentslot, 2.0F);
                  ((Mob)livingentity).setPersistenceRequired();
+             }
+ 
++            if (shrink) p_40400_.shrink(1); // Paper
+             return true;
+         }
+     }

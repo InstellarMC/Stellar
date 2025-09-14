@@ -1,4 +1,4 @@
-package io.papermc.paper.event.player;
+package com.destroystokyo.paper.event.player;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;

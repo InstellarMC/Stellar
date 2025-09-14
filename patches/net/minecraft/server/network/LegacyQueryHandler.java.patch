@@ -1,5 +1,13 @@
 --- a/net/minecraft/server/network/LegacyQueryHandler.java
 +++ b/net/minecraft/server/network/LegacyQueryHandler.java
+@@ -14,6 +_,7 @@
+ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final ServerInfo server;
++    private ByteBuf buf; // Paper
+ 
+     public LegacyQueryHandler(ServerInfo p_296029_) {
+         this.server = p_296029_;
 @@ -33,9 +_,21 @@
  
                  SocketAddress socketaddress = p_9686_.channel().remoteAddress();
@@ -50,17 +58,20 @@
                  }
  
                  bytebuf.release();
-@@ -95,19 +_,19 @@
+@@ -95,20 +_,24 @@
          }
      }
  
 -    private static String createVersion0Response(ServerInfo p_294449_) {
 -        return String.format(Locale.ROOT, "%s\u00a7%d\u00a7%d", p_294449_.getMotd(), p_294449_.getPlayerCount(), p_294449_.getMaxPlayers());
++    // CraftBukkit start
 +    private static String createVersion0Response(ServerInfo p_294449_, org.bukkit.event.server.ServerListPingEvent event) {
 +        return String.format(Locale.ROOT, "%s\u00a7%d\u00a7%d", event.getMotd(), event.getNumPlayers(), event.getMaxPlayers());
++        // CraftBukkit end
      }
  
 -    private static String createVersion1Response(ServerInfo p_295503_) {
++    // CraftBukkit start
 +    private static String createVersion1Response(ServerInfo p_295503_, org.bukkit.event.server.ServerListPingEvent event) {
          return String.format(
              Locale.ROOT,
@@ -74,5 +85,7 @@
 +            event.getNumPlayers(),
 +            event.getMaxPlayers()
          );
++        // CraftBukkit end
      }
  
+     private static void sendFlushAndClose(ChannelHandlerContext p_9681_, ByteBuf p_9682_) {

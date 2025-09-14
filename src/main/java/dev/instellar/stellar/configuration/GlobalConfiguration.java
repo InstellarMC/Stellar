@@ -46,6 +46,19 @@ public final class GlobalConfiguration extends ConfigurationPart {
         public IntOr.Default mapUpdateInterval = IntOr.Default.USE_DEFAULT;
     }
 
+    public SpamLimiter spamLimiter;
+
+    public class SpamLimiter extends ConfigurationPart {
+
+        @Constraints.Min(1)
+        public int chatSpamIncrement = 1;
+        @Constraints.Min(5)
+        public int chatSpamLimit = 20;
+        @Constraints.Min(1)
+        public int dropSpamIncrement = 1;
+        @Constraints.Min(5)
+        public int dropSpamLimit = 20;
+    }
 
     @Setting("world-generation")
     public WorldGeneration levelgen;

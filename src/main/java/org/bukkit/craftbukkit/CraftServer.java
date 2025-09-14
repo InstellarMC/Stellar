@@ -1069,7 +1069,7 @@ public final class CraftServer implements Server {
         Command target = this.commandMap.getCommand(args[0].toLowerCase(java.util.Locale.ENGLISH));
 
         try {
-            commands.performCommandCB(results, commandLine, commandLine, true);
+            commands.performCommand(results, commandLine, commandLine, true);
         } catch (CommandException ex) {
             this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
             //target.timings.stopTiming(); // Spigot // Paper

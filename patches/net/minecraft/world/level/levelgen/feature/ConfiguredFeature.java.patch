@@ -9,8 +9,8 @@
 +        if (!p_224954_.ensureCanWrite(p_224957_)) {
 +            return false;
 +        }
-+        final dev.instellar.stellar.util.SimpleObjectPool<net.minecraft.world.level.levelgen.feature.FeaturePlaceContext.@org.jspecify.annotations.NonNull PooledFeaturePlaceContext<FC>> pool = net.minecraft.world.level.levelgen.feature.FeaturePlaceContext.PooledFeaturePlaceContext.POOL.get();
-+        final net.minecraft.world.level.levelgen.feature.FeaturePlaceContext.PooledFeaturePlaceContext<FC> context = pool.alloc();
++        final dev.instellar.stellar.util.SimpleObjectPool<FeaturePlaceContext.@org.jspecify.annotations.NonNull PooledFeaturePlaceContext<FC>> pool = (dev.instellar.stellar.util.SimpleObjectPool) FeaturePlaceContext.PooledFeaturePlaceContext.POOL.get();
++        final FeaturePlaceContext.PooledFeaturePlaceContext<FC> context = pool.alloc();
 +        try {
 +            context.reInit(java.util.Optional.empty(), p_224954_, p_224955_, p_224956_, p_224957_, this.config());
 +            return this.feature.place(context);

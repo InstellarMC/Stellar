@@ -15,11 +15,11 @@
 -        if (minecraftserver.getWorldData().getDifficulty() == p_136946_) {
 +        net.minecraft.server.level.ServerLevel worldServer = p_136945_.getLevel(); // CraftBukkit
 +
-+        if (worldServer.getDifficulty() == p_136946_) {
++        if (worldServer.getDifficulty() == p_136946_) { // CraftBukkit
              throw ERROR_ALREADY_DIFFICULT.create(p_136946_.getKey());
          } else {
 -            minecraftserver.setDifficulty(p_136946_, true);
-+            minecraftserver.setDifficulty(worldServer, p_136946_, true);
++            minecraftserver.setDifficulty(worldServer, p_136946_, true); // Paper - per level difficulty; don't skip other difficulty-changing logic (fix upstream's fix)
              p_136945_.sendSuccess(() -> Component.translatable("commands.difficulty.success", p_136946_.getDisplayName()), true);
              return 0;
          }

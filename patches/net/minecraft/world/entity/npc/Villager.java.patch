@@ -299,14 +299,23 @@
      }
  
      public void gossip(ServerLevel p_35412_, Villager p_35413_, long p_35414_) {
-@@ -898,7 +_,9 @@
+@@ -893,15 +_,16 @@
+     }
+ 
+     public void spawnGolemIfNeeded(ServerLevel p_35398_, long p_35399_, int p_35400_) {
++        if (p_35398_.purpurConfig.villagerSpawnIronGolemRadius > 0 && p_35398_.getEntitiesOfClass(net.minecraft.world.entity.animal.IronGolem.class, getBoundingBox().inflate(p_35398_.purpurConfig.villagerSpawnIronGolemRadius)).size() > p_35398_.purpurConfig.villagerSpawnIronGolemLimit) return; // Purpur
+         if (this.wantsToSpawnGolem(p_35399_)) {
+             AABB aabb = this.getBoundingBox().inflate(10.0, 10.0, 10.0);
              List<Villager> list = p_35398_.getEntitiesOfClass(Villager.class, aabb);
              List<Villager> list1 = list.stream().filter(p_186293_ -> p_186293_.wantsToSpawnGolem(p_35399_)).limit(5L).collect(Collectors.toList());
              if (list1.size() >= p_35400_) {
 -                if (!SpawnUtil.trySpawnMob(
-+                SpawnUtil.trySpawnMob$reason(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE);
-+                SpawnUtil.setTrySpawnMob$onAbort(() -> {GolemSensor.golemDetected(this);});
+-                        EntityType.IRON_GOLEM, MobSpawnType.MOB_SUMMONED, p_35398_, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM
 +                if (SpawnUtil.trySpawnMob(
-                         EntityType.IRON_GOLEM, MobSpawnType.MOB_SUMMONED, p_35398_, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM
++                        EntityType.IRON_GOLEM, MobSpawnType.MOB_SUMMONED, p_35398_, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE, () -> GolemSensor.golemDetected(this) // CraftBukkit // Paper - Set Golem Last Seen to stop it from spawning another one
                      )
-                     .isEmpty()) {
+-                    .isEmpty()) {
++                    .isPresent()) {
+                     list.forEach(GolemSensor::golemDetected);
+                 }
+             }

@@ -45,7 +45,7 @@
 +                    ((BlockItem)item).place(new DirectionalPlaceContext(p_302426_.level(), blockpos, direction, CraftItemStack.asNMSCopy(event.getItem()), direction1)).consumesAction()
                  );
 +                if (this.isSuccess()) {
-+                    stack.shrink(1); // vanilla shrink is in the place function above, manually handle it here
++                    p_123588_.shrink(1); // vanilla shrink is in the place function above, manually handle it here
 +                }
 +                // Paper end - track changed items in the dispense event
              } catch (Exception exception) {

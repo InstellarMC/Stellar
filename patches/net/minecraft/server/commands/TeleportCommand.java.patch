@@ -8,7 +8,7 @@
  import com.mojang.brigadier.exceptions.CommandSyntaxException;
  import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
  import com.mojang.brigadier.tree.LiteralCommandNode;
-@@ -270,6 +_,14 @@
+@@ -270,13 +_,45 @@
          float p_139023_,
          @Nullable TeleportCommand.LookAt p_139024_
      ) throws CommandSyntaxException {
@@ -23,3 +23,35 @@
          BlockPos blockpos = BlockPos.containing(p_139018_, p_139019_, p_139020_);
          if (!Level.isInSpawnableBounds(blockpos)) {
              throw INVALID_POSITION.create();
+         } else {
+             float f = Mth.wrapDegrees(p_139022_);
+             float f1 = Mth.wrapDegrees(p_139023_);
+-            if (p_139016_.teleportTo(p_139017_, p_139018_, p_139019_, p_139020_, p_139021_, f, f1)) {
++            // CraftBukkit start - Teleport event
++            boolean result;
++            if (p_139016_ instanceof ServerPlayer player) {
++                result = player.teleportTo(p_139017_, p_139018_, p_139019_, p_139020_, p_139021_, f, f1, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND);
++            } else {
++                org.bukkit.Location to = new org.bukkit.Location(p_139017_.getWorld(), p_139018_, p_139019_, p_139020_, f, f1);
++                org.bukkit.event.entity.EntityTeleportEvent eventCB = new org.bukkit.event.entity.EntityTeleportEvent(p_139016_.getBukkitEntity(), p_139016_.getBukkitEntity().getLocation(), to);
++                p_139017_.getCraftServer().getPluginManager().callEvent(eventCB);
++                if (eventCB.isCancelled() || eventCB.getTo() == null) { // Paper
++                    return;
++                }
++                to = eventCB.getTo(); // Paper - actually track new location
++
++                p_139018_ = to.getX();
++                p_139019_ = to.getY();
++                p_139020_ = to.getZ();
++                f = to.getYaw();
++                f1 = to.getPitch();
++                p_139017_ = ((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle();
++
++                result = p_139016_.teleportTo(p_139017_, p_139018_, p_139019_, p_139020_, p_139021_, f, f1);
++            }
++
++            if (result) {
++            // CraftBukkit end
+                 if (p_139024_ != null) {
+                     p_139024_.perform(p_139015_, p_139016_);
+                 }

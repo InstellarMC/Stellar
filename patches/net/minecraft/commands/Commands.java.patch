@@ -208,7 +208,7 @@
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -258,15 +_,63 @@
+@@ -258,15 +_,67 @@
          return new ParseResults<>(commandcontextbuilder1, p_242928_.getReader(), p_242928_.getExceptions());
      }
  
@@ -249,18 +249,22 @@
 +        this.performPrefixedCommand(source, command, command);
 +    }
 +
-+    public void performPrefixedCommand(CommandSourceStack commandlistenerwrapper, String s, String label) {
++    public void performPrefixedCommand(CommandSourceStack source, String s, String label) {
 +        s = s.startsWith("/") ? s.substring(1) : s;
-+        this.performCommandCB(this.dispatcher.parse(s, commandlistenerwrapper), s, label);
++        this.performCommand(this.dispatcher.parse(s, source), s, label);
 +        // CraftBukkit end
 +    }
 +
-+    public void performCommand(ParseResults<CommandSourceStack> pParseResults, String pCommand, String label) { // CraftBukkit
-+        // Paper start
-+        this.performCommand(pParseResults, pCommand, label, false);
++    public void performCommand(ParseResults<CommandSourceStack> parseResults, String command) {
++        this.performCommand(parseResults, command, command);
 +    }
 +
-+    public void performCommand(ParseResults<CommandSourceStack> parseresults, String s, String label, boolean throwCommandError) {
++    public void performCommand(ParseResults<CommandSourceStack> parseResults, String command, String label) { // CraftBukkit
++        // Paper start
++        this.performCommand(parseResults, command, label, false);
++    }
++
++    public void performCommand(ParseResults<CommandSourceStack> p_242844_, String p_242841_, String label, boolean throwCommandError) {
 +        // Paper end
          CommandSourceStack commandsourcestack = p_242844_.getContext().getSource();
 +        net.neoforged.neoforge.event.CommandEvent event = new net.neoforged.neoforge.event.CommandEvent(p_242844_);
@@ -337,7 +341,7 @@
              }
  
              return null;
-@@ -359,11 +_,67 @@
+@@ -359,11 +_,69 @@
      }
  
      public void sendCommands(ServerPlayer p_82096_) {
@@ -373,9 +377,11 @@
 +        // Paper - brigadier API removes the need to fill the map twice
 +        RootCommandNode<SharedSuggestionProvider> rootcommandnode = new RootCommandNode();
 +
++
          map.put(this.dispatcher.getRoot(), rootcommandnode);
 -        this.fillUsableCommands(this.dispatcher.getRoot(), rootcommandnode, p_82096_.createCommandSourceStack(), map);
 -        p_82096_.connection.send(new ClientboundCommandsPacket(rootcommandnode));
++        map.keySet().removeIf((node) -> !org.spigotmc.SpigotConfig.sendNamespaced && node.getName().contains( ":" )); // Paper - Remove namedspaced from result nodes to prevent redirect trimming ~ see comment below
 +        // this.fillUsableCommands(this.dispatcher.getRoot(), rootcommandnode, player.createCommandSourceStack(), map);
 +        // FORGE: Use our own command node merging method to handle redirect nodes properly, see issue #7551
 +        net.neoforged.neoforge.server.command.CommandHelper.mergeCommandNode(this.dispatcher.getRoot(), rootcommandnode, map, player.createCommandSourceStack(), ctx -> 0, suggest -> SuggestionProviders.safelySwap((SuggestionProvider<SharedSuggestionProvider>) (SuggestionProvider<?>) suggest));
@@ -424,7 +430,8 @@
 +            // Paper end - Brigadier API
 +            if ( !org.spigotmc.SpigotConfig.sendNamespaced && commandnode.getName().contains( ":" ) ) continue; // Spigot
              if (commandnode.canUse(p_82115_)) {
-                 ArgumentBuilder<SharedSuggestionProvider, ?> argumentbuilder = (ArgumentBuilder<SharedSuggestionProvider, ?>)(ArgumentBuilder<?, ?>)commandnode.createBuilder();
+-                ArgumentBuilder<SharedSuggestionProvider, ?> argumentbuilder = (ArgumentBuilder<SharedSuggestionProvider, ?>)(ArgumentBuilder<?, ?>)commandnode.createBuilder();
++                ArgumentBuilder argumentbuilder = commandnode.createBuilder();
 +                // Paper start
 +                /*
 +                Because of how commands can be yeeted right left and center due to bad bukkit practices
@@ -447,7 +454,7 @@
 +
 +                    CommandNode<CommandSourceStack> redirect = argumentbuilder.getRedirect();
 +                    // Diff copied from LiteralCommand#createBuilder
-+                    final com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> builder = com.mojang.brigadier.builder.LiteralArgumentBuilder.literal(commandnode2.getName());
++                    final com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> builder = com.mojang.brigadier.builder.LiteralArgumentBuilder.literal(commandnode.getName());
 +                    builder.requires(redirect.getRequirement());
 +                    // builder.forward(redirect.getRedirect(), redirect.getRedirectModifier(), redirect.isFork()); We don't want to migrate the forward, since it's invalid.
 +                    if (redirect.getCommand() != null) {

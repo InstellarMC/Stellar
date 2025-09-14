@@ -18,7 +18,7 @@
          }
  
          for (BlockPos blockpos2 : set) {
-+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockPos3, Blocks.COBWEB.defaultBlockState())) continue; // Paper - Fire EntityChangeBlockEvent in more places
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockpos2, Blocks.COBWEB.defaultBlockState())) continue; // Paper - Fire EntityChangeBlockEvent in more places
              p_338396_.setBlock(blockpos2, Blocks.COBWEB.defaultBlockState(), 3);
              p_338396_.levelEvent(3018, blockpos2, 0);
          }

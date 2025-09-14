@@ -74,11 +74,11 @@
          super(p_214789_, p_214790_, p_214791_, p_214792_, Proxy.NO_PROXY, p_214794_, p_214795_, p_214796_);
          this.settings = p_214793_;
 -        this.rconConsoleSource = new RconConsoleSource(this);
-+        // this.rconConsoleSource = new RconConsoleSource(this);
++        // this.rconConsoleSource = new RconConsoleSource(this); // CraftBukkit - remove field
          this.textFilterClient = TextFilterClient.createFromConfig(p_214793_.getProperties().textFilteringConfig);
          this.serverLinks = createServerLinks(p_214793_);
      }
-@@ -103,21 +_,32 @@
+@@ -103,21 +_,31 @@
          Thread thread = new Thread("Server console handler") {
              @Override
              public void run() {
@@ -108,7 +108,6 @@
 +        }
 +        global.addHandler(new ForwardLogHandler());
 +
-+        // Paper start - Not needed with TerminalConsoleAppender
 +        final org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
 +        System.setOut(IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.INFO).buildPrintStream());
 +        System.setErr(IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.WARN).buildPrintStream());

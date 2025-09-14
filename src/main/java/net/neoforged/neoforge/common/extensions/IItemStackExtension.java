@@ -323,6 +323,7 @@ public interface IItemStackExtension {
      * @param player The player that dropped the item
      */
     default boolean onDroppedByPlayer(Player player) {
+        if (player.level().stellarConfig().players.disableDropItem) return false; // Stellar - Disable dropping items
         return self().getItem().onDroppedByPlayer(self(), player);
     }
 

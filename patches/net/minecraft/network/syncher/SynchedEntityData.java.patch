@@ -28,6 +28,15 @@
                  }
              } catch (ClassNotFoundException classnotfoundexception) {
              }
+@@ -45,7 +_,7 @@
+         }
+     }
+ 
+-    public <T> SynchedEntityData.DataItem<T> getItem(EntityDataAccessor<T> p_135380_) {
++    public <T> SynchedEntityData.DataItem<T> getItem(EntityDataAccessor<T> p_135380_) { // Paper - public
+         return (SynchedEntityData.DataItem<T>)this.itemsById[p_135380_.id()];
+     }
+ 
 @@ -58,6 +_,10 @@
      }
  

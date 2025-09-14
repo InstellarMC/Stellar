@@ -9,7 +9,20 @@
  
      public StoredUserList(File p_11380_) {
          this.file = p_11380_;
-@@ -48,8 +_,11 @@
+@@ -39,27 +_,30 @@
+     public void add(V p_11382_) {
+         this.map.put(this.getKeyForUser(p_11382_.getUser()), p_11382_);
+ 
+-        try {
++        // try { // Stellar start - Save JsonList async
+             this.save();
+-        } catch (IOException ioexception) {
+-            LOGGER.warn("Could not save the list after adding a user.", (Throwable)ioexception);
+-        }
++        // } catch (IOException ioexception) {
++        //     LOGGER.warn("Could not save the list after adding a user.", (Throwable)ioexception);
++        // } // Stellar end - Save JsonList async
+     }
  
      @Nullable
      public V get(K p_11389_) {
@@ -23,6 +36,20 @@
      }
  
      public void remove(K p_11394_) {
+         this.map.remove(this.getKeyForUser(p_11394_));
+ 
+-        try {
++        // try { // Stellar start - Save JsonList async
+             this.save();
+-        } catch (IOException ioexception) {
+-            LOGGER.warn("Could not save the list after removing a user.", (Throwable)ioexception);
+-        }
++        // } catch (IOException ioexception) {
++        //     LOGGER.warn("Could not save the list after removing a user.", (Throwable)ioexception);
++        // } // Stellar end - Save JsonList async
+     }
+ 
+     public void remove(StoredUserEntry<K> p_11387_) {
 @@ -71,7 +_,7 @@
      }
  
@@ -56,11 +83,40 @@
      }
  
      protected abstract StoredUserEntry<K> createEntry(JsonObject p_11383_);
-@@ -103,6 +_,7 @@
+@@ -102,13 +_,19 @@
+         return this.map.values();
      }
  
-     public void save() throws IOException {
+-    public void save() throws IOException {
++    public void save() /* throws IOException */ { // Stellar - Save JsonList async
++        io.papermc.paper.util.MCUtil.scheduleAsyncTask(() -> { // Stellar - Save JsonList async
 +        this.removeExpired(); // Paper - remove expired values before saving
          JsonArray jsonarray = new JsonArray();
          this.map.values().stream().map(p_11392_ -> Util.make(new JsonObject(), p_11392_::serialize)).forEach(jsonarray::add);
  
+         try (BufferedWriter bufferedwriter = Files.newWriter(this.file, StandardCharsets.UTF_8)) {
+             GSON.toJson(jsonarray, GSON.newJsonWriter(bufferedwriter));
+         }
++        catch (IOException e) {
++            StoredUserList.LOGGER.warn("Failed to asynchronously save file " + this.file, e);
++        }
++        }); // Stellar - Save JsonList async
+     }
+ 
+     public void load() throws IOException {
+@@ -127,6 +_,15 @@
+                         this.map.put(this.getKeyForUser(storeduserentry.getUser()), (V)storeduserentry);
+                     }
+                 }
++            }
++            // Spigot Start
++            catch ( com.google.gson.JsonParseException | NullPointerException ex )
++            {
++                org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.WARNING, "Unable to read file " + this.file + ", backing it up to {0}.backup and creating new copy.", ex );
++                File backup = new File( this.file + ".backup" );
++                this.file.renameTo( backup );
++                this.file.delete();
++            // Spigot End
+             }
+         }
+     }

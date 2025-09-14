@@ -147,7 +147,7 @@
  
          try {
              PlayerList playerlist = this.server.getPlayerList();
-@@ -134,14 +_,14 @@
+@@ -134,16 +_,21 @@
                  return;
              }
  
@@ -163,7 +163,14 @@
 +            playerlist.placeNewPlayer(this.connection, serverplayer, this.createCookie(this.clientInformation, this.connectionType));
          } catch (Exception exception) {
              LOGGER.error("Couldn't place player in world", (Throwable)exception);
++            // Paper start - Debugging
++            if (MinecraftServer.getServer().isDebugging()) {
++                exception.printStackTrace();
++            }
++            // Paper end - Debugging
              this.connection.send(new ClientboundDisconnectPacket(DISCONNECT_REASON_INVALID_DATA));
+             this.connection.disconnect(DISCONNECT_REASON_INVALID_DATA);
+         }
 @@ -175,4 +_,36 @@
              this.startNextTask();
          }

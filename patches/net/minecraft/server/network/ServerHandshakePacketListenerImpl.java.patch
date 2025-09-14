@@ -3,16 +3,15 @@
 @@ -1,5 +_,6 @@
  package net.minecraft.server.network;
  
-+import io.papermc.paper.network.PaperNetworkClient;
++import com.destroystokyo.paper.event.player.PlayerHandshakeEvent;import io.papermc.paper.network.PaperNetworkClient;
  import net.minecraft.SharedConstants;
  import net.minecraft.network.Connection;
  import net.minecraft.network.DisconnectionDetails;
-@@ -12,10 +_,23 @@
+@@ -12,10 +_,22 @@
  import net.minecraft.network.protocol.status.StatusProtocols;
  import net.minecraft.server.MinecraftServer;
  
 +import java.net.InetAddress;
-+import java.util.HashMap;
 +
  public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketListener {
      private static final Component IGNORE_STATUS_REASON = Component.translatable("disconnect.ignoring_status_request");
@@ -105,10 +104,10 @@
 +            boolean proxyLogicEnabled = org.spigotmc.SpigotConfig.bungee;
 +            boolean handledByEvent = false;
 +            // Try and handle the handshake through the event
-+            if (io.papermc.paper.event.player.PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
++            if (PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
 +                java.net.SocketAddress socketAddress = this.connection.address;
 +                String hostnameOfRemote = socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getHostString() : InetAddress.getLoopbackAddress().getHostAddress();
-+                io.papermc.paper.event.player.PlayerHandshakeEvent event = new io.papermc.paper.event.player.PlayerHandshakeEvent(p_320524_.hostName(), hostnameOfRemote, !proxyLogicEnabled);
++                PlayerHandshakeEvent event = new PlayerHandshakeEvent(p_320524_.hostName(), hostnameOfRemote, !proxyLogicEnabled);
 +                if (event.callEvent()) {
 +                    // If we've failed somehow, let the client know so and go no further.
 +                    if (event.isFailed()) {

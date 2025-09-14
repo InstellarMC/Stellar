@@ -8,18 +8,18 @@
  import com.mojang.logging.LogUtils;
  import io.netty.bootstrap.ServerBootstrap;
  import io.netty.channel.Channel;
-@@ -48,35 +_,73 @@
+@@ -48,28 +_,55 @@
  
  public class ServerConnectionListener {
      private static final Logger LOGGER = LogUtils.getLogger();
 +    private static final int READ_TIMEOUT = Integer.parseInt(System.getProperty("neoforge.readTimeout", "30"));
      public static final Supplier<NioEventLoopGroup> SERVER_EVENT_GROUP = Suppliers.memoize(
 -        () -> new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Server IO #%d").setDaemon(true).build())
-+        () -> new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).setThreadFactory(net.neoforged.fml.util.thread.SidedThreadGroups.SERVER).build())
++        () -> new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).setThreadFactory(net.neoforged.fml.util.thread.SidedThreadGroups.SERVER).build()) // Neo // Paper
      );
      public static final Supplier<EpollEventLoopGroup> SERVER_EPOLL_EVENT_GROUP = Suppliers.memoize(
 -        () -> new EpollEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).build())
-+        () -> new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).setThreadFactory(net.neoforged.fml.util.thread.SidedThreadGroups.SERVER).build())
++        () -> new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).setThreadFactory(net.neoforged.fml.util.thread.SidedThreadGroups.SERVER).build()) // Neo // Paper
      );
      final MinecraftServer server;
      public volatile boolean running;
@@ -67,16 +67,12 @@
 +                }
 +                // Paper end - Unix domain socket support
                  eventloopgroup = SERVER_EPOLL_EVENT_GROUP.get();
--                LOGGER.info("Using epoll channel type");
-+                LOGGER.info(I18n.as("serverconnectionlistener.1"));
+                 LOGGER.info("Using epoll channel type");
              } else {
-                 oclass = NioServerSocketChannel.class;
-                 eventloopgroup = SERVER_EVENT_GROUP.get();
--                LOGGER.info("Using default channel type");
--            }
-+                LOGGER.info(I18n.as("serverconnectionlistener.2"));
-+            }
-+
+@@ -78,6 +_,17 @@
+                 LOGGER.info("Using default channel type");
+             }
+ 
 +            // Paper start - Warn people with console access that HAProxy is in use.
 +            if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
 +                ServerConnectionListener.LOGGER.warn("Using HAProxy, please ensure the server port is adequately firewalled.");
@@ -87,9 +83,10 @@
 +            ServerConnectionListener.LOGGER.info("Paper: Using " + com.velocitypowered.natives.util.Natives.compress.getLoadedVariant() + " compression from Velocity.");
 +            ServerConnectionListener.LOGGER.info("Paper: Using " + com.velocitypowered.natives.util.Natives.cipher.getLoadedVariant() + " cipher from Velocity.");
 +            // Paper end - Use Velocity cipher
- 
++
              this.channels.add(new ServerBootstrap().channel(oclass).childHandler(new ChannelInitializer<Channel>() {
                  @Override
+                 protected void initChannel(Channel p_9729_) {
 @@ -86,7 +_,8 @@
                      } catch (ChannelException channelexception) {
                      }
@@ -100,7 +97,7 @@
                      if (ServerConnectionListener.this.server.repliesToStatus()) {
                          channelpipeline.addLast("legacy_query", new LegacyQueryHandler(ServerConnectionListener.this.getServer()));
                      }
-@@ -94,11 +_,43 @@
+@@ -94,13 +_,55 @@
                      Connection.configureSerialization(channelpipeline, PacketFlow.SERVERBOUND, false, null);
                      int i = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
                      Connection connection = (Connection)(i > 0 ? new RateKickingConnection(i) : new Connection(PacketFlow.SERVERBOUND));
@@ -142,10 +139,24 @@
 +                    io.papermc.paper.network.ChannelInitializeListenerHolder.callListeners(p_9729_); // Paper - Add Channel initialization listeners
                  }
 -            }).group(eventloopgroup).localAddress(p_9712_, p_9713_).bind().syncUninterruptibly());
+-        }
+-    }
 +            }).group(eventloopgroup).localAddress(address).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit // Paper - Unix domain socket support
-         }
-     }
++        }
++    }
++
++    // CraftBukkit start
++    public void acceptConnections() {
++        synchronized (this.channels) {
++            for (final ChannelFuture future : this.channels) {
++                future.channel().config().setAutoRead(true);
++            }
++        }
++    }
++    // CraftBukkit end
  
+     public SocketAddress startMemoryChannel() {
+         ChannelFuture channelfuture;
 @@ -146,6 +_,14 @@
  
      public void tick() {
@@ -161,20 +172,14 @@
              Iterator<Connection> iterator = this.connections.iterator();
  
              while (iterator.hasNext()) {
-@@ -180,6 +_,16 @@
-     public List<Connection> getConnections() {
-         return this.connections;
-     }
-+
-+    // CraftBukkit start
-+    public void acceptConnections() {
-+        synchronized (this.channels) {
-+            for (final ChannelFuture future : this.channels) {
-+                future.channel().config().setAutoRead(true);
-+            }
-+        }
-+    }
-+    // CraftBukkit end
- 
-     static class LatencySimulator extends ChannelInboundHandlerAdapter {
-         private static final Timer TIMER = new HashedWheelTimer();
+@@ -165,6 +_,10 @@
+                             connection.setReadOnly();
+                         }
+                     } else {
++                        // Spigot Start
++                        // Fix a race condition where a NetworkManager could be unregistered just before connection.
++                        if (connection.preparing) continue;
++                        // Spigot End
+                         iterator.remove();
+                         connection.handleDisconnection();
+                     }

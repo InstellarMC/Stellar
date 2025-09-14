@@ -266,7 +266,7 @@ public class EventHooks {
         var event = new PositionCheck(mob, level, spawnType, null);
         NeoForge.EVENT_BUS.post(event);
         if (event.getResult() == PositionCheck.Result.DEFAULT) {
-            return mob.checkSpawnRules(level, spawnType) && mob.checkSpawnObstruction(level);
+            return mob.checkSpawnRules(level, spawnType) && mob.checkSpawnObstruction(level); // CraftBukkit
         }
         return event.getResult() == PositionCheck.Result.SUCCEED;
     }

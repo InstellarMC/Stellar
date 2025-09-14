@@ -58,7 +58,7 @@
          );
 -        list.forEach(p_238232_ -> p_238232_.addEffect(new MobEffectInstance(p_216951_), p_216948_));
 +        list.forEach(p_238232_ -> {
-+            p_238232_.addEffect(new MobEffectInstance(p_216951_), p_216948_, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN); // CraftBukkit
++            p_238232_.addEffect(new MobEffectInstance(p_216951_), p_216948_, cause); // CraftBukkit
 +        });
          return list;
      }

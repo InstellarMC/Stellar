@@ -5,7 +5,8 @@
  import net.minecraft.core.Direction;
  import net.minecraft.server.level.ServerLevel;
 -import net.minecraft.tags.FluidTags;
- import net.minecraft.world.entity.EntityType;
+-import net.minecraft.world.entity.EntityType;
++import net.minecraft.tags.FluidTags;import net.minecraft.world.entity.EntityType;
  import net.minecraft.world.entity.vehicle.Boat;
  import net.minecraft.world.entity.vehicle.ChestBoat;
  import net.minecraft.world.item.ItemStack;
@@ -21,10 +22,9 @@
          double d3 = vec3.z() + (double)direction.getStepZ() * d0;
          BlockPos blockpos = p_302460_.pos().relative(direction);
          double d4;
--        if (serverlevel.getFluidState(blockpos).is(FluidTags.WATER)) {
--            d4 = 1.0;
 +
-+        if (serverlevel.getFluidState(blockposition).is(FluidTags.WATER)) {
+         if (serverlevel.getFluidState(blockpos).is(FluidTags.WATER)) {
+-            d4 = 1.0;
 +            d4 = 1.0D;
          } else {
              if (!serverlevel.getBlockState(blockpos).isAir() || !serverlevel.getFluidState(blockpos.below()).is(FluidTags.WATER)) {

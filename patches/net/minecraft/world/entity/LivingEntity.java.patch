@@ -2515,6 +2515,19 @@
          Equipable equipable = Equipable.get(p_147234_);
          if (equipable != null) {
              EquipmentSlot equipmentslot = equipable.getEquipmentSlot();
+@@ -3433,6 +_,12 @@
+         return EquipmentSlot.MAINHAND;
+     }
+ 
++    // Purpur start - Dispenser curse of binding protection
++    public @Nullable EquipmentSlot getEquipmentSlotForDispenserItem(ItemStack itemstack) {
++        return EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.BINDING_CURSE, itemstack) > 0 ? null : this.getEquipmentSlotForItem(itemstack);
++    }
++    // Purpur end - Dispenser curse of binding protection
++
+     private static SlotAccess createEquipmentSlotAccess(LivingEntity p_147196_, EquipmentSlot p_147197_) {
+         return p_147197_ != EquipmentSlot.HEAD && p_147197_ != EquipmentSlot.MAINHAND && p_147197_ != EquipmentSlot.OFFHAND
+             ? SlotAccess.forEquipmentSlot(p_147196_, p_147197_, p_348156_ -> p_348156_.isEmpty() || p_147196_.getEquipmentSlotForItem(p_348156_) == p_147197_)
 @@ -3507,7 +_,7 @@
      }
  

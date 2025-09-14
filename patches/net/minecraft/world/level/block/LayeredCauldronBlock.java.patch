@@ -13,7 +13,7 @@
  import net.minecraft.world.level.material.Fluid;
  import net.minecraft.world.level.material.Fluids;
 +import org.bukkit.craftbukkit.block.CraftBlockState;
-+import org.bukkit.craftbukkit.block.CraftBlockStates;
++import org.bukkit.craftbukkit.block.CraftBlockStates;import org.bukkit.event.block.CauldronLevelChangeEvent;
  
  public class LayeredCauldronBlock extends AbstractCauldronBlock {
      public static final MapCodec<LayeredCauldronBlock> CODEC = RecordCodecBuilder.mapCodec(
@@ -37,7 +37,7 @@
          }
      }
  
-@@ -78,18 +_,40 @@
+@@ -78,18 +_,46 @@
      }
  
      public static void lowerFillLevel(BlockState p_153560_, Level p_153561_, BlockPos p_153562_) {
@@ -55,7 +55,13 @@
 +    }
 +
 +    // CraftBukkit start
-+    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason) {
++    // Paper start - Call CauldronLevelChangeEvent
++    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason) { // Paper - entity is nullable
++        return changeLevel(iblockdata, world, blockposition, newBlock, entity, reason, true);
++    }
++
++    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason, boolean sendGameEvent) { // Paper - entity is nullable
++    // Paper end - Call CauldronLevelChangeEvent
 +        CraftBlockState newState = CraftBlockStates.getBlockState(world, blockposition);
 +        newState.setData(newBlock);
 +
@@ -68,7 +74,7 @@
 +            return false;
 +        }
 +        newState.update(true);
-+        world.gameEvent((net.minecraft.core.Holder<net.minecraft.world.level.gameevent.GameEvent>) GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(newBlock));
++        if (sendGameEvent) world.gameEvent((net.minecraft.core.Holder<net.minecraft.world.level.gameevent.GameEvent>) GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(newBlock));
 +        return true;
 +    }
 +    // CraftBukkit end

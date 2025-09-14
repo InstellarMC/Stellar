@@ -21,7 +21,7 @@
  *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package io.papermc.paper.event.server;
+package com.destroystokyo.paper.event.server;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.util.TransformingRandomAccessList;

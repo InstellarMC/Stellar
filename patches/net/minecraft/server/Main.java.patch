@@ -308,7 +308,7 @@
              final DedicatedServer dedicatedserver = MinecraftServer.spin(
                  p_293760_ -> {
                      DedicatedServer dedicatedserver1 = new DedicatedServer(
-@@ -258,12 +_,13 @@
+@@ -258,25 +_,29 @@
                          services,
                          LoggerChunkProgressListener::createFromGameruleRadius
                      );
@@ -323,7 +323,10 @@
                      }
  
                      return dedicatedserver1;
-@@ -273,6 +_,7 @@
+                 }
+             );
++            /* CraftBukkit start
+             Thread thread = new Thread("Server Shutdown Thread") {
                  @Override
                  public void run() {
                      dedicatedserver.halt(true);
@@ -331,3 +334,8 @@
                  }
              };
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
+             Runtime.getRuntime().addShutdownHook(thread);
++            */ // CraftBukkit end
+         } catch (Exception exception1) {
+             LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", (Throwable)exception1);
+         }

@@ -10,7 +10,7 @@
  
  public class SimpleContainer implements Container, StackedContentsCompatible {
      private final int size;
-@@ -19,9 +_,76 @@
+@@ -19,9 +_,83 @@
      @Nullable
      private List<ContainerListener> listeners;
  
@@ -80,6 +80,13 @@
 -        this.items = NonNullList.withSize(p_19150_, ItemStack.EMPTY);
 +        this(p_19150_, null);
 +    }
++    // Paper start - Add missing InventoryHolders
++    private @Nullable java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> bukkitOwnerCreator;
++    public SimpleContainer(java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> bukkitOwnerCreator, int size) {
++        this(size);
++        this.bukkitOwnerCreator = bukkitOwnerCreator;
++    }
++    // Paper end - Add missing InventoryHolders
 +
 +    public SimpleContainer(int i, org.bukkit.inventory.InventoryHolder owner) {
 +        this.bukkitOwner = owner;

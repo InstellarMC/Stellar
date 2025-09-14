@@ -41,6 +41,13 @@ public final class CommandHelper {
             S canUse, Command<T> execute, Function<SuggestionProvider<S>, SuggestionProvider<T>> sourceToResultSuggestion) {
         sourceToResult.put(sourceNode, resultNode);
         for (CommandNode<S> sourceChild : sourceNode.getChildren()) {
+            // Paper start - Brigadier API
+            if (sourceChild.clientNode != null) {
+                // suppresswarnings unchecked - we check for null above
+                sourceChild = (CommandNode<S>) sourceChild.clientNode; // Stellar - unchecked cast
+            }
+            // Paper end - Brigadier API
+            if ( !org.spigotmc.SpigotConfig.sendNamespaced && sourceChild.getName().contains( ":" ) ) continue; // Spigot
             if (sourceChild.canUse(canUse)) {
                 resultNode.addChild(toResult(sourceChild, sourceToResult, canUse, execute, sourceToResultSuggestion));
             }
@@ -61,7 +68,7 @@ public final class CommandHelper {
             Function<SuggestionProvider<S>, SuggestionProvider<T>> sourceToResultSuggestion) {
         if (sourceToResult.containsKey(sourceNode))
             return sourceToResult.get(sourceNode);
-        sourceToResult.keySet().removeIf((node) -> !org.spigotmc.SpigotConfig.sendNamespaced && node.getName().contains( ":" )); // Paper - Remove namedspaced from result nodes to prevent redirect trimming ~ see comment below
+        // sourceToResult.keySet().removeIf((node) -> !org.spigotmc.SpigotConfig.sendNamespaced && node.getName().contains( ":" )); // Paper - Remove namedspaced from result nodes to prevent redirect trimming ~ see comment below
 
         ArgumentBuilder<T, ?> resultBuilder;
         if (sourceNode instanceof ArgumentCommandNode<?, ?>) {

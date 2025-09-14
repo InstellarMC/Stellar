@@ -9,13 +9,14 @@
  import com.mojang.datafixers.DataFixer;
  import java.io.File;
  import java.io.IOException;
-@@ -45,13 +_,14 @@
+@@ -45,13 +_,15 @@
  import net.minecraft.world.level.storage.DimensionDataStorage;
  import net.minecraft.world.level.storage.LevelStorageSource;
  
 -public class ServerChunkCache extends ChunkSource implements net.neoforged.neoforge.common.extensions.IServerChunkCacheExtension {
 +public class ServerChunkCache extends ChunkSource implements net.neoforged.neoforge.common.extensions.IServerChunkCacheExtension, ca.spottedleaf.moonrise.patches.chunk_system.world.ChunkSystemServerChunkCache { // Paper - rewrite chunk system
-+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
++
++    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper
      private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
      private final DistanceManager distanceManager;
      public final ServerLevel level;

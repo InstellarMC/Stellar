@@ -41,9 +41,9 @@
                          if (p_121534_.isTag()) {
                              TagKey<EntityType<?>> tagkey = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.read(p_121534_.getReader()));
 +                            // Paper start - tell clients to ask server for suggestions for EntityArguments; throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
-+                            if (reader.parsingEntityArgumentSuggestions && io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTag(tagkey).isEmpty()) {
-+                                reader.getReader().setCursor(i);
-+                                throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), tagkey);
++                            if (p_121534_.parsingEntityArgumentSuggestions && io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getTag(tagkey).isEmpty()) {
++                                p_121534_.getReader().setCursor(i);
++                                throw ERROR_ENTITY_TAG_INVALID.createWithContext(p_121534_.getReader(), tagkey);
 +                            }
 +                            // Paper end - tell clients to ask server for suggestions for EntityArguments
                              p_121534_.addPredicate(p_205691_ -> p_205691_.getType().is(tagkey) != flag);

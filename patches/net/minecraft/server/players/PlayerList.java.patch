@@ -97,7 +97,7 @@
      private boolean doWhiteList;
      private final LayeredRegistryAccess<RegistryLayer> registries;
      public int maxPlayers;
-@@ -128,15 +_,58 @@
+@@ -128,15 +_,65 @@
      private boolean allowCommandsForAllPlayers;
      private static final boolean ALLOW_LOGOUTIVATOR = false;
      private int sendAllPlayerInfoIn;
@@ -112,6 +112,7 @@
 +        this.cserver = p_203842_.server = new CraftServer((DedicatedServer) p_203842_, this);
 +        p_203842_.console = new TerminalConsoleCommandSender(); // Paper
 +        // CraftBukkit end
++
          this.server = p_203842_;
          this.registries = p_251844_;
          this.maxPlayers = p_203845_;
@@ -122,9 +123,15 @@
 +
 +    }; // Paper - fix converting txt to json file; moved from DedicatedPlayerList constructor
 +
++    // Stellar start
 +    private static final Component DISCONNECT_REASON_CONNECT_FAILED = Component.translatable("multiplayer.status.cannot_connect");
 +    private static final Component DISCONNECT_REASON_SERVER_CLOSED = Component.translatable("multiplayer.disconnect.server_shutdown");
-+    private static final java.util.concurrent.ExecutorService PLAYER_IO_POOL = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
++    private static final java.util.concurrent.ThreadFactory PLAYER_IO_THREAD_FACTORY = Thread.ofVirtual()
++        .name("stellar-player-io-", 0)
++        .uncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandler(LOGGER))
++        .factory();
++    private static final java.util.concurrent.ExecutorService PLAYER_IO_POOL = java.util.concurrent.Executors.newThreadPerTaskExecutor(PLAYER_IO_THREAD_FACTORY);
++    // Stellar end
  
      public void placeNewPlayer(Connection p_11262_, ServerPlayer p_11263_, CommonListenerCookie p_301988_) {
 +        // Stellar start - async player join

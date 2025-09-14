@@ -10,13 +10,13 @@
      @Override
      public final void addPlayerListener(PlayerAdvancements p_66243_, CriterionTrigger.Listener<T> p_66244_) {
 -        this.players.computeIfAbsent(p_66243_, p_66252_ -> Sets.newHashSet()).add(p_66244_);
-+        p_66243_.criterionData.computeIfAbsent(p_66243_, p_66252_ -> Sets.newHashSet()).add(p_66244_); // Paper - fix AdvancementDataPlayer leak
++        p_66243_.criterionData.computeIfAbsent(this, p_66252_ -> Sets.newHashSet()).add(p_66244_); // Paper - fix AdvancementDataPlayer leak
      }
  
      @Override
      public final void removePlayerListener(PlayerAdvancements p_66254_, CriterionTrigger.Listener<T> p_66255_) {
 -        Set<CriterionTrigger.Listener<T>> set = this.players.get(p_66254_);
-+        Set<CriterionTrigger.Listener<T>> set = p_66254_.criterionData.get(p_66254_); // Paper - fix AdvancementDataPlayer leak
++        Set<CriterionTrigger.Listener<T>> set = (Set) p_66254_.criterionData.get(this); // Paper - fix AdvancementDataPlayer leak
          if (set != null) {
              set.remove(p_66255_);
              if (set.isEmpty()) {
@@ -35,7 +35,7 @@
      protected void trigger(ServerPlayer p_66235_, Predicate<T> p_66236_) {
          PlayerAdvancements playeradvancements = p_66235_.getAdvancements();
 -        Set<CriterionTrigger.Listener<T>> set = this.players.get(playeradvancements);
-+        Set<CriterionTrigger.Listener<T>> set = playeradvancements.criterionData.get(playeradvancements); // Paper - fix AdvancementDataPlayer leak
++        Set<CriterionTrigger.Listener<T>> set = (Set) playeradvancements.criterionData.get(this); // Paper - fix AdvancementDataPlayer leak
          if (set != null && !set.isEmpty()) {
 -            LootContext lootcontext = EntityPredicate.createContext(p_66235_, p_66235_);
 +            LootContext lootcontext = null; // EntityPredicate.createContext(p_66235_, p_66235_); // Paper - Perf: lazily create LootContext for criterions
@@ -46,7 +46,7 @@
                  if (p_66236_.test(t)) {
                      Optional<ContextAwarePredicate> optional = t.player();
 -                    if (optional.isEmpty() || optional.get().matches(lootcontext)) {
-+                    if (optional.isEmpty() || optional.get().matches(lootcontext = (lootContext == null ? EntityPredicate.createContext(p_66235_, p_66235_) : lootcontext))) { // Paper - Perf: lazily create LootContext for criterions
++                    if (optional.isEmpty() || optional.get().matches(lootcontext = (lootcontext == null ? EntityPredicate.createContext(p_66235_, p_66235_) : lootcontext))) { // Paper - Perf: lazily create LootContext for criterions
                          if (list == null) {
                              list = Lists.newArrayList();
                          }

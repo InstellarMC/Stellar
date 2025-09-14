@@ -29,7 +29,7 @@
                  }
  
 -                if (!serverlevel.tryAddFreshEntityWithPassengers(entity)) {
-+                if (!serverlevel.tryAddFreshEntityWithPassengers(entity, CreatureSpawnEvent.SpawnReason.COMMAND)) { // Youer TODO fix mixin
++                if (!serverlevel.tryAddFreshEntityWithPassengers(entity, CreatureSpawnEvent.SpawnReason.COMMAND)) { // Youer - TODO fix mixin // Stellar - no
                      throw ERROR_DUPLICATE_UUID.create();
                  } else {
                      return entity;

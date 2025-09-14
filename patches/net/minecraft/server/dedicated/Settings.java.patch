@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/dedicated/Settings.java
 +++ b/net/minecraft/server/dedicated/Settings.java
-@@ -20,17 +_,33 @@
+@@ -20,19 +_,43 @@
  import java.util.function.Supplier;
  import java.util.function.UnaryOperator;
  import javax.annotation.Nullable;
@@ -12,6 +12,8 @@
  public abstract class Settings<T extends Settings<T>> {
      private static final Logger LOGGER = LogUtils.getLogger();
      public final Properties properties;
++    private static final boolean skipComments = Boolean.getBoolean("Paper.skipServerPropertiesComments"); // Paper - allow skipping server.properties comments
++    // CraftBukkit start
 +    private OptionSet options = null;
  
      public Settings(Properties p_139801_) {
@@ -29,12 +31,20 @@
 +        }
 +
 +        return value;
++        // CraftBukkit end
 +    }
 +
      public static Properties loadFromFile(Path p_139840_) {
          try {
++            // CraftBukkit start - SPIGOT-7465, MC-264979: Don't load if file doesn't exist
++            if (!p_139840_.toFile().exists()) {
++                return new Properties();
++            }
++            // CraftBukkit end
              try {
-@@ -59,14 +_,14 @@
+                 Properties properties3;
+                 try (InputStream inputstream = Files.newInputStream(p_139840_)) {
+@@ -59,14 +_,23 @@
                  return properties1;
              }
          } catch (IOException ioexception) {
@@ -45,6 +55,15 @@
      }
  
      public void store(Path p_139877_) {
++        // CraftBukkit start - Don't attempt writing to file if it's read only
++        { // Stellar - avoid multiple toFile() calls
++            final java.io.File asFile = p_139877_.toFile(); // Stellar - avoid multiple toFile() calls
++            if (asFile.exists() && !asFile.canWrite()) {
++                Settings.LOGGER.warn("Can not write to file {}, skipping.", p_139877_); // Paper - log message file is read-only
++                return;
++            }
++        } // Stellar - avoid multiple toFile() calls; free up the reference
++        // CraftBukkit end
          try (Writer writer = Files.newBufferedWriter(p_139877_, StandardCharsets.UTF_8)) {
 -            this.properties.store(writer, "Minecraft server properties");
 +            net.neoforged.neoforge.common.util.SortedProperties.store(this.properties, writer, "Minecraft server properties");
