@@ -6,7 +6,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import net.kyori.adventure.text.Component;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -35,6 +41,12 @@ public final class MSPTCommand extends Command {
 
     @Override
     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
+        // Stellar start - Port SparklyPaper patches; Track World specific MSPT
+        if (args.length == 1) {
+            final MinecraftServer server = MinecraftServer.getServer();
+            return CommandUtil.getListMatchingLast(sender, args, server.levelKeys().stream().map(ResourceKey::location).toList());
+        }
+        // Stellar end - Port SparklyPaper patches; Track World specific MSPT
         return Collections.emptyList();
     }
 
@@ -44,6 +56,7 @@ public final class MSPTCommand extends Command {
 
         MinecraftServer server = MinecraftServer.getServer();
 
+        if (args.length == 0) { // Stellar
         List<Component> times = new ArrayList<>();
         times.addAll(eval(server.tickTimes1s.getTimes())); // Stellar - Add more granular tick times
         times.addAll(eval(server.tickTimes5s.getTimes()));
@@ -90,44 +103,46 @@ public final class MSPTCommand extends Command {
                         )
                 )
         );
-
-        // Stellar start - Port SparklyPaper patches; Track World specific MSPT
-        sender.sendMessage(text());
-        sender.sendMessage(text().content("World tick times ").color(GOLD)
-                .append(text().color(YELLOW)
-                        .append(
-                                text("("),
-                                text("avg", GRAY),
-                                text("/"),
-                                text("min", GRAY),
-                                text("/"),
-                                text("max", GRAY),
-                                text(")")
-                        )
-                ).append(
-                        // Stellar start - Add more granular tick times
-                        text(" from last 1s"),
-                        text(",", GRAY),
-                        text(" 5s"),
-                        text(",", GRAY),
-                        text(" 10s"),
-                        text(",", GRAY),
-                        text(" 30s"),
-                        text(",", GRAY),
-                        text(" 1m"),
-                        text(":", YELLOW)
-                        // Stellar end - Add more granular tick times
-                )
-        );
-        for (net.minecraft.server.level.ServerLevel level: server.getAllLevels()) {
+        } else if (args.length == 1) { // Stellar
+            // Stellar start - Port SparklyPaper patches; Track World specific MSPT
+            sender.sendMessage(text());
+            sender.sendMessage(text().content("World tick times ").color(GOLD)
+                    .append(text().color(YELLOW)
+                            .append(
+                                    text("("),
+                                    text("avg", GRAY),
+                                    text("/"),
+                                    text("min", GRAY),
+                                    text("/"),
+                                    text("max", GRAY),
+                                    text(")")
+                            )
+                    ).append(
+                            // Stellar start - Add more granular tick times
+                            text(" from last 1s"),
+                            text(",", GRAY),
+                            text(" 5s"),
+                            text(",", GRAY),
+                            text(" 10s"),
+                            text(",", GRAY),
+                            text(" 30s"),
+                            text(",", GRAY),
+                            text(" 1m"),
+                            text(":", YELLOW)
+                            // Stellar end - Add more granular tick times
+                    )
+            );
+            final var resourcelocation = ResourceLocation.parse(args[0]);
+            final var resourcekey = ResourceKey.create(Registries.DIMENSION, resourcelocation);
+            final var serverlevel = server.getLevel(resourcekey);
             List<Component> worldTimes = new ArrayList<>();
-            worldTimes.addAll(eval(level.tickTimes1s.getTimes())); // Stellar - Add more granular tick times
-            worldTimes.addAll(eval(level.tickTimes5s.getTimes()));
-            worldTimes.addAll(eval(level.tickTimes10s.getTimes()));
-            worldTimes.addAll(eval(level.tickTimes30s.getTimes())); // Stellar - Add more granular tick times
-            worldTimes.addAll(eval(level.tickTimes60s.getTimes()));
+            worldTimes.addAll(eval(serverlevel.tickTimes1s.getTimes())); // Stellar - Add more granular tick times
+            worldTimes.addAll(eval(serverlevel.tickTimes5s.getTimes()));
+            worldTimes.addAll(eval(serverlevel.tickTimes10s.getTimes()));
+            worldTimes.addAll(eval(serverlevel.tickTimes30s.getTimes())); // Stellar - Add more granular tick times
+            worldTimes.addAll(eval(serverlevel.tickTimes60s.getTimes()));
 
-            sender.sendMessage(text().content("◴ " + level.getWorld().getName() + ": ").color(GOLD)
+            sender.sendMessage(text().content("◴ " + serverlevel.getWorld().getName() + ": ").color(GOLD)
                     .append(text().color(GRAY)
                             .append(
                                     worldTimes.get(0), SLASH, worldTimes.get(1), SLASH, worldTimes.get(2), text(", ", YELLOW),
@@ -140,8 +155,8 @@ public final class MSPTCommand extends Command {
                             )
                     )
             );
+            // Stellar end - Port SparklyPaper patches; Track World specific MSPT
         }
-        // Stellar end - Port SparklyPaper patches; Track World specific MSPT
         return true;
     }
 
