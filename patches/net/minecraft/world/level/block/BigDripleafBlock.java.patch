@@ -63,7 +63,7 @@
              } else if (tilt == Tilt.FULL) {
                  resetTilt(p_220798_, p_220799_, p_220800_);
              }
-@@ -229,8 +_,8 @@
+@@ -229,31 +_,39 @@
          return p_152303_.onGround() && p_152303_.position().y > (double)((float)p_152302_.getY() + 0.6875F);
      }
  
@@ -74,7 +74,12 @@
          if (p_152287_ != null) {
              playTiltSound(p_152284_, p_152285_, p_152287_);
          }
-@@ -242,18 +_,26 @@
+ 
+-        int i = DELAY_UNTIL_NEXT_TILT_STATE.getInt(p_152286_);
++        int i = p_152284_.purpurConfig.bigDripleafTiltDelay.getOrDefault(p_152286_, -1); // Purpur
+         if (i != -1) {
+             p_152284_.scheduleTick(p_152285_, this, i);
+         }
      }
  
      private static void resetTilt(BlockState p_152314_, Level p_152315_, BlockPos p_152316_) {
