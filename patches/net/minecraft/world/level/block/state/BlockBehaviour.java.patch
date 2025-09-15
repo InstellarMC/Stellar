@@ -30,7 +30,7 @@
 -    protected final boolean hasCollision;
 -    protected final float explosionResistance;
 +    public final boolean hasCollision;
-+    public float explosionResistance;
++    public float explosionResistance; // Purpur - protected final -> public
      protected final boolean isRandomlyTicking;
      protected final SoundType soundType;
      protected final float friction;
