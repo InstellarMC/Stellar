@@ -42,11 +42,17 @@
      }
  
      @Override
-@@ -234,7 +_,28 @@
+@@ -234,13 +_,28 @@
          ItemStack p_316332_, BlockState p_316118_, Level p_316624_, BlockPos p_316660_, Player p_316715_, InteractionHand p_316472_, BlockHitResult p_316606_
      ) {
          int i = p_316118_.getValue(LEVEL);
 -        if (i < 8 && COMPOSTABLES.containsKey(p_316332_.getItem())) {
+-            if (i < 7 && !p_316624_.isClientSide) {
+-                BlockState blockstate = addItem(p_316715_, p_316118_, p_316624_, p_316660_, p_316332_);
+-                p_316624_.levelEvent(1500, p_316660_, p_316118_ != blockstate ? 1 : 0);
+-                p_316715_.awardStat(Stats.ITEM_USED.get(p_316332_.getItem()));
+-                p_316332_.consume(1, p_316715_);
+-            }
 +        if (i < 8 && getValue(p_316332_) > 0) {
 +            // Purpur start - sneak to bulk process composter
 +            BlockState newState = process(i, p_316715_, p_316118_, p_316624_, p_316660_, p_316332_);
@@ -69,9 +75,9 @@
 +                } while (newCount > 0 && (newCount != oldCount || newLevel != oldLevel || newState != oldState));
 +            }
 +            // Purpur end - Sneak to bulk process composter
-             if (i < 7 && !p_316624_.isClientSide) {
-                 BlockState blockstate = addItem(p_316715_, p_316118_, p_316624_, p_316660_, p_316332_);
-                 p_316624_.levelEvent(1500, p_316660_, p_316118_ != blockstate ? 1 : 0);
+ 
+             return ItemInteractionResult.sidedSuccess(p_316624_.isClientSide);
+         } else {
 @@ -248,6 +_,25 @@
          }
      }
@@ -79,17 +85,17 @@
 +    // Purpur start - sneak to bulk process composter
 +    private static @Nullable BlockState process(int levelValue, Player player, BlockState state, Level level, BlockPos pos, ItemStack stack) {
 +        if (levelValue < 7 && !level.isClientSide) {
-+            BlockState iblockdata1 = ComposterBlock.addItem(player, state, level, pos, stack);
++            BlockState blockstate = ComposterBlock.addItem(player, state, level, pos, stack);
 +            // Paper start - handle cancelled events
-+            if (iblockdata1 == null) {
++            if (blockstate == null) {
 +                return null;
 +            }
 +            // Paper end
 +
-+            level.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
++            level.levelEvent(1500, pos, state != blockstate ? 1 : 0);
 +            player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
 +            stack.consume(1, player);
-+            return iblockdata1;
++            return blockstate;
 +        }
 +        return state;
 +    }

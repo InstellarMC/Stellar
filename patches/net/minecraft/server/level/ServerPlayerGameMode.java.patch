@@ -563,7 +563,7 @@
 +                && !(p_9266_.getMainHandItem().doesSneakBypassUse(p_9267_, blockpos, p_9266_) && p_9266_.getOffhandItem().doesSneakBypassUse(p_9267_, blockpos, p_9266_)); // Neo
              ItemStack itemstack = p_9268_.copy();
 -            if (!flag1) {
-+            if (neoEvent.getUseBlock().isTrue() || (neoEvent.getUseBlock().isDefault() && !flag1)|| (player.level().purpurConfig.composterBulkProcess && blockstate.is(net.minecraft.world.level.block.Blocks.COMPOSTER))) { // Purpur - Sneak to bulk process composter
++            if (neoEvent.getUseBlock().isTrue() || neoEvent.getUseBlock().isDefault() && (!flag1 || (player.level().purpurConfig.composterBulkProcess && blockstate.is(net.minecraft.world.level.block.Blocks.COMPOSTER)))) { // Purpur - Sneak to bulk process composter
                  ItemInteractionResult iteminteractionresult = blockstate.useItemOn(p_9266_.getItemInHand(p_9269_), p_9267_, p_9266_, p_9269_, p_9270_);
                  if (iteminteractionresult.consumesAction()) {
                      CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger(p_9266_, blockpos, itemstack);
