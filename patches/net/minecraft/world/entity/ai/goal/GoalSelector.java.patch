@@ -37,14 +37,17 @@
              if (!p_186080_.getOrDefault(goal$flag, NO_GOAL).canBeReplacedBy(p_186079_)) {
                  return false;
              }
-@@ -71,12 +_,28 @@
+@@ -71,12 +_,31 @@
          return true;
      }
  
 +    // Paper start - EAR 2
-+    public boolean inactiveTick() {
++    public boolean inactiveTick(int tickRate, boolean inactive) { // Pufferfish start
++        if (inactive && !gg.pufferfish.pufferfish.PufferfishConfig.dearEnabled) tickRate = 4; // reset to Paper's
++        tickRate = Math.min(tickRate, 3);
 +        this.curRate++;
-+        return this.curRate % 3 == 0; // TODO newGoalRate was already unused in 1.20.4, check if this is correct
++        return this.curRate % tickRate == 0; // TODO newGoalRate was already unused in 1.20.4, check if this is correct
++        // Pufferfish end
 +    }
 +
 +    public boolean hasTasks() {

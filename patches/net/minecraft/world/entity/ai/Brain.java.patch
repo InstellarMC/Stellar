@@ -42,6 +42,16 @@
          } else {
              return (Optional<U>)optional.map(ExpirableValue::getValue);
          }
+@@ -399,7 +_,9 @@
+         return brain;
+     }
+ 
++    private int behaviorTick = 0; // Pufferfish
+     public void tick(ServerLevel p_21866_, E p_21867_) {
++        if (this.behaviorTick++ % p_21867_.activatedPriority == 0) return; // Pufferfish
+         this.forgetOutdatedMemories();
+         this.tickSensors(p_21866_, p_21867_);
+         this.startEachNonRunningBehavior(p_21866_, p_21867_);
 @@ -413,7 +_,7 @@
      }
  

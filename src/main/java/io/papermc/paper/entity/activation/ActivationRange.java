@@ -165,6 +165,24 @@ public final class ActivationRange {
                 }
 
                 ActivationRange.activateEntity(entity);
+
+                // Pufferfish start
+                if (gg.pufferfish.pufferfish.PufferfishConfig.dearEnabled && entity.getType().dabEnabled) {
+                    if (!entity.activatedPriorityReset) {
+                        entity.activatedPriorityReset = true;
+                        entity.activatedPriority = gg.pufferfish.pufferfish.PufferfishConfig.maximumActivationPrio;
+                    }
+                    var playerVec = player.position();
+                    var entityVec = entity.position();
+                    double diffX = playerVec.x - entityVec.x, diffY = playerVec.y - entityVec.y, diffZ = playerVec.z - entityVec.z;
+                    int squaredDistance = (int) (diffX * diffX + diffY * diffY + diffZ * diffZ);
+                    entity.activatedPriority = squaredDistance > gg.pufferfish.pufferfish.PufferfishConfig.startDistanceSquared ?
+                            Math.max(1, Math.min(squaredDistance >> gg.pufferfish.pufferfish.PufferfishConfig.activationDistanceMod, entity.activatedPriority)) :
+                            1;
+                } else {
+                    entity.activatedPriority = 1;
+                }
+                // Pufferfish end
             }
         }
     }
