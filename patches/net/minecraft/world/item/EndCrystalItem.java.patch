@@ -8,7 +8,7 @@
  
  public class EndCrystalItem extends Item {
      public EndCrystalItem(Item.Properties p_41174_) {
-@@ -41,6 +_,12 @@
+@@ -41,10 +_,16 @@
                      if (level instanceof ServerLevel) {
                          EndCrystal endcrystal = new EndCrystal(level, d0 + 0.5, d1, d2 + 0.5);
                          endcrystal.setShowBottom(false);
@@ -21,3 +21,8 @@
                          level.addFreshEntity(endcrystal);
                          level.gameEvent(p_41176_.getPlayer(), GameEvent.ENTITY_PLACE, blockpos1);
                          EndDragonFight enddragonfight = ((ServerLevel)level).getDragonFight();
+-                        if (enddragonfight != null) {
++                        if (enddragonfight != null && gg.pufferfish.pufferfish.PufferfishConfig.allowEndCrystalRespawn) { // Pufferfish
+                             enddragonfight.tryRespawn();
+                         }
+                     }
