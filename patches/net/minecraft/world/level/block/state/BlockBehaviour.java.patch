@@ -374,18 +374,7 @@
          public SoundType getSoundType() {
              return this.getBlock().getSoundType(this.asState());
          }
-@@ -862,6 +_,10 @@
-         static final class Cache {
-             private static final Direction[] DIRECTIONS = Direction.values();
-             private static final int SUPPORT_TYPE_COUNT = SupportType.values().length;
-+            // Stellar start - Leaf: Cache blockstate cache array
-+            private static final SupportType[] SUPPORT_TYPE_VALUES = SupportType.values();
-+            private static final Direction.Axis[] DIRECTION_AXIS_VALUES = Direction.Axis.values();
-+            // Stellar end - Leaf: Cache blockstate cache array
-             protected final boolean solidRender;
-             final boolean propagatesSkylightDown;
-             final int lightBlock;
-@@ -898,12 +_,20 @@
+@@ -898,8 +_,16 @@
                          )
                      );
                  } else {
@@ -393,7 +382,7 @@
 -                        .anyMatch(p_60860_ -> this.collisionShape.min(p_60860_) < 0.0 || this.collisionShape.max(p_60860_) > 1.0);
 +                    // Stellar start - Leaf: Remove stream in BlockBehaviour cache blockstate
 +                    boolean largeCollisionShape0 = false;
-+                    for (Direction.Axis axis : DIRECTION_AXIS_VALUES) { // Stellar - Leaf: Cache blockstate cache array
++                    for (Direction.Axis axis : Direction.Axis.values()) {
 +                        if (this.collisionShape.min(axis) < 0.0 || this.collisionShape.max(axis) > 1.0) {
 +                            largeCollisionShape0 = true;
 +                            break;
@@ -404,11 +393,6 @@
                      this.faceSturdy = new boolean[DIRECTIONS.length * SUPPORT_TYPE_COUNT];
  
                      for (Direction direction1 : DIRECTIONS) {
--                        for (SupportType supporttype : SupportType.values()) {
-+                        for (SupportType supporttype : SUPPORT_TYPE_VALUES) { // Stellar - Leaf: Cache blockstate cache array
-                             this.faceSturdy[getFaceSupportIndex(direction1, supporttype)] = supporttype.isSupporting(
-                                 p_60853_, EmptyBlockGetter.INSTANCE, BlockPos.ZERO, direction1
-                             );
 @@ -959,11 +_,12 @@
          PushReaction pushReaction = PushReaction.NORMAL;
          boolean spawnTerrainParticles = true;
