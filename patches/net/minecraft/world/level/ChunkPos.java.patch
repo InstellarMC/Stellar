@@ -37,3 +37,17 @@
      }
  
      public static long asLong(int p_45590_, int p_45591_) {
+@@ -83,6 +_,13 @@
+         if (this == p_45607_) {
+             return true;
+         } else {
++            // Stellar start - optimized equals
++            if (p_45607_ == null || p_45607_.getClass() != this.getClass()) return false;
++            if (true) {
++                ChunkPos chunkpos = (ChunkPos)p_45607_;
++                return this.longKey == chunkpos.longKey;
++            }
++            // Stellar end - optimized equals
+             return !(p_45607_ instanceof ChunkPos chunkpos) ? false : this.x == chunkpos.x && this.z == chunkpos.z;
+         }
+     }
