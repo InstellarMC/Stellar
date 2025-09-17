@@ -31,7 +31,7 @@
 +
 +            try {
 +                NbtIo.writeCompressed(compoundtag, nbtBytes);
-+            } catch (Exception exception) {
++            } catch (final Exception exception) {
 +                LOGGER.warn("Failed to encode player data for {}", p_78434_.getScoreboardName(), exception);
 +            }
 +
@@ -46,29 +46,28 @@
              Path path2 = path.resolve(p_78434_.getStringUUID() + ".dat");
              Path path3 = path.resolve(p_78434_.getStringUUID() + ".dat_old");
              Util.safeReplaceFile(path2, path1, path3);
--        } catch (Exception exception) {
++            net.neoforged.neoforge.event.EventHooks.firePlayerSavingEvent(p_78434_, playerDir, p_78434_.getStringUUID());
++                    } catch (final Exception exception) {
++                        LOGGER.warn("Failed to save player data for {}", p_78434_.getScoreboardName(),  exception); // Paper - Print exception
++                    }
++                    finally { // Stellar start - Nitori: Async playerdata saving
++                        synchronized (PlayerDataStorage.this) {
++                            savingLocks.remove(p_78434_.getUUID());
++                        }
++                    }
++                }).ifPresent(future -> savingLocks.put(p_78434_.getUUID(), future));
++            }
++            // Stellar end - Nitori: Async playerdata saving
+         } catch (Exception exception) {
 -            LOGGER.warn("Failed to save player data for {}", p_78434_.getName().getString());
 -        }
 -    }
-+            net.neoforged.neoforge.event.EventHooks.firePlayerSavingEvent(p_78434_, playerDir, p_78434_.getStringUUID());
-+        } catch (Exception exception) {
-+            LOGGER.warn("Failed to save player data for {}", p_78434_.getScoreboardName(),  exception); // Paper - Print exception
-+        }
-+        // Stellar start - Nitori: Async playerdata saving
-+        finally {
-+            synchronized (PlayerDataStorage.this) {
-+                savingLocks.remove(p_78434_.getUUID());
-+            }
-+        }
-+        }).ifPresent(future -> savingLocks.put(p_78434_.getUUID(), future));}
-+        // Stellar end - Nitori: Async playerdata saving
-+        } catch (Exception exception) {
 +            LOGGER.warn("Failed to save player data for {}", p_78434_.getScoreboardName(), exception);
 +        }
 +    }
 +
 +    // Stellar start - Nitori: Async playerdata saving
-+    private void lockFor(java.util.UUID uniqueId, String playerName) {
++    private void lockFor(final java.util.UUID uniqueId, final String playerName) {
 +        java.util.concurrent.Future<?> fut;
 +        synchronized (this) {
 +            fut = savingLocks.get(uniqueId);
@@ -127,20 +126,26 @@
          File file1 = new File(this.playerDir, p_316534_.getStringUUID() + p_316666_);
          if (file1.exists() && file1.isFile()) {
              try {
-@@ -70,17 +_,78 @@
+@@ -70,17 +_,89 @@
          return Optional.empty();
      }
  
-+    private Optional<CompoundTag> load(String name, String s1, String s) { // name, uuid, extension
++    // Stellar start - Nitori: Async playerdata saving
++    private Optional<CompoundTag> load(final String name, final String stringUuid, final String extension) {
++        return load(name, stringUuid, java.util.UUID.fromString(stringUuid), extension);
++    }
++    private Optional<CompoundTag> load(final String name, final String stringUuid, final java.util.UUID playerUuid, final String extension) {
++        lockFor(playerUuid, name);
++        // Stellar end - Nitori: Async playerdata saving
 +        // CraftBukkit end
 +        File file = this.playerDir;
 +        // String s1 = entityhuman.getStringUUID(); // CraftBukkit - used above
-+        File file1 = new File(file, s1 + s);
++        File file1 = new File(file, stringUuid + extension);
 +        // Spigot Start
 +        boolean usingWrongFile = false;
 +        if ( org.bukkit.Bukkit.getOnlineMode() && !file1.exists() ) // Paper - Check online mode first
 +        {
-+            file1 = new File( file, java.util.UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + name ).getBytes( java.nio.charset.StandardCharsets.UTF_8 ) ).toString() + s );
++            file1 = new File( file, java.util.UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + name ).getBytes( java.nio.charset.StandardCharsets.UTF_8 ) ).toString() + extension );
 +            if ( file1.exists() )
 +            {
 +                usingWrongFile = true;
@@ -174,7 +179,7 @@
          }
  
 -        return optional.or(() -> this.load(p_78436_, ".dat_old")).map(p_316252_ -> {
-+        return optional.or(() -> this.load(p_78436_.getName().getString(), p_78436_.getStringUUID())).map(p_316252_ -> {
++        return optional.or(() -> this.load(p_78436_.getName().getString(), p_78436_.getStringUUID(), p_78436_.getUUID())).map(p_316252_ -> { // Stellar - Nitori: Async playerdata saving
 +            if (p_78436_ instanceof ServerPlayer) {
 +                CraftPlayer player1 = (CraftPlayer) p_78436_.getBukkitEntity();
 +                // Only update first played if it is older than the one we have
@@ -190,12 +195,17 @@
 +    }
 +
 +    public Optional<CompoundTag> load(String p_78436_, String uuid) {
-+        Optional<CompoundTag> optional = this.load(p_78436_, uuid, ".dat");
++        // Stellar start - Nitori: Async playerdata saving
++        return this.load(p_78436_, uuid, java.util.UUID.fromString(uuid));
++    }
++    public Optional<CompoundTag> load(String p_78436_, String uuid, final java.util.UUID playerUuid) {
++        Optional<CompoundTag> optional = this.load(p_78436_, uuid, playerUuid, ".dat");
++        // Stellar end - Nitori: Async playerdata saving
 +        if (optional.isEmpty()) {
 +            this.backup(p_78436_, uuid, ".dat");
 +        }
 +
-+        return optional.or(() -> this.load(p_78436_, uuid, ".dat_old")).map(p_316252_ -> {
++        return optional.or(() -> this.load(p_78436_, uuid, playerUuid, ".dat_old")).map(p_316252_ -> { // Stellar - Nitori: Async playerdata saving
              int i = NbtUtils.getDataVersion(p_316252_, -1);
              p_316252_ = DataFixTypes.PLAYER.updateToCurrentVersion(this.fixerUpper, p_316252_, i);
 -            p_78436_.load(p_316252_);
