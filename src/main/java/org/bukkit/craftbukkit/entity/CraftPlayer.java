@@ -198,7 +198,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, io.papermc.
     private boolean hasPlayedBefore = false;
     private final ConversationTracker conversationTracker = new ConversationTracker();
     private final Set<String> channels = new ObjectOpenHashSet<>();
-    private final Map<UUID, Set<WeakReference<Plugin>>> invertedVisibilityEntities = new HashMap<>();
+    private final Map<UUID, Set<WeakReference<Plugin>>> invertedVisibilityEntities = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(); // Stellar - SparklyPaper: optimize canSee checks
     private final Set<UUID> unlistedEntities = new HashSet<>(); // Paper - Add Listing API for Player
     private static final WeakHashMap<Plugin, WeakReference<Plugin>> pluginWeakReferences = new WeakHashMap<>();
     private int hash = 0;
@@ -2259,14 +2259,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player, io.papermc.
 
     @Override
     public boolean canSee(org.bukkit.entity.Entity entity) {
-        return this.equals(entity) || this.chunkMapCanSee(entity); // SPIGOT-7312: Can always see self // Stellar - Optimize canSee check
+        return this.equals(entity) || this.canSeeChunkMapUpdatePlayer(entity); // SPIGOT-7312: Can always see self // Stellar - SparklyPaper: optimize canSee checks
     }
 
-    // Stellar start - Optimize canSee check (The check in ChunkMap#updatePlayer already rejects if it is the same entity, so we don't need to check it twice, especially because CraftPlayer's equals check is a bit expensive)
-    public boolean chunkMapCanSee(org.bukkit.entity.Entity entity) {
-        return entity.isVisibleByDefault() ^ (!invertedVisibilityEntities.isEmpty() && this.invertedVisibilityEntities.containsKey(entity.getUniqueId()));
+    // Stellar start - SparklyPaper: optimize canSee check
+    // The check in ChunkMap#updatePlayer already rejects if it is the same entity, so we don't need to
+    // check it twice, especially because CraftPlayer's equals check is a bit expensive
+    public boolean canSeeChunkMapUpdatePlayer(org.bukkit.entity.Entity entity) {
+        return entity.isVisibleByDefault() ^ (!invertedVisibilityEntities.isEmpty() && this.invertedVisibilityEntities.containsKey(entity.getUniqueId())); // SPIGOT-7312: Can always see self // Stellar - SparklyPaper: optimize canSee checks
      }
-    // Stellar end - Optimize canSee check
+    // Stellar end - SparklyPaper: optimize canSee check
 
     public boolean canSeePlayer(UUID uuid) {
         org.bukkit.entity.Entity entity = this.getServer().getPlayer(uuid);
