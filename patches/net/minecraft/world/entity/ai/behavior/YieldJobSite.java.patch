@@ -1,0 +1,46 @@
+--- a/net/minecraft/world/entity/ai/behavior/YieldJobSite.java
++++ b/net/minecraft/world/entity/ai/behavior/YieldJobSite.java
+@@ -40,24 +_,26 @@
+                                     if (optional.isEmpty()) {
+                                         return true;
+                                     } else {
+-                                        p_258916_.<List<LivingEntity>>get(p_258903_)
+-                                            .stream()
+-                                            .filter(p_258898_ -> p_258898_ instanceof Villager && p_258898_ != p_258913_)
+-                                            .map(p_258896_ -> (Villager)p_258896_)
+-                                            .filter(LivingEntity::isAlive)
+-                                            .filter(p_258919_ -> nearbyWantsJobsite(optional.get(), p_258919_, blockpos))
+-                                            .findFirst()
+-                                            .ifPresent(p_340764_ -> {
+-                                                p_258904_.erase();
+-                                                p_258905_.erase();
+-                                                p_258901_.erase();
+-                                                if (p_340764_.getBrain().getMemory(MemoryModuleType.JOB_SITE).isEmpty()) {
+-                                                    BehaviorUtils.setWalkAndLookTargetMemories(p_340764_, blockpos, p_259768_, 1);
+-                                                    p_340764_.getBrain()
+-                                                        .setMemory(MemoryModuleType.POTENTIAL_JOB_SITE, GlobalPos.of(p_258912_.dimension(), blockpos));
+-                                                    DebugPackets.sendPoiTicketCountPacket(p_258912_, blockpos);
++                                        // Stellar start - Leaf: Remove stream in YieldJobSite
++                                        List<LivingEntity> mobsList = p_258916_.get(p_258903_);
++                                        for (LivingEntity nearEntity : mobsList) {
++                                            if (nearEntity instanceof Villager nearVillager && nearEntity != p_258913_ && nearEntity.isAlive()) {
++                                                if (nearbyWantsJobsite(optional.get(), nearVillager, blockpos)) {
++                                                    p_258904_.erase();
++                                                    p_258905_.erase();
++                                                    p_258901_.erase();
++
++                                                    if (nearVillager.getBrain().getMemory(MemoryModuleType.JOB_SITE).isEmpty()) {
++                                                        BehaviorUtils.setWalkAndLookTargetMemories(nearVillager, blockpos, p_259768_, 1);
++                                                        nearVillager.getBrain().setMemory(MemoryModuleType.POTENTIAL_JOB_SITE, GlobalPos.of(p_258912_.dimension(), blockpos));
++                                                        DebugPackets.sendPoiTicketCountPacket(p_258912_, blockpos);
++                                                    }
++
++                                                    break;
+                                                 }
+-                                            });
++                                            }
++                                        }
++                                        // Stellar end - Leaf: Remove stream in YieldJobSite
+                                         return true;
+                                     }
+                                 }
