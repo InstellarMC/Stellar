@@ -119,6 +119,7 @@ public final class GlobalConfiguration extends ConfigurationPart {
         public boolean turboStructureGeneratingSequence = false;
         public boolean reduceUselessEntityMovePackets = true;
         public boolean asyncChunkSend = false;
+        public boolean optimizeNonFlushPackerSending = false;
     }
 
     public Compatibility compatibility;

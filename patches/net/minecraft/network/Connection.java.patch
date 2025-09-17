@@ -55,7 +55,7 @@
      @Nullable
      private volatile PacketListener disconnectListener;
      @Nullable
-@@ -107,6 +_,49 @@
+@@ -107,6 +_,50 @@
      private volatile DisconnectionDetails delayedDisconnect;
      @Nullable
      BandwidthDebugMonitor bandwidthDebugMonitor;
@@ -69,6 +69,7 @@
 +    // Paper end
 +    // Paper start - Optimize network
 +    public boolean isPending = true;
++    private io.netty.channel.SingleThreadEventLoop eventLoop; // Paper - optimise packets that are not flushed
 +    public boolean queueImmunity;
 +    // Paper end - Optimize network
 +
@@ -105,9 +106,11 @@
  
      public Connection(PacketFlow p_129482_) {
          this.receiving = p_129482_;
-@@ -117,30 +_,57 @@
+@@ -116,31 +_,59 @@
+     public void channelActive(ChannelHandlerContext p_129525_) throws Exception {
          super.channelActive(p_129525_);
          this.channel = p_129525_.channel();
++        this.eventLoop = (io.netty.channel.SingleThreadEventLoop) this.channel.eventLoop(); // Paper - optimise packets that are not flushed
          this.address = this.channel.remoteAddress();
 +        this.preparing = false; // Spigot
          if (this.delayedDisconnect != null) {
@@ -318,7 +321,17 @@
          }
      }
  
-@@ -344,6 +_,14 @@
+@@ -339,11 +_,24 @@
+         if (this.channel.eventLoop().inEventLoop()) {
+             this.doSendPacket(p_129521_, p_243246_, p_294510_);
+         } else {
++            // Paper start - optimise packets that are not flushed
++            if (!p_294510_ && dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.optimizeNonFlushPackerSending) {
++                this.eventLoop.lazyExecute(() -> this.doSendPacket(p_129521_, p_243246_, p_294510_));
++            } else
++                // Paper end - optimise packets that are not flushed
+             this.channel.eventLoop().execute(() -> this.doSendPacket(p_129521_, p_243246_, p_294510_));
+         }
      }
  
      private void doSendPacket(Packet<?> p_243260_, @Nullable PacketSendListener p_243290_, boolean p_294125_) {
