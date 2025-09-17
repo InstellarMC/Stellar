@@ -101,7 +101,7 @@
 +        // Stellar start - Leaf: Optimize LinearPalette
 +        int i = VarInt.getByteSize(this.size);
 +        for (int k = 0; k < this.size; k++) {
-+            i += this.byteSizes[i]; // Use cached byte sizes
++            i += this.byteSizes[k]; // Use cached byte sizes
 +         }
 +        // Stellar end - Leaf: Optimize LinearPalette
  

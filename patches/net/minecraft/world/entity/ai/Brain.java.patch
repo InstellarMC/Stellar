@@ -25,7 +25,7 @@
 -    private final Map<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>> memories = Maps.newHashMap();
 -    private final Map<SensorType<? extends Sensor<? super E>>, Sensor<? super E>> sensors = Maps.newLinkedHashMap();
 -    private final Map<Integer, Map<Activity, Set<BehaviorControl<? super E>>>> availableBehaviorsByPriority = Maps.newTreeMap();
-+    private final Reference2ObjectMap<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>> memories = new Reference2ObjectOpenHashMap<>(); // Stellar - lithium: Use fastutil
++    private final Reference2ObjectOpenHashMap<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>> memories = new Reference2ObjectOpenHashMap<>(); // Stellar - lithium: Use fastutil
 +    private final Map<SensorType<? extends Sensor<? super E>>, Sensor<? super E>> sensors = new Reference2ReferenceLinkedOpenHashMap<>(); // Stellar - lithium: Use fastutil
 +    private final Map<Integer, Map<Activity, Set<BehaviorControl<? super E>>>> availableBehaviorsByPriority = new it.unimi.dsi.fastutil.objects.Object2ObjectRBTreeMap<>(); // Stellar - Leaf: Replace brain maps with optimized collection
      private Schedule schedule = Schedule.EMPTY;
@@ -84,7 +84,7 @@
              memoryvalue.setMemoryInternal(this);
          }
 +
-+        ((it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>>) this.memories).trim(); // Stellar - Leaf
++        this.memories.trim(); // Stellar - Leaf
      }
  
      public <T> DataResult<T> serializeStart(DynamicOps<T> p_21915_) {

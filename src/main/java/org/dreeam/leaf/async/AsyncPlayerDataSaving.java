@@ -39,7 +39,7 @@ public class AsyncPlayerDataSaving {
     }
 
     public static Optional<Future<?>> submit(final Runnable runnable) {
-        if (GlobalConfiguration.get().players.useAsyncPlayerDataSaving) {
+        if (MinecraftServer.getServer() != null && GlobalConfiguration.get().players.useAsyncPlayerDataSaving) {
             return Optional.of(IO_POOL.submit(runnable));
         } else {
             runnable.run();
