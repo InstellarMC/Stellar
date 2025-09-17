@@ -52,3 +52,21 @@
      }
  
      public void stopInterpolation() {
+@@ -348,7 +_,16 @@
+     }
+ 
+     protected DensityFunction wrap(DensityFunction p_209214_) {
+-        return this.wrapped.computeIfAbsent(p_209214_, this::wrapNew);
++        // Stellar start - Leaf: Reduce worldgen allocations - Avoid lambda allocation
++        DensityFunction func = this.wrapped.get(p_209214_);
++
++        if (func == null) {
++            func = this.wrapNew(p_209214_);
++            this.wrapped.put(p_209214_, func);
++        }
++
++        return func;
++        // Stellar end - Leaf: Reduce worldgen allocations - Avoid lambda allocation
+     }
+ 
+     private DensityFunction wrapNew(DensityFunction p_209234_) {

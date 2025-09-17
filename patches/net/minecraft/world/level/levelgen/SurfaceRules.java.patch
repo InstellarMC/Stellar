@@ -48,6 +48,20 @@
          int waterHeight;
          int stoneDepthBelow;
          int stoneDepthAbove;
+@@ -317,6 +_,13 @@
+ 
+         protected void updateY(int p_189577_, int p_189578_, int p_189579_, int p_189580_, int p_189581_, int p_189582_) {
+             this.lastUpdateY++;
++            // Staller start - Leaf: Reduce worldgen allocations - Reuse supplier object instead of creating new ones every time
++            Supplier<Holder<Biome>> getter = this.biome;
++            if (getter == null) {
++                this.biome = getter = new org.dreeam.leaf.world.biome.PositionalBiomeGetter(this.biomeGetter, this.pos);
++            }
++            ((org.dreeam.leaf.world.biome.PositionalBiomeGetter) getter).update(blockX, blockY, blockZ);
++            // Staller end - Leaf: Reduce worldgen allocations - Reuse supplier object instead of creating new ones every time
+             this.biome = Suppliers.memoize(() -> this.biomeGetter.apply(this.pos.set(p_189580_, p_189581_, p_189582_)));
+             this.blockY = p_189581_;
+             this.waterHeight = p_189579_;
 @@ -403,14 +_,14 @@
                  ChunkAccess chunkaccess = this.context.chunk;
                  int i1 = chunkaccess.getHeight(Heightmap.Types.WORLD_SURFACE_WG, i, k);
