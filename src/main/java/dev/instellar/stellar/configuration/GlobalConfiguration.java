@@ -32,7 +32,13 @@ public final class GlobalConfiguration extends ConfigurationPart {
 
     public class Players extends ConfigurationPart {
 
-        public boolean useAsync = false;
+        public boolean useAsyncPlayerDataSaving = false;
+        @PostProcess
+        private void postProcess() {
+            if (this.useAsyncPlayerDataSaving) {
+                org.dreeam.leaf.async.AsyncPlayerDataSaving.init();
+            }
+        }
 
     }
 

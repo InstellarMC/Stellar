@@ -11,25 +11,100 @@
  import org.slf4j.Logger;
  
  public class PlayerDataStorage {
-@@ -31,6 +_,7 @@
+@@ -23,6 +_,7 @@
+     private final File playerDir;
+     protected final DataFixer fixerUpper;
+     private static final DateTimeFormatter FORMATTER = FileNameDateFormatter.create();
++    private final java.util.Map<java.util.UUID, java.util.concurrent.Future<?>> savingLocks = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(); // Stellar - Nitori: Async playerdata saving
+ 
+     public PlayerDataStorage(LevelStorageSource.LevelStorageAccess p_78430_, DataFixer p_78431_) {
+         this.fixerUpper = p_78431_;
+@@ -31,18 +_,81 @@
      }
  
      public void save(Player p_78434_) {
 +        if (org.spigotmc.SpigotConfig.disablePlayerDataSaving) return; // Spigot
          try {
              CompoundTag compoundtag = p_78434_.saveWithoutId(new CompoundTag());
++            // Stellar start - Nitori: Async playerdata saving
++            final var nbtBytes = new it.unimi.dsi.fastutil.io.FastByteArrayOutputStream(65536);
++
++            try {
++                NbtIo.writeCompressed(compoundtag, nbtBytes);
++            } catch (Exception exception) {
++                LOGGER.warn("Failed to encode player data for {}", p_78434_.getScoreboardName(), exception);
++            }
++
++            lockFor(p_78434_.getUUID(), p_78434_.getScoreboardName());
++            synchronized (PlayerDataStorage.this) {
++                org.dreeam.leaf.async.AsyncPlayerDataSaving.submit(() -> {
++                    try {
++            // Stellar end - Nitori: Async playerdata saving
              Path path = this.playerDir.toPath();
-@@ -39,8 +_,9 @@
+             Path path1 = Files.createTempFile(path, p_78434_.getStringUUID() + "-", ".dat");
+             NbtIo.writeCompressed(compoundtag, path1);
              Path path2 = path.resolve(p_78434_.getStringUUID() + ".dat");
              Path path3 = path.resolve(p_78434_.getStringUUID() + ".dat_old");
              Util.safeReplaceFile(path2, path1, path3);
-+            net.neoforged.neoforge.event.EventHooks.firePlayerSavingEvent(p_78434_, playerDir, p_78434_.getStringUUID());
-         } catch (Exception exception) {
+-        } catch (Exception exception) {
 -            LOGGER.warn("Failed to save player data for {}", p_78434_.getName().getString());
+-        }
+-    }
++            net.neoforged.neoforge.event.EventHooks.firePlayerSavingEvent(p_78434_, playerDir, p_78434_.getStringUUID());
++        } catch (Exception exception) {
 +            LOGGER.warn("Failed to save player data for {}", p_78434_.getScoreboardName(),  exception); // Paper - Print exception
-         }
-     }
++        }
++        // Stellar start - Nitori: Async playerdata saving
++        finally {
++            synchronized (PlayerDataStorage.this) {
++                savingLocks.remove(p_78434_.getUUID());
++            }
++        }
++        }).ifPresent(future -> savingLocks.put(p_78434_.getUUID(), future));}
++        // Stellar end - Nitori: Async playerdata saving
++        } catch (Exception exception) {
++            LOGGER.warn("Failed to save player data for {}", p_78434_.getScoreboardName(), exception);
++        }
++    }
++
++    // Stellar start - Nitori: Async playerdata saving
++    private void lockFor(java.util.UUID uniqueId, String playerName) {
++        java.util.concurrent.Future<?> fut;
++        synchronized (this) {
++            fut = savingLocks.get(uniqueId);
++        }
++        if (fut == null) {
++            return;
++        }
++        while (true) {
++            try {
++                fut.get(10_000L, java.util.concurrent.TimeUnit.MILLISECONDS);
++                break;
++            } catch (InterruptedException ignored) {
++            } catch (java.util.concurrent.ExecutionException
++                     | java.util.concurrent.TimeoutException exception) {
++                LOGGER.warn("Failed to save player data for {}", playerName, exception);
++
++                String threadDump = "";
++                var threadMXBean = java.lang.management.ManagementFactory.getThreadMXBean();
++                for (var threadInfo : threadMXBean.dumpAllThreads(true, true)) {
++                    if (threadInfo.getThreadName().equals("Leaf IO Thread")) {
++                        threadDump = threadInfo.toString();
++                        break;
++                    }
++                }
++                LOGGER.warn(threadDump);
++                fut.cancel(true);
++                break;
++            } finally {
++                savingLocks.remove(uniqueId);
++            }
++        }
++    }
++    // Stellar end - Nitori: Async playerdata saving
  
+     private void backup(Player p_316529_, String p_316776_) {
+         Path path = this.playerDir.toPath();
 @@ -57,7 +_,20 @@
          }
      }

@@ -120,7 +120,7 @@
          public PlayerDataStorage createPlayerStorage() {
              this.checkLock();
              return new PlayerDataStorage(this, LevelStorageSource.this.fixerUpper);
-@@ -496,6 +_,7 @@
+@@ -496,12 +_,23 @@
              CompoundTag compoundtag = p_78292_.createTag(p_78291_, p_78293_);
              CompoundTag compoundtag1 = new CompoundTag();
              compoundtag1.put("Data", compoundtag);
@@ -128,7 +128,28 @@
              this.saveLevelData(compoundtag1);
          }
  
-@@ -515,6 +_,10 @@
+         private void saveLevelData(CompoundTag p_307262_) {
+             Path path = this.levelDirectory.path();
+ 
++            // Stellar start - Nitori: Async playerdata saving
++            try {
++                var nbtBytes = new it.unimi.dsi.fastutil.io.FastByteArrayOutputStream(65536);
++                NbtIo.writeCompressed(p_307262_, nbtBytes);
++            } catch (final Exception e) {
++                LevelStorageSource.LOGGER.error("Failed to encode level {}", path, e);
++            }
++
++            org.dreeam.leaf.async.AsyncPlayerDataSaving.submit(() -> {
++            // Stellar end - Nitori: Async playerdata saving
+             try {
+                 Path path1 = Files.createTempFile(path, "level", ".dat");
+                 NbtIo.writeCompressed(p_307262_, path1);
+@@ -511,10 +_,15 @@
+             } catch (Exception exception) {
+                 LevelStorageSource.LOGGER.error("Failed to save level {}", path, exception);
+             }
++            }); // Stellar - Nitori: Async playerdata saving
+         }
  
          public Optional<Path> getIconFile() {
              return !this.lock.isValid() ? Optional.empty() : Optional.of(this.levelDirectory.iconFile());

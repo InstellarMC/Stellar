@@ -351,9 +351,12 @@
      public MinecraftServer(
          Thread p_236723_,
          LevelStorageSource.LevelStorageAccess p_236724_,
-@@ -287,6 +_,7 @@
+@@ -285,8 +_,9 @@
+         DataFixer p_236728_,
+         Services p_236729_,
          ChunkProgressListenerFactory p_236730_
-     ) {
+-    ) {
++    ) throws IOException { // Stellar - throw IOException
          super("Server");
 +        SERVER = this; // Paper - better singleton
          this.registries = p_236726_.registries();
@@ -1031,7 +1034,7 @@
              this.nextTickTimeNanos = Util.getNanos() + TimeUtil.NANOSECONDS_PER_MILLISECOND;
  
              for (ServerLevel serverlevel1 : this.getAllLevels()) {
-@@ -615,26 +_,41 @@
+@@ -615,26 +_,42 @@
              this.waitUntilNextTick();
          }
  
@@ -1073,6 +1076,7 @@
 +        ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.deinit(); // Paper - rewrite chunk system
 +        // Paper start - move final shutdown items here
 +        Util.shutdownExecutors();
++        org.dreeam.leaf.async.ShutdownExecutors.shutdown(this); // Stellar - Leaf
 +        try {
 +            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
 +        } catch (final Exception ignored) {
