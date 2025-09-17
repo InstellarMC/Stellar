@@ -1358,7 +1358,7 @@
 -                    file3.renameTo(file2);
 -                }
 -            }
-+            File file2 = new File(file1, displayName + ".json"); // CraftBukkit
++            File file2 = new File(file1, uuid + ".json"); // CraftBukkit // Stellar - use uuid for file name
  
              serverstatscounter = new ServerStatsCounter(this.server, file2);
 -            this.stats.put(uuid, serverstatscounter);
