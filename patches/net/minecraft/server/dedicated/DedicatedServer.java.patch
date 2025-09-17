@@ -120,7 +120,7 @@
          LOGGER.info("Starting minecraft server version {}", SharedConstants.getCurrentVersion().getName());
          if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
              LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
-@@ -133,65 +_,181 @@
+@@ -133,65 +_,177 @@
              this.setLocalIp(dedicatedserverproperties.serverIp);
          }
  
@@ -144,10 +144,6 @@
 +        this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
 +        this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
 +        // Paper end - initialize global and world-defaults configuration
-+        // Stellar start - initialize global and world-defaults configuration
-+        this.stellarConfigurations.initializeGlobalConfiguration(this.registryAccess());
-+        this.stellarConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
-+        // Stellar end - initialize global and world-defaults configuration
 +        // Youer start // Stellar - TODO: deprecate Youer
 +        YouerConfig.init((java.io.File) options.valueOf("youer-settings"));
 +        YouerConfig.registerCommands();

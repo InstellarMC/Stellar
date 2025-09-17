@@ -368,7 +368,7 @@
              this.services = p_236729_;
              if (p_236729_.profileCache() != null) {
                  p_236729_.profileCache().setExecutor(this);
-@@ -315,7 +_,12 @@
+@@ -315,7 +_,17 @@
              this.structureTemplateManager = new StructureTemplateManager(p_236726_.resourceManager(), p_236724_, p_236728_, holdergetter);
              this.serverThread = p_236723_;
              this.executor = Util.backgroundExecutor();
@@ -379,6 +379,11 @@
 +            Runtime.getRuntime().addShutdownHook(new ServerShutdownThread(this));
 +            this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
 +            this.stellarConfigurations = services.stellarConfigurations(); // Stellar - add stellar configuration files
++            // Stellar start - initialize global and world-defaults configuration
++            this.stellarConfigurations.initializeGlobalConfiguration(this.registryAccess());
++            this.stellarConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
++            // Stellar end - initialize global and world-defaults configuration
++            this.chatExecutor = Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Chat Thread - #%d").setThreadFactory(dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.useVT4ChatExecutor ? Thread.ofVirtual().factory() : java.util.concurrent.Executors.defaultThreadFactory()).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper // Stellar - Virtual Threaad for chat executor
          }
      }
  
@@ -1882,12 +1887,11 @@
      public RegistryAccess.Frozen registryAccess() {
          return this.registries.compositeAccess();
      }
-@@ -1939,8 +_,17 @@
+@@ -1939,8 +_,16 @@
          }
      }
  
-+    public final ExecutorService chatExecutor = Executors.newCachedThreadPool(
-+            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Chat Thread - #%d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
++    public final ExecutorService chatExecutor; // Stellar - moved to constructor
 +
 +    public final ChatDecorator improvedChatDecorator = new io.papermc.paper.adventure.ImprovedChatDecorator(this); // Paper - adventure
 +
