@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/ai/sensing/Sensing.java
 +++ b/net/minecraft/world/entity/ai/sensing/Sensing.java
-@@ -1,41 +_,75 @@
+@@ -1,41 +_,80 @@
  package net.minecraft.world.entity.ai.sensing;
  
 -import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -46,7 +46,12 @@
 -        this.unseen.clear();
 +        } else {
 +            var expiringNow = this.expiring[this.nextToExpireIndex];
-+            expiringNow.forEach(this.seen::remove);
++            // Stellar start - Leaf: Use direct iteration on Sensing.tick
++            var iterator = expiringNow.iterator();
++            while (iterator.hasNext()) {
++                this.seen.remove(iterator.nextInt());
++            }
++            // Stellar end - Leaf: Use direct iteration on Sensing.tick
 +            expiringNow.clear();
 +            this.currentCacheAddIndex = ++this.currentCacheAddIndex % this.expiring.length;
 +            this.nextToExpireIndex = ++this.nextToExpireIndex % this.expiring.length;
