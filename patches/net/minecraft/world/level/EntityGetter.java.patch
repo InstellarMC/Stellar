@@ -65,7 +65,7 @@
      }
  
      default <T extends Entity> List<T> getEntitiesOfClass(Class<T> p_45977_, AABB p_45978_) {
-@@ -55,23 +_,39 @@
+@@ -55,57 +_,135 @@
      }
  
      default List<VoxelShape> getEntityCollisions(@Nullable Entity p_186451_, AABB p_186452_) {
@@ -122,7 +122,45 @@
      }
  
      @Nullable
-@@ -92,20 +_,62 @@
+     default Player getNearestPlayer(double p_45919_, double p_45920_, double p_45921_, double p_45922_, @Nullable Predicate<Entity> p_45923_) {
+-        double d0 = -1.0;
++        // Stellar start - Leaf: Slightly optimise getNearestPlayer
++        if (p_45922_ < 0.0) {
++            p_45922_ = Double.MAX_VALUE;
++        } else {
++            p_45922_ = p_45922_ * p_45922_;
++        }
++        // Stellar end - Leaf: Slightly optimise getNearestPlayer
+         Player player = null;
+ 
+-        for (Player player1 : this.players()) {
+-            if (p_45923_ == null || p_45923_.test(player1)) {
++        // Stellar start - Leaf: Slightly optimise getNearestPlayer
++        List<? extends Player> players = this.players();
++        if (p_45923_ == null) {
++        for (final Player player1 : players) {
++        // Stellar end - Leaf: Slightly optimise getNearestPlayer
+                 double d1 = player1.distanceToSqr(p_45919_, p_45920_, p_45921_);
+-                if ((p_45922_ < 0.0 || d1 < p_45922_ * p_45922_) && (d0 == -1.0 || d1 < d0)) {
+-                    d0 = d1;
++                if (d1 < p_45922_) { // Stellar - Leaf: Slightly optimise getNearestPlayer
++                    p_45922_ = d1; // Stellar - Leaf: Slightly optimise getNearestPlayer
+                     player = player1;
+                 }
++        // Stellar start - Leaf: Slightly optimise getNearestPlayer
++        }} else {
++            for (final Player player1 : players) {
++                if (p_45923_.test(player1)) {
++                    double d1 = player1.distanceToSqr(p_45919_, p_45920_, p_45921_);
++                    if (d1 < p_45922_) {
++                        p_45922_ = d1;
++                        player = player1;
++                    }
++                }
++        // Stellar end - Leaf: Slightly optimise getNearestPlayer
+             }
+         }
+ 
          return player;
      }
  
