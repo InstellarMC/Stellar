@@ -1,6 +1,6 @@
 --- a/net/minecraft/util/SortedArraySet.java
 +++ b/net/minecraft/util/SortedArraySet.java
-@@ -8,14 +_,93 @@
+@@ -8,14 +_,83 @@
  import java.util.NoSuchElementException;
  import javax.annotation.Nullable;
  
@@ -20,30 +20,20 @@
 +        final int len = this.size;
 +        final T[] backingArray = this.contents;
 +
-+        for (;;) {
-+            if (i >= len) {
-+                return false;
-+            }
-+            if (!filter.test(backingArray[i])) {
-+                ++i;
-+                continue;
-+            }
-+            break;
++        // Stellar start - Leaf: Make removeIf slightly faster
++        // Find first element to remove
++        while (i < len && !filter.test(backingArray[i])) i++;
++        if (i == len) return false;
++
++        // Shift elements in-place
++        int lastIndex = i;
++        for (i++; i < len; i++) {
++            T curr = backingArray[i];
++            if (!filter.test(curr)) backingArray[lastIndex++] = curr;
 +        }
 +
-+        // we only want to write back to backingArray if we really need to
-+
-+        int lastIndex = i; // this is where new elements are shifted to
-+
-+        for (; i < len; ++i) {
-+            final T curr = backingArray[i];
-+            if (!filter.test(curr)) { // if test throws we're screwed
-+                backingArray[lastIndex++] = curr;
-+            }
-+        }
-+
-+        // cleanup end
-+        Arrays.fill(backingArray, lastIndex, len, null);
++        // Only update size - skip Arrays.fill (safe in ChunkHolderManager's context)
++        // Stellar end - Leaf: Make removeIf slightly faster
 +        this.size = lastIndex;
 +        return true;
 +    }
