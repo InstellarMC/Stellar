@@ -487,12 +487,12 @@ public final class ChunkHolderManager {
 
     public <T> boolean addTicketAtLevel(final TicketType<T> type, final ChunkPos chunkPos, final int level,
                                         final T identifier) {
-        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier, false);
+        return this.addTicketAtLevel(type, chunkPos.longKey, level, identifier, false); // Stellar - Leaf: Cache chunk key
     }
 
     public <T> boolean addTicketAtLevel(final TicketType<T> type, final ChunkPos chunkPos, final int level,
                                         final T identifier, final boolean forceTicks) {
-        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier, forceTicks);
+        return this.addTicketAtLevel(type, chunkPos.longKey, level, identifier, forceTicks); // Stellar - Leaf: Cache chunk key
     }
 
     public <T> boolean addTicketAtLevel(final TicketType<T> type, final int chunkX, final int chunkZ, final int level,
@@ -598,11 +598,11 @@ public final class ChunkHolderManager {
     }
 
     public <T> boolean removeTicketAtLevel(final TicketType<T> type, final ChunkPos chunkPos, final int level, final T identifier) {
-        return this.removeTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier, false);
+        return this.removeTicketAtLevel(type, chunkPos.longKey, level, identifier, false); // Stellar - Leaf: Cache chunk key
     }
 
     public <T> boolean removeTicketAtLevel(final TicketType<T> type, final ChunkPos chunkPos, final int level, final T identifier, final boolean forceTicks) {
-        return this.removeTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier, forceTicks);
+        return this.removeTicketAtLevel(type, chunkPos.longKey, level, identifier, forceTicks); // Stellar - Leaf: Cache chunk key
     }
 
     public <T> boolean removeTicketAtLevel(final TicketType<T> type, final int chunkX, final int chunkZ, final int level, final T identifier) {
@@ -1236,7 +1236,7 @@ public final class ChunkHolderManager {
         }
 
         public static <T> TicketOperation<T, T> addOp(final ChunkPos chunk, final TicketType<T> type, final int ticketLevel, final T identifier) {
-            return addOp(CoordinateUtils.getChunkKey(chunk), type, ticketLevel, identifier);
+            return addOp(chunk.longKey, type, ticketLevel, identifier); // Stellar - Leaf: Cache chunk key
         }
 
         public static <T> TicketOperation<T, T> addOp(final int chunkX, final int chunkZ, final TicketType<T> type, final int ticketLevel, final T identifier) {
@@ -1248,7 +1248,7 @@ public final class ChunkHolderManager {
         }
 
         public static <T> TicketOperation<T, T> removeOp(final ChunkPos chunk, final TicketType<T> type, final int ticketLevel, final T identifier) {
-            return removeOp(CoordinateUtils.getChunkKey(chunk), type, ticketLevel, identifier);
+            return removeOp(chunk.longKey, type, ticketLevel, identifier); // Stellar - Leaf: Cache chunk key
         }
 
         public static <T> TicketOperation<T, T> removeOp(final int chunkX, final int chunkZ, final TicketType<T> type, final int ticketLevel, final T identifier) {

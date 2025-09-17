@@ -1905,7 +1905,7 @@
      public boolean isNaturalSpawningAllowed(ChunkPos p_201917_) {
 -        return this.entityManager.canPositionTick(p_201917_);
 +        // Paper start - rewrite chunk system
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder chunkHolder = this.moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(p_201917_));
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder chunkHolder = this.moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(p_201917_.longKey); // Stellar - Leaf: Cache chunk key
 +        return chunkHolder != null && chunkHolder.isEntityTickingReady();
 +        // Paper end - rewrite chunk system
      }

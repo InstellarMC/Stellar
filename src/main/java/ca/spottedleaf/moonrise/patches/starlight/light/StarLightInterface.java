@@ -817,7 +817,7 @@ public final class StarLightInterface {
         }
 
         public ServerChunkTasks queueChunkLightTask(final ChunkPos pos, final BooleanSupplier lightTask, final PrioritisedExecutor.Priority priority) {
-            final ServerChunkTasks ret = this.chunkTasks.compute(CoordinateUtils.getChunkKey(pos), (final long keyInMap, ServerChunkTasks valueInMap) -> {
+            final ServerChunkTasks ret = this.chunkTasks.compute(pos.longKey, (final long keyInMap, ServerChunkTasks valueInMap) -> { // Stellar - Leaf: Cache chunk key
                 if (valueInMap == null) {
                     valueInMap = new ServerChunkTasks(
                             keyInMap, ServerLightQueue.this.lightInterface, ServerLightQueue.this, priority

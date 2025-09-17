@@ -127,7 +127,7 @@ public final class NearbyPlayers {
     }
 
     public TrackedChunk getChunk(final ChunkPos pos) {
-        return this.byChunk.get(CoordinateUtils.getChunkKey(pos));
+        return this.byChunk.get(pos.longKey); // Stellar - Leaf: Cache chunk key
     }
 
     public TrackedChunk getChunk(final BlockPos pos) {
@@ -143,7 +143,7 @@ public final class NearbyPlayers {
     }
 
     public ReferenceList<ServerPlayer> getPlayers(final ChunkPos pos, final NearbyMapType type) {
-        return this.directByChunk[type.ordinal()].get(CoordinateUtils.getChunkKey(pos));
+        return this.directByChunk[type.ordinal()].get(pos.longKey); // Stellar - Leaf: Cache chunk key
     }
 
     public ReferenceList<ServerPlayer> getPlayersByChunk(final int chunkX, final int chunkZ, final NearbyMapType type) {
