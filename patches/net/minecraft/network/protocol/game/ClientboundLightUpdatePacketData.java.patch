@@ -1,0 +1,225 @@
+--- a/net/minecraft/network/protocol/game/ClientboundLightUpdatePacketData.java
++++ b/net/minecraft/network/protocol/game/ClientboundLightUpdatePacketData.java
+@@ -16,30 +_,113 @@
+ 
+ public class ClientboundLightUpdatePacketData {
+     private static final StreamCodec<ByteBuf, byte[]> DATA_LAYER_STREAM_CODEC = ByteBufCodecs.byteArray(2048);
++
++    // Stellar start - Leaf: Rewrite ClientboundLightUpdatePacketData
++    // Static constants to avoid allocations
++    private static final byte[][] EMPTY_ARRAY = new byte[0][];
++
++    // Pre-sized arrays to avoid dynamic resizing
++    private static final ThreadLocal<byte[][]> SKY_BUFFER = ThreadLocal.withInitial(() -> new byte[256][]);
++    private static final ThreadLocal<byte[][]> BLOCK_BUFFER = ThreadLocal.withInitial(() -> new byte[256][]);
++
++    // Pre-cached BitSets with fixed size
+     private final BitSet skyYMask;
+     private final BitSet blockYMask;
+     private final BitSet emptySkyYMask;
+     private final BitSet emptyBlockYMask;
+-    private final List<byte[]> skyUpdates;
+-    private final List<byte[]> blockUpdates;
++
++    // Fixed arrays with exact counts
++    private final byte[][] skyUpdates;
++    private final byte[][] blockUpdates;
++    private final int skyUpdateCount;
++    private final int blockUpdateCount;
++    // Stellar end - Leaf: Rewrite ClientboundLightUpdatePacketData
+ 
+     public ClientboundLightUpdatePacketData(ChunkPos p_285385_, LevelLightEngine p_285143_, @Nullable BitSet p_285253_, @Nullable BitSet p_285051_) {
+-        this.skyYMask = new BitSet();
+-        this.blockYMask = new BitSet();
+-        this.emptySkyYMask = new BitSet();
+-        this.emptyBlockYMask = new BitSet();
+-        this.skyUpdates = Lists.newArrayList();
+-        this.blockUpdates = Lists.newArrayList();
+-
+-        for (int i = 0; i < p_285143_.getLightSectionCount(); i++) {
++        // Stellar start - Leaf: Rewrite ClientboundLightUpdatePacketData
++        int sectionCount = p_285143_.getLightSectionCount();
++
++        // Round up to nearest long boundary (64 bits) to prevent BitSet expansion
++        int longWords = (sectionCount + 63) >>> 6;
++        int bitSetSize = longWords << 6;
++
++        // Pre-size all BitSets to exact size needed
++        this.skyYMask = new BitSet(bitSetSize);
++        this.blockYMask = new BitSet(bitSetSize);
++        this.emptySkyYMask = new BitSet(bitSetSize);
++        this.emptyBlockYMask = new BitSet(bitSetSize);
++
++        // Get buffer arrays from thread local storage to avoid allocations
++        byte[][] skyBuffer = SKY_BUFFER.get();
++        byte[][] blockBuffer = BLOCK_BUFFER.get();
++
++        // Process all sections in a single pass
++        int skyCount = 0;
++        int blockCount = 0;
++        int minLightSection = p_285143_.getMinLightSection();
++
++        // Cache layer listeners to avoid repeated method calls
++        var skyLayerListener = p_285143_.getLayerListener(LightLayer.SKY);
++        var blockLayerListener = p_285143_.getLayerListener(LightLayer.BLOCK);
++
++        // Single pass through all sections
++        for (int i = 0; i < sectionCount; i++) {
++            int sectionY = minLightSection + i;
++            SectionPos sectionPos = SectionPos.of(p_285385_.x, sectionY, p_285385_.z);
++
++            // Process sky light
+             if (p_285253_ == null || p_285253_.get(i)) {
+-                this.prepareSectionData(p_285385_, p_285143_, LightLayer.SKY, i, this.skyYMask, this.emptySkyYMask, this.skyUpdates);
++                final DataLayer skyData = skyLayerListener.getDataLayerData(sectionPos);
++                if (skyData != null) {
++                    if (skyData.isEmpty()) {
++                        emptySkyYMask.set(i);
++                    } else {
++                        skyYMask.set(i);
++                        // Store in buffer temporarily - only clone at the end
++                        skyBuffer[skyCount++] = skyData.getData();
++                    }
++                }
+             }
+ 
++            // Process block light
+             if (p_285051_ == null || p_285051_.get(i)) {
+-                this.prepareSectionData(p_285385_, p_285143_, LightLayer.BLOCK, i, this.blockYMask, this.emptyBlockYMask, this.blockUpdates);
+-            }
+-        }
++                final DataLayer blockData = blockLayerListener.getDataLayerData(sectionPos);
++                if (blockData != null) {
++                    if (blockData.isEmpty()) {
++                        emptyBlockYMask.set(i);
++                    } else {
++                        blockYMask.set(i);
++                        // Store in buffer temporarily - only clone at the end
++                        blockBuffer[blockCount++] = blockData.getData();
++                    }
++                }
++            }
++        }
++
++        // Create final arrays with exact sizes
++        if (skyCount > 0) {
++            this.skyUpdates = new byte[skyCount][];
++            // Clone only at the end to minimize work
++            for (int i = 0; i < skyCount; i++) {
++                this.skyUpdates[i] = skyBuffer[i].clone();
++            }
++        } else {
++            this.skyUpdates = EMPTY_ARRAY;
++        }
++
++        if (blockCount > 0) {
++            this.blockUpdates = new byte[blockCount][];
++            // Clone only at the end to minimize work
++            for (int i = 0; i < blockCount; i++) {
++                this.blockUpdates[i] = blockBuffer[i].clone();
++             }
++        } else {
++            this.blockUpdates = EMPTY_ARRAY;
++         }
++
++        this.skyUpdateCount = skyCount;
++        this.blockUpdateCount = blockCount;
++        // Stellar end - Leaf: Rewrite ClientboundLightUpdatePacketData
+     }
+ 
+     public ClientboundLightUpdatePacketData(FriendlyByteBuf p_195737_, int p_195738_, int p_195739_) {
+@@ -47,8 +_,30 @@
+         this.blockYMask = p_195737_.readBitSet();
+         this.emptySkyYMask = p_195737_.readBitSet();
+         this.emptyBlockYMask = p_195737_.readBitSet();
+-        this.skyUpdates = p_195737_.readList(DATA_LAYER_STREAM_CODEC);
+-        this.blockUpdates = p_195737_.readList(DATA_LAYER_STREAM_CODEC);
++
++        // Stellar start - Leaf: Rewrite ClientboundLightUpdatePacketData
++        // Read lists directly as arrays to avoid intermediate collections
++        List<byte[]> skyList = p_195737_.readList(DATA_LAYER_STREAM_CODEC);
++        List<byte[]> blockList = p_195737_.readList(DATA_LAYER_STREAM_CODEC);
++
++        int skySize = skyList.size();
++        int blockSize = blockList.size();
++
++        if (skySize > 0) {
++            this.skyUpdates = skyList.toArray(new byte[skySize][]);
++        } else {
++            this.skyUpdates = EMPTY_ARRAY;
++        }
++
++        if (blockSize > 0) {
++            this.blockUpdates = blockList.toArray(new byte[blockSize][]);
++        } else {
++            this.blockUpdates = EMPTY_ARRAY;
++        }
++
++        this.skyUpdateCount = skySize;
++        this.blockUpdateCount = blockSize;
++        // Stellar end - Leaf: Rewrite ClientboundLightUpdatePacketData
+     }
+ 
+     public void write(FriendlyByteBuf p_195750_) {
+@@ -56,23 +_,31 @@
+         p_195750_.writeBitSet(this.blockYMask);
+         p_195750_.writeBitSet(this.emptySkyYMask);
+         p_195750_.writeBitSet(this.emptyBlockYMask);
+-        p_195750_.writeCollection(this.skyUpdates, DATA_LAYER_STREAM_CODEC);
+-        p_195750_.writeCollection(this.blockUpdates, DATA_LAYER_STREAM_CODEC);
+-    }
++        // Stellar start - Leaf: Rewrite ClientboundLightUpdatePacketData
++        // Avoid creating unnecessary objects when writing
++        if (this.skyUpdateCount > 0) {
++            // Use direct array access for efficiency
++            p_195750_.writeVarInt(this.skyUpdateCount);
++            for (int i = 0; i < this.skyUpdateCount; i++) {
++                DATA_LAYER_STREAM_CODEC.encode(p_195750_, this.skyUpdates[i]);
++             }
++        } else {
++            p_195750_.writeVarInt(0);
++         }
+ 
+-    private void prepareSectionData(
+-        ChunkPos p_195742_, LevelLightEngine p_195743_, LightLayer p_195744_, int p_195745_, BitSet p_195746_, BitSet p_195747_, List<byte[]> p_195748_
+-    ) {
+-        DataLayer datalayer = p_195743_.getLayerListener(p_195744_).getDataLayerData(SectionPos.of(p_195742_, p_195743_.getMinLightSection() + p_195745_));
+-        if (datalayer != null) {
+-            if (datalayer.isEmpty()) {
+-                p_195747_.set(p_195745_);
+-            } else {
+-                p_195746_.set(p_195745_);
+-                p_195748_.add(datalayer.copy().getData());
++        if (this.blockUpdateCount > 0) {
++            // Use direct array access for efficiency
++            p_195750_.writeVarInt(this.blockUpdateCount);
++            for (int i = 0; i < this.blockUpdateCount; i++) {
++                DATA_LAYER_STREAM_CODEC.encode(p_195750_, this.blockUpdates[i]);
+             }
++        } else {
++            p_195750_.writeVarInt(0);
+         }
++        // Stellar end - Leaf: Rewrite ClientboundLightUpdatePacketData
+     }
++
++    // Getter methods
+ 
+     public BitSet getSkyYMask() {
+         return this.skyYMask;
+@@ -83,7 +_,7 @@
+     }
+ 
+     public List<byte[]> getSkyUpdates() {
+-        return this.skyUpdates;
++        return this.skyUpdateCount > 0 ? java.util.Arrays.asList(this.skyUpdates) : List.of(); // Stellar - Leaf: Rewrite ClientboundLightUpdatePacketData
+     }
+ 
+     public BitSet getBlockYMask() {
+@@ -95,6 +_,6 @@
+     }
+ 
+     public List<byte[]> getBlockUpdates() {
+-        return this.blockUpdates;
++        return this.blockUpdateCount > 0 ? java.util.Arrays.asList(this.blockUpdates) : List.of(); // Stellar - Leaf: Rewrite ClientboundLightUpdatePacketData
+     }
+ }
