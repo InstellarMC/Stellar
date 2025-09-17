@@ -1512,7 +1512,7 @@
          this.connection.resetPosition();
      }
  
-@@ -1468,9 +_,18 @@
+@@ -1468,13 +_,23 @@
      }
  
      public boolean setGameMode(GameType p_143404_) {
@@ -1533,6 +1533,11 @@
          } else {
              this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float)p_143404_.getId()));
              if (p_143404_ == GameType.SPECTATOR) {
+                 this.removeEntitiesOnShoulder();
++                this.stopSleeping(); // Stellar - Fix MC-119417
+                 this.stopRiding();
+                 EnchantmentHelper.stopLocationBasedEffects(this);
+             } else {
 @@ -1486,7 +_,7 @@
  
              this.onUpdateAbilities();
