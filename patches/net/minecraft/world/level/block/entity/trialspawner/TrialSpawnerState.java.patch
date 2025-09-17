@@ -1,0 +1,35 @@
+--- a/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
++++ b/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
+@@ -170,17 +_,21 @@
+     }
+ 
+     private static Optional<Vec3> calculatePositionToSpawnSpawner(ServerLevel p_338436_, BlockPos p_338583_, TrialSpawner p_338226_, TrialSpawnerData p_338461_) {
+-        List<Player> list = p_338461_.detectedPlayers
+-            .stream()
+-            .map(p_338436_::getPlayerByUUID)
+-            .filter(Objects::nonNull)
+-            .filter(
+-                p_350236_ -> !p_350236_.isCreative()
+-                        && !p_350236_.isSpectator()
+-                        && p_350236_.isAlive()
+-                        && p_350236_.distanceToSqr(p_338583_.getCenter()) <= (double)Mth.square(p_338226_.getRequiredPlayerRange())
+-            )
+-            .toList();
++        // Stellar start - Leaf: Remove stream in trial spawner ticking
++        List<Player> list = new java.util.ArrayList<>();
++
++        for (UUID uuid : p_338461_.detectedPlayers) {
++            Player player = p_338436_.getPlayerByUUID(uuid);
++
++            if (player != null
++                    && !player.isCreative()
++                    && !player.isSpectator()
++                    && player.isAlive()
++                    && player.distanceToSqr(p_338583_.getCenter()) <= Mth.square(p_338226_.getRequiredPlayerRange())) {
++                list.add(player);
++            }
++        }
++        // Stellar end - Leaf: Remove stream in trial spawner ticking
+         if (list.isEmpty()) {
+             return Optional.empty();
+         } else {
