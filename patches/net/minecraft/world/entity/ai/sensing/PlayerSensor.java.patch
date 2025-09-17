@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
++++ b/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
+@@ -22,17 +_,40 @@
+ 
+     @Override
+     protected void doTick(ServerLevel p_26740_, LivingEntity p_26741_) {
+-        List<Player> list = p_26740_.players()
+-            .stream()
+-            .filter(EntitySelector.NO_SPECTATORS)
+-            .filter(p_26744_ -> p_26741_.closerThan(p_26744_, 16.0))
+-            .sorted(Comparator.comparingDouble(p_26741_::distanceToSqr))
+-            .collect(Collectors.toList());
++        // Stellar start - Leaf: Remove stream in PlayerSensor
++        final List<Player> list = new java.util.ArrayList<>();
++        for (final Player player : p_26740_.players()) {
++            if (!EntitySelector.NO_SPECTATORS.test(player)) {
++                continue;
++            }
++            if (!p_26741_.closerThan(player, 16.0)) {
++                continue;
++            }
++
++            list.add(player);
++        }
++        list.sort(Comparator.comparingDouble(p_26741_::distanceToSqr));
++        // Stellar end - Leaf: Remove stream in PlayerSensor
+         Brain<?> brain = p_26741_.getBrain();
+         brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, list);
+-        List<Player> list1 = list.stream().filter(p_26747_ -> isEntityTargetable(p_26741_, p_26747_)).collect(Collectors.toList());
++        // Stellar start - Leaf: Remove stream in PlayerSensor
++        final List<Player> list1 = new java.util.ArrayList<>(list.size());
++        for (final Player player : list) {
++            if (isEntityTargetable(p_26741_, player)) {
++                list1.add(player);
++            }
++        }
++        // Stellar end - Leaf: Remove stream in PlayerSensor
+         brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, list1.isEmpty() ? null : list1.get(0));
+-        Optional<Player> optional = list1.stream().filter(p_148304_ -> isEntityAttackable(p_26741_, p_148304_)).findFirst();
++        // Stellar start - Leaf: Remove stream in PlayerSensor
++        Optional<Player> optional = Optional.empty();
++        for (final Player player : list1) {
++            if (isEntityAttackable(p_26741_, player)) {
++                optional = Optional.of(player);
++                break;
++            }
++        }
++        // Stellar end - Leaf: Remove stream in PlayerSensor
+         brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, optional);
+     }
+ }
