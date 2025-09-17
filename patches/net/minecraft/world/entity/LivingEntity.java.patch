@@ -456,18 +456,29 @@
  
          if (this.effectsDirty) {
              if (!this.level().isClientSide) {
-@@ -817,8 +_,9 @@
-         List<ParticleOptions> list = this.activeEffects
-             .values()
-             .stream()
+@@ -814,12 +_,16 @@
+     }
+ 
+     private void updateSynchronizedMobEffectParticles() {
+-        List<ParticleOptions> list = this.activeEffects
+-            .values()
+-            .stream()
 -            .filter(MobEffectInstance::isVisible)
 -            .map(MobEffectInstance::getParticleOptions)
-+            .map(effect -> net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.living.EffectParticleModificationEvent(this, effect)))
-+            .filter(net.neoforged.neoforge.event.entity.living.EffectParticleModificationEvent::isVisible)
-+            .map(net.neoforged.neoforge.event.entity.living.EffectParticleModificationEvent::getParticleOptions)
-             .toList();
+-            .toList();
++        // Stellar start - Leaf: Remove stream in entity visible effects filter
++        final List<ParticleOptions> list = new java.util.ArrayList<>();
++
++        for (MobEffectInstance effect : this.activeEffects.values()) {
++            final var event = net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.living.EffectParticleModificationEvent(this, effect)); // Neo
++            if (effect.isVisible()) {
++                list.add(event.getParticleOptions());
++            }
++        }
++        // Stellar end - Leaf: Remove stream in entity visible effects filter
          this.entityData.set(DATA_EFFECT_PARTICLES, list);
          this.entityData.set(DATA_EFFECT_AMBIENCE_ID, areAllEffectsAmbient(this.activeEffects.values()));
+     }
 @@ -858,6 +_,7 @@
              }
          }
