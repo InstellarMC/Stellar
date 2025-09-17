@@ -100,6 +100,8 @@ public final class GlobalConfiguration extends ConfigurationPart {
 
         public boolean asyncPlayerJoin = false;
         public int updateEntityLineOfSight = 4;
+        @Setting("use-vt-for-user-authentication")
+        public boolean useVT4UserAuthentication = false;
     }
 
     public Compatibility compatibility;
