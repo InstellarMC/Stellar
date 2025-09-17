@@ -33,6 +33,60 @@
      private final Map<Activity, Set<MemoryModuleType<?>>> activityMemoriesToEraseWhenStopped = Maps.newHashMap();
      private Set<Activity> coreActivities = Sets.newHashSet();
      private final Set<Activity> activeActivities = Sets.newHashSet();
+@@ -71,13 +_,22 @@
+             (new MapCodec<Brain<E>>() {
+                     @Override
+                     public <T> Stream<T> keys(DynamicOps<T> p_22029_) {
+-                        return p_21947_.stream()
+-                            .flatMap(
+-                                p_22020_ -> p_22020_.getCodec()
+-                                        .map(p_258254_ -> BuiltInRegistries.MEMORY_MODULE_TYPE.getKey((MemoryModuleType<?>)p_22020_))
+-                                        .stream()
+-                            )
+-                            .map(p_22018_ -> p_22029_.createString(p_22018_.toString()));
++                        // Stellar start - Leaf: Remove stream in Brain
++                        List<T> results = new java.util.ArrayList<>();
++
++                        for (final MemoryModuleType<?> memoryModuleType : p_21947_) {
++                            final Optional<?> codec = memoryModuleType.getCodec();
++
++                            if (codec.isPresent()) {
++                                final net.minecraft.resources.ResourceLocation resourceLocation = BuiltInRegistries.MEMORY_MODULE_TYPE.getKey(memoryModuleType);
++                                final T opsResult = p_22029_.createString(resourceLocation.toString());
++
++                                results.add(opsResult);
++                            }
++                        }
++
++                        return results.stream();
++                        // Stellar end - Leaf: Remove stream in Brain
+                     }
+ 
+                     @Override
+@@ -113,7 +_,13 @@
+                     }
+ 
+                     public <T> RecordBuilder<T> encode(Brain<E> p_21985_, DynamicOps<T> p_21986_, RecordBuilder<T> p_21987_) {
+-                        p_21985_.memories().forEach(p_22007_ -> p_22007_.serialize(p_21986_, p_21987_));
++                        // Stellar start - Leaf: Remove stream in Brain
++                        for (final Entry<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>> memory : p_21985_.memories.entrySet()) {
++                            final Brain.MemoryValue<?> result = Brain.MemoryValue.createUnchecked(memory.getKey(), memory.getValue());
++
++                            result.serialize(p_21986_, p_21987_);
++                        }
++                        // Stellar end - Leaf: Remove stream in Brain
+                         return p_21987_;
+                     }
+                 })
+@@ -155,7 +_,7 @@
+     }
+ 
+     Stream<Brain.MemoryValue<?>> memories() {
+-        return this.memories.entrySet().stream().map(p_21929_ -> Brain.MemoryValue.createUnchecked(p_21929_.getKey(), p_21929_.getValue()));
++        return this.memories.entrySet().stream().map(p_21929_ -> Brain.MemoryValue.createUnchecked(p_21929_.getKey(), p_21929_.getValue())); // Stellar - Leaf: Remove stream in Brain - diff on change
+     }
+ 
+     public boolean hasMemoryValue(MemoryModuleType<?> p_21875_) {
 @@ -195,7 +_,7 @@
      public <U> Optional<U> getMemory(MemoryModuleType<U> p_21953_) {
          Optional<? extends ExpirableValue<?>> optional = this.memories.get(p_21953_);
