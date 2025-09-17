@@ -105,7 +105,7 @@
      public static final int MAX_ENTITY_SPAWN_Y = 20000000;
      public static final int MIN_ENTITY_SPAWN_Y = -20000000;
 -    protected final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList();
-+    public final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList();
++    public final org.dreeam.leaf.util.list.BlockEntityTickersList blockEntityTickers = new org.dreeam.leaf.util.list.BlockEntityTickersList(); // Paper - public // Stellar - SparklyPaper: optimize block entity removals
      protected final NeighborUpdater neighborUpdater;
      private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
      private boolean tickingBlockEntities;
@@ -1138,7 +1138,7 @@
      }
  
      @Override
-@@ -489,10 +_,34 @@
+@@ -489,41 +_,119 @@
          (this.tickingBlockEntities ? this.pendingBlockEntityTickers : this.blockEntityTickers).add(p_151526_);
      }
  
@@ -1173,17 +1173,22 @@
          if (!this.pendingBlockEntityTickers.isEmpty()) {
              this.blockEntityTickers.addAll(this.pendingBlockEntityTickers);
              this.pendingBlockEntityTickers.clear();
-@@ -501,29 +_,82 @@
-         Iterator<TickingBlockEntity> iterator = this.blockEntityTickers.iterator();
+         }
+ 
+-        Iterator<TickingBlockEntity> iterator = this.blockEntityTickers.iterator();
++        // Stellar - SparklyPaper: optimize block entity removals
          boolean flag = this.tickRateManager().runsNormally();
  
+-        while (iterator.hasNext()) {
+-            TickingBlockEntity tickingblockentity = iterator.next();
 +        int tickedEntities = 0; // Paper - rewrite chunk system
 +
-         while (iterator.hasNext()) {
-             TickingBlockEntity tickingblockentity = iterator.next();
++        for (int tileTickPosition = 0; tileTickPosition < this.blockEntityTickers.size(); tileTickPosition++) { // Stellar - SparklyPaper: optimize block entity removals
++            TickingBlockEntity tickingblockentity = this.blockEntityTickers.get(tileTickPosition); // Stellar - SparklyPaper: optimize block entity removals
              if (tickingblockentity.isRemoved()) {
-                 iterator.remove();
+-                iterator.remove();
 -            } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
++                this.blockEntityTickers.markAsRemoved(tileTickPosition); // Stellar - SparklyPaper: optimize block entity removals
 +            } else if (flag && this.shouldTickBlocksAt0(tickingblockentity.getPos())) { // Stellar - lithium(block_entity_ticking/chunk_ticking)
                  tickingblockentity.tick();
 +                // Paper start - execute chunk tasks during tick
@@ -1194,6 +1199,7 @@
              }
          }
 +
++        this.blockEntityTickers.removeMarkedEntries(); // Stellar - SparklyPaper: optimize block entity removals
 +        this.cachedLastTickableChunk = Long.MIN_VALUE; // Stellar - lithium(block_entity_ticking/chunk_ticking): invalidate cache
  
          this.tickingBlockEntities = false;
