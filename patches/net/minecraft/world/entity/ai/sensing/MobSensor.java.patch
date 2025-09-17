@@ -1,0 +1,20 @@
+--- a/net/minecraft/world/entity/ai/sensing/MobSensor.java
++++ b/net/minecraft/world/entity/ai/sensing/MobSensor.java
+@@ -40,9 +_,14 @@
+     public void checkForMobsNearby(T p_316143_) {
+         Optional<List<LivingEntity>> optional = p_316143_.getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES);
+         if (!optional.isEmpty()) {
+-            boolean flag = optional.get().stream().anyMatch(p_316324_ -> this.mobTest.test(p_316143_, p_316324_));
+-            if (flag) {
+-                this.mobDetected(p_316143_);
++            // Stellar start - Leaf: Remove streams in MobSensor
++            List<LivingEntity> entities = optional.get();
++            for (LivingEntity livingEntity : entities) {
++                if (this.mobTest.test(p_316143_, livingEntity)) {
++                    this.mobDetected(p_316143_);
++                    break;
++                }
++            // Stellar end - Leaf: Remove streams in MobSensor
+             }
+         }
+     }
