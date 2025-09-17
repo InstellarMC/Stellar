@@ -1,16 +1,29 @@
 --- a/net/minecraft/server/players/SleepStatus.java
 +++ b/net/minecraft/server/players/SleepStatus.java
-@@ -14,8 +_,11 @@
+@@ -14,8 +_,24 @@
      }
  
      public boolean areEnoughDeepSleeping(int p_144005_, List<ServerPlayer> p_144006_) {
 -        int i = (int)p_144006_.stream().filter(Player::isSleepingLongEnough).count();
 -        return i >= this.sleepersNeeded(p_144005_);
-+        // CraftBukkit start
-+        int j = (int) p_144006_.stream().filter((eh) -> { return eh.isSleepingLongEnough() || eh.fauxSleeping || (eh.level().purpurConfig.idleTimeoutCountAsSleeping && eh.isAfk()); }).count(); // Purpur
-+        boolean anyDeepSleep = p_144006_.stream().anyMatch(Player::isSleepingLongEnough);
-+        return anyDeepSleep && j >= this.sleepersNeeded(p_144005_);
-+        // CraftBukkit end
++        // Stellar start - Leaf: Remove stream and double iteration in enough deep sleeping player check
++        int count = 0;
++        boolean anyPlayerSleeping = false;
++
++        for (final ServerPlayer player : p_144006_) {
++            final boolean isSleepingLongEnough = player.isSleepingLongEnough();
++
++            if (isSleepingLongEnough) {
++                anyPlayerSleeping = true;
++            }
++
++            if (isSleepingLongEnough || player.fauxSleeping || (player.level().purpurConfig.idleTimeoutCountAsSleeping && player.isAfk())) { // Purpur - AFK API
++                count++;
++            }
++        }
++
++        return anyPlayerSleeping && count >= this.sleepersNeeded(p_144005_);
++        // Stellar end - Leaf: Remove stream and double iteration in enough deep sleeping player check
      }
  
      public int sleepersNeeded(int p_144011_) {
