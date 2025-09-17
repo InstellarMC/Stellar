@@ -28,6 +28,12 @@ public final class GlobalConfiguration extends ConfigurationPart {
         INSTANCE = configuration;
     }
 
+    public Entities entities;
+    public class Entities extends ConfigurationPart {
+
+        public boolean enableFMA = false;
+    }
+
     public Players players;
 
     public class Players extends ConfigurationPart {

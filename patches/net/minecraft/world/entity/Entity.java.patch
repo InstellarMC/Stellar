@@ -1228,7 +1228,49 @@
      }
  
      public final void setOldPosAndRot() {
-@@ -1476,8 +_,10 @@
+@@ -1447,37 +_,43 @@
+         this.xRotO = this.getXRot();
+     }
+ 
+-    public float distanceTo(Entity p_20271_) {
+-        float f = (float)(this.getX() - p_20271_.getX());
+-        float f1 = (float)(this.getY() - p_20271_.getY());
+-        float f2 = (float)(this.getZ() - p_20271_.getZ());
+-        return Mth.sqrt(f * f + f1 * f1 + f2 * f2);
++    // Stellar start - Leaf: Optimize Entity distanceTo - Inlining and avoid casting
++    // Use Math#sqrt instead of Mojang's Mth#sqrt - only case once
++    public final float distanceTo(Entity p_20271_) { // Stellar - inline
++        double f = (this.getX() - p_20271_.getX());
++        double f1 = (this.getY() - p_20271_.getY());
++        double f2 = (this.getZ() - p_20271_.getZ());
++        return (float) Math.sqrt(dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.enableFMA ? Math.fma(f, f, Math.fma(f1, f1, f2 * f2)) : f * f + f1 * f1 + f2 * f2);
++        // Stellar end - Leaf: Optimize Entity distanceTo - Inlining and avoid casting
+     }
+ 
+-    public double distanceToSqr(double p_20276_, double p_20277_, double p_20278_) {
++    public final double distanceToSqr(double p_20276_, double p_20277_, double p_20278_) { // Stellar - inline
+         double d0 = this.getX() - p_20276_;
+         double d1 = this.getY() - p_20277_;
+         double d2 = this.getZ() - p_20278_;
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.enableFMA) return Math.fma(d0, d0, Math.fma(d1, d1, d2 * d2)); // Stellar - Leaf: Optimize Entity distanceTo - Inlining and avoid casting
+         return d0 * d0 + d1 * d1 + d2 * d2;
+     }
+ 
+-    public double distanceToSqr(Entity p_20281_) {
++    public final double distanceToSqr(Entity p_20281_) { // Stellar - inline
+         return this.distanceToSqr(p_20281_.position());
+     }
+ 
+-    public double distanceToSqr(Vec3 p_20239_) {
++    public final double distanceToSqr(Vec3 p_20239_) { // Stellar - inline
+         double d0 = this.getX() - p_20239_.x;
+         double d1 = this.getY() - p_20239_.y;
+         double d2 = this.getZ() - p_20239_.z;
+-        return d0 * d0 + d1 * d1 + d2 * d2;
++        return dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.enableFMA ? Math.fma(d0, d0, Math.fma(d1, d1, d2 * d2)) : d0 * d0 + d1 * d1 + d2 * d2; // Stellar - Leaf: Optimize Entity distanceTo - Inlining and avoid casting
+     }
+ 
+     public void playerTouch(Player p_20081_) {
      }
  
      public void push(Entity p_20293_) {
