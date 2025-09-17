@@ -108,6 +108,44 @@
                  throw illegalargumentexception;
              }
          }
+@@ -462,16 +_,37 @@
+         return p_137470_;
+     }
+ 
++    // Stellar start - Leaf: Faster sequencing of futures for chunk structure gen
+     public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<V>> p_137568_) {
++        return sequence(p_137568_, true);
++    }
++    public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<V>> futures, boolean turbo) {
++        // Stellar end - Leaf: Faster sequencing of futures for chunk structure gen
+         if (p_137568_.isEmpty()) {
+             return CompletableFuture.completedFuture(List.of());
+         } else if (p_137568_.size() == 1) {
+             return p_137568_.get(0).thenApply(List::of);
+         } else {
+             CompletableFuture<Void> completablefuture = CompletableFuture.allOf(p_137568_.toArray(new CompletableFuture[0]));
++            if (turbo) return sequenceTurbo(futures, completableFuture); // Stellar - Leaf: Faster sequencing of futures for chunk structure gen
+             return completablefuture.thenApply(p_203746_ -> p_137568_.stream().map(CompletableFuture::join).toList());
+         }
+     }
++    // Stellar start - Leaf: Faster sequencing of futures for chunk structure gen
++    private static <V> CompletableFuture<List<V>> sequenceTurbo(List<? extends CompletableFuture<V>> futures, CompletableFuture<Void> completableFuture) {
++        return completableFuture.thenCompose($ ->
++            CompletableFuture.supplyAsync(() -> {
++                List<V> list = new java.util.ArrayList<>();
++
++                for (CompletableFuture<V> future : futures) {
++                    list.add(future.join());
++                }
++
++                return list;
++            })
++        );
++    }
++    // Stellar end - Leaf: Faster sequencing of futures for chunk structure gen
+ 
+     public static <V> CompletableFuture<List<V>> sequenceFailFast(List<? extends CompletableFuture<? extends V>> p_143841_) {
+         CompletableFuture<List<V>> completablefuture = new CompletableFuture<>();
 @@ -526,20 +_,20 @@
  
      public static void logAndPauseIfInIde(String p_143786_) {

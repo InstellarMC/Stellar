@@ -104,6 +104,7 @@ public final class GlobalConfiguration extends ConfigurationPart {
         public boolean useVT4UserAuthentication = false;
         @Setting("use-vt-for-chat-executor")
         public boolean useVT4ChatExecutor = false;
+        public boolean turboStructureGeneratingSequence = false;
     }
 
     public Compatibility compatibility;

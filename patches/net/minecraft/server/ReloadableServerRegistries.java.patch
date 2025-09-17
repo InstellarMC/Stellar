@@ -9,7 +9,8 @@
 -            .map(p_335899_ -> scheduleElementParse((LootDataType<?>)p_335899_, registryops, p_335786_, p_335516_))
 +            .map(p_335899_ -> scheduleElementParse((LootDataType<?>)p_335899_, registryops, p_335786_, p_335516_, conversions)) // Paper
              .toList();
-         CompletableFuture<List<WritableRegistry<?>>> completablefuture = Util.sequence(list);
+-        CompletableFuture<List<WritableRegistry<?>>> completablefuture = Util.sequence(list);
++        CompletableFuture<List<WritableRegistry<?>>> completablefuture = Util.sequence(list, false); // Stellar - Leaf: Faster sequencing of futures for chunk structure gen
          return completablefuture.thenApplyAsync(p_335383_ -> apply(p_335950_, (List<WritableRegistry<?>>)p_335383_), p_335516_);
      }
  

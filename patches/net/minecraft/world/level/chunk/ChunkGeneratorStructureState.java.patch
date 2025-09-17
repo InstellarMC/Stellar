@@ -84,3 +84,12 @@
  
      private static boolean hasBiomesForStructureSet(StructureSet p_255766_, BiomeSource p_256424_) {
          Stream<Holder<Biome>> stream = p_255766_.structures().stream().flatMap(p_255738_ -> {
+@@ -159,7 +_,7 @@
+                 }
+             }
+ 
+-            return Util.sequence(list).thenApply(p_256372_ -> {
++            return Util.sequence(list, dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.turboStructureGeneratingSequence).thenApply(p_256372_ -> { // Stellar - Leaf: Faster sequencing of futures for chunk structure gen
+                 double d2 = (double)stopwatch.stop().elapsed(TimeUnit.MILLISECONDS) / 1000.0;
+                 LOGGER.debug("Calculation for {} took {}s", p_255966_, d2);
+                 return p_256372_;
