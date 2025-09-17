@@ -90,6 +90,8 @@ public class WorldConfiguration extends ConfigurationPart {
 
         @Comment("Prevent entities random strolling into non-ticking chunks")
         public boolean entitiesCanRandomStrollIntoNonTickingChunks = true;
+
+        public boolean onlyPlayerPushable = false;
     }
 
     public Misc misc;
