@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/enchantment/Enchantment.java
 +++ b/net/minecraft/world/item/enchantment/Enchantment.java
-@@ -124,6 +_,10 @@
+@@ -124,18 +_,40 @@
          return map;
      }
  
@@ -11,8 +11,18 @@
      public HolderSet<Item> getSupportedItems() {
          return this.definition.supportedItems();
      }
-@@ -132,10 +_,20 @@
-         return this.definition.slots().stream().anyMatch(p_345027_ -> p_345027_.test(p_345146_));
+ 
+     public boolean matchingSlot(EquipmentSlot p_345146_) {
+-        return this.definition.slots().stream().anyMatch(p_345027_ -> p_345027_.test(p_345146_));
++        // Stellar start - Leaf: Remove stream in matchingSlot
++        for (final EquipmentSlotGroup equipmentSlotGroup : this.definition.slots()) {
++            if (equipmentSlotGroup.test(p_345146_)) {
++                return true;
++            }
++        }
++
++        return false;
++        // Stellar end - Leaf: Remove stream in matchingSlot
      }
  
 +    /**
