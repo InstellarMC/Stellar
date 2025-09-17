@@ -69,8 +69,8 @@
 -                : this.byType(p_220249_).stream().filter(p_344413_ -> p_344413_.value().matches(p_345826_, p_220251_)).findFirst();
 +            // Stellar start - Carpet-Fixes: Use optimized RecipeManager - Remove streams to be faster
 +            RecipeHolder<T> lastRecipe = null;
-+            for (RecipeHolder<T> recipeHolder : this.recipes.byType(recipeType)) {
-+                if (recipeHolder.value().matches(input, level)) {
++            for (RecipeHolder<T> recipeHolder : this.byType(p_220249_)) {
++                if (recipeHolder.value().matches(p_345826_, p_220251_)) {
 +                    lastRecipe = recipeHolder;
 +                }
 +            }
