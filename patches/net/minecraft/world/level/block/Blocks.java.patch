@@ -9,6 +9,14 @@
      );
      public static final Block DETECTOR_RAIL = register(
          "detector_rail", new DetectorRailBlock(BlockBehaviour.Properties.of().noCollission().strength(0.7F).sound(SoundType.METAL))
+@@ -7532,6 +_,7 @@
+                 .mapColor(MapColor.COLOR_ORANGE)
+                 .instrument(NoteBlockInstrument.BASEDRUM)
+                 .requiresCorrectToolForDrops()
++                .sound(SoundType.COPPER) // Stellar - Fix MC-223153
+                 .strength(5.0F, 6.0F)
+         )
+     );
 @@ -7806,7 +_,8 @@
      static {
          for (Block block : BuiltInRegistries.BLOCK) {
