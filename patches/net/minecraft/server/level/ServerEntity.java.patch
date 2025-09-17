@@ -128,7 +128,12 @@
                      this.wasOnGround = this.entity.onGround();
                      this.teleportDelay = 0;
                      packet1 = new ClientboundTeleportEntityPacket(this.entity);
-@@ -174,6 +_,7 @@
+@@ -171,9 +_,12 @@
+                     flag1 = true;
+                 }
+ 
++                if (dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.reduceUselessEntityMovePackets && isUselessMoveEntityPacket(packet1)) packet1 = null; // Purpur - Dont send useless entity packets
++
                  if ((this.trackDelta || this.entity.hasImpulse || this.entity instanceof LivingEntity && ((LivingEntity)this.entity).isFallFlying())
                      && this.tickCount > 0) {
                      Vec3 vec3 = this.entity.getDeltaMovement();
@@ -144,7 +149,7 @@
                  }
  
                  if (packet1 != null) {
-@@ -217,10 +_,32 @@
+@@ -217,15 +_,52 @@
              }
  
              this.entity.hasImpulse = false;
@@ -177,6 +182,26 @@
              this.entity.hurtMarked = false;
              this.broadcastAndSend(new ClientboundSetEntityMotionPacket(this.entity));
          }
+     }
+ 
++    // Purpur start - Don't send useless entity packets
++    private boolean isUselessMoveEntityPacket(@Nullable Packet<?> packet) {
++        if (!(packet instanceof ClientboundMoveEntityPacket moveEntityPacket)) return false;
++        return switch (packet) {
++            case ClientboundMoveEntityPacket.Pos ignored ->
++                    moveEntityPacket.getXa() == 0 && moveEntityPacket.getYa() == 0 && moveEntityPacket.getZa() == 0;
++            case ClientboundMoveEntityPacket.PosRot ignored ->
++                    moveEntityPacket.getXa() == 0 && moveEntityPacket.getYa() == 0 && moveEntityPacket.getZa() == 0 && moveEntityPacket.getyRot() == 0 && moveEntityPacket.getxRot() == 0;
++            case ClientboundMoveEntityPacket.Rot ignored ->
++                    moveEntityPacket.getyRot() == 0 && moveEntityPacket.getxRot() == 0;
++            default -> false;
++        };
++    }
++    // Purpur end - Don't send useless entity packets
++
+     private static Stream<Entity> removedPassengers(List<Entity> p_277592_, List<Entity> p_277658_) {
+         return p_277658_.stream().filter(p_275361_ -> !p_277592_.contains(p_275361_));
+     }
 @@ -233,22 +_,28 @@
      public void removePairing(ServerPlayer p_8535_) {
          this.entity.stopSeenByPlayer(p_8535_);
