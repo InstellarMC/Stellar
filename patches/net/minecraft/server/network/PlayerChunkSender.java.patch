@@ -12,13 +12,54 @@
          }
      }
  
-@@ -73,10 +_,18 @@
+@@ -60,12 +_,26 @@
+                         ServerGamePacketListenerImpl servergamepacketlistenerimpl = p_296009_.connection;
+                         this.unacknowledgedBatches++;
+                         servergamepacketlistenerimpl.send(ClientboundChunkBatchStartPacket.INSTANCE);
++                        // Stellar start - Leaf: Async chunk sending
++                        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.asyncChunkSend) {
++                            org.dreeam.leaf.async.chunk.AsyncChunkSend.POOL.execute(
++                                () -> servergamepacketlistenerimpl.send(ClientboundChunkBatchStartPacket.INSTANCE)
++                            );
++                        } else // Stellar end - Leaf: Async chunk sending
++                        servergamepacketlistenerimpl.send(ClientboundChunkBatchStartPacket.INSTANCE);
+ 
+                         for (LevelChunk levelchunk : list) {
+                             sendChunk(servergamepacketlistenerimpl, serverlevel, levelchunk);
+                         }
+ 
+                         servergamepacketlistenerimpl.send(new ClientboundChunkBatchFinishedPacket(list.size()));
++                        // Stellar start - Leaf: Async chunk sending
++                        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.asyncChunkSend) {
++                            org.dreeam.leaf.async.chunk.AsyncChunkSend.POOL.execute(
++                                () -> servergamepacketlistenerimpl.send(new ClientboundChunkBatchFinishedPacket(list.size()))
++                            );
++                        } else // Stellar end - Leaf: Async chunk sending
++                        servergamepacketlistenerimpl.send(new ClientboundChunkBatchFinishedPacket(list.size()));
+                         this.batchQuota = this.batchQuota - (float)list.size();
+                     }
+                 }
+@@ -73,10 +_,32 @@
          }
      }
  
 -    private static void sendChunk(ServerGamePacketListenerImpl p_295237_, ServerLevel p_294963_, LevelChunk p_295144_) {
 -        p_295237_.send(new ClientboundLevelChunkWithLightPacket(p_295144_, p_294963_.getLightEngine(), null, null));
 +    public static void sendChunk(ServerGamePacketListenerImpl p_295237_, ServerLevel p_294963_, LevelChunk p_295144_) { // Paper - public
++        // Stellar start - Leaf: Async chunk sending
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.asyncChunkSend) {
++            var blockEntities = p_295144_.blockEntities.values().toArray(new net.minecraft.world.level.block.entity.BlockEntity[0]);
++            net.minecraft.nbt.CompoundTag heightmaps = new net.minecraft.nbt.CompoundTag();
++
++            for (var entry : p_295144_.getHeightmaps()) {
++                if (entry.getKey().sendToClient()) {
++                    heightmaps.put(entry.getKey().getSerializationKey(), new net.minecraft.nbt.LongArrayTag(entry.getValue().getRawData()));
++                }
++            }
++            org.dreeam.leaf.async.chunk.AsyncChunkSend.POOL.execute(
++                () -> p_295237_.send(p_295144_.getAuxLightManager(p_295144_.getPos()).sendLightDataTo(new ClientboundLevelChunkWithLightPacket(p_295144_, p_294963_.getLightEngine(), null, null, blockEntities, heightmaps)))
++            );
++        } else // Stellar end - Leaf: Async chunk sending
 +        p_295237_.send(p_295144_.getAuxLightManager(p_295144_.getPos()).sendLightDataTo(
 +                new ClientboundLevelChunkWithLightPacket(p_295144_, p_294963_.getLightEngine(), null, null)
 +        ));

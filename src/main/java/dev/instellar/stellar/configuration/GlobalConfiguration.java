@@ -118,6 +118,7 @@ public final class GlobalConfiguration extends ConfigurationPart {
         public boolean useVT4ChatExecutor = false;
         public boolean turboStructureGeneratingSequence = false;
         public boolean reduceUselessEntityMovePackets = true;
+        public boolean asyncChunkSend = false;
     }
 
     public Compatibility compatibility;

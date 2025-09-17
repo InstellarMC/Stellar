@@ -432,6 +432,13 @@ public final class RegionizedPlayerChunkLoader {
                 .getChunkHolder(chunkX, chunkZ).vanillaChunkHolder).moonrise$removeReceivedChunk(this.player);
             final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
             this.player.connection.send(new ClientboundForgetLevelChunkPacket(chunkPos));
+            // Stellar start - Leaf: Async chunk sending
+            if (dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.asyncChunkSend) {
+                org.dreeam.leaf.async.chunk.AsyncChunkSend.POOL.execute(
+                        () -> this.player.connection.send(new ClientboundForgetLevelChunkPacket(new ChunkPos(chunkX, chunkZ)))
+                );
+            } else // Stellar end - Leaf: Async chunk sending
+            this.player.connection.send(new ClientboundForgetLevelChunkPacket(new ChunkPos(chunkX, chunkZ)));
             // Paper start - PlayerChunkUnloadEvent
             if (io.papermc.paper.event.packet.PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0) {
                 new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(this.world.getWorld().getChunkAt(chunkPos.longKey), this.player.getBukkitEntity()).callEvent();
