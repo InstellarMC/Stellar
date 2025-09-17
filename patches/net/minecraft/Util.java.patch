@@ -116,7 +116,7 @@
      public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<V>> p_137568_) {
 +        return sequence(p_137568_, true);
 +    }
-+    public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<V>> futures, boolean turbo) {
++    public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<V>> p_137568_, boolean turbo) {
 +        // Stellar end - Leaf: Faster sequencing of futures for chunk structure gen
          if (p_137568_.isEmpty()) {
              return CompletableFuture.completedFuture(List.of());
@@ -124,7 +124,7 @@
              return p_137568_.get(0).thenApply(List::of);
          } else {
              CompletableFuture<Void> completablefuture = CompletableFuture.allOf(p_137568_.toArray(new CompletableFuture[0]));
-+            if (turbo) return sequenceTurbo(futures, completableFuture); // Stellar - Leaf: Faster sequencing of futures for chunk structure gen
++            if (turbo) return sequenceTurbo(p_137568_, completablefuture); // Stellar - Leaf: Faster sequencing of futures for chunk structure gen
              return completablefuture.thenApply(p_203746_ -> p_137568_.stream().map(CompletableFuture::join).toList());
          }
      }
