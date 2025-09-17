@@ -17,9 +17,33 @@
  
  public class TemptingSensor extends Sensor<PathfinderMob> {
      public static final int TEMPTATION_RANGE = 10;
-@@ -38,7 +_,17 @@
-             .collect(Collectors.toList());
+@@ -27,18 +_,32 @@
+ 
+     protected void doTick(ServerLevel p_148331_, PathfinderMob p_148332_) {
+         Brain<?> brain = p_148332_.getBrain();
+-        List<Player> list = p_148331_.players()
+-            .stream()
+-            .filter(EntitySelector.NO_SPECTATORS)
+-            .filter(p_148342_ -> TEMPT_TARGETING.test(p_148332_, p_148342_))
+-            .filter(p_148335_ -> p_148332_.closerThan(p_148335_, 10.0))
+-            .filter(this::playerHoldingTemptation)
+-            .filter(p_325765_ -> !p_148332_.hasPassenger(p_325765_))
+-            .sorted(Comparator.comparingDouble(p_148332_::distanceToSqr))
+-            .collect(Collectors.toList());
++        // Stellar start - Leaf: Remove streams in TemptingSensor
++        final List<net.minecraft.server.level.ServerPlayer> allPlayers = p_148331_.players();
++        final List<Player> list = new java.util.ArrayList<>();
++        for (final Player serverPlayer : allPlayers) {
++            if (EntitySelector.NO_SPECTATORS.test(serverPlayer) &&
++                TEMPT_TARGETING.test(p_148332_, serverPlayer) &&
++                this.playerHoldingTemptation(serverPlayer) &&
++                !p_148332_.hasPassenger(serverPlayer)) {
++                list.add(serverPlayer);
++            }
++        }
++        // Stellar end - Leaf: Remove streams in TemptingSensor
          if (!list.isEmpty()) {
++            list.sort(Comparator.comparingDouble(p_148332_::distanceToSqr)); // Stellar - Leaf: Remove streams in TemptingSensor
              Player player = list.get(0);
 -            brain.setMemory(MemoryModuleType.TEMPTING_PLAYER, player);
 +            // CraftBukkit start
