@@ -8,14 +8,15 @@
  import com.mojang.logging.LogUtils;
  import java.util.Collection;
  import net.minecraft.commands.CommandSourceStack;
-@@ -17,6 +_,7 @@
+@@ -17,7 +_,7 @@
      private static final Logger LOGGER = LogUtils.getLogger();
  
      public static void reloadPacks(Collection<String> p_138236_, CommandSourceStack p_138237_) {
-+        p_138237_.getServer().reloadResources$Cause.set(io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.COMMAND);
-         p_138237_.getServer().reloadResources(p_138236_).exceptionally(p_138234_ -> {
+-        p_138237_.getServer().reloadResources(p_138236_).exceptionally(p_138234_ -> {
++        p_138237_.getServer().reloadResources(p_138236_, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.COMMAND).exceptionally(p_138234_ -> {
              LOGGER.warn("Failed to execute reload", p_138234_);
              p_138237_.sendFailure(Component.translatable("commands.reload.failure"));
+             return null;
 @@ -35,8 +_,19 @@
              }
          }
@@ -30,7 +31,7 @@
 +        WorldData savedata = minecraftserver.getWorldData();
 +        Collection<String> collection = resourcepackrepository.getSelectedIds();
 +        Collection<String> collection1 = discoverNewPacks(resourcepackrepository, savedata, collection);
-+        minecraftserver.reloadResourcesPaper(collection1, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN); // Paper - Add ServerResourcesReloadedEvent);
++        minecraftserver.reloadResources(collection1, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN); // Paper - Add ServerResourcesReloadedEvent);
 +    }
 +    // CraftBukkit end
  

@@ -1765,13 +1765,13 @@
          return this.functionManager;
      }
  
-+    public AtomicReference<io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause> reloadResources$Cause = new AtomicReference<>(io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN);
-+    public CompletableFuture<Void> reloadResourcesPaper(Collection<String> dataPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause cause) {
-+        reloadResources$Cause.set(cause);
-+        return reloadResources(dataPacks);
-+    }
-+
++    // Paper start - Add ServerResourcesReloadedEvent
++    @Deprecated @io.papermc.paper.annotation.DoNotUse
      public CompletableFuture<Void> reloadResources(Collection<String> p_129862_) {
++        return reloadResources(p_129862_, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN);
++    }
++    public CompletableFuture<Void> reloadResources(Collection<String> p_129862_, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause cause) {
++        // Paper end - Add ServerResourcesReloadedEvent
          CompletableFuture<Void> completablefuture = CompletableFuture.<ImmutableList>supplyAsync(
 -                () -> p_129862_.stream().map(this.packRepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()),
 +                () -> this.packRepository.rebuildSelected(p_129862_).stream().map(Pack::open).collect(ImmutableList.toImmutableList()),
@@ -1815,7 +1815,7 @@
 +                    helpMap.initializeCommands();
 +                    this.server.syncCommands(); // Refresh commands after event
 +                    // Paper end
-+                    new io.papermc.paper.event.server.ServerResourcesReloadedEvent(reloadResources$Cause.getAndSet(io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN)).callEvent(); // Paper - fire after everything has been reloaded
++                    new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper - fire after everything has been reloaded
                  },
                  this
              );
