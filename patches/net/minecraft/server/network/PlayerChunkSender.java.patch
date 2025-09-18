@@ -12,33 +12,31 @@
          }
      }
  
-@@ -60,12 +_,26 @@
+@@ -59,12 +_,24 @@
+                     if (!list.isEmpty()) {
                          ServerGamePacketListenerImpl servergamepacketlistenerimpl = p_296009_.connection;
                          this.unacknowledgedBatches++;
-                         servergamepacketlistenerimpl.send(ClientboundChunkBatchStartPacket.INSTANCE);
 +                        // Stellar start - Leaf: Async chunk sending
 +                        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.asyncChunkSend) {
 +                            org.dreeam.leaf.async.chunk.AsyncChunkSend.POOL.execute(
 +                                () -> servergamepacketlistenerimpl.send(ClientboundChunkBatchStartPacket.INSTANCE)
 +                            );
 +                        } else // Stellar end - Leaf: Async chunk sending
-+                        servergamepacketlistenerimpl.send(ClientboundChunkBatchStartPacket.INSTANCE);
+                         servergamepacketlistenerimpl.send(ClientboundChunkBatchStartPacket.INSTANCE);
  
                          for (LevelChunk levelchunk : list) {
                              sendChunk(servergamepacketlistenerimpl, serverlevel, levelchunk);
                          }
  
-                         servergamepacketlistenerimpl.send(new ClientboundChunkBatchFinishedPacket(list.size()));
 +                        // Stellar start - Leaf: Async chunk sending
 +                        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.asyncChunkSend) {
 +                            org.dreeam.leaf.async.chunk.AsyncChunkSend.POOL.execute(
 +                                () -> servergamepacketlistenerimpl.send(new ClientboundChunkBatchFinishedPacket(list.size()))
 +                            );
 +                        } else // Stellar end - Leaf: Async chunk sending
-+                        servergamepacketlistenerimpl.send(new ClientboundChunkBatchFinishedPacket(list.size()));
+                         servergamepacketlistenerimpl.send(new ClientboundChunkBatchFinishedPacket(list.size()));
                          this.batchQuota = this.batchQuota - (float)list.size();
                      }
-                 }
 @@ -73,10 +_,32 @@
          }
      }
