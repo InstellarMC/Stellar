@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/LevelReader.java
 +++ b/net/minecraft/world/level/LevelReader.java
-@@ -22,9 +_,23 @@
+@@ -22,10 +_,24 @@
  import net.minecraft.world.level.levelgen.Heightmap;
  import net.minecraft.world.phys.AABB;
  
@@ -19,9 +19,34 @@
 +
      @Nullable
      ChunkAccess getChunk(int p_46823_, int p_46824_, ChunkStatus p_330944_, boolean p_46826_);
-+
+ 
 +    @Nullable ChunkAccess getChunkIfLoadedImmediately(int x, int z); // Paper - ifLoaded api (we need this since current impl blocks if the chunk is loading)
 +    @Nullable default ChunkAccess getChunkIfLoadedImmediately(BlockPos pos) { return this.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);}
- 
++
      @Deprecated
      boolean hasChunk(int p_46838_, int p_46839_);
+ 
+@@ -175,7 +_,7 @@
+ 
+     @Deprecated
+     default boolean hasChunkAt(int p_151578_, int p_151579_) {
+-        return this.hasChunk(SectionPos.blockToSectionCoord(p_151578_), SectionPos.blockToSectionCoord(p_151579_));
++        return this.hasChunk(p_151578_ >> 4, p_151579_ >> 4); // Stellar - inline
+     }
+ 
+     @Deprecated
+@@ -195,10 +_,10 @@
+ 
+     @Deprecated
+     default boolean hasChunksAt(int p_151573_, int p_151574_, int p_151575_, int p_151576_) {
+-        int i = SectionPos.blockToSectionCoord(p_151573_);
+-        int j = SectionPos.blockToSectionCoord(p_151575_);
+-        int k = SectionPos.blockToSectionCoord(p_151574_);
+-        int l = SectionPos.blockToSectionCoord(p_151576_);
++        int i = p_151573_ >> 4; // Stellar - inline
++        int j = p_151575_ >> 4; // Stellar - inline
++        int k = p_151574_ >> 4; // Stellar - inline
++        int l = p_151576_ >> 4; // Stellar - inline
+ 
+         for (int i1 = i; i1 <= j; i1++) {
+             for (int j1 = k; j1 <= l; j1++) {
