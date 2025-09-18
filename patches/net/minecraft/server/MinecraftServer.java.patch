@@ -391,7 +391,7 @@
          }
      }
  
-@@ -325,18 +_,95 @@
+@@ -325,18 +_,82 @@
  
      protected abstract boolean initServer() throws IOException;
  
@@ -437,19 +437,6 @@
 +        LockSupport.parkNanos("executing tasks", 1000L);
 +        // CraftBukkit end
 +    }
-+
-+    // CraftBukkit start
-+    public void addLevel(ServerLevel level) {
-+        this.levels.put(level.dimension(), level); // Mohist
-+        markWorldsDirty();
-+    }
-+
-+    public void removeLevel(ServerLevel level) {
-+        this.levels.remove(level.dimension()); // Mohist
-+        markWorldsDirty();
-+        ((CraftServer)Bukkit.getServer()).removeWorld(level);
-+    }
-+    // CraftBukkit end
 +
 +    // Paper start - rewrite chunk system
 +    @Override
@@ -1498,25 +1485,25 @@
              ObjectArrayList<GameProfile> objectarraylist = new ObjectArrayList<>(j);
              int k = Mth.nextInt(this.random, 0, list.size() - j);
  
-@@ -992,37 +_,99 @@
+@@ -990,39 +_,100 @@
+         }
+     }
  
++    public final io.papermc.paper.threadedregions.EntityScheduler.EntitySchedulerTickList entitySchedulerTickList = new io.papermc.paper.threadedregions.EntityScheduler.EntitySchedulerTickList(); // Paper - optimise Folia entity scheduler
++
      public void tickChildren(BooleanSupplier p_129954_) {
          this.getPlayerList().getPlayers().forEach(p_341570_ -> p_341570_.connection.suspendFlushing());
 +        this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
-+        // Paper start - Folia scheduler API
++        // Paper start - optimise Folia entity scheduler
 +        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
-+        for (ServerLevel level : getAllLevels()) {
-+            for (final Entity entity : level.moonrise$getEntityLookup().getAllCopy()) { // Paper - rewrite chunk system
-+                if (entity.isRemoved()) {
-+                    continue;
-+                }
-+                final CraftEntity bukkit = entity.getBukkitEntityRaw();
-+                if (bukkit != null) {
-+                    bukkit.taskScheduler.executeTick();
-+                }
++        for (final io.papermc.paper.threadedregions.EntityScheduler scheduler : this.entitySchedulerTickList.getAllSchedulers()) {
++            if (scheduler.isRetired()) {
++                continue;
 +            }
++
++            scheduler.executeTick();
 +        }
-+        // Paper end - Folia scheduler API
++        // Paper end - optimise Folia entity scheduler
 +        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          this.profiler.push("commandFunctions");
          this.getFunctions().tick();
@@ -1588,6 +1575,7 @@
  
              this.profiler.pop();
              this.profiler.pop();
++            serverlevel.explosionDensityCache.clear(); // Paper - Optimize explosions
 +            perWorldTickTimes.computeIfAbsent(serverlevel.dimension(), k -> new long[100])[this.tickCount % 100] = Util.getNanos() - tickStart;
          }
 +        this.isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
@@ -1624,6 +1612,29 @@
      }
  
      public void forceTimeSynchronization() {
+@@ -1089,6 +_,22 @@
+         return this.levels.get(p_129881_);
+     }
+ 
++    // CraftBukkit start
++    public void addLevel(ServerLevel level) {
++        Map<ResourceKey<Level>, ServerLevel> oldLevels = this.levels;
++        Map<ResourceKey<Level>, ServerLevel> newLevels = Maps.newLinkedHashMap(oldLevels);
++        newLevels.put(level.dimension(), level);
++        this.levels = Collections.unmodifiableMap(newLevels);
++    }
++
++    public void removeLevel(ServerLevel level) {
++        Map<ResourceKey<Level>, ServerLevel> oldLevels = this.levels;
++        Map<ResourceKey<Level>, ServerLevel> newLevels = Maps.newLinkedHashMap(oldLevels);
++        newLevels.remove(level.dimension());
++        this.levels = Collections.unmodifiableMap(newLevels);
++    }
++    // CraftBukkit end
++
+     public Set<ResourceKey<Level>> levelKeys() {
+         return this.levels.keySet();
+     }
 @@ -1118,7 +_,7 @@
  
      @DontObfuscate
@@ -1746,7 +1757,7 @@
      public void executeIfPossible(Runnable p_202482_) {
          if (this.isStopped()) {
 -            throw new RejectedExecutionException("Server already shutting down");
-+            throw new io.papermc.paper.util.ServerStopRejectedExecutionException("Server already shutting down");
++            throw new io.papermc.paper.util.ServerStopRejectedExecutionException("Server already shutting down"); // Paper - do not prematurely disconnect players on stop
          } else {
              super.executeIfPossible(p_202482_);
          }

@@ -2725,7 +2725,7 @@
      }
  
      public void checkDespawn() {
-@@ -3412,22 +_,54 @@
+@@ -3412,22 +_,59 @@
  
      @Override
      public final void setRemoved(Entity.RemovalReason p_146876_) {
@@ -2778,6 +2778,11 @@
 +        this.getBukkitEntity().taskScheduler.retire();
 +    }
 +    // Paper end - Folia schedulers
++    // Paper start - optimise Folia entity scheduler
++    public final void registerScheduler() {
++        this.getBukkitEntity().taskScheduler.registerTo(net.minecraft.server.MinecraftServer.getServer().entitySchedulerTickList);
++    }
++    // Paper end - optimise Folia entity scheduler
 +
      @Override
      public void setLevelCallback(EntityInLevelCallback p_146849_) {

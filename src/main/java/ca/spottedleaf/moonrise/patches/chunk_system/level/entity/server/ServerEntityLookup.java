@@ -70,6 +70,7 @@ public final class ServerEntityLookup extends EntityLookup {
         if (entity instanceof ServerPlayer player) {
             ((ChunkSystemServerLevel)this.serverWorld).moonrise$getNearbyPlayers().addPlayer(player);
         }
+        entity.registerScheduler(); // Paper - optimise Folia entity scheduler
     }
 
     @Override
