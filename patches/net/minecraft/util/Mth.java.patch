@@ -23,3 +23,52 @@
      }
  
      public static float sqrt(float p_14117_) {
+@@ -58,13 +_,11 @@
+     }
+ 
+     public static int floor(float p_14144_) {
+-        int i = (int)p_14144_;
+-        return p_14144_ < (float)i ? i - 1 : i;
++        return (int) Math.floor(p_14144_); // Stellar - Use Intrinsics implementation
+     }
+ 
+     public static int floor(double p_14108_) {
+-        int i = (int)p_14108_;
+-        return p_14108_ < (double)i ? i - 1 : i;
++        return (int) Math.floor(p_14108_); // Stellar - Use Intrinsics implementation
+     }
+ 
+     public static long lfloor(double p_14135_) {
+@@ -81,13 +_,11 @@
+     }
+ 
+     public static int ceil(float p_14168_) {
+-        int i = (int)p_14168_;
+-        return p_14168_ > (float)i ? i + 1 : i;
++        return (int) Math.ceil(p_14168_); // Stellar - Use Intrinsics implementation
+     }
+ 
+     public static int ceil(double p_14166_) {
+-        int i = (int)p_14166_;
+-        return p_14166_ > (double)i ? i + 1 : i;
++        return (int) Math.ceil(p_14166_); // Stellar - Use Intrinsics implementation
+     }
+ 
+     public static int clamp(int p_14046_, int p_14047_, int p_14048_) {
+@@ -123,15 +_,7 @@
+     }
+ 
+     public static double absMax(double p_14006_, double p_14007_) {
+-        if (p_14006_ < 0.0) {
+-            p_14006_ = -p_14006_;
+-        }
+-
+-        if (p_14007_ < 0.0) {
+-            p_14007_ = -p_14007_;
+-        }
+-
+-        return Math.max(p_14006_, p_14007_);
++        return Math.max(Math.abs(p_14006_), Math.abs(p_14007_)); // Stellar - Use Intrinsics implementation
+     }
+ 
+     public static int floorDiv(int p_14043_, int p_14044_) {
