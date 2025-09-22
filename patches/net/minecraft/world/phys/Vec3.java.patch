@@ -1,5 +1,28 @@
 --- a/net/minecraft/world/phys/Vec3.java
 +++ b/net/minecraft/world/phys/Vec3.java
+@@ -64,9 +_,20 @@
+         return new Vec3(p_82506_.x - this.x, p_82506_.y - this.y, p_82506_.z - this.z);
+     }
+ 
++    // Stellar start - Nitori: Cache normalized Vec
++    private Vec3 cachedNormalized;
+     public Vec3 normalize() {
+-        double d0 = Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+-        return d0 < 1.0E-4 ? ZERO : new Vec3(this.x / d0, this.y / d0, this.z / d0);
++        if (cachedNormalized == null) {
++            double squaredLength = x * x + y * y + z * z;
++            if (squaredLength < 1.0E-8) {
++                cachedNormalized = Vec3.ZERO;
++            } else {
++                double invLength = 1.0 / Math.sqrt(squaredLength);
++                cachedNormalized = new Vec3(x * invLength, y * invLength, z * invLength);
++            }
++        }
++        return cachedNormalized;
++        // Stellar end - Nitori: Cache normalized Vec
+     }
+ 
+     public double dot(Vec3 p_82527_) {
 @@ -244,7 +_,13 @@
      }
  
