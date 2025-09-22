@@ -11,7 +11,7 @@
                      BiomeGenerationSettings.CODEC.forGetter(p_220548_ -> p_220548_.generationSettings),
                      MobSpawnSettings.CODEC.forGetter(p_220546_ -> p_220546_.mobSettings)
                  )
-@@ -60,9 +_,11 @@
+@@ -60,11 +_,13 @@
      )
      public static final PerlinSimplexNoise BIOME_INFO_NOISE = new PerlinSimplexNoise(new WorldgenRandom(new LegacyRandomSource(2345L)), ImmutableList.of(0));
      private static final int TEMPERATURE_CACHE_SIZE = 1024;
@@ -21,8 +21,11 @@
      private final MobSpawnSettings mobSettings;
 +    /** Neo: Field accesses are redirected to {@link #getModifiedSpecialEffects()} with a coremod. */
      private final BiomeSpecialEffects specialEffects;
-     private final ThreadLocal<Long2FloatLinkedOpenHashMap> temperatureCache = ThreadLocal.withInitial(() -> Util.make(() -> {
+-    private final ThreadLocal<Long2FloatLinkedOpenHashMap> temperatureCache = ThreadLocal.withInitial(() -> Util.make(() -> {
++    private static final ThreadLocal<Long2FloatLinkedOpenHashMap> temperatureCache = ThreadLocal.withInitial(() -> Util.make(() -> { // Stellar - Reduce allocation
              Long2FloatLinkedOpenHashMap long2floatlinkedopenhashmap = new Long2FloatLinkedOpenHashMap(1024, 0.25F) {
+                 @Override
+                 protected void rehash(int p_47580_) {
 @@ -74,11 +_,15 @@
              return long2floatlinkedopenhashmap;
          }));
