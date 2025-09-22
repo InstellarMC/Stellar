@@ -1,0 +1,10 @@
+--- a/net/minecraft/world/level/block/state/StateHolder.java
++++ b/net/minecraft/world/level/block/state/StateHolder.java
+@@ -148,6 +_,7 @@
+                 }
+             }
+ 
++            if (this.owner instanceof net.minecraft.world.level.block.Block || this.owner instanceof net.minecraft.world.level.material.Fluid) this.neighbours = new net.gensokyoreimagined.nitori.common.state.FastImmutableTable<Property<?>, Comparable<?>, S>(this.neighbours, net.gensokyoreimagined.nitori.common.state.StatePropertyTableCache.getTableCache(this.owner)); // Stellar - Nitori
+             this.neighbours = (Table<Property<?>, Comparable<?>, S>)(table.isEmpty() ? table : ArrayTable.create(table));
+         }
+     }
