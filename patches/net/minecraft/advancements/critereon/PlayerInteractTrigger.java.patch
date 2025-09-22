@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/PlayerInteractTrigger.java
++++ b/net/minecraft/advancements/critereon/PlayerInteractTrigger.java
+@@ -18,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_61495_, ItemStack p_61496_, Entity p_61497_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         LootContext lootcontext = EntityPredicate.createContext(p_61495_, p_61497_);
+         this.trigger(p_61495_, p_61501_ -> p_61501_.matches(p_61496_, lootcontext));
+     }

@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/ChangeDimensionTrigger.java
++++ b/net/minecraft/advancements/critereon/ChangeDimensionTrigger.java
+@@ -18,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_19758_, ResourceKey<Level> p_19759_, ResourceKey<Level> p_19760_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_19758_, p_19768_ -> p_19768_.matches(p_19759_, p_19760_));
+     }
+ 

@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/KilledTrigger.java
++++ b/net/minecraft/advancements/critereon/KilledTrigger.java
+@@ -18,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_48105_, Entity p_48106_, DamageSource p_48107_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         LootContext lootcontext = EntityPredicate.createContext(p_48105_, p_48106_);
+         this.trigger(p_48105_, p_48112_ -> p_48112_.matches(p_48105_, lootcontext, p_48107_));
+     }

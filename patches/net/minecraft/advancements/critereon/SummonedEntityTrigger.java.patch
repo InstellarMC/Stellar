@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/SummonedEntityTrigger.java
++++ b/net/minecraft/advancements/critereon/SummonedEntityTrigger.java
+@@ -17,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_68257_, Entity p_68258_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         LootContext lootcontext = EntityPredicate.createContext(p_68257_, p_68258_);
+         this.trigger(p_68257_, p_68265_ -> p_68265_.matches(lootcontext));
+     }

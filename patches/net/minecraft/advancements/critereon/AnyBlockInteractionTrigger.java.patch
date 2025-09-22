@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/AnyBlockInteractionTrigger.java
++++ b/net/minecraft/advancements/critereon/AnyBlockInteractionTrigger.java
+@@ -21,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_319979_, BlockPos p_320093_, ItemStack p_320553_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         ServerLevel serverlevel = p_319979_.serverLevel();
+         BlockState blockstate = serverlevel.getBlockState(p_320093_);
+         LootParams lootparams = new LootParams.Builder(serverlevel)

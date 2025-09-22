@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/TradeTrigger.java
++++ b/net/minecraft/advancements/critereon/TradeTrigger.java
+@@ -18,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_70960_, AbstractVillager p_70961_, ItemStack p_70962_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         LootContext lootcontext = EntityPredicate.createContext(p_70960_, p_70961_);
+         this.trigger(p_70960_, p_70970_ -> p_70970_.matches(lootcontext, p_70962_));
+     }

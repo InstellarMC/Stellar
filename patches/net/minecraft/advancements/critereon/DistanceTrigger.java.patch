@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/DistanceTrigger.java
++++ b/net/minecraft/advancements/critereon/DistanceTrigger.java
+@@ -17,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_186166_, Vec3 p_186167_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         Vec3 vec3 = p_186166_.position();
+         this.trigger(p_186166_, p_284572_ -> p_284572_.matches(p_186166_.serverLevel(), p_186167_, vec3));
+     }

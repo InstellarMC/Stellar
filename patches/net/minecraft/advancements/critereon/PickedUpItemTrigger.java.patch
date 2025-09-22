@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/PickedUpItemTrigger.java
++++ b/net/minecraft/advancements/critereon/PickedUpItemTrigger.java
+@@ -19,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_221299_, ItemStack p_221300_, @Nullable Entity p_221301_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         LootContext lootcontext = EntityPredicate.createContext(p_221299_, p_221301_);
+         this.trigger(p_221299_, p_221306_ -> p_221306_.matches(p_221299_, p_221300_, lootcontext));
+     }

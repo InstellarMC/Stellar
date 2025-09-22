@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/ChanneledLightningTrigger.java
++++ b/net/minecraft/advancements/critereon/ChanneledLightningTrigger.java
+@@ -20,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_21722_, Collection<? extends Entity> p_21723_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         List<LootContext> list = p_21723_.stream().map(p_21720_ -> EntityPredicate.createContext(p_21722_, p_21720_)).collect(Collectors.toList());
+         this.trigger(p_21722_, p_21730_ -> p_21730_.matches(list));
+     }

@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/LightningStrikeTrigger.java
++++ b/net/minecraft/advancements/critereon/LightningStrikeTrigger.java
+@@ -20,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_153392_, LightningBolt p_153393_, List<Entity> p_153394_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         List<LootContext> list = p_153394_.stream().map(p_153390_ -> EntityPredicate.createContext(p_153392_, p_153390_)).collect(Collectors.toList());
+         LootContext lootcontext = EntityPredicate.createContext(p_153392_, p_153393_);
+         this.trigger(p_153392_, p_153402_ -> p_153402_.matches(lootcontext, list));

@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/FishingRodHookedTrigger.java
++++ b/net/minecraft/advancements/critereon/FishingRodHookedTrigger.java
+@@ -22,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_40417_, ItemStack p_40418_, FishingHook p_40419_, Collection<ItemStack> p_40420_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         LootContext lootcontext = EntityPredicate.createContext(p_40417_, (Entity)(p_40419_.getHookedIn() != null ? p_40419_.getHookedIn() : p_40419_));
+         this.trigger(p_40417_, p_40425_ -> p_40425_.matches(p_40418_, lootcontext, p_40420_));
+     }

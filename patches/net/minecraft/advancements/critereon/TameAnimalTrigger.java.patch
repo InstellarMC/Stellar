@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/TameAnimalTrigger.java
++++ b/net/minecraft/advancements/critereon/TameAnimalTrigger.java
+@@ -17,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_68830_, Animal p_68831_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         LootContext lootcontext = EntityPredicate.createContext(p_68830_, p_68831_);
+         this.trigger(p_68830_, p_68838_ -> p_68838_.matches(lootcontext));
+     }

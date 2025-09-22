@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/BredAnimalsTrigger.java
++++ b/net/minecraft/advancements/critereon/BredAnimalsTrigger.java
+@@ -19,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_147279_, Animal p_147280_, Animal p_147281_, @Nullable AgeableMob p_147282_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         LootContext lootcontext = EntityPredicate.createContext(p_147279_, p_147280_);
+         LootContext lootcontext1 = EntityPredicate.createContext(p_147279_, p_147281_);
+         LootContext lootcontext2 = p_147282_ != null ? EntityPredicate.createContext(p_147279_, p_147282_) : null;

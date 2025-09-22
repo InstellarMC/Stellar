@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/FallAfterExplosionTrigger.java
++++ b/net/minecraft/advancements/critereon/FallAfterExplosionTrigger.java
+@@ -20,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_335648_, Vec3 p_336086_, @Nullable Entity p_336120_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         Vec3 vec3 = p_335648_.position();
+         LootContext lootcontext = p_336120_ != null ? EntityPredicate.createContext(p_335648_, p_336120_) : null;
+         this.trigger(p_335648_, p_335739_ -> p_335739_.matches(p_335648_.serverLevel(), p_336086_, vec3, lootcontext));

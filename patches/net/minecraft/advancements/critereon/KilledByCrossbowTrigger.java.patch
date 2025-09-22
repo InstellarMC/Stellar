@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/KilledByCrossbowTrigger.java
++++ b/net/minecraft/advancements/critereon/KilledByCrossbowTrigger.java
+@@ -24,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_46872_, Collection<Entity> p_46873_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         List<LootContext> list = Lists.newArrayList();
+         Set<EntityType<?>> set = Sets.newHashSet();
+ 

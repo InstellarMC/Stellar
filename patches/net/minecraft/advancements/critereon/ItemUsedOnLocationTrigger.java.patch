@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/ItemUsedOnLocationTrigger.java
++++ b/net/minecraft/advancements/critereon/ItemUsedOnLocationTrigger.java
+@@ -29,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_286813_, BlockPos p_286625_, ItemStack p_286620_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         ServerLevel serverlevel = p_286813_.serverLevel();
+         BlockState blockstate = serverlevel.getBlockState(p_286625_);
+         LootParams lootparams = new LootParams.Builder(serverlevel)

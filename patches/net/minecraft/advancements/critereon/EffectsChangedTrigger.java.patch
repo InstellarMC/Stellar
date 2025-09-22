@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/EffectsChangedTrigger.java
++++ b/net/minecraft/advancements/critereon/EffectsChangedTrigger.java
+@@ -19,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_149263_, @Nullable Entity p_149264_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         LootContext lootcontext = p_149264_ != null ? EntityPredicate.createContext(p_149263_, p_149264_) : null;
+         this.trigger(p_149263_, p_149268_ -> p_149268_.matches(p_149263_, lootcontext));
+     }

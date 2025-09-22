@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/InventoryChangeTrigger.java
++++ b/net/minecraft/advancements/critereon/InventoryChangeTrigger.java
+@@ -24,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_43150_, Inventory p_43151_, ItemStack p_43152_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         int i = 0;
+         int j = 0;
+         int k = 0;

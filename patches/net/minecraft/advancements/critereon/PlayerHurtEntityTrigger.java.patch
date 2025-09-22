@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/PlayerHurtEntityTrigger.java
++++ b/net/minecraft/advancements/critereon/PlayerHurtEntityTrigger.java
+@@ -18,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_60113_, Entity p_60114_, DamageSource p_60115_, float p_60116_, float p_60117_, boolean p_60118_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         LootContext lootcontext = EntityPredicate.createContext(p_60113_, p_60114_);
+         this.trigger(p_60113_, p_60126_ -> p_60126_.matches(p_60113_, lootcontext, p_60115_, p_60116_, p_60117_, p_60118_));
+     }

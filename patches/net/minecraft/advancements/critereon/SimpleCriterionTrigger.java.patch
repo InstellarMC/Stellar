@@ -1,6 +1,6 @@
 --- a/net/minecraft/advancements/critereon/SimpleCriterionTrigger.java
 +++ b/net/minecraft/advancements/critereon/SimpleCriterionTrigger.java
-@@ -15,41 +_,41 @@
+@@ -15,41 +_,42 @@
  import net.minecraft.world.level.storage.loot.LootContext;
  
  public abstract class SimpleCriterionTrigger<T extends SimpleCriterionTrigger.SimpleInstance> implements CriterionTrigger<T> {
@@ -33,6 +33,7 @@
      }
  
      protected void trigger(ServerPlayer p_66235_, Predicate<T> p_66236_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
          PlayerAdvancements playeradvancements = p_66235_.getAdvancements();
 -        Set<CriterionTrigger.Listener<T>> set = this.players.get(playeradvancements);
 +        Set<CriterionTrigger.Listener<T>> set = (Set) playeradvancements.criterionData.get(this); // Paper - fix AdvancementDataPlayer leak

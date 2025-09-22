@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/CuredZombieVillagerTrigger.java
++++ b/net/minecraft/advancements/critereon/CuredZombieVillagerTrigger.java
+@@ -18,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_24275_, Zombie p_24276_, Villager p_24277_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         LootContext lootcontext = EntityPredicate.createContext(p_24275_, p_24276_);
+         LootContext lootcontext1 = EntityPredicate.createContext(p_24275_, p_24277_);
+         this.trigger(p_24275_, p_24285_ -> p_24285_.matches(lootcontext, lootcontext1));

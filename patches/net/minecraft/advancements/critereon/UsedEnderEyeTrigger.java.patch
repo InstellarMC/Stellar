@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/UsedEnderEyeTrigger.java
++++ b/net/minecraft/advancements/critereon/UsedEnderEyeTrigger.java
+@@ -14,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_73936_, BlockPos p_73937_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         double d0 = p_73936_.getX() - (double)p_73937_.getX();
+         double d1 = p_73936_.getZ() - (double)p_73937_.getZ();
+         double d2 = d0 * d0 + d1 * d1;

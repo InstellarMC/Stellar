@@ -39,6 +39,8 @@ public final class GlobalConfiguration extends ConfigurationPart {
     public class Players extends ConfigurationPart {
 
         public boolean useAsyncPlayerDataSaving = false;
+        @Comment("Disables all criterion triggers. Advancements will still be possible to obtain, but only through commands.")
+        public boolean disableCriterionTrigger = false;
         @PostProcess
         private void postProcess() {
             if (this.useAsyncPlayerDataSaving) {
