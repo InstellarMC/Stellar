@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/level/levelgen/SurfaceSystem.java
++++ b/net/minecraft/world/level/levelgen/SurfaceSystem.java
+@@ -322,7 +_,7 @@
+     }
+ 
+     protected BlockState getBand(int p_189931_, int p_189932_, int p_189933_) {
+-        int i = (int)Math.round(this.clayBandsOffsetNoise.getValue((double)p_189931_, 0.0, (double)p_189933_) * 4.0);
++        int i = (int)net.gensokyoreimagined.nitori.common.math.FasterMathUtil.round(this.clayBandsOffsetNoise.getValue((double)p_189931_, 0.0, (double)p_189933_) * 4.0); // Stellar - Nitori: FasterMathUtil
+         return this.clayBands[(p_189932_ + i + this.clayBands.length) % this.clayBands.length];
+     }
+ }

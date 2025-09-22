@@ -984,7 +984,7 @@
          } else {
              super.travel(p_36359_);
          }
-@@ -1503,7 +_,8 @@
+@@ -1503,11 +_,12 @@
  
      @Override
      public boolean causeFallDamage(float p_150093_, float p_150094_, DamageSource p_150095_) {
@@ -994,6 +994,11 @@
              return false;
          } else {
              if (p_150093_ >= 2.0F) {
+-                this.awardStat(Stats.FALL_ONE_CM, (int)Math.round((double)p_150093_ * 100.0));
++                this.awardStat(Stats.FALL_ONE_CM, (int)net.gensokyoreimagined.nitori.common.math.FasterMathUtil.round((double)p_150093_ * 100.0)); // Stellar - Nitori: FasterMathUtil
+             }
+ 
+             boolean flag;
 @@ -1535,7 +_,7 @@
      public boolean tryToStartFallFlying() {
          if (!this.onGround() && !this.isFallFlying() && !this.isInWater() && !this.hasEffect(MobEffects.LEVITATION)) {

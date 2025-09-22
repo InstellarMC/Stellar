@@ -72,8 +72,8 @@
 +                    final int sizeZ = 1 << bitsZ;
 +                    final BitSetDiscreteVoxelShape shape = BitSetDiscreteVoxelShape.withFilledBounds(
 +                            sizeX, sizeY, sizeZ,
-+                            (int)Math.round(p_166050_ * (double)sizeX), (int)Math.round(p_166051_ * (double)sizeY), (int)Math.round(p_166052_ * (double)sizeZ),
-+                            (int)Math.round(p_166053_ * (double)sizeX), (int)Math.round(p_166054_ * (double)sizeY), (int)Math.round(p_166055_ * (double)sizeZ)
++                            (int)net.gensokyoreimagined.nitori.common.math.FasterMathUtil.round(p_166050_ * (double)sizeX), (int)net.gensokyoreimagined.nitori.common.math.FasterMathUtil.round(p_166051_ * (double)sizeY), (int)net.gensokyoreimagined.nitori.common.math.FasterMathUtil.round(p_166052_ * (double)sizeZ), // Stellar - Nitori: FasterMathUtil
++                            (int)net.gensokyoreimagined.nitori.common.math.FasterMathUtil.round(p_166053_ * (double)sizeX), (int)net.gensokyoreimagined.nitori.common.math.FasterMathUtil.round(p_166054_ * (double)sizeY), (int)net.gensokyoreimagined.nitori.common.math.FasterMathUtil.round(p_166055_ * (double)sizeZ) // Stellar - Nitori: FasterMathUtil
 +                    );
 +                    return new ArrayVoxelShape(
 +                            shape,
