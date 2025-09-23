@@ -88,7 +88,7 @@ public class PaperDatapack implements Datapack {
         } else {
             enabledPacks.remove(packToChange);
         }
-        server.reloadResourcesPaper(enabledPacks.stream().map(Pack::getId).toList(), ServerResourcesReloadedEvent.Cause.PLUGIN);
+        server.reloadResources(enabledPacks.stream().map(Pack::getId).toList(), ServerResourcesReloadedEvent.Cause.PLUGIN);
     }
 
     @Override
