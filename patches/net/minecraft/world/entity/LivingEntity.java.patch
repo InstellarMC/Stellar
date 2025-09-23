@@ -1363,7 +1363,7 @@
      public Optional<BlockPos> getLastClimbablePos() {
          return this.lastClimbablePos;
      }
-@@ -1521,15 +_,9 @@
+@@ -1521,17 +_,22 @@
          } else {
              BlockPos blockpos = this.blockPosition();
              BlockState blockstate = this.getInBlockState();
@@ -1376,12 +1376,27 @@
 -            } else {
 -                return false;
 -            }
+-        }
+-    }
 +            Optional<BlockPos> ladderPos = net.neoforged.neoforge.common.CommonHooks.isLivingOnLadder(blockstate, level(), blockpos, this);
 +            if (ladderPos.isPresent()) this.lastClimbablePos = ladderPos;
 +            return ladderPos.isPresent();
-         }
-     }
++        }
++    }
++    // Pufferfish start
++    private boolean cachedOnClimable = false;
++    private BlockPos lastClimbingPosition = null;
++    public boolean onClimbableCached() {
++        if (!this.blockPosition().equals(this.lastClimbingPosition)) {
++            this.cachedOnClimable = this.onClimbable();
++            this.lastClimbingPosition = this.blockPosition();
++        }
++        return this.cachedOnClimable;
++    }
++    // Pufferfish end
  
+     private boolean trapdoorUsableAsLadder(BlockPos p_21177_, BlockState p_21178_) {
+         if (!p_21178_.getValue(TrapDoorBlock.OPEN)) {
 @@ -1544,7 +_,7 @@
  
      @Override

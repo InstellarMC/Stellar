@@ -239,7 +239,7 @@ public final class ActivationRange {
         }
         // special cases.
         if (entity instanceof final LivingEntity living) {
-            if (living.onClimbable() || living.jumping || living.hurtTime > 0 || !living.activeEffects.isEmpty() || living.isFreezing()) {
+            if (living.onClimbableCached() || living.jumping || living.hurtTime > 0 || !living.activeEffects.isEmpty() || living.isFreezing()) { // Pufferfish - Use Cached
                 return 1;
             }
             if (entity instanceof final Mob mob && mob.getTarget() != null) {
