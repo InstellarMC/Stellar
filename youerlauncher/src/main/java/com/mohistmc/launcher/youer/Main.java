@@ -50,6 +50,7 @@ public class Main {
     }
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("org.jline.terminal.disableDeprecatedProviderWarning", "true");
         mainArgs.addAll(List.of(args));
         DataParser.parseVersions();
         DataParser.parseLaunchArgs();

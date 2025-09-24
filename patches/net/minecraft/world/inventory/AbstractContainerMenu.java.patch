@@ -48,7 +48,7 @@
  import org.slf4j.Logger;
  
  public abstract class AbstractContainerMenu {
-@@ -45,22 +_,74 @@
+@@ -45,22 +_,92 @@
      public static final int CARRIED_SLOT_SIZE = Integer.MAX_VALUE;
      public NonNullList<ItemStack> lastSlots = NonNullList.create();
      public NonNullList<Slot> slots = NonNullList.create();
@@ -75,22 +75,40 @@
      private boolean suppressRemoteUpdates;
 +    @Nullable protected ItemStack activeQuickItem = null; // Purpur - Anvil API
 +
-+    // CraftBukkit start
-+    public boolean checkReachable = true;
-+    // Youer start
-+    public InventoryView bukkitView ;
-+    public Player containerOwner = null;
++    // Stellar start - Support for modded inventories
++    public @Nullable InventoryView bukkitView ;
++    public @Nullable Player containerOwner = null;
 +
-+    public InventoryView getBukkitView(){
++    public InventoryView getBukkitView() {
 +        if (bukkitView == null && containerOwner != null) {
 +            org.bukkit.inventory.Inventory view = new CraftInventory(new YouerModsInventory(this, containerOwner));
 +            bukkitView = new CraftInventoryView<>(containerOwner.getBukkitEntity(), view, this);
 +        }
 +        return bukkitView;
 +    }
-+
++    public InventoryView getBukkitView(AbstractContainerMenu other) {
++        if (other.bukkitView == null && other.containerOwner != null) {
++            org.bukkit.inventory.Inventory view = new CraftInventory(new YouerModsInventory(other, containerOwner));
++            view.getType().setMods(true);
++            return new CraftInventoryView<>(other.containerOwner.getBukkitEntity(), view, other);
++        }
++        return other.bukkitView;
++    }
++    // Stellar end - Support for modded inventories
++    // CraftBukkit start
++    public boolean checkReachable = true;
 +    public void transferTo(AbstractContainerMenu other, CraftHumanEntity player) {
++        other.containerOwner = player.getHandle(); // Stellar - Handle null
++        this.containerOwner = player.getHandle(); // Stellar - Handle null
 +        InventoryView source = this.getBukkitView(), destination = other.getBukkitView();
++        // Stellar start - Handle null
++        if (destination == null) destination = this.getBukkitView(other);
++        if (source == null) {
++            org.bukkit.inventory.Inventory view = new CraftInventory(new YouerModsInventory(other, containerOwner));
++            view.getType().setMods(true);
++            source = new CraftInventoryView<>(other.containerOwner.getBukkitEntity(), view, other);
++        }
++        // Stellar end - Handle null
 +        ((CraftInventory) source.getTopInventory()).getInventory().onClose(player);
 +        ((CraftInventory) source.getBottomInventory()).getInventory().onClose(player);
 +        ((CraftInventory) destination.getTopInventory()).getInventory().onOpen(player);
