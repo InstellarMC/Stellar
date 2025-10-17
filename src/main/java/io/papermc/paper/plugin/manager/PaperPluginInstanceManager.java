@@ -305,8 +305,10 @@ class PaperPluginInstanceManager {
         }
 
         try {
-            for (World world : this.server.getWorlds()) {
-                world.removePluginChunkTickets(plugin);
+            if (!this.server.isStopping()) {
+                for (World world : this.server.getWorlds()) {
+                    world.removePluginChunkTickets(plugin);
+                }
             }
         } catch (Throwable ex) {
             this.handlePluginException(I18n.as("paperplugininstancemanager.20", pluginName), ex, plugin); // Paper
