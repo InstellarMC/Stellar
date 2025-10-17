@@ -183,7 +183,7 @@
  
              Path path = optionset.valueOf(optionspec14);
              if (path != null) {
-@@ -101,28 +_,40 @@
+@@ -101,36 +_,49 @@
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
@@ -230,9 +230,11 @@
 +                return;
 +            }
              LevelStorageSource levelstoragesource = LevelStorageSource.createDefault(file1.toPath());
-             LevelStorageSource.LevelStorageAccess levelstoragesource$levelstorageaccess = levelstoragesource.validateAndCreateAccess(s);
+-            LevelStorageSource.LevelStorageAccess levelstoragesource$levelstorageaccess = levelstoragesource.validateAndCreateAccess(s);
++            LevelStorageSource.LevelStorageAccess levelstoragesource$levelstorageaccess = levelstoragesource.validateAndCreateAccess(s, LevelStem.OVERWORLD);
              Dynamic<?> dynamic;
-@@ -131,6 +_,7 @@
+             if (levelstoragesource$levelstorageaccess.hasWorldData()) {
+                 LevelSummary levelsummary;
                  try {
                      dynamic = levelstoragesource$levelstorageaccess.getDataTag();
                      levelsummary = levelstoragesource$levelstorageaccess.getSummary(dynamic);

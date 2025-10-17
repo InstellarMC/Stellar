@@ -12,7 +12,7 @@ High tuned Pixelmon server implementing Paper/Purpur based on Neoforge
       <img alt="GitHub Stars" src="https://img.shields.io/github/stars/MohistMC/Youer?logo=github&color=181717&style=flat-square">
     </a>
     <a href="https://neoforged.net/">
-      <img alt="NeoForge" src="https://img.shields.io/badge/NeoForge-21.1.209-FF8B00?style=flat-square">
+      <img alt="NeoForge" src="https://img.shields.io/badge/NeoForge-21.1.211-FF8B00?style=flat-square">
     </a>
     <a href="https://www.azul.com/downloads/?version=java-21-lts#zulu">
       <img alt="JDK" src="https://img.shields.io/badge/JDK-21.0.8-007396?logo=java&logoColor=white&style=flat-square">
@@ -36,7 +36,7 @@ High tuned Pixelmon server implementing Paper/Purpur based on Neoforge
 ## 📊 Progress Status
 
 ✅ **Core Integration**
-- [x] NeoForge ([3b7413647](https://github.com/neoforged/NeoForge/commit/3b7413647))
+- [x] NeoForge ([a9a8f46c0](https://github.com/neoforged/NeoForge/commit/a9a8f46c0))
 - [x] Bukkit API ([69fa4695](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit/commits/69fa4695))
 - [x] CraftBukkit ([19bf84656](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/commits/19bf84656))
 - [x] Spigot ([a759b629](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/commits/a759b629))
@@ -45,7 +45,7 @@ High tuned Pixelmon server implementing Paper/Purpur based on Neoforge
 - [x] Paper ([3cb8529bd](https://github.com/PaperMC/Paper-archive/commit/3cb8529bd))
   - [x] api (16)
   - [x] server (225)
-- [x] PurPur ([803bf624](https://github.com/PurpurMC/Purpur/commit/803bf624))
+- [x] Purpur ([803bf624](https://github.com/PurpurMC/Purpur/commit/803bf624))
   - [x] api
   - [x] server (276)
 

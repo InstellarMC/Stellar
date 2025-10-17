@@ -1351,7 +1351,7 @@
 +
 +        // CraftBukkit start // Stellar start - bullyshit youer makes me do this, move down correctly
 +        ServerLevel worldserver1 = this;
-+        if (worldserver1.getWorld().isBukkit() && worldserver1 != this.server.overworld()) {
++        if (worldserver1/*.getWorld().isBukkit() && worldserver1*/ != this.server.overworld()) {
 +            this.K.setWorldBorder(worldserver1.getWorldBorder().createSettings());
 +            this.K.setCustomBossEvents(this.server.getCustomBossEvents().save(this.registryAccess()));
 +            this.convertable.saveDataTag(this.server.registryAccess(), this.K, this.server.getPlayerList().getSingleplayerData());

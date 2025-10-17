@@ -54,16 +54,12 @@
      public static record LevelCandidates(List<LevelStorageSource.LevelDirectory> levels) implements Iterable<LevelStorageSource.LevelDirectory> {
          public boolean isEmpty() {
              return this.levels.isEmpty();
-@@ -410,12 +_,30 @@
+@@ -410,8 +_,19 @@
          public final LevelStorageSource.LevelDirectory levelDirectory;
          private final String levelId;
          private final Map<LevelResource, Path> resources = Maps.newHashMap();
 -
 -        LevelStorageAccess(String p_289967_, Path p_289988_) throws IOException {
--            this.levelId = p_289967_;
--            this.levelDirectory = new LevelStorageSource.LevelDirectory(p_289988_);
--            this.lock = DirectoryLock.create(p_289988_);
--        }
 +        // CraftBukkit start
 +        public ResourceKey<LevelStem> dimensionType;
 +
@@ -77,20 +73,9 @@
 +        public LevelStorageAccess(String p_289967_, Path p_289988_, final ResourceKey<LevelStem> dimensionType) throws IOException {
 +            this.dimensionType = dimensionType;
 +            // CraftBukkit end
-+            this.levelId = p_289967_;
-+            this.levelDirectory = new LevelStorageSource.LevelDirectory(p_289988_);
-+            this.lock = DirectoryLock.create(p_289988_);
-+        }
-+
-+        // Youer start
-+        public LevelStorageAccess setTypeKey(ResourceKey<LevelStem> dimensionType) {
-+            this.dimensionType = dimensionType;
-+            return this;
-+        }
-+        // Youer end
- 
-         public long estimateDiskSpace() {
-             try {
+             this.levelId = p_289967_;
+             this.levelDirectory = new LevelStorageSource.LevelDirectory(p_289988_);
+             this.lock = DirectoryLock.create(p_289988_);
 @@ -454,7 +_,7 @@
          }
  

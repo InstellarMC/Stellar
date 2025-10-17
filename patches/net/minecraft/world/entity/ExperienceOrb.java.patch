@@ -222,22 +222,24 @@
              }
  
              return true;
-@@ -212,7 +_,7 @@
+@@ -212,43 +_,58 @@
      public void addAdditionalSaveData(CompoundTag p_20796_) {
          p_20796_.putShort("Health", (short)this.health);
          p_20796_.putShort("Age", (short)this.age);
 -        p_20796_.putShort("Value", (short)this.value);
 +        p_20796_.putInt("Value", this.value);  // Paper - save as Integer
          p_20796_.putInt("Count", this.count);
++        this.savePaperNBT(p_20796_); // Paper
      }
  
-@@ -220,35 +_,48 @@
+     @Override
      public void readAdditionalSaveData(CompoundTag p_20788_) {
          this.health = p_20788_.getShort("Health");
          this.age = p_20788_.getShort("Age");
 -        this.value = p_20788_.getShort("Value");
 +        this.value = p_20788_.getInt("Value"); // Paper - load as Integer
          this.count = Math.max(p_20788_.getInt("Count"), 1);
++        this.loadPaperNBT(p_20788_); // Paper
      }
  
      @Override

@@ -53,7 +53,7 @@
  
          this.level().broadcastEntityEvent(this, (byte)18);
      }
-@@ -201,26 +_,62 @@
+@@ -201,26 +_,66 @@
  
      public void spawnChildFromBreeding(ServerLevel p_27564_, Animal p_27565_) {
          AgeableMob ageablemob = this.getBreedOffspring(p_27564_, p_27565_);
@@ -90,16 +90,22 @@
      }
  
      public void finalizeSpawnChildFromBreeding(ServerLevel p_277963_, Animal p_277357_, @Nullable AgeableMob p_277516_) {
+-        Optional.ofNullable(this.getLoveCause()).or(() -> Optional.ofNullable(p_277357_.getLoveCause())).ifPresent(p_277486_ -> {
 +        // CraftBukkit start
 +        this.finalizeSpawnChildFromBreeding(p_277963_, p_277357_, p_277516_, this.getRandom().nextInt(7) + 1);
 +    }
 +
 +    public void finalizeSpawnChildFromBreeding(ServerLevel p_277963_, Animal p_277357_, @Nullable AgeableMob p_277516_, int experience) {
 +        // CraftBukkit end
-         Optional.ofNullable(this.getLoveCause()).or(() -> Optional.ofNullable(p_277357_.getLoveCause())).ifPresent(p_277486_ -> {
++        // Paper start
++        ServerPlayer p_277486_ = this.getLoveCause();
++        if (p_277486_ == null) p_277486_ = p_277357_.getLoveCause();
++        if (p_277486_ != null) {
++        // Paper end
              p_277486_.awardStat(Stats.ANIMALS_BRED);
              CriteriaTriggers.BRED_ANIMALS.trigger(p_277486_, this, p_277357_, p_277516_);
-         });
+-        });
++        } // Paper
 +        // Purpur start
 +        this.setAge(this.getPurpurBreedTime());
 +        p_277357_.setAge(p_277357_.getPurpurBreedTime());
@@ -113,7 +119,7 @@
 -            p_277963_.addFreshEntity(new ExperienceOrb(p_277963_, this.getX(), this.getY(), this.getZ(), this.getRandom().nextInt(7) + 1));
 +            // CraftBukkit start - use event experience
 +            if (experience > 0) {
-+                p_277963_.addFreshEntity(new ExperienceOrb(p_277963_, this.getX(), this.getY(), this.getZ(), experience));
++                p_277963_.addFreshEntity(new ExperienceOrb(p_277963_, this.getX(), this.getY(), this.getZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, p_277486_, p_277516_)); // Paper
 +            }
 +            // CraftBukkit end
          }

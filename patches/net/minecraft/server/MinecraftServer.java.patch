@@ -695,7 +695,7 @@
          if (!serverleveldata.isInitialized()) {
              try {
                  setInitialSpawn(serverlevel, serverleveldata, worldoptions.generateBonusChest(), flag);
-@@ -405,6 +_,18 @@
+@@ -405,10 +_,28 @@
              if (resourcekey != LevelStem.OVERWORLD) {
                  ResourceKey<Level> resourcekey1 = ResourceKey.create(Registries.DIMENSION, resourcekey.location());
                  DerivedLevelData derivedleveldata = new DerivedLevelData(this.worldData, serverleveldata);
@@ -711,9 +711,20 @@
 +                }
 +                NeoForgeInjectBukkit.addEnumEnvironment(this.registryAccess().registryOrThrow(Registries.LEVEL_STEM));
 +                Level.craftWorldData(NeoForgeInjectBukkit.environment.get(resourcekey), this.server.getGenerator(name), this.server.getBiomeProvider(name));
++                LevelStorageSource.LevelStorageAccess worldSession;
++                try {
++                    worldSession = LevelStorageSource.createDefault(this.server.getWorldContainer().toPath()).validateAndCreateAccess(name, resourcekey);
++                } catch (IOException |  net.minecraft.world.level.validation.ContentValidationException ex) {
++                    worldSession = this.storageSource;
++                }
                  ServerLevel serverlevel1 = new ServerLevel(
                      this,
                      this.executor,
+-                    this.storageSource,
++                    worldSession,
+                     derivedleveldata,
+                     resourcekey1,
+                     entry.getValue(),
 @@ -419,12 +_,45 @@
                      false,
                      randomsequences
@@ -919,7 +930,7 @@
              flag = true;
          }
  
-+        /*
++        /* Stellar start - TODO: figure out if we need this block
          ServerLevel serverlevel2 = this.overworld();
          ServerLevelData serverleveldata = this.worldData.overworldData();
 -        serverleveldata.setWorldBorder(serverlevel2.getWorldBorder().createSettings());
@@ -936,7 +947,7 @@
 +            }
 +        }
 +        // CraftBukkit end
-+        */
++        */// Stellar end - TODO: figure out if we need this block
 +        if (flush) {
              for (ServerLevel serverlevel1 : this.getAllLevels()) {
 -                LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", serverlevel1.getChunkSource().chunkMap.getStorageName());
