@@ -355,7 +355,7 @@ dependencies {
     // Paper end - Use Velocity cipher
 
     // Spark
-    stellar("me.lucko:spark-paper:1.10.133-20250413.112336-1")
+    stellar("me.lucko:spark-paper:1.10.152")
     // Paper end
 
     // LibraryLoader start
