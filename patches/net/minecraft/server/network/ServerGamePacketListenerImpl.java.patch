@@ -1481,6 +1481,20 @@
                      } else {
                          Component component1 = Component.translatable("build.tooHigh", i - 1).withStyle(ChatFormatting.RED);
                          this.player.sendSystemMessage(component1, true);
+@@ -1120,13 +_,6 @@
+ 
+                     this.player.connection.send(new ClientboundBlockUpdatePacket(serverlevel, blockpos));
+                     this.player.connection.send(new ClientboundBlockUpdatePacket(serverlevel, blockpos.relative(direction)));
+-                } else {
+-                    LOGGER.warn(
+-                        "Rejecting UseItemOnPacket from {}: Location {} too far away from hit block {}.",
+-                        this.player.getGameProfile().getName(),
+-                        vec3,
+-                        blockpos
+-                    );
+                 }
+             }
+         }
 @@ -1135,6 +_,8 @@
      @Override
      public void handleUseItem(ServerboundUseItemPacket p_9932_) {
