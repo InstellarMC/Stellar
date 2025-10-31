@@ -24,8 +24,8 @@
          this.inCellY = p_209192_ - this.cellStartBlockY;
 -        this.interpolators.forEach(p_209238_ -> p_209238_.updateForY(p_209193_));
 +        // Stellar start - perf: micro optimization for interpolation iteration
-+        for (final Object interpolator : this.interpolators.elements()) {
-+            ((NoiseChunk.NoiseInterpolator) interpolator).updateForY(p_209193_);
++        for (final NoiseInterpolator interpolator : this.interpolators) {
++            interpolator.updateForY(p_209193_);
 +        }
 +        // Stellar end - perf: micro optimization for interpolation iteration
      }
@@ -34,8 +34,8 @@
          this.inCellX = p_209231_ - this.cellStartBlockX;
 -        this.interpolators.forEach(p_209229_ -> p_209229_.updateForX(p_209232_));
 +        // Stellar start - perf: micro optimization for interpolation iteration
-+        for (final Object interpolator : this.interpolators.elements()) {
-+            ((NoiseChunk.NoiseInterpolator) interpolator).updateForX(p_209232_);
++        for (final NoiseInterpolator interpolator : this.interpolators) {
++            interpolator.updateForX(p_209232_);
 +        }
 +        // Stellar end - perf: micro optimization for interpolation iteration
      }
@@ -45,8 +45,8 @@
          this.interpolationCounter++;
 -        this.interpolators.forEach(p_209188_ -> p_209188_.updateForZ(p_209243_));
 +        // Stellar start - perf: micro optimization for interpolation iteration
-+        for (final Object interpolator : this.interpolators.elements()) {
-+            ((NoiseChunk.NoiseInterpolator) interpolator).updateForZ(p_209243_);
++        for (final NoiseInterpolator interpolator : this.interpolators) {
++            interpolator.updateForZ(p_209243_);
 +        }
 +        // Stellar end - perf: micro optimization for interpolation iteration
      }
