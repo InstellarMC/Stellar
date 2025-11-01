@@ -54,7 +54,6 @@ public final class SkyStarLightEngine extends StarLightEngine {
 
     public SkyStarLightEngine() {
         super(true);
-        this.nullPropagationCheckCache = new boolean[WorldUtil.getTotalLightSections(world)];
     }
 
     @Override
