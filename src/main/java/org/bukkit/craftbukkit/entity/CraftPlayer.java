@@ -1720,6 +1720,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player, io.papermc.
     public void setPlayerTime(long time, boolean relative) {
         this.getHandle().timeOffset = time;
         this.getHandle().relativeTime = relative;
+
+        // Paper start - sends time update packet to client
+        if (this.getHandle().connection == null) {
+            return;
+        }
+
+        final long gameTime = this.getHandle().level().getGameTime();
+        final long dayTime = this.getHandle().getPlayerTime();
+        final boolean tickDayTime = this.getHandle().relativeTime && this.getHandle().level().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_DAYLIGHT);
+        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSetTimePacket(gameTime, dayTime, tickDayTime));
+        // Paper end - sends time update packet to client
     }
 
     @Override
