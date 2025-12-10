@@ -219,7 +219,7 @@
 +    public OptionSet options;
 +    public ConsoleCommandSender console;
 +    public static int currentTick; // Paper - improve tick loop
-+    public static final long startTimeMillis = System.currentTimeMillis();
++    public static final long startTimeMillis = System.currentTimeMillis(); // Purpur - Add uptime command
 +    public Queue<Runnable> processQueue = new ConcurrentLinkedQueue<Runnable>();
 +    public int autosavePeriod;
 +    // Paper - don't store the vanilla dispatcher
@@ -236,8 +236,8 @@
 +    public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
 +    public final dev.instellar.stellar.configuration.StellarConfigurations stellarConfigurations; // Stellar - add stellar configuration files
 +    public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
-+    public boolean lagging = false; // Purpur
-+    protected boolean upnp = false; // Purpur
++    public boolean lagging = false; // Purpur - Lagging threshold
++    protected boolean upnp = false; // Purpur - UPnP Port Forwarding
 +
 +    public volatile Thread shutdownThread; // Paper
 +    public volatile boolean abnormalExit = false; // Paper
@@ -986,7 +986,7 @@
          LOGGER.info("Stopping server");
 +        Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
 +        this.server.spark.disable(); // Paper - spark
-+        // Purpur start
++        // Purpur start - UPnP Port Forwarding
 +        if (upnp) {
 +            if (dev.omega24.upnp4j.UPnP4J.close(this.getPort(), dev.omega24.upnp4j.util.Protocol.TCP)) {
 +                LOGGER.info("[UPnP] Port {} closed", this.getPort());
@@ -994,7 +994,7 @@
 +                LOGGER.error("[UPnP] Failed to close port {}", this.getPort());
 +            }
 +        }
-+        // Purpur end
++        // Purpur end - UPnP Port Forwarding
 +        // CraftBukkit start
 +        if (this.server != null) {
 +            this.server.disablePlugins();
@@ -1076,7 +1076,7 @@
      }
  
      public String getLocalIp() {
-@@ -650,6 +_,15 @@
+@@ -650,6 +_,16 @@
      }
  
      public void halt(boolean p_129884_) {
@@ -1084,7 +1084,8 @@
 +        this.safeShutdown(p_129884_, false);
 +    }
 +    public void safeShutdown(boolean p_129884_, boolean isRestarting) {
-+        org.purpurmc.purpur.task.BossBarTask.stopAll(); // Purpur
++        org.purpurmc.purpur.task.BossBarTask.stopAll(); // Purpur - Implement TPSBar
++        org.purpurmc.purpur.task.BeehiveTask.instance().unregister(); // Purpur - Give bee counts in beehives to Purpur clients
 +        this.isRestarting = isRestarting;
 +        this.hasLoggedStop = true; // Paper - Debugging
 +        if (isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
@@ -1092,7 +1093,7 @@
          this.running = false;
          if (p_129884_) {
              try {
-@@ -660,16 +_,96 @@
+@@ -660,16 +_,105 @@
          }
      }
  
@@ -1186,6 +1187,15 @@
 +            long tickSection = Util.getNanos();
 +            long currentTime;
 +            // Paper end - further improve server tick loop
++            // Purpur start - config for startup commands
++            if (!Boolean.getBoolean("Purpur.IReallyDontWantStartupCommands") && !org.purpurmc.purpur.PurpurConfig.startupCommands.isEmpty()) {
++                LOGGER.info("Purpur: Running startup commands specified in purpur.yml.");
++                for (final String startupCommand : org.purpurmc.purpur.PurpurConfig.startupCommands) {
++                    LOGGER.info("Purpur: Running the following command: \"{}\"", startupCommand);
++                    ((net.minecraft.server.dedicated.DedicatedServer) this).handleConsoleInput(startupCommand, this.createCommandSourceStack());
++                }
++            }
++            // Purpur end - config for startup commands
              while (this.running) {
                  long i;
                  if (!this.isPaused() && this.tickRateManager.isSprinting() && this.tickRateManager.checkShouldSprintThisTick()) {
@@ -1217,7 +1227,7 @@
 +                    this.recentTps[1] = tps1.getAverage();
 +                    this.recentTps[2] = tps5.getAverage();
 +                    this.recentTps[3] = tps15.getAverage();
-+                    lagging = recentTps[0] < org.purpurmc.purpur.PurpurConfig.laggingThreshold; // Purpur
++                    lagging = recentTps[0] < org.purpurmc.purpur.PurpurConfig.laggingThreshold; // Purpur - Lagging threshold
 +                    tickSection = currentTime;
 +                }
 +                // Spigot end
@@ -1523,7 +1533,7 @@
 +            long worldTime = level.getGameTime();
 +            final ClientboundSetTimePacket worldPacket = new ClientboundSetTimePacket(worldTime, dayTime, doDaylight);
 +            for (Player entityhuman : level.players()) {
-+                if (!(entityhuman instanceof ServerPlayer) || (tickCount + entityhuman.getId()) % 20 != 0) {
++                if (!(entityhuman instanceof ServerPlayer) || (!level.isForceTime() && (tickCount + entityhuman.getId()) % 20 != 0)) {
 +                    continue;
 +                }
 +                ServerPlayer entityplayer = (ServerPlayer) entityhuman;
@@ -1640,7 +1650,7 @@
      @DontObfuscate
      public String getServerModName() {
 -        return "vanilla";
-+        return org.purpurmc.purpur.PurpurConfig.serverModName; // Paper // Purpur
++        return org.purpurmc.purpur.PurpurConfig.serverModName; // Paper // Purpur - Configurable server mod name
      }
  
      public SystemReport fillSystemReport(SystemReport p_177936_) {

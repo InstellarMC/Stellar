@@ -27,3 +27,11 @@
              p_221841_.setBlock(p_221842_, p_221840_.setValue(POWERED, Boolean.valueOf(true)), 2);
              p_221841_.scheduleTick(p_221842_, this, 2);
          }
+@@ -59,6 +_,7 @@
+     @Override
+     protected BlockState updateShape(BlockState p_55118_, Direction p_55119_, BlockState p_55120_, LevelAccessor p_55121_, BlockPos p_55122_, BlockPos p_55123_) {
+         if (p_55118_.getValue(FACING) == p_55119_ && !p_55118_.getValue(POWERED)) {
++            if (!(p_55121_.getWorldBorder().world != null && p_55121_.getWorldBorder().world.purpurConfig.disableObserverClocks) || !(p_55120_.getBlock() instanceof ObserverBlock) || p_55120_.getValue(ObserverBlock.FACING).getOpposite() != p_55119_) // Purpur - Add Option for disable observer clocks
+             this.startSignal(p_55121_, p_55122_);
+         }
+ 

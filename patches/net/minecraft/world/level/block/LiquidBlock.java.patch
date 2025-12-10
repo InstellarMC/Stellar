@@ -16,7 +16,7 @@
  
  public class LiquidBlock extends Block implements BucketPickup {
      private static final Codec<FlowingFluid> FLOWING_FLUID = BuiltInRegistries.FLUID
-@@ -134,10 +_,29 @@
+@@ -134,14 +_,33 @@
  
      @Override
      protected void onPlace(BlockState p_54754_, Level p_54755_, BlockPos p_54756_, BlockState p_54757_, boolean p_54758_) {
@@ -24,7 +24,7 @@
 -            p_54755_.scheduleTick(p_54756_, p_54754_.getFluidState().getType(), this.fluid.getTickDelay(p_54755_));
 -        }
 -    }
-+        if (!net.neoforged.neoforge.fluids.FluidInteractionRegistry.canInteract(p_54755_, p_54756_)) {
++        if (p_54755_.purpurConfig.tickFluids && !net.neoforged.neoforge.fluids.FluidInteractionRegistry.canInteract(p_54755_, p_54756_)) { // Purpur - Tick fluids config
 +            p_54755_.scheduleTick(p_54756_, p_54754_.getFluidState().getType(), this.getFlowSpeed(p_54755_, p_54756_)); // Paper - Configurable speed for water flowing over lava
 +        }
 +    }
@@ -50,13 +50,18 @@
  
      @Override
      protected BlockState updateShape(BlockState p_54723_, Direction p_54724_, BlockState p_54725_, LevelAccessor p_54726_, BlockPos p_54727_, BlockPos p_54728_) {
+-        if (p_54723_.getFluidState().isSource() || p_54725_.getFluidState().isSource()) {
++        if ((p_54726_.getWorldBorder().world == null || p_54726_.getWorldBorder().world.purpurConfig.tickFluids) && p_54723_.getFluidState().isSource() || p_54725_.getFluidState().isSource()) { // Purpur - Tick fluids config
+             p_54726_.scheduleTick(p_54727_, p_54723_.getFluidState().getType(), this.fluid.getTickDelay(p_54726_));
+         }
+ 
 @@ -150,11 +_,12 @@
  
      @Override
      protected void neighborChanged(BlockState p_54709_, Level p_54710_, BlockPos p_54711_, Block p_54712_, BlockPos p_54713_, boolean p_54714_) {
 -        if (this.shouldSpreadLiquid(p_54710_, p_54711_, p_54709_)) {
 -            p_54710_.scheduleTick(p_54711_, p_54709_.getFluidState().getType(), this.fluid.getTickDelay(p_54710_));
-+        if (!net.neoforged.neoforge.fluids.FluidInteractionRegistry.canInteract(p_54710_, p_54711_)) {
++        if (p_54710_.purpurConfig.tickFluids && !net.neoforged.neoforge.fluids.FluidInteractionRegistry.canInteract(p_54710_, p_54711_)) { // Purpur - Tick fluids config
 +            p_54710_.scheduleTick(p_54711_, p_54709_.getFluidState().getType(), this.getFlowSpeed(p_54710_, p_54711_)); // Paper - Configurable speed for water flowing over lava
          }
      }

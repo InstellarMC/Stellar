@@ -39,7 +39,7 @@
  
                      for (ServerPlayer serverplayer : p_121167_.getServer().getPlayerList().getPlayers()) {
 -                        if (predicate.test(serverplayer)) {
-+                        if (predicate.test(serverplayer) && canSee(p_121167_, serverplayer)) { // Purpur
++                        if (predicate.test(serverplayer) && canSee(p_121167_, serverplayer)) { // Purpur - Hide hidden players from entity selector
                              list.add(serverplayer);
                              if (list.size() >= i) {
                                  return list;

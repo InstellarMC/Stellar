@@ -153,11 +153,15 @@
          SpreadPlayersCommand.register(this.dispatcher);
          StopSoundCommand.register(this.dispatcher);
          SummonCommand.register(this.dispatcher, p_230944_);
-@@ -214,7 +_,7 @@
+@@ -214,7 +_,11 @@
              JfrCommand.register(this.dispatcher);
          }
  
 -        if (SharedConstants.IS_RUNNING_IN_IDE) {
++        if (org.purpurmc.purpur.PurpurConfig.registerMinecraftDisabledCommands) { // Purpur - register disabled minecraft commands
++            ChaseCommand.register(this.dispatcher);
++        }
++
 +        if (org.purpurmc.purpur.PurpurConfig.registerMinecraftDebugCommands || net.neoforged.neoforge.gametest.GameTestHooks.isGametestEnabled()) { // Purpur // Neo
              TestCommand.register(this.dispatcher);
              RaidCommand.register(this.dispatcher, p_230944_);
@@ -166,14 +170,14 @@
              StopCommand.register(this.dispatcher);
              TransferCommand.register(this.dispatcher);
              WhitelistCommand.register(this.dispatcher);
-+            org.purpurmc.purpur.command.CreditsCommand.register(this.dispatcher); // Purpur
-+            org.purpurmc.purpur.command.DemoCommand.register(this.dispatcher); // Purpur
-+            org.purpurmc.purpur.command.PingCommand.register(this.dispatcher); // Purpur
-+            org.purpurmc.purpur.command.UptimeCommand.register(this.dispatcher); // Purpur
-+            org.purpurmc.purpur.command.TPSBarCommand.register(this.dispatcher); // Purpur
-+            org.purpurmc.purpur.command.CompassCommand.register(this.dispatcher); // Purpur
-+            org.purpurmc.purpur.command.RamBarCommand.register(this.dispatcher); // Purpur
-+            org.purpurmc.purpur.command.RamCommand.register(this.dispatcher); // Purpur
++            org.purpurmc.purpur.command.CreditsCommand.register(this.dispatcher); // Purpur - Add credits command
++            org.purpurmc.purpur.command.DemoCommand.register(this.dispatcher); // Purpur - Add demo command
++            org.purpurmc.purpur.command.PingCommand.register(this.dispatcher); // Purpur - Add ping command
++            org.purpurmc.purpur.command.UptimeCommand.register(this.dispatcher); // Purpur - Add uptime command
++            org.purpurmc.purpur.command.TPSBarCommand.register(this.dispatcher); // Purpur - Implement TPSBar
++            org.purpurmc.purpur.command.CompassCommand.register(this.dispatcher); // Purpur - Add compass command
++            org.purpurmc.purpur.command.RamBarCommand.register(this.dispatcher); // Purpur - Add rambar command
++            org.purpurmc.purpur.command.RamCommand.register(this.dispatcher); // Purpur - Add ram command
 +            dev.instellar.stellar.command.brigadier.SetMaxPlayersCommand.register(this.dispatcher); // Stellar
          }
  
@@ -400,7 +404,7 @@
 +    private void runSync(ServerPlayer player, Collection<String> bukkit, RootCommandNode<SharedSuggestionProvider> rootcommandnode) {
 +        // Paper end - Perf: Async command map building
 +        new AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootcommandnode, true).callEvent(); // Paper - Brigadier API
-+        if (PlayerCommandSendEvent.getHandlerList().getRegisteredListeners().length > 0) { // Purpur - skip all this crap if there's nothing listening
++        if (PlayerCommandSendEvent.getHandlerList().getRegisteredListeners().length > 0) { // Purpur - Skip events if there's no listeners
 +        PlayerCommandSendEvent event = new PlayerCommandSendEvent(player.getBukkitEntity(), new LinkedHashSet<>(bukkit));
 +        event.getPlayer().getServer().getPluginManager().callEvent(event);
 +
@@ -411,7 +415,7 @@
 +            }
 +        }
 +        // CraftBukkit end
-+        } // Purpur - skip event
++        } // Purpur - Skip events if there's no listeners
 +        player.connection.send(new ClientboundCommandsPacket(rootcommandnode));
      }
  

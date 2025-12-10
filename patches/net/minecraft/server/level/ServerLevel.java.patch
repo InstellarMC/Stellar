@@ -170,7 +170,7 @@
      private final GameEventDispatcher gameEventDispatcher;
      public boolean noSave;
      private final SleepStatus sleepStatus;
-@@ -199,86 +_,458 @@
+@@ -199,86 +_,460 @@
      private final List<CustomSpawner> customSpawners;
      @Nullable
      private EndDragonFight dragonFight;
@@ -179,6 +179,8 @@
      private final StructureManager structureManager;
      private final StructureCheck structureCheck;
      private final boolean tickTime;
++    private double preciseTime; // Purpur - Configurable daylight cycle
++    private boolean forceTime; // Purpur - Configurable daylight cycle
      private final RandomSequences randomSequences;
  
 +    public PrimaryLevelData K;
@@ -684,7 +686,7 @@
          } else {
              this.dragonFight = null;
          }
-@@ -296,10 +_,87 @@
+@@ -296,10 +_,88 @@
          this.sleepStatus = new SleepStatus();
          this.gameEventDispatcher = new GameEventDispatcher(this);
          this.randomSequences = Objects.requireNonNullElseGet(
@@ -717,6 +719,7 @@
 +
 +        this.world = new CraftWorld(this, generator, biomeProvider, environment);
 +        this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
++        this.preciseTime = this.serverLevelData.getDayTime(); // Purpur - Configurable daylight cycle
 +        this.K.setWorld(this);
 +        // CraftBukkit start
 +        getWorldBorder().world = this;
@@ -792,7 +795,7 @@
  
          int i = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
 -        if (this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
-+        if (this.purpurConfig.playersSkipNight && this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
++        if (this.purpurConfig.playersSkipNight && this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) { // Purpur - Config for skipping night
 +            // CraftBukkit start
 +            long j = this.levelData.getDayTime() + 24000L;
 +            TimeSkipEvent event = new TimeSkipEvent(this.getWorld(), TimeSkipEvent.SkipReason.NIGHT_SKIP, net.neoforged.neoforge.event.EventHooks.onSleepFinished(this, j - j % 24000L, this.getDayTime()) - this.getDayTime());
@@ -902,15 +905,39 @@
      }
  
      protected void tickTime() {
-@@ -438,7 +_,7 @@
+@@ -438,13 +_,31 @@
              this.serverLevelData.setGameTime(i);
              this.serverLevelData.getScheduledEvents().tick(this.server, i);
              if (this.levelData.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
 -                this.setDayTime(this.levelData.getDayTime() + 1L);
++                // Purpur start - Configurable daylight cycle
++                int incrementTicks = isDay() ? this.purpurConfig.daytimeTicks : this.purpurConfig.nighttimeTicks;
++                if (incrementTicks != 12000) {
++                    this.preciseTime += 12000 / (double) incrementTicks;
++                    this.setDayTime(this.preciseTime);
++                } else
++                    // Purpur end - Configurable daylight cycle
 +                this.setDayTime(this.levelData.getDayTime() + advanceDaytime());
              }
          }
      }
+ 
+     public void setDayTime(long p_8616_) {
+         this.serverLevelData.setDayTime(p_8616_);
++        // Purpur start - Configurable daylight cycle
++        this.preciseTime = p_8616_;
++        this.forceTime = false;
++    }
++    public void setDayTime(double i) {
++        this.serverLevelData.setDayTime((long) i);
++        this.forceTime = true;
++    }
++    public boolean isForceTime() {
++        return this.forceTime;
++        // Purpur end - Configurable daylight cycle
+     }
+ 
+     public void tickCustomSpawners(boolean p_8800_, boolean p_8801_) {
 @@ -464,27 +_,92 @@
          this.players.stream().filter(LivingEntity::isSleeping).collect(Collectors.toList()).forEach(p_184116_ -> p_184116_.stopSleepInBed(false, false));
      }
@@ -1125,7 +1152,7 @@
                  }
              }
  
-@@ -570,7 +_,7 @@
+@@ -570,31 +_,37 @@
          }
      }
  
@@ -1134,7 +1161,12 @@
          Optional<BlockPos> optional = this.getPoiManager()
              .findClosest(
                  p_215059_ -> p_215059_.is(PoiTypes.LIGHTNING_ROD),
-@@ -582,19 +_,25 @@
+                 p_184055_ -> p_184055_.getY() == this.getHeight(Heightmap.Types.WORLD_SURFACE, p_184055_.getX(), p_184055_.getZ()) - 1,
+                 p_143249_,
+-                128,
++                org.purpurmc.purpur.PurpurConfig.lightningRodRange, // Purpur - Make lightning rod range configurable
+                 PoiManager.Occupancy.ANY
+             );
          return optional.map(p_184053_ -> p_184053_.above(1));
      }
  
@@ -1163,7 +1195,34 @@
                  if (blockpos.getY() == this.getMinBuildHeight() - 1) {
                      blockpos = blockpos.above(2);
                  }
-@@ -714,15 +_,19 @@
+@@ -618,8 +_,26 @@
+                 int i = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
+                 Component component;
+                 if (this.sleepStatus.areEnoughSleeping(i)) {
++                    // Purpur start - Customizable sleeping actionbar messages
++                    if (org.purpurmc.purpur.PurpurConfig.sleepSkippingNight.isBlank()) {
++                        return;
++                    }
++                    if (!org.purpurmc.purpur.PurpurConfig.sleepSkippingNight.equalsIgnoreCase("default")) {
++                        component = io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.sleepSkippingNight));
++                    } else
++                    // Purpur end - Customizable sleeping actionbar messages
+                     component = Component.translatable("sleep.skipping_night");
+                 } else {
++                    // Purpur start - Customizable sleeping actionbar messages
++                    if (org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent.isBlank()) {
++                        return;
++                    }
++                    if (!org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent.equalsIgnoreCase("default")) {
++                        component = io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent,
++                                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed("count", Integer.toString(this.sleepStatus.amountSleeping())),
++                                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed("total", Integer.toString(this.sleepStatus.sleepersNeeded(i)))));
++                    } else
++                    // Purpur end - Customizable sleeping actionbar messages
+                     component = Component.translatable("sleep.players_sleeping", this.sleepStatus.amountSleeping(), this.sleepStatus.sleepersNeeded(i));
+                 }
+ 
+@@ -714,24 +_,30 @@
                  .broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel), this.dimension());
          }
  
@@ -1187,6 +1246,19 @@
          }
      }
  
+     @VisibleForTesting
+     public void resetWeatherCycle() {
+         this.serverLevelData.setRainTime(0);
+-        this.serverLevelData.setRaining(false);
++        if (this.purpurConfig.rainStopsAfterSleep) // Purpur - Option for if rain and thunder should stop on sleep
++        this.serverLevelData.setRaining(false, org.bukkit.event.weather.WeatherChangeEvent.Cause.SLEEP); // Paper - Add cause to Weather/ThunderChangeEvents
+         this.serverLevelData.setThunderTime(0);
+-        this.serverLevelData.setThundering(false);
++        if (this.purpurConfig.thunderStopsAfterSleep) // Purpur - Option for if rain and thunder should stop on sleep
++        this.serverLevelData.setThundering(false, org.bukkit.event.weather.ThunderChangeEvent.Cause.SLEEP); // Paper - Add cause to Weather/ThunderChangeEvents
+     }
+ 
+     public void resetEmptyTime() {
 @@ -743,6 +_,11 @@
          if (fluidstate.is(p_184078_)) {
              fluidstate.tick(this, p_184077_);
@@ -2017,7 +2089,7 @@
 +            // Spigot Start
 +            if (p_143375_.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder && (!(p_143375_ instanceof ServerPlayer) || p_143375_.getRemovalReason() != Entity.RemovalReason.KILLED)) { // SPIGOT-6876: closeInventory clears death message
 +                // Paper start - Fix merchant inventory not closing on entity removal
-+                if (p_143375_.getBukkitEntity() instanceof org.bukkit.inventory.Merchant merchant && merchant.getTrader() != null) {
++                if (!p_143375_.level().purpurConfig.playerVoidTrading && p_143375_.getBukkitEntity() instanceof org.bukkit.inventory.Merchant merchant && merchant.getTrader() != null) { // Purpur - Allow void trading
 +                    merchant.getTrader().closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED);
 +                }
 +                // Paper end - Fix merchant inventory not closing on entity removal

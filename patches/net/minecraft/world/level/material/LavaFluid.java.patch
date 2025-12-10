@@ -87,7 +87,7 @@
      @Override
      public int getTickDelay(LevelReader p_76226_) {
 -        return p_76226_.dimensionType().ultraWarm() ? 10 : 30;
-+        return p_76226_.dimensionType().ultraWarm() ? YouerConfig.custom_lava_speed_nether : YouerConfig.custom_lava_speed_normal;
++        return p_76226_.getWorldBorder().world != null ? (p_76226_.dimensionType().ultraWarm() ? p_76226_.getWorldBorder().world.purpurConfig.lavaSpeedNether : p_76226_.getWorldBorder().world.purpurConfig.lavaSpeedNotNether) : (p_76226_.dimensionType().ultraWarm() ? 10 : 30); // Purpur - Make lava flow speed configurable
      }
  
      @Override

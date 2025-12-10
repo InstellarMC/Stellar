@@ -1396,7 +1396,7 @@ public class CraftEventFactory {
         // Paper end - Add titleOverride to InventoryOpenEvent
     }
 
-    @Deprecated // Paper - use method that acknowledges title overrides
+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - use method that acknowledges title overrides
     public static AbstractContainerMenu callInventoryOpenEvent(ServerPlayer player, AbstractContainerMenu container, boolean cancelled) {
         // Paper start - Add titleOverride to InventoryOpenEvent
         return callInventoryOpenEventWithTitle(player, container, cancelled).getSecond();

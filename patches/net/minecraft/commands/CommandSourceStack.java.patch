@@ -100,7 +100,7 @@
 +        // Paper end - Fix permission levels for command blocks
 +    }
 +
-+    // Purpur start
++    // Purpur start - Gamemode extra permissions
 +    public boolean testPermission(int i, String bukkitPermission) {
 +        if (hasPermission(i, bukkitPermission)) {
 +            return true;
@@ -111,7 +111,7 @@
 +        }
 +        return false;
 +    }
-+    // Purpur end
++    // Purpur end - Gamemode extra permissions
 +
      public Vec3 getPosition() {
          return this.worldPosition;

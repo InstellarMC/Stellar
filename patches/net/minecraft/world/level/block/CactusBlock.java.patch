@@ -44,7 +44,14 @@
                  }
              }
          }
-@@ -99,12 +_,15 @@
+@@ -93,18 +_,21 @@
+     protected boolean canSurvive(BlockState p_51153_, LevelReader p_51154_, BlockPos p_51155_) {
+         for (Direction direction : Direction.Plane.HORIZONTAL) {
+             BlockState blockstate = p_51154_.getBlockState(p_51155_.relative(direction));
+-            if (blockstate.isSolid() || p_51154_.getFluidState(p_51155_.relative(direction)).is(FluidTags.LAVA)) {
++            if ((p_51154_.getWorldBorder().world == null || p_51154_.getWorldBorder().world.purpurConfig.cactusBreaksFromSolidNeighbors) && blockstate.isSolid() || p_51154_.getFluidState(p_51155_.relative(direction)).is(FluidTags.LAVA)) { // Purpur - Cactus breaks from solid neighbors config
+                 return false;
+             }
          }
  
          BlockState blockstate1 = p_51154_.getBlockState(p_51155_.below());

@@ -97,7 +97,7 @@
      private boolean doWhiteList;
      private final LayeredRegistryAccess<RegistryLayer> registries;
      public int maxPlayers;
-@@ -128,15 +_,65 @@
+@@ -128,15 +_,72 @@
      private boolean allowCommandsForAllPlayers;
      private static final boolean ALLOW_LOGOUTIVATOR = false;
      private int sendAllPlayerInfoIn;
@@ -137,6 +137,7 @@
 +        // Stellar start - async player join
 +        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.asyncPlayerJoin) {
 +            java.util.concurrent.CompletableFuture.supplyAsync(() -> this.load(p_11263_), PLAYER_IO_POOL)
++                    .orTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
 +            .exceptionallyAsync(e -> {
 +                LOGGER.error("Failed to load player data for {}", p_11263_.getGameProfile().getName(), e);
 +                p_11262_.disconnect(DISCONNECT_REASON_CONNECT_FAILED);
@@ -149,7 +150,13 @@
 +                }
 +
 +                placeNewPlayer(p_11262_, p_11263_, p_301988_, optional);
-+            }, this.server);
++            }, this.server)
++                    .orTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
++                    .exceptionallyAsync(e -> {
++                        LOGGER.error("Failed to place player {} into the world", p_11263_.getGameProfile().getName(), e);
++                        p_11262_.disconnect(DISCONNECT_REASON_SERVER_CLOSED);
++                        return null;
++                    }, this.server);
 +        } else {
 +            placeNewPlayer(p_11262_, p_11263_, p_301988_, this.load(p_11263_));
 +        }
@@ -157,7 +164,7 @@
 +
 +    @org.jetbrains.annotations.ApiStatus.Internal
 +    public void placeNewPlayer(Connection p_11262_, ServerPlayer p_11263_, CommonListenerCookie p_301988_, Optional<CompoundTag> optional1) {
-+        // Stellar start - async player join
++        // Stellar end - async player join
 +        p_11263_.isRealPlayer = true; // Paper
 +        p_11263_.loginTime = System.currentTimeMillis(); // Paper - Replace OfflinePlayer#getLastPlayed
          GameProfile gameprofile = p_11263_.getGameProfile();
