@@ -18,10 +18,12 @@
          this.setLootTable(p_335762_);
          this.setLootTableSeed(p_335967_);
      }
-@@ -51,13 +_,14 @@
+@@ -50,14 +_,15 @@
+ 
      default boolean tryLoadLootTable(CompoundTag p_309695_) {
          if (p_309695_.contains("LootTable", 8)) {
-             this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(p_309695_.getString("LootTable"))));
+-            this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(p_309695_.getString("LootTable"))));
++            this.setLootTable(net.minecraft.Optionull.map(ResourceLocation.tryParse(p_309695_.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl))); // Paper - Validate ResourceLocation
 +            if (this.lootableData() != null && this.getLootTable() != null) this.lootableData().loadNbt(p_309695_); // Paper - LootTable API
              if (p_309695_.contains("LootTableSeed", 4)) {
                  this.setLootTableSeed(p_309695_.getLong("LootTableSeed"));
@@ -34,7 +36,7 @@
          } else {
              return false;
          }
-@@ -69,28 +_,46 @@
+@@ -69,28 +_,45 @@
              return false;
          } else {
              p_309634_.putString("LootTable", resourcekey.location().toString());
@@ -49,7 +51,6 @@
          }
      }
 -
-+    AtomicBoolean unpackLootTable$forceClearLootTable = new AtomicBoolean(false);
      default void unpackLootTable(@Nullable Player p_309628_) {
 +        // Paper start - LootTable API
 +        this.unpackLootTable(p_309628_, false);

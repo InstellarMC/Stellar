@@ -65,7 +65,7 @@
  
      public AnvilMenu(int p_39005_, Inventory p_39006_) {
          this(p_39005_, p_39006_, ContainerLevelAccess.NULL);
-@@ -70,7 +_,7 @@
+@@ -70,15 +_,22 @@
  
      @Override
      protected boolean mayPickup(Player p_39023_, boolean p_39024_) {
@@ -74,7 +74,13 @@
      }
  
      @Override
-@@ -79,6 +_,8 @@
+     protected void onTake(Player p_150474_, ItemStack p_150475_) {
++        // Purpur start - Anvil API
++        ItemStack itemstack = this.activeQuickItem != null ? this.activeQuickItem : p_150475_;
++        if (org.purpurmc.purpur.event.inventory.AnvilTakeResultEvent.getHandlerList().getRegisteredListeners().length > 0) new org.purpurmc.purpur.event.inventory.AnvilTakeResultEvent(player.getBukkitEntity(), getBukkitView(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)).callEvent();
++        // Purpur end - Anvil API
+         if (!p_150474_.getAbilities().instabuild) {
++            if (this.bypassCost) ((ServerPlayer) player).lastSentExp = -1; else // Purpur - Anvil API
              p_150474_.giveExperienceLevels(-this.cost.get());
          }
  
@@ -200,6 +206,61 @@
                          return;
                      }
                  }
+@@ -221,6 +_,54 @@
+                 if (!this.itemName.equals(itemstack.getHoverName().getString())) {
+                     k = 1;
+                     i += k;
++                    // Purpur start
++                    if (this.player != null) {
++                        org.bukkit.craftbukkit.entity.CraftHumanEntity player = this.player.getBukkitEntity();
++                        String name = this.itemName;
++                        boolean removeItalics = false;
++                        if (player.hasPermission("purpur.anvil.remove_italics")) {
++                            if (name.startsWith("&r")) {
++                                name = name.substring(2);
++                                removeItalics = true;
++                            } else if (name.startsWith("<r>")) {
++                                name = name.substring(3);
++                                removeItalics = true;
++                            } else if (name.startsWith("<reset>")) {
++                                name = name.substring(7);
++                                removeItalics = true;
++                            }
++                        }
++                        if (this.player.level().purpurConfig.anvilAllowColors) {
++                            if (player.hasPermission("purpur.anvil.color")) {
++                                java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?i)&([0-9a-fr])").matcher(name);
++                                while (matcher.find()) {
++                                    String match = matcher.group(1);
++                                    name = name.replace("&" + match, "\u00a7" + match.toLowerCase(java.util.Locale.ROOT));
++                                }
++                                //name = name.replaceAll("(?i)&([0-9a-fr])", "\u00a7$1");
++                            }
++                            if (player.hasPermission("purpur.anvil.format")) {
++                                java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?i)&([k-or])").matcher(name);
++                                while (matcher.find()) {
++                                    String match = matcher.group(1);
++                                    name = name.replace("&" + match, "\u00a7" + match.toLowerCase(java.util.Locale.ROOT));
++                                }
++                                //name = name.replaceAll("(?i)&([l-or])", "\u00a7$1");
++                            }
++                        }
++                        net.kyori.adventure.text.Component component;
++                        if (this.player.level().purpurConfig.anvilColorsUseMiniMessage && player.hasPermission("purpur.anvil.minimessage")) {
++                            component = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.bukkit.ChatColor.stripColor(name));
++                        } else {
++                            component = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(name);
++                        }
++                        if (removeItalics) {
++                            component = component.decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false);
++                        }
++                        itemstack1.set(DataComponents.CUSTOM_NAME, io.papermc.paper.adventure.PaperAdventure.asVanilla(component));
++                    }
++                    else
++                        // Purpur end
+                     itemstack1.set(DataComponents.CUSTOM_NAME, Component.literal(this.itemName));
+                 }
+             } else if (itemstack.has(DataComponents.CUSTOM_NAME)) {
 @@ -228,6 +_,7 @@
                  i += k;
                  itemstack1.remove(DataComponents.CUSTOM_NAME);

@@ -18,7 +18,7 @@
 +            int oldFoodLevel = player.getFoodData().foodLevel;
 +            org.bukkit.event.entity.FoodLevelChangeEvent event = CraftEventFactory.callFoodLevelChangeEvent(player, p_296026_ + 1 + oldFoodLevel);
 +            if (!event.isCancelled()) {
-+                player.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, 1.0F);
++                player.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, p_295892_.level().purpurConfig.humanSaturationRegenAmount); // Purpur
 +            }
 +
 +            ((CraftPlayer) player.getBukkitEntity()).sendHealthUpdate();

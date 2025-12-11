@@ -8,11 +8,7 @@
  import javax.annotation.Nullable;
  import net.minecraft.core.Holder;
  import net.minecraft.network.chat.Component;
-@@ -44,21 +_,45 @@
-         return p_19589_.hasEffect(MobEffects.WATER_BREATHING) || p_19589_.hasEffect(MobEffects.CONDUIT_POWER);
-     }
- 
-+    @Nullable static java.util.function.Predicate<ServerPlayer> playerPredicate = null;
+@@ -47,18 +_,41 @@
      public static List<ServerPlayer> addEffectToPlayersAround(
          ServerLevel p_216947_, @Nullable Entity p_216948_, Vec3 p_216949_, double p_216950_, MobEffectInstance p_216951_, int p_216952_
      ) {

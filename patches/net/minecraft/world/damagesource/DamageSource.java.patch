@@ -8,7 +8,7 @@
  
  public class DamageSource {
      private final Holder<DamageType> type;
-@@ -20,6 +_,105 @@
+@@ -20,6 +_,129 @@
      private final Entity directEntity;
      @Nullable
      private final Vec3 damageSourcePosition;
@@ -20,6 +20,8 @@
 +    private boolean sweep = false;
 +    private boolean melting = false;
 +    private boolean poison = false;
++    private boolean scissors = false; // Purpur
++    private boolean stonecutter = false; // Purpur
 +    @Nullable
 +    private Entity customEventDamager = null; // This field is a helper for when causing entity damage is not set by vanilla // Paper - fix DamageSource API
 +
@@ -50,6 +52,26 @@
 +        return this.poison;
 +    }
 +
++    // Purpur start
++    public DamageSource scissors() {
++        this.scissors = true;
++        return this;
++    }
++
++    public boolean isScissors() {
++        return this.scissors;
++    }
++
++    public DamageSource stonecutter() {
++        this.stonecutter = true;
++        return this;
++    }
++
++    public boolean isStonecutter() {
++        return this.stonecutter;
++    }
++    // Purpur end
++
 +    // Paper start - fix DamageSource API
 +    @Nullable
 +    public Entity getCustomEventDamager() {
@@ -58,7 +80,7 @@
 +
 +    public DamageSource customEventDamager(Entity entity) {
 +        if (this.directEntity != null) {
-+            throw new IllegalStateException("Cannot set custom event damager when direct entity is already set (report a bug to Paper)");
++            throw new IllegalStateException("Cannot set custom event damager when direct entity is already set (report a bug to " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + ")"); // Stellar
 +        }
 +        DamageSource damageSource = this.cloneInstance();
 +        damageSource.customEventDamager = entity;
@@ -108,6 +130,8 @@
 +        damageSource.sweep = this.isSweep();
 +        damageSource.poison = this.isPoison();
 +        damageSource.melting = this.isMelting();
++        damageSource.scissors = this.isScissors(); // Purpur
++        damageSource.stonecutter = this.isStonecutter(); // Purpur
 +        return damageSource;
 +    }
 +    // CraftBukkit end

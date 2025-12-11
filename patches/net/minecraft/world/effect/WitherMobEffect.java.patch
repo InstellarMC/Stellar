@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/effect/WitherMobEffect.java
++++ b/net/minecraft/world/effect/WitherMobEffect.java
+@@ -9,7 +_,7 @@
+ 
+     @Override
+     public boolean applyEffectTick(LivingEntity p_296279_, int p_294798_) {
+-        p_296279_.hurt(p_296279_.damageSources().wither(), 1.0F);
++        p_296279_.hurt(p_296279_.damageSources().wither(), p_296279_.level().purpurConfig.entityWitherDegenerationAmount); // Purpur
+         return true;
+     }
+ 

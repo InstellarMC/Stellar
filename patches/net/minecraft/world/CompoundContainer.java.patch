@@ -13,6 +13,15 @@
  
  public class CompoundContainer implements Container {
      public final Container container1;
+@@ -58,7 +_,7 @@
+ 
+     @Override
+     public int getMaxStackSize() {
+-        return this.container1.getMaxStackSize();
++        return Math.min(this.container1.getMaxStackSize(), this.container2.getMaxStackSize()); // CraftBukkit - check both sides
+     }
+ 
+     @Override
 @@ -96,4 +_,46 @@
          this.container1.clearContent();
          this.container2.clearContent();
