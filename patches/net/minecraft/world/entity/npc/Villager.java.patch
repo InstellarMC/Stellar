@@ -85,7 +85,7 @@
      @Override
      public Brain<Villager> getBrain() {
          return (Brain<Villager>)super.getBrain();
-@@ -268,9 +_,33 @@
+@@ -268,9 +_,41 @@
          return this.assignProfessionWhenSpawned;
      }
  
@@ -113,8 +113,16 @@
 +        // Paper start - EAR 2
 +        this.customServerAiStep(false);
 +    }
-+    protected void customServerAiStep(final boolean inactive) {
++    protected void customServerAiStep(boolean inactive) { // Purpur - Lobotomize stuck villagers - not final
          this.level().getProfiler().push("villagerBrain");
++        // Purpur start - Lobotomize stuck villagers
++        if (this.level().purpurConfig.villagerLobotomizeEnabled) {
++            // treat as inactive if lobotomized
++            inactive = inactive || checkLobotomized();
++        } else {
++            this.isLobotomized = false;
++        }
++        // Purpur end - Lobotomize stuck villagers
 +        if (!inactive) // Paper - EAR 2
          this.getBrain().tick((ServerLevel)this.level(), this);
          this.level().getProfiler().pop();
@@ -153,6 +161,14 @@
              return super.mobInteract(p_35472_, p_35473_);
          } else if (this.isBaby()) {
              this.setUnhappy();
+@@ -342,6 +_,7 @@
+                     return InteractionResult.CONSUME;
+                 }
+ 
++                if (this.level().purpurConfig.villagerAllowTrading) // Purpur - Add config for villager trading
+                 this.startTrading(p_35472_);
+             }
+ 
 @@ -399,7 +_,13 @@
          this.updateDemand();
  
@@ -182,6 +198,15 @@
 +                // CraftBukkit end
              }
          }
+ 
+@@ -473,7 +_,7 @@
+ 
+     private void updateDemand() {
+         for (MerchantOffer merchantoffer : this.getOffers()) {
+-            merchantoffer.updateDemand();
++            merchantoffer.updateDemand(this.level().purpurConfig.villagerMinimumDemand); // Purpur - Configurable minimum demand for trades
+         }
+     }
  
 @@ -481,6 +_,7 @@
          int i = this.getPlayerReputation(p_35541_);
@@ -226,6 +251,15 @@
          Entity entity = p_35419_.getEntity();
          if (entity != null) {
              this.tellWitnessesThatIWasMurdered(entity);
+@@ -684,7 +_,7 @@
+ 
+     @Override
+     public boolean canBreed() {
+-        return this.foodLevel + this.countFoodPointsInInventory() >= 12 && !this.isSleeping() && this.getAge() == 0;
++        return this.level().purpurConfig.villagerCanBreed && this.foodLevel + this.countFoodPointsInInventory() >= 12 && !this.isSleeping() && this.getAge() == 0; // Purpur - Configurable villager breeding
+     }
+ 
+     private boolean hungry() {
 @@ -742,8 +_,9 @@
  
      @Override
@@ -312,7 +346,7 @@
      }
  
      public void spawnGolemIfNeeded(ServerLevel p_35398_, long p_35399_, int p_35400_) {
-+        if (p_35398_.purpurConfig.villagerSpawnIronGolemRadius > 0 && p_35398_.getEntitiesOfClass(net.minecraft.world.entity.animal.IronGolem.class, getBoundingBox().inflate(p_35398_.purpurConfig.villagerSpawnIronGolemRadius)).size() > p_35398_.purpurConfig.villagerSpawnIronGolemLimit) return; // Purpur
++        if (p_35398_.purpurConfig.villagerSpawnIronGolemRadius > 0 && p_35398_.getEntitiesOfClass(net.minecraft.world.entity.animal.IronGolem.class, getBoundingBox().inflate(p_35398_.purpurConfig.villagerSpawnIronGolemRadius)).size() > p_35398_.purpurConfig.villagerSpawnIronGolemLimit) return; // Purpur - Implement configurable search radius for villagers to spawn iron golems
          if (this.wantsToSpawnGolem(p_35399_)) {
              AABB aabb = this.getBoundingBox().inflate(10.0, 10.0, 10.0);
              List<Villager> list = p_35398_.getEntitiesOfClass(Villager.class, aabb);
@@ -328,3 +362,16 @@
                      list.forEach(GolemSensor::golemDetected);
                  }
              }
+@@ -956,6 +_,12 @@
+ 
+     @Override
+     public void startSleeping(BlockPos p_35479_) {
++        // Purpur start - Option for beds to explode on villager sleep
++        if (level().purpurConfig.bedExplodeOnVillagerSleep && this.level().getBlockState(p_35479_).getBlock() instanceof net.minecraft.world.level.block.BedBlock) {
++            this.level().explode(null, (double) p_35479_.getX() + 0.5D, (double) p_35479_.getY() + 0.5D, (double) p_35479_.getZ() + 0.5D, (float) this.level().purpurConfig.bedExplosionPower, this.level().purpurConfig.bedExplosionFire, this.level().purpurConfig.bedExplosionEffect);
++            return;
++        }
++        // Purpur end - Option for beds to explode on villager sleep
+         super.startSleeping(p_35479_);
+         this.brain.setMemory(MemoryModuleType.LAST_SLEPT, this.level().getGameTime());
+         this.brain.eraseMemory(MemoryModuleType.WALK_TARGET);

@@ -70,14 +70,14 @@
      @Override
      protected boolean mayPickup(Player p_39023_, boolean p_39024_) {
 -        return (p_39023_.hasInfiniteMaterials() || p_39023_.experienceLevel >= this.cost.get()) && this.cost.get() > 0;
-+        return (p_39023_.hasInfiniteMaterials() || p_39023_.experienceLevel >= this.cost.get()) && (this.bypassCost || this.cost.get() > AnvilMenu.DEFAULT_DENIED_COST) && p_39024_; // CraftBukkit - allow cost 0 like a free item
++        return (p_39023_.hasInfiniteMaterials() || p_39023_.experienceLevel >= this.cost.get()) && (this.bypassCost || this.cost.get() > AnvilMenu.DEFAULT_DENIED_COST) && p_39024_; // CraftBukkit - allow cost 0 like a free item // Purpur - Anvil API
      }
  
      @Override
      protected void onTake(Player p_150474_, ItemStack p_150475_) {
 +        // Purpur start - Anvil API
-+        ItemStack itemstack = this.activeQuickItem != null ? this.activeQuickItem : p_150475_;
-+        if (org.purpurmc.purpur.event.inventory.AnvilTakeResultEvent.getHandlerList().getRegisteredListeners().length > 0) new org.purpurmc.purpur.event.inventory.AnvilTakeResultEvent(player.getBukkitEntity(), getBukkitView(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)).callEvent();
++        ItemStack activeQuickItem = this.activeQuickItem != null ? this.activeQuickItem : p_150475_;
++        if (org.purpurmc.purpur.event.inventory.AnvilTakeResultEvent.getHandlerList().getRegisteredListeners().length > 0) new org.purpurmc.purpur.event.inventory.AnvilTakeResultEvent(player.getBukkitEntity(), getBukkitView(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(activeQuickItem)).callEvent();
 +        // Purpur end - Anvil API
          if (!p_150474_.getAbilities().instabuild) {
 +            if (this.bypassCost) ((ServerPlayer) player).lastSentExp = -1; else // Purpur - Anvil API

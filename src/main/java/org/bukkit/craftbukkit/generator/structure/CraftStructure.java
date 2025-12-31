@@ -20,12 +20,12 @@ public class CraftStructure extends Structure implements Handleable<net.minecraf
 
     private final NamespacedKey key;
     private final net.minecraft.world.level.levelgen.structure.Structure structure;
-    private final StructureType structureType;
+    private final java.util.function.Supplier<StructureType> structureType;
 
     public CraftStructure(NamespacedKey key, net.minecraft.world.level.levelgen.structure.Structure structure) {
         this.key = key;
         this.structure = structure;
-        this.structureType = CraftStructureType.minecraftToBukkit(structure.type());
+        this.structureType = com.google.common.base.Suppliers.memoize(() -> CraftStructureType.minecraftToBukkit(structure.type()));
     }
 
     @Override
@@ -35,7 +35,7 @@ public class CraftStructure extends Structure implements Handleable<net.minecraf
 
     @Override
     public StructureType getStructureType() {
-        return this.structureType;
+        return this.structureType.get();
     }
 
     @Override

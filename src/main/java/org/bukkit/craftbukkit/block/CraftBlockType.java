@@ -195,7 +195,7 @@ public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, 
 
     @Override
     public boolean hasGravity() {
-        return block instanceof FallingBlock;
+        return block instanceof net.minecraft.world.level.block.Fallable;
     }
 
     @Override

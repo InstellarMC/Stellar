@@ -200,11 +200,19 @@
      }
  
      protected boolean reallyHurt(DamageSource p_31162_, float p_31163_) {
-@@ -538,7 +_,7 @@
+@@ -538,7 +_,15 @@
  
      @Override
      public void kill() {
 -        this.remove(Entity.RemovalReason.KILLED);
++        // Paper start - Fire entity death event
++        this.silentDeath = true;
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, this.damageSources().genericKill());
++        if (deathEvent.isCancelled()) {
++            this.silentDeath = false; // Reset to default if event was cancelled
++            return;
++        }
++        // Paper end - Fire entity death event
 +        this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
          this.gameEvent(GameEvent.ENTITY_DIE);
          if (this.dragonFight != null) {

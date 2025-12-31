@@ -150,7 +150,7 @@ public class SimpleCommandMap implements CommandMap {
             return false;
         }
 
-        // Purpur start
+        // Purpur start - ExecuteCommandEvent
         String[] parsedArgs = Arrays.copyOfRange(args, 1, args.length);
         org.purpurmc.purpur.event.ExecuteCommandEvent event = new org.purpurmc.purpur.event.ExecuteCommandEvent(sender, target, sentCommandLabel, parsedArgs);
         if (!event.callEvent()) {
@@ -161,15 +161,18 @@ public class SimpleCommandMap implements CommandMap {
         target = event.getCommand();
         sentCommandLabel = event.getLabel();
         parsedArgs = event.getArgs();
-        // Purpur end
+        // Purpur end - ExecuteCommandEvent
 
         try {
             // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
             target.execute(sender, sentCommandLabel, parsedArgs);
         } catch (CommandException ex) {
+            server.getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
             throw ex;
         } catch (Throwable ex) {
-            throw new CommandException("Unhandled exception executing '" + commandLine + "' in " + target, ex);
+            String msg = "Unhandled exception executing tab-completer for '" + commandLine + "' in " + target;
+            server.getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerTabCompleteException(msg, ex, target, sender, args))); // Paper
+            throw new CommandException(msg, ex);
         }
 
         // return true as command was handled

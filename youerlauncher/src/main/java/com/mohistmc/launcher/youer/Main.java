@@ -88,8 +88,8 @@ public class Main {
         }
 
 
-        if (System.getProperty("log4j.configurationFile") == null) {
-            System.setProperty("log4j.configurationFile", "log4j2_youer.xml");
+        if (System.getProperty("log4j2.configurationFile") == null) {
+            System.setProperty("log4j2.configurationFile", "log4j2_youer.xml");
         }
         if (false) // Stellar - ignore Youer version check
         if (YouerConfigUtil.INSTALLATIONFINISHED() && YouerConfigUtil.CHECK_UPDATE()) {

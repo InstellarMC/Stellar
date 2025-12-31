@@ -332,6 +332,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public IntOr.Default compressionLevel = IntOr.Default.USE_DEFAULT;
         @Comment("Defines the leniency distance added on the server to the interaction range of a player when validating interact packets.")
         public DoubleOr.Default clientInteractionLeniencyDistance = DoubleOr.Default.USE_DEFAULT;
+        @Comment("See Fix MC-163962; prevent villager demand from going negative.")
+        public boolean preventNegativeVillagerDemand = false;
     }
 
     public BlockUpdates blockUpdates;

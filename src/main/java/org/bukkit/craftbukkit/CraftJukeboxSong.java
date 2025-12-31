@@ -59,6 +59,7 @@ public class CraftJukeboxSong implements JukeboxSong, Handleable<net.minecraft.w
     @NotNull
     @Override
     public String getTranslationKey() {
+        if (!(this.getHandle().description().getContents() instanceof TranslatableContents)) throw new UnsupportedOperationException("Description isn't translatable!"); // Paper
         return ((TranslatableContents) handle.description().getContents()).getKey();
     }
 }
