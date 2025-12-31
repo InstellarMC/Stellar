@@ -368,7 +368,7 @@
              this.services = p_236729_;
              if (p_236729_.profileCache() != null) {
                  p_236729_.profileCache().setExecutor(this);
-@@ -315,7 +_,21 @@
+@@ -315,7 +_,24 @@
              this.structureTemplateManager = new StructureTemplateManager(p_236726_.resourceManager(), p_236724_, p_236728_, holdergetter);
              this.serverThread = p_236723_;
              this.executor = Util.backgroundExecutor();
@@ -387,7 +387,10 @@
 +                throw new RuntimeException("Failed to load Stellar configuration files", e);
 +            }
 +            // Stellar end - initialize global and world-defaults configuration
-+            this.chatExecutor = Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Chat Thread - #%d").setThreadFactory(dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.useVT4ChatExecutor ? Thread.ofVirtual().factory() : java.util.concurrent.Executors.defaultThreadFactory()).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper // Stellar - Virtual Threaad for chat executor
++            this.chatExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
++                    .name("Async Chat Thread - #", 0)
++                    .uncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER))
++                    .factory()); // Paper // Stellar - Virtual Thread for chat executor
          }
      }
  
