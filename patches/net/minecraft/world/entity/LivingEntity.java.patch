@@ -2084,10 +2084,30 @@
                  if (i > 0 && list.size() > i - 1 && this.random.nextInt(4) == 0) {
                      int j = 0;
  
-@@ -2773,6 +_,43 @@
-             }
-         }
-     }
+@@ -2762,17 +_,59 @@
+                         }
+                     }
+ 
++                    this.numCollisions = Math.max(0, this.numCollisions - this.level().paperConfig().collisions.maxEntityCollisions); // Paper - Cap entity collisions
+                     if (j > i - 1) {
+                         this.hurt(this.damageSources().cramming(), 6.0F);
+                     }
+                 }
+ 
+                 for (Entity entity1 : list) {
++                    if (this.numCollisions < this.level().paperConfig().collisions.maxEntityCollisions) { // Paper - Cap entity collisions
++                        entity1.numCollisions++; // Paper - Cap entity collisions
++                        this.numCollisions++; // Paper - Cap entity collisions
+                     this.doPush(entity1);
+-                }
+-            }
+-        }
+-    }
++                    } // Paper - Cap entity collisions
++                }
++            }
++        }
++    }
 +    // Stellar start - Leaf: Only player pushable
 +    public List<Entity> getNearbyPushablePlayers(final Entity entity, final AABB box, final Predicate<Entity> conditions) {
 +        final Vec3 vec = entity.position();
@@ -2137,6 +2157,15 @@
              this.dismountVehicle(entity);
          }
      }
+@@ -2881,7 +_,7 @@
+         if (!p_21030_.isRemoved()
+             && !this.level().isClientSide
+             && (p_21030_ instanceof ItemEntity || p_21030_ instanceof AbstractArrow || p_21030_ instanceof ExperienceOrb)) {
+-            ((ServerLevel)this.level()).getChunkSource().broadcast(p_21030_, new ClientboundTakeItemEntityPacket(p_21030_.getId(), this.getId(), p_21031_));
++            ((ServerLevel)this.level()).getChunkSource().broadcastAndSend(p_21030_, new ClientboundTakeItemEntityPacket(p_21030_.getId(), this.getId(), p_21031_)); // Paper - broadcast with collector as source
+         }
+     }
+ 
 @@ -2891,7 +_,7 @@
          } else {
              Vec3 vec3 = new Vec3(this.getX(), this.getEyeY(), this.getZ());

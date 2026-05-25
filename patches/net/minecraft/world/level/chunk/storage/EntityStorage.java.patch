@@ -15,10 +15,11 @@
          p_156563_.put("Position", new IntArrayTag(new int[]{p_156564_.x, p_156564_.z}));
      }
  
-@@ -94,8 +_,12 @@
+@@ -94,8 +_,13 @@
              ListTag listtag = new ListTag();
              p_156559_.getEntities().forEach(p_156567_ -> {
                  CompoundTag compoundtag1 = new CompoundTag();
++                if (!p_156567_.canSaveToDisk()) return; // Purpur
 +                try {
                  if (p_156567_.save(compoundtag1)) {
                      listtag.add(compoundtag1);

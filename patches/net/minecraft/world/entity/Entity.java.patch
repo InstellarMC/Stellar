@@ -124,7 +124,7 @@
      private float eyeHeight;
      public boolean isInPowderSnow;
      public boolean wasInPowderSnow;
-@@ -243,14 +_,328 @@
+@@ -243,14 +_,329 @@
      public boolean hasVisualFire;
      @Nullable
      private BlockState inBlockState = null;
@@ -285,6 +285,7 @@
 +    public void inactiveTick() {
 +    }
 +    // Paper end - EAR 2
++    protected int numCollisions = 0; // Paper - Cap entity collisions
 +    public boolean fromNetherPortal; // Paper - Add option to nerf pigmen from nether portals
 +
 +    // Paper start - Entity origin API

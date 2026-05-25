@@ -487,7 +487,7 @@
      }
  
      @Override
-@@ -473,7 +_,8 @@
+@@ -473,12 +_,13 @@
          PacketUtils.ensureRunningOnSameThread(p_9835_, this, this.player.serverLevel());
          if (p_9835_.getId() == this.awaitingTeleport) {
              if (this.awaitingPositionFromClient == null) {
@@ -497,6 +497,12 @@
                  return;
              }
  
+             this.player
+-                .absMoveTo(
++                .moveTo( // Paper - Fix Entity Teleportation and cancel velocity if teleported
+                     this.awaitingPositionFromClient.x,
+                     this.awaitingPositionFromClient.y,
+                     this.awaitingPositionFromClient.z,
 @@ -493,6 +_,7 @@
              }
  

@@ -1245,7 +1245,8 @@
 +                // MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit // Paper - don't overwrite current tick time
 +                lastTick = currentTime;
                  this.nextTickTimeNanos += i;
-                 this.startMetricsRecordingTick();
+-                this.startMetricsRecordingTick();
++                // this.startMetricsRecordingTick(); // Purpur
                  this.profiler.push("tick");
                  this.tickServer(flag ? () -> false : this::haveTime);
 +                // Paper start - rewrite chunk system
@@ -1267,7 +1268,12 @@
                  this.startMeasuringTaskExecutionTime();
                  this.waitUntilNextTick();
                  this.finishMeasuringTaskExecutionTime();
-@@ -714,7 +_,15 @@
+@@ -710,11 +_,19 @@
+ 
+                 this.profiler.pop();
+                 this.logFullTickTime();
+-                this.endMetricsRecordingTick();
++                // this.endMetricsRecordingTick(); // Purpur
                  this.isReady = true;
                  JvmProfiler.INSTANCE.onServerTick(this.smoothedTickTimeMillis);
              }
