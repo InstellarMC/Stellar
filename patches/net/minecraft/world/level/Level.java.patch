@@ -1138,7 +1138,11 @@
      }
  
      @Override
-@@ -489,41 +_,119 @@
+@@ -486,44 +_,123 @@
+     }
+ 
+     public void addBlockEntityTicker(TickingBlockEntity p_151526_) {
++        if (!this.paperConfig().unsupportedSettings.ticking.blockEntities) return; // Paper - option to disable ticking
          (this.tickingBlockEntities ? this.pendingBlockEntityTickers : this.blockEntityTickers).add(p_151526_);
      }
  

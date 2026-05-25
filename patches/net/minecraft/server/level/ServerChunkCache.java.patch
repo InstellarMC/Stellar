@@ -468,13 +468,15 @@
 +                    this.iterationCopy, size
 +                );
              }
+-
+-            if (this.level.tickRateManager().runsNormally()) {
 +            // Paper end - chunk tick iteration optimisations
 +            java.util.Iterator<?> iterator = null; // Paper - chunk tick iteration optimisations
 +            //if (this.level.getServer().tickRateManager().runsNormally()) this.level.timings.chunkTicks.startTiming(); // Paper // Purpur
 +
 +            // Paper - chunk tick iteration optimisations
- 
-             if (this.level.tickRateManager().runsNormally()) {
++
++            if (this.level.tickRateManager().runsNormally() && this.level.paperConfig().unsupportedSettings.ticking.chunks) { // Paper - options to disable ticking
                  profilerfiller.popPush("naturalSpawnCount");
                  int l = this.distanceManager.getNaturalSpawnChunkCount();
 -                NaturalSpawner.SpawnState naturalspawner$spawnstate = NaturalSpawner.createState(

@@ -538,6 +538,14 @@
          this.blockEntities.values().forEach(p_187988_ -> {
              if (this.level instanceof ServerLevel serverlevel) {
                  this.addGameEventListener(p_187988_, serverlevel);
+@@ -631,6 +_,7 @@
+     }
+ 
+     private <T extends BlockEntity> void updateBlockEntityTicker(T p_156407_) {
++        if (!this.level.paperConfig().unsupportedSettings.ticking.blockEntities) return; // Paper - option to disable ticking
+         BlockState blockstate = p_156407_.getBlockState();
+         BlockEntityTicker<T> blockentityticker = blockstate.getTicker(this.level, (BlockEntityType<T>)p_156407_.getType());
+         if (blockentityticker == null) {
 @@ -662,6 +_,19 @@
          return new LevelChunk.BoundTickingBlockEntity<>(p_156376_, p_156377_);
      }
