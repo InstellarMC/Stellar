@@ -271,12 +271,15 @@ dependencies {
     compileOnly "org.jetbrains:annotations:${project.jetbrains_annotations_version}"
 
     userdevCompileOnly jarJar("io.github.llamalad7:mixinextras-neoforge:${project.mixin_extras_version}")
+    userdevTestFixtures("net.neoforged.fancymodloader:junit-fml:${project.fancy_mod_loader_version}") {
+        endorseStrictVersions()
+    }
 
     // Must be implementation instead of compileOnly so that running dependent projects such as tests will trigger (re)compilation of coremods.
     // (Only needed when compiling through IntelliJ non-delegated builds - otherwise `compileOnly` would work).
     implementation(jarJar(project(":neoforge-coremods")))
 
-    // craftbukkit
+    // CraftBukkit
     libraries 'org.fusesource.jansi:jansi:2.4.1'
     libraries 'com.googlecode.json-simple:json-simple:1.1.1'
     libraries 'org.xerial:sqlite-jdbc:3.46.0.0'
@@ -285,7 +288,7 @@ dependencies {
         exclude group: 'com.opencsv'
     }
     libraries 'org.apache.logging.log4j:log4j-iostreams:2.22.1'
-    // spigot
+    // Spigot
     libraries 'commons-codec:commons-codec:1.16.0'
     libraries 'net.sf.jopt-simple:jopt-simple:5.0.4'
 

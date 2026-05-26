@@ -103,25 +103,25 @@
      @Override
 -    public boolean hurt(DamageSource p_32494_, float p_32495_) {
 -        if (this.isInvulnerableTo(p_32494_)) {
-+    public boolean hurt(DamageSource source, float amount) {
-+        if (this.isInvulnerableTo(source)) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        if (this.isInvulnerableTo(p_21016_)) {
              return false;
          } else {
 -            boolean flag = p_32494_.getDirectEntity() instanceof ThrownPotion;
 -            if (!p_32494_.is(DamageTypeTags.IS_PROJECTILE) && !flag) {
 -                boolean flag2 = super.hurt(p_32494_, p_32495_);
 -                if (!this.level().isClientSide() && !(p_32494_.getEntity() instanceof LivingEntity) && this.random.nextInt(10) != 0) {
-+            boolean flag = source.getDirectEntity() instanceof ThrownPotion;
-+            if (!source.is(DamageTypeTags.IS_PROJECTILE) && !flag) {
-+                boolean flag2 = super.hurt(source, amount);
-+                if (!this.level().isClientSide() && !(source.getEntity() instanceof LivingEntity) && this.random.nextInt(10) != 0) {
++            boolean flag = p_21016_.getDirectEntity() instanceof ThrownPotion;
++            if (!p_21016_.is(DamageTypeTags.IS_PROJECTILE) && !flag) {
++                boolean flag2 = super.hurt(p_21016_, p_21017_);
++                if (!this.level().isClientSide() && !(p_21016_.getEntity() instanceof LivingEntity) && this.random.nextInt(10) != 0) {
                      this.teleport();
                  }
  
                  return flag2;
              } else {
 -                boolean flag1 = flag && this.hurtWithCleanWater(p_32494_, (ThrownPotion)p_32494_.getDirectEntity(), p_32495_);
-+                boolean flag1 = flag && this.hurtWithCleanWater(source, (ThrownPotion)source.getDirectEntity(), amount);
++                boolean flag1 = flag && this.hurtWithCleanWater(p_21016_, (ThrownPotion) p_21016_.getDirectEntity(), p_21017_);
  
 -                for (int i = 0; i < 64; i++) {
 +                if (this.tryEscape(EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - EndermanEscapeEvent

@@ -35,8 +35,8 @@
      @Override
 -    public boolean hurt(DamageSource p_147114_, float p_147115_) {
 -        boolean flag = super.hurt(p_147114_, p_147115_);
-+    public boolean hurt(DamageSource source, float amount) {
-+        boolean flag = super.hurt(source, amount);
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        boolean flag = super.hurt(p_21016_, p_21017_);
          if (flag) {
              this.setDarkTicks(100);
          }

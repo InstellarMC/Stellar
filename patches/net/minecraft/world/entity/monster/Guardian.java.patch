@@ -31,7 +31,7 @@
  
      @Override
 -    public boolean hurt(DamageSource p_32820_, float p_32821_) {
-+    public boolean hurt(DamageSource source, float amount) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
          if (this.level().isClientSide) {
              return false;
          } else {
@@ -39,9 +39,9 @@
 -                && !p_32820_.is(DamageTypeTags.AVOIDS_GUARDIAN_THORNS)
 -                && !p_32820_.is(DamageTypes.THORNS)
 -                && p_32820_.getDirectEntity() instanceof LivingEntity livingentity) {
-+                && !source.is(DamageTypeTags.AVOIDS_GUARDIAN_THORNS)
-+                && !source.is(DamageTypes.THORNS)
-+                && source.getDirectEntity() instanceof LivingEntity livingentity) {
++                && !p_21016_.is(DamageTypeTags.AVOIDS_GUARDIAN_THORNS)
++                && !p_21016_.is(DamageTypes.THORNS)
++                && p_21016_.getDirectEntity() instanceof LivingEntity livingentity) {
                  livingentity.hurt(this.damageSources().thorns(this), 2.0F);
              }
  
@@ -50,7 +50,7 @@
              }
  
 -            return super.hurt(p_32820_, p_32821_);
-+            return super.hurt(source, amount);
++            return super.hurt(p_21016_, p_21017_);
          }
      }
  

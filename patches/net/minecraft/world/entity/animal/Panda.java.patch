@@ -105,13 +105,13 @@
  
      @Override
 -    public boolean hurt(DamageSource p_29097_, float p_29098_) {
-+    public boolean hurt(DamageSource source, float amount) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
          if (!this.level().isClientSide) {
              this.sit(false);
          }
  
 -        return super.hurt(p_29097_, p_29098_);
-+        return super.hurt(source, amount);
++        return super.hurt(p_21016_, p_21017_);
      }
  
      @Nullable

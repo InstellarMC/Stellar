@@ -190,8 +190,8 @@
      @Override
 -    public boolean hurt(DamageSource p_34288_, float p_34289_) {
 -        if (!super.hurt(p_34288_, p_34289_)) {
-+    public boolean hurt(DamageSource source, float amount) {
-+        if (!super.hurt(source, amount)) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        if (!super.hurt(p_21016_, p_21017_)) {
              return false;
          } else if (!(this.level() instanceof ServerLevel)) {
              return false;
@@ -200,8 +200,8 @@
              LivingEntity livingentity = this.getTarget();
 -            if (livingentity == null && p_34288_.getEntity() instanceof LivingEntity) {
 -                livingentity = (LivingEntity)p_34288_.getEntity();
-+            if (livingentity == null && source.getEntity() instanceof LivingEntity) {
-+                livingentity = (LivingEntity)source.getEntity();
++            if (livingentity == null && p_21016_.getEntity() instanceof LivingEntity) {
++                livingentity = (LivingEntity) p_21016_.getEntity();
              }
  
              if (livingentity != null
@@ -323,18 +323,3 @@
                          }
                      }
                  }
-@@ -526,10 +_,14 @@
-                 .addOrReplacePermanentModifier(
-                     new AttributeModifier(LEADER_ZOMBIE_BONUS_ID, this.random.nextDouble() * 0.25 + 0.5, AttributeModifier.Operation.ADD_VALUE)
-                 );
-+            var damageTaken = getMaxHealth() - getHealth();
-             this.getAttribute(Attributes.MAX_HEALTH)
-                 .addOrReplacePermanentModifier(
-                     new AttributeModifier(LEADER_ZOMBIE_BONUS_ID, this.random.nextDouble() * 3.0 + 1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
-                 );
-+            // Neo: fix MC-219981 by resetting the leader zombie's health based on the new max health
-+            // without disregarding damage already taken (if any)
-+            setHealth(getMaxHealth() - damageTaken);
-             this.setCanBreakDoors(this.supportsBreakDoorGoal());
-         }
-     }

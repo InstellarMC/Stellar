@@ -49,16 +49,16 @@
      @Override
 -    public boolean hurt(DamageSource p_219381_, float p_219382_) {
 -        boolean flag = super.hurt(p_219381_, p_219382_);
-+    public boolean hurt(DamageSource source, float amount) {
-+        boolean flag = super.hurt(source, amount);
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        boolean flag = super.hurt(p_21016_, p_21017_);
          if (!this.level().isClientSide && !this.isNoAi() && !this.isDiggingOrEmerging()) {
 -            Entity entity = p_219381_.getEntity();
-+            Entity entity = source.getEntity();
++            Entity entity = p_21016_.getEntity();
              this.increaseAngerAt(entity, AngerLevel.ANGRY.getMinimumAnger() + 20, false);
              if (this.brain.getMemory(MemoryModuleType.ATTACK_TARGET).isEmpty()
                  && entity instanceof LivingEntity livingentity
 -                && (p_219381_.isDirect() || this.closerThan(livingentity, 5.0))) {
-+                && (source.isDirect() || this.closerThan(livingentity, 5.0))) {
++                && (p_21016_.isDirect() || this.closerThan(livingentity, 5.0))) {
                  this.setAttackTarget(livingentity);
              }
          }

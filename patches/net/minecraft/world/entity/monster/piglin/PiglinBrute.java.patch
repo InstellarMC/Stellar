@@ -6,15 +6,15 @@
      @Override
 -    public boolean hurt(DamageSource p_35055_, float p_35056_) {
 -        boolean flag = super.hurt(p_35055_, p_35056_);
-+    public boolean hurt(DamageSource source, float amount) {
-+        boolean flag = super.hurt(source, amount);
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        boolean flag = super.hurt(p_21016_, p_21017_);
          if (this.level().isClientSide) {
              return false;
          } else {
 -            if (flag && p_35055_.getEntity() instanceof LivingEntity) {
 -                PiglinBruteAi.wasHurtBy(this, (LivingEntity)p_35055_.getEntity());
-+            if (flag && source.getEntity() instanceof LivingEntity) {
-+                PiglinBruteAi.wasHurtBy(this, (LivingEntity)source.getEntity());
++            if (flag && p_21016_.getEntity() instanceof LivingEntity) {
++                PiglinBruteAi.wasHurtBy(this, (LivingEntity) p_21016_.getEntity());
              }
  
              return flag;

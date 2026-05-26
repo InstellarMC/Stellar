@@ -709,14 +709,14 @@
      @Override
 -    public boolean hurt(DamageSource p_9037_, float p_9038_) {
 -        if (this.isInvulnerableTo(p_9037_)) {
-+    public boolean hurt(DamageSource source, float amount) {
-+        if (this.isInvulnerableTo(source)) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        if (this.isInvulnerableTo(p_21016_)) {
              return false;
          } else {
 -            boolean flag = this.server.isDedicatedServer() && this.isPvpAllowed() && p_9037_.is(DamageTypeTags.IS_FALL);
 -            if (!flag && this.spawnInvulnerableTime > 0 && !p_9037_.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 +            // Purpur start - Add boat fall damage config
-+            if (source.is(DamageTypeTags.IS_FALL)) {
++            if (p_21016_.is(DamageTypeTags.IS_FALL)) {
 +                if (getRootVehicle() instanceof net.minecraft.world.entity.vehicle.AbstractMinecart && level().purpurConfig.minecartControllable && !level().purpurConfig.minecartControllableFallDamage) {
 +                    return false;
 +                }
@@ -725,12 +725,12 @@
 +                }
 +            }
 +            // Purpur end - Add boat fall damage config
-+            boolean flag = this.server.isDedicatedServer() && this.isPvpAllowed() && source.is(DamageTypeTags.IS_FALL);
-+            if (!flag && this.spawnInvulnerableTime > 0 && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
++            boolean flag = this.server.isDedicatedServer() && this.isPvpAllowed() && p_21016_.is(DamageTypeTags.IS_FALL);
++            if (!flag && this.spawnInvulnerableTime > 0 && !p_21016_.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
                  return false;
              } else {
 -                Entity entity = p_9037_.getEntity();
-+                Entity entity = source.getEntity();
++                Entity entity = p_21016_.getEntity();
                  if (entity instanceof Player player && !this.canHarmPlayer(player)) {
                      return false;
                  }
@@ -741,7 +741,7 @@
 -                return super.hurt(p_9037_, p_9038_);
 +                // Paper start - cancellable death events
 +                this.queueHealthUpdatePacket = true;
-+                boolean damaged = super.hurt(source, amount);
++                boolean damaged = super.hurt(p_21016_, p_21017_);
 +                this.queueHealthUpdatePacket = false;
 +                if (this.queuedHealthUpdatePacket != null) {
 +                    this.connection.send(this.queuedHealthUpdatePacket);

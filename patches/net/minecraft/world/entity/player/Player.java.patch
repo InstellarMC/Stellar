@@ -464,11 +464,11 @@
      @Override
 -    public boolean hurt(DamageSource p_36154_, float p_36155_) {
 -        if (this.isInvulnerableTo(p_36154_)) {
-+    public boolean hurt(DamageSource source, float amount) {
-+        if (this.isInvulnerableTo(source)) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        if (this.isInvulnerableTo(p_21016_)) {
              return false;
 -        } else if (this.abilities.invulnerable && !p_36154_.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-+        } else if (this.abilities.invulnerable && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
++        } else if (this.abilities.invulnerable && !p_21016_.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
              return false;
          } else {
              this.noActionTime = 0;
@@ -483,7 +483,7 @@
 +                // } // Stellar
  
 -                if (p_36154_.scalesWithDifficulty()) {
-+                if (source.scalesWithDifficulty()) {
++                if (p_21016_.scalesWithDifficulty()) {
                      if (this.level().getDifficulty() == Difficulty.PEACEFUL) {
 -                        p_36155_ = 0.0F;
 +                        return false; // CraftBukkit - f = 0.0f -> return false
@@ -491,18 +491,18 @@
  
                      if (this.level().getDifficulty() == Difficulty.EASY) {
 -                        p_36155_ = Math.min(p_36155_ / 2.0F + 1.0F, p_36155_);
-+                        amount = Math.min(amount / 2.0F + 1.0F, amount);
++                        p_21017_ = Math.min(p_21017_ / 2.0F + 1.0F, p_21017_);
                      }
  
                      if (this.level().getDifficulty() == Difficulty.HARD) {
 -                        p_36155_ = p_36155_ * 3.0F / 2.0F;
-+                        amount = amount * 3.0F / 2.0F;
++                        p_21017_ = p_21017_ * 3.0F / 2.0F;
                      }
                  }
  
 -                return p_36155_ == 0.0F ? false : super.hurt(p_36154_, p_36155_);
 +                // CraftBukkit start - Don't filter out 0 damage
-+                boolean damaged = super.hurt(source, amount);
++                boolean damaged = super.hurt(p_21016_, p_21017_);
 +                if (damaged) {
 +                    this.removeEntitiesOnShoulder();
 +                }

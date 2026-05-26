@@ -74,24 +74,24 @@
  
      @Override
 -    public boolean hurt(DamageSource p_149115_, float p_149116_) {
-+    public boolean hurt(DamageSource source, float amount) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
          float f = this.getHealth();
          if (!this.level().isClientSide
              && !this.isNoAi()
              && this.level().random.nextInt(3) == 0
 -            && ((float)this.level().random.nextInt(3) < p_149116_ || f / this.getMaxHealth() < 0.5F)
 -            && p_149116_ < f
-+            && ((float)this.level().random.nextInt(3) < amount || f / this.getMaxHealth() < 0.5F)
-+            && amount < f
++            && ((float)this.level().random.nextInt(3) < p_21017_ || f / this.getMaxHealth() < 0.5F)
++            && p_21017_ < f
              && this.isInWater()
 -            && (p_149115_.getEntity() != null || p_149115_.getDirectEntity() != null)
-+            && (source.getEntity() != null || source.getDirectEntity() != null)
++            && (p_21016_.getEntity() != null || p_21016_.getDirectEntity() != null)
              && !this.isPlayingDead()) {
              this.brain.setMemory(MemoryModuleType.PLAY_DEAD_TICKS, 200);
          }
  
 -        return super.hurt(p_149115_, p_149116_);
-+        return super.hurt(source, amount);
++        return super.hurt(p_21016_, p_21017_);
      }
  
      @Override

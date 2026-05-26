@@ -53,25 +53,25 @@
  
      @Override
 -    public boolean hurt(DamageSource p_33421_, float p_33422_) {
-+    public boolean hurt(DamageSource source, float amount) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
          if (this.isClosed()) {
 -            Entity entity = p_33421_.getDirectEntity();
-+            Entity entity = source.getDirectEntity();
++            Entity entity = p_21016_.getDirectEntity();
              if (entity instanceof AbstractArrow) {
                  return false;
              }
          }
  
 -        if (!super.hurt(p_33421_, p_33422_)) {
-+        if (!super.hurt(source, amount)) {
++        if (!super.hurt(p_21016_, p_21017_)) {
              return false;
          } else {
              if ((double)this.getHealth() < (double)this.getMaxHealth() * 0.5 && this.random.nextInt(4) == 0) {
                  this.teleportSomewhere();
 -            } else if (p_33421_.is(DamageTypeTags.IS_PROJECTILE)) {
 -                Entity entity1 = p_33421_.getDirectEntity();
-+            } else if (source.is(DamageTypeTags.IS_PROJECTILE)) {
-+                Entity entity1 = source.getDirectEntity();
++            } else if (p_21016_.is(DamageTypeTags.IS_PROJECTILE)) {
++                Entity entity1 = p_21016_.getDirectEntity();
                  if (entity1 != null && entity1.getType() == EntityType.SHULKER_BULLET) {
                      this.hitByShulkerBullet();
                  }

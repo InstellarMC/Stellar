@@ -23,17 +23,17 @@
      @Override
 -    public boolean hurt(DamageSource p_33527_, float p_33528_) {
 -        if (this.isInvulnerableTo(p_33527_)) {
-+    public boolean hurt(DamageSource source, float amount) {
-+        if (this.isInvulnerableTo(source)) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        if (this.isInvulnerableTo(p_21016_)) {
              return false;
          } else {
 -            if ((p_33527_.getEntity() != null || p_33527_.is(DamageTypeTags.ALWAYS_TRIGGERS_SILVERFISH)) && this.friendsGoal != null) {
-+            if ((source.getEntity() != null || source.is(DamageTypeTags.ALWAYS_TRIGGERS_SILVERFISH)) && this.friendsGoal != null) {
++            if ((p_21016_.getEntity() != null || p_21016_.is(DamageTypeTags.ALWAYS_TRIGGERS_SILVERFISH)) && this.friendsGoal != null) {
                  this.friendsGoal.notifyHurt();
              }
  
 -            return super.hurt(p_33527_, p_33528_);
-+            return super.hurt(source, amount);
++            return super.hurt(p_21016_, p_21017_);
          }
      }
  

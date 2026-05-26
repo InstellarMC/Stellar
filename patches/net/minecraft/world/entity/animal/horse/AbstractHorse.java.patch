@@ -100,8 +100,8 @@
      @Override
 -    public boolean hurt(DamageSource p_252258_, float p_250984_) {
 -        boolean flag = super.hurt(p_252258_, p_250984_);
-+    public boolean hurt(DamageSource source, float amount) {
-+        boolean flag = super.hurt(source, amount);
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        boolean flag = super.hurt(p_21016_, p_21017_);
          if (flag && this.random.nextInt(3) == 0) {
              this.standIfPossible();
          }
