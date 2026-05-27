@@ -112,6 +112,17 @@
              this.gameEvent(GameEvent.ENTITY_INTERACT);
              this.playSound(SoundEvents.ARMADILLO_BRUSH);
              return true;
+@@ -333,8 +_,8 @@
+     }
+ 
+     @Override
+-    public void setInLove(@Nullable Player p_316200_) {
+-        super.setInLove(p_316200_);
++    public void setInLove(@Nullable Player p_316200_, @Nullable ItemStack breedItemCopy) { // Paper
++        super.setInLove(p_316200_, breedItemCopy); // Paper
+         this.makeSound(SoundEvents.ARMADILLO_EAT);
+     }
+ 
 @@ -354,7 +_,7 @@
      }
  

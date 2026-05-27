@@ -101,7 +101,13 @@
      }
  
      @Override
-@@ -173,7 +_,7 @@
+@@ -168,12 +_,12 @@
+             f = 10.0F;
+             if (this.isTamed() && this.getAge() == 0 && this.canFallInLove()) {
+                 flag = true;
+-                this.setInLove(p_30796_);
++                this.setInLove(p_30796_, p_30797_.copy()); // Paper - Fix EntityBreedEvent copying
+             }
          }
  
          if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {

@@ -591,49 +591,38 @@
 -            float f1 = Math.max(p_36313_ - this.getAbsorptionAmount(), 0.0F);
 -            this.setAbsorptionAmount(this.getAbsorptionAmount() - (p_36313_ - f1));
 -            float f = p_36313_ - f1;
--            if (f > 0.0F && f < 3.4028235E37F) {
--                this.awardStat(Stats.DAMAGE_ABSORBED, Math.round(f * 10.0F));
--            }
--
--            if (f1 != 0.0F) {
--                this.causeFoodExhaustion(p_36312_.getFoodExhaustion());
--                this.getCombatTracker().recordDamage(p_36312_, f1);
--                this.setHealth(this.getHealth() - f1);
--                if (f1 < 3.4028235E37F) {
--                    this.awardStat(Stats.DAMAGE_TAKEN, Math.round(f1 * 10.0F));
--                }
--
--                this.gameEvent(GameEvent.ENTITY_DAMAGE);
 +    protected boolean actuallyHurt(DamageSource source, float amount, org.bukkit.event.entity.EntityDamageEvent event) { // CraftBukkit: void -> boolean
 +        if (true) {
 +            return super.actuallyHurt(source, amount, event);
-+        } else {
-+            if (!this.isInvulnerableTo(source)) {
-+                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ARMOR, this.damageContainers.peek().getNewDamage() - this.getDamageAfterArmorAbsorb(source, this.damageContainers.peek().getNewDamage()));
-+                this.getDamageAfterMagicAbsorb(source, this.damageContainers.peek().getNewDamage());
-+                float damage = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek());  // Neo
-+                this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION, Math.min(this.getAbsorptionAmount(), damage));
-+                float absorbed = Math.min(damage, this.damageContainers.peek().getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION));
-+                this.setAbsorptionAmount(Math.max(0, this.getAbsorptionAmount() - absorbed));
-+                float f1 = this.damageContainers.peek().getNewDamage();
-+                float f = absorbed;
-+                if (f > 0.0F && f < 3.4028235E37F) {
-+                    this.awardStat(Stats.DAMAGE_ABSORBED, Math.round(f * 10.0F));
-+                }
-+
-+                if (f1 != 0.0F) {
-+                    this.causeFoodExhaustion(source.getFoodExhaustion(), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
-+                    this.getCombatTracker().recordDamage(source, f1);
-+                    this.setHealth(this.getHealth() - f1);
-+                    if (f1 < 3.4028235E37F) {
-+                        this.awardStat(Stats.DAMAGE_TAKEN, Math.round(f1 * 10.0F));
-+                    }
-+
-+                    this.gameEvent(GameEvent.ENTITY_DAMAGE);
-+                    this.onDamageTaken(this.damageContainers.peek());
-+                }
-+                net.neoforged.neoforge.common.CommonHooks.onLivingDamagePost(this, this.damageContainers.peek()); // Neo
++        }
++        // CraftBukkit end
++        if (!this.isInvulnerableTo(source)) {
++            this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ARMOR, this.damageContainers.peek().getNewDamage() - this.getDamageAfterArmorAbsorb(source, this.damageContainers.peek().getNewDamage()));
++            this.getDamageAfterMagicAbsorb(source, this.damageContainers.peek().getNewDamage());
++            float damage = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek());  // Neo
++            this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION, Math.min(this.getAbsorptionAmount(), damage));
++            float absorbed = Math.min(damage, this.damageContainers.peek().getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION));
++            this.setAbsorptionAmount(Math.max(0, this.getAbsorptionAmount() - absorbed));
++            float f1 = this.damageContainers.peek().getNewDamage();
++            float f = absorbed;
+             if (f > 0.0F && f < 3.4028235E37F) {
+                 this.awardStat(Stats.DAMAGE_ABSORBED, Math.round(f * 10.0F));
              }
+ 
+             if (f1 != 0.0F) {
+-                this.causeFoodExhaustion(p_36312_.getFoodExhaustion());
+-                this.getCombatTracker().recordDamage(p_36312_, f1);
++                this.causeFoodExhaustion(source.getFoodExhaustion(), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
++                this.getCombatTracker().recordDamage(source, f1);
+                 this.setHealth(this.getHealth() - f1);
+                 if (f1 < 3.4028235E37F) {
+                     this.awardStat(Stats.DAMAGE_TAKEN, Math.round(f1 * 10.0F));
+                 }
+ 
+                 this.gameEvent(GameEvent.ENTITY_DAMAGE);
++                this.onDamageTaken(this.damageContainers.peek());
+             }
++            net.neoforged.neoforge.common.CommonHooks.onLivingDamagePost(this, this.damageContainers.peek()); // Neo
          }
 +        return false; // CraftBukkit
      }

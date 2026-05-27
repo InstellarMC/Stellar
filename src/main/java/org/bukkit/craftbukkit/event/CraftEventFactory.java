@@ -1661,7 +1661,7 @@ public class CraftEventFactory {
         }
         // Stellar end - respect modified inventory
         InventoryCloseEvent event = new InventoryCloseEvent(view, reason); // Paper
-        human.level().getCraftServer().getPluginManager().callEvent(event);i
+        human.level().getCraftServer().getPluginManager().callEvent(event);
         human.containerMenu.transferTo(human.inventoryMenu, human.getBukkitEntity());
     }
 

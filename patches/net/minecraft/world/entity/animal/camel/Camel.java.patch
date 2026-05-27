@@ -44,7 +44,7 @@
          return SoundEvents.CAMEL_DEATH;
      }
  
-@@ -383,7 +_,7 @@
+@@ -383,12 +_,12 @@
          } else {
              boolean flag = this.getHealth() < this.getMaxHealth();
              if (flag) {
@@ -53,6 +53,12 @@
              }
  
              boolean flag1 = this.isTamed() && this.getAge() == 0 && this.canFallInLove();
+             if (flag1) {
+-                this.setInLove(p_249923_);
++                this.setInLove(p_249923_, p_248995_.copy()); // Paper - Fix EntityBreedEvent copying
+             }
+ 
+             boolean flag2 = this.isBaby();
 @@ -451,9 +_,14 @@
      }
  

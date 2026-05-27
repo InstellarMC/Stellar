@@ -34,14 +34,23 @@
      }
  
      @Override
-@@ -157,10 +_,17 @@
+@@ -156,11 +_,26 @@
+         return this.inLove <= 0;
      }
  
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Fix EntityBreedEvent copying
      public void setInLove(@Nullable Player p_27596_) {
 -        this.inLove = 600;
++        // Paper start - Fix EntityBreedEvent copying
++        this.setInLove(p_27596_, null);
++    }
++    public void setInLove(@Nullable Player p_27596_, @Nullable ItemStack breedItemCopy) {
++        if (breedItemCopy != null) this.breedItem = breedItemCopy;
++        // Paper end - Fix EntityBreedEvent copying
 +        // CraftBukkit start
 +        org.bukkit.event.entity.EntityEnterLoveModeEvent entityEnterLoveModeEvent = CraftEventFactory.callEntityEnterLoveModeEvent(p_27596_, this, 600);
 +        if (entityEnterLoveModeEvent.isCancelled()) {
++            this.breedItem = null; // Paper - Fix EntityBreedEvent copying; clear if cancelled
 +            return;
 +        }
 +        this.inLove = entityEnterLoveModeEvent.getTicksInLove();
@@ -49,11 +58,11 @@
          if (p_27596_ != null) {
              this.loveCause = p_27596_.getUUID();
          }
-+        this.breedItem = p_27596_.getInventory().getSelected(); // CraftBukkit
++        // Paper - Fix EntityBreedEvent copying; set breed item in better place
  
          this.level().broadcastEntityEvent(this, (byte)18);
      }
-@@ -201,26 +_,66 @@
+@@ -201,26 +_,74 @@
  
      public void spawnChildFromBreeding(ServerLevel p_27564_, Animal p_27565_) {
          AgeableMob ageablemob = this.getBreedOffspring(p_27564_, p_27565_);
@@ -73,10 +82,18 @@
              ageablemob.moveTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);
 -            this.finalizeSpawnChildFromBreeding(p_27564_, p_27565_, ageablemob);
 -            p_27564_.addFreshEntityWithPassengers(ageablemob);
-+            // CraftBukkit start - call EntityBreedEvent
 +            ServerPlayer breeder = Optional.ofNullable(this.getLoveCause()).or(() -> {
 +                return Optional.ofNullable(p_27565_.getLoveCause());
 +            }).orElse(null);
++            // Purpur start
++            if (breeder != null && p_27564_.purpurConfig.animalBreedingCooldownSeconds > 0) {
++                if (p_27564_.hasBreedingCooldown(breeder.getUUID(), this.getClass())) {
++                    return;
++                }
++                p_27564_.addBreedingCooldown(breeder.getUUID(), this.getClass());
++            }
++            // Purpur end
++            // CraftBukkit start - call EntityBreedEvent
 +            int experience = this.getRandom().nextInt(7) + 1;
 +            org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = CraftEventFactory.callEntityBreedEvent(ageablemob, this, p_27565_, breeder, this.breedItem, experience);
 +            if (entityBreedEvent.isCancelled()) {

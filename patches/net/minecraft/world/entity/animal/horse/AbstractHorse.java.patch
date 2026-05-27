@@ -20,7 +20,7 @@
  
  public abstract class AbstractHorse extends Animal implements ContainerListener, HasCustomInventoryScreen, OwnableEntity, PlayerRideableJumping, Saddleable {
      public static final int EQUIPMENT_SLOT_OFFSET = 400;
-@@ -145,8 +_,55 @@
+@@ -145,15 +_,110 @@
          public boolean stillValid(Player p_324170_) {
              return p_324170_.getVehicle() == AbstractHorse.this || p_324170_.canInteractWithEntity(AbstractHorse.this, 4.0);
          }
@@ -75,7 +75,70 @@
 +
      protected AbstractHorse(EntityType<? extends AbstractHorse> p_30531_, Level p_30532_) {
          super(p_30531_, p_30532_);
++        this.moveControl = new net.minecraft.world.entity.ai.control.MoveControl(this); // Purpur - use vanilla controller
++        this.lookControl = new net.minecraft.world.entity.ai.control.LookControl(this); // Purpur - use vanilla controller
          this.createInventory();
+     }
+ 
++    // Purpur start
++    @Override
++    public boolean isRidable() {
++        return false; // vanilla handles
++    }
++    // Purpur end
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.generateMaxHealth(random));
++        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.generateSpeed(random));
++        this.getAttribute(Attributes.JUMP_STRENGTH).setBaseValue(this.generateJumpStrength(random));
++    }
++
++    protected double generateMaxHealth(double min, double max) {
++        if (min == max) return min;
++        int diff = Mth.floor(max - min);
++        double base = max - diff;
++        int first = Mth.floor((double) diff / 2);
++        int rest = diff - first;
++        return base + random.nextInt(first + 1) + random.nextInt(rest + 1);
++    }
++
++    protected double generateJumpStrength(double min, double max) {
++        if (min == max) return min;
++        return min + (max - min) * this.random.nextDouble();
++    }
++
++    protected double generateSpeed(double min, double max) {
++        if (min == max) return min;
++        return min + (max - min) * this.random.nextDouble();
++    }
++
++    protected float generateMaxHealth(RandomSource random) {
++        return 15.0F + (float) random.nextInt(8) + (float) random.nextInt(9);
++    }
++
++    protected double generateJumpStrength(RandomSource random) {
++        return 0.4000000059604645D + random.nextDouble() * 0.2D + random.nextDouble() * 0.2D + random.nextDouble() * 0.2D;
++    }
++
++    protected double generateSpeed(RandomSource random) {
++        return (0.44999998807907104D + random.nextDouble() * 0.3D + random.nextDouble() * 0.3D + random.nextDouble() * 0.3D) * 0.25D;
++    }
++
+     @Override
+     protected void registerGoals() {
++        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HorseHasRider(this)); // Purpur
+         this.goalSelector.addGoal(1, new PanicGoal(this, 1.2));
+         this.goalSelector.addGoal(1, new RunAroundLikeCrazyGoal(this, 1.2));
+         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0, AbstractHorse.class));
+@@ -164,6 +_,7 @@
+         if (this.canPerformRearing()) {
+             this.goalSelector.addGoal(9, new RandomStandGoal(this));
+         }
++        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HorseHasRider(this)); // Purpur
+ 
+         this.addBehaviourGoals();
+     }
 @@ -280,7 +_,7 @@
      }
  
@@ -131,7 +194,22 @@
          return 0.8F;
      }
  
-@@ -516,7 +_,7 @@
+@@ -503,7 +_,7 @@
+             j = 5;
+             if (!this.level().isClientSide && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
+                 flag = true;
+-                this.setInLove(p_30593_);
++                this.setInLove(p_30593_, p_30594_.copy()); // Paper - Fix EntityBreedEvent copying
+             }
+         } else if (p_30594_.is(Items.GOLDEN_APPLE) || p_30594_.is(Items.ENCHANTED_GOLDEN_APPLE)) {
+             f = 10.0F;
+@@ -511,12 +_,12 @@
+             j = 10;
+             if (!this.level().isClientSide && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
+                 flag = true;
+-                this.setInLove(p_30593_);
++                this.setInLove(p_30593_, p_30594_.copy()); // Paper - Fix EntityBreedEvent copying
+             }
          }
  
          if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
@@ -224,9 +302,12 @@
          this.allowStandSliding = true;
          this.standIfPossible();
          this.playJumpSound();
-@@ -1118,6 +_,11 @@
+@@ -1116,8 +_,13 @@
+             p_30558_ = new AgeableMob.AgeableMobGroupData(0.2F);
+         }
  
-         this.randomizeAttributes(p_30555_.getRandom());
+-        this.randomizeAttributes(p_30555_.getRandom());
++        // this.randomizeAttributes(p_30555_.getRandom()); // Purpur - replaced by initAttributes()
          return super.finalizeSpawn(p_30555_, p_30556_, p_30557_, p_30558_);
 +    }
 +

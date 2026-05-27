@@ -1460,7 +1460,7 @@
                  }
  
                  return p_21194_;
-@@ -1677,24 +_,197 @@
+@@ -1677,24 +_,206 @@
          }
      }
  
@@ -1481,6 +1481,7 @@
 -                this.setAbsorptionAmount(this.getAbsorptionAmount() - f1);
 +    // CraftBukkit start
 +    private org.bukkit.event.entity.EntityDamageEvent handleEntityDamage(final DamageSource damagesource, float f) {
++        f = net.neoforged.neoforge.common.CommonHooks.onLivingDamagePre(this, this.damageContainers.peek());
 +        float originalDamage = f;
 +
 +        com.google.common.base.Function<Double, Double> freezing = new com.google.common.base.Function<Double, Double>() {
@@ -1519,7 +1520,11 @@
 +        com.google.common.base.Function<Double, Double> armor = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
-+                return -(f - LivingEntity.this.getDamageAfterArmorAbsorb(damagesource, f.floatValue()));
++                // Stellar start - respect neo
++                final double amount = f - LivingEntity.this.getDamageAfterArmorAbsorb(damagesource, f.floatValue());
++                LivingEntity.this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ARMOR, (float) amount);
++                return -amount;
++                // Stellar end - respect neo
 +            }
 +        };
 +        float armorModifier = armor.apply((double) f).floatValue();
@@ -1552,7 +1557,9 @@
 +        com.google.common.base.Function<Double, Double> absorption = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
-+                return -(Math.max(f - Math.max(f - LivingEntity.this.getAbsorptionAmount(), 0.0F), 0.0F));
++                LivingEntity.this.damageContainers.peek().setReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION, Math.min(LivingEntity.this.getAbsorptionAmount(), f.floatValue()));
++                float absorbed = Math.min(f.floatValue(), LivingEntity.this.damageContainers.peek().getReduction(net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction.ABSORPTION));
++                return -(Math.max(f - Math.max(f - absorbed, 0.0F), 0.0F));
 +            }
 +        };
 +        float absorptionModifier = absorption.apply((double) f).floatValue();
@@ -1645,6 +1652,8 @@
 +                    this.setAbsorptionAmount(this.getAbsorptionAmount() - amount);
 +                }
                  this.gameEvent(GameEvent.ENTITY_DAMAGE);
++                this.onDamageTaken(this.damageContainers.peek()); // Neo
++                net.neoforged.neoforge.common.CommonHooks.onLivingDamagePost(this, this.damageContainers.peek()); // Neo
 +
 +                return true;
 +            } else {
