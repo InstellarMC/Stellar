@@ -527,10 +527,6 @@ tasks.register("youerJar", Jar) {
     destinationDirectory = file("build/libs")
 
     manifest {
-        attributes('Class-Path': configurations.libraries.resolvedConfiguration.resolvedArtifacts.collect {
-            def moduleVersion = it.moduleVersion
-            "libraries/${moduleVersion.id.group.replace('.', '/')}/${moduleVersion.id.name}/${moduleVersion.id.version}"
-        }.join(' ') + " libraries/net/minecraft/server/${minecraft_version}-${neoform_version}/server-${minecraft_version}-${neoform_version}-extra.jar")
         attributes([
                 'Main-Class': 'com.mohistmc.launcher.youer.Main'
         ])

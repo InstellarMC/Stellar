@@ -36,7 +36,7 @@ High tuned Pixelmon server implementing Paper/Purpur based on Neoforge
 ## 📊 Progress Status
 
 ✅ **Core Integration**
-- [x] NeoForge ([941187639](https://github.com/neoforged/NeoForge/commit/941187639))
+- [x] NeoForge ([f03701f39](https://github.com/neoforged/NeoForge/commit/f03701f39))
 - [x] Bukkit API ([69fa4695](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit/commits/69fa4695))
 - [x] CraftBukkit ([19bf84656](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/commits/19bf84656))
 - [x] Spigot ([a759b629](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/commits/a759b629))
