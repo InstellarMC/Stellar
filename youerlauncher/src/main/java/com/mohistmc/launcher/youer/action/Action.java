@@ -253,9 +253,7 @@ public class Action {
 
     protected void unmute() {
         if (Main.DEBUG) return;
-        if (System.out instanceof PrintStream) {
-            System.out.flush();
-        }
+        System.out.flush();
         System.setOut(origin);
     }
 
