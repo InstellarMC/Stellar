@@ -1,6 +1,7 @@
 plugins {
     id 'net.neoforged.gradleutils' version '4.0.1'
     id 'dev.lukebemish.immaculate' version '0.1.6' apply false
+    id 'idea'
 }
 
 project.version = project.neoforge_version
@@ -42,6 +43,8 @@ allprojects {
         resolutionStrategy.force("net.neoforged:mergetool:${project.mergetool_version}") // Stellar - Pinning the mergetool version to the one used in the project
     }
 }
+
+idea.module.downloadSources = false
 
 // Remove src/ sources from the root project. They are used in the neoforge subproject.
 sourceSets {
