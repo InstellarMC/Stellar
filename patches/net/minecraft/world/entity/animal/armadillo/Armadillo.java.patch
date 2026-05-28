@@ -59,14 +59,14 @@
  
      @Override
 -    public boolean hurt(DamageSource p_321611_, float p_321629_) {
-+    public boolean hurt(DamageSource source, float amount) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
          if (this.isScared()) {
 -            p_321629_ = (p_321629_ - 1.0F) / 2.0F;
-+            amount = (amount - 1.0F) / 2.0F;
++            p_21017_ = (p_21017_ - 1.0F) / 2.0F;
          }
  
 -        return super.hurt(p_321611_, p_321629_);
-+        return super.hurt(source, amount);
++        return super.hurt(p_21016_, p_21017_);
      }
  
      @Override
@@ -112,6 +112,17 @@
              this.gameEvent(GameEvent.ENTITY_INTERACT);
              this.playSound(SoundEvents.ARMADILLO_BRUSH);
              return true;
+@@ -333,8 +_,8 @@
+     }
+ 
+     @Override
+-    public void setInLove(@Nullable Player p_316200_) {
+-        super.setInLove(p_316200_);
++    public void setInLove(@Nullable Player p_316200_, @Nullable ItemStack breedItemCopy) { // Paper
++        super.setInLove(p_316200_, breedItemCopy); // Paper
+         this.makeSound(SoundEvents.ARMADILLO_EAT);
+     }
+ 
 @@ -354,7 +_,7 @@
      }
  

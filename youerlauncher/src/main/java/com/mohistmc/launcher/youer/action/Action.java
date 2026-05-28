@@ -24,9 +24,9 @@ import com.mohistmc.launcher.youer.feature.DefaultLibraries;
 import com.mohistmc.launcher.youer.libraries.Libraries;
 import com.mohistmc.launcher.youer.util.DataParser;
 import com.mohistmc.launcher.youer.util.I18n;
-import com.mohistmc.launcher.youer.util.JarMerger;
 import com.mohistmc.launcher.youer.util.YouerModuleManager;
 import com.mohistmc.tools.FileUtils;
+import com.mohistmc.tools.JarMerger;
 import com.mohistmc.tools.JarTool;
 import com.mohistmc.tools.SHA256;
 import java.io.BufferedOutputStream;
@@ -242,11 +242,18 @@ public class Action {
             out.getParentFile().mkdirs();
             out.createNewFile();
         }
-        System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(out))));
+        System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(out)) {
+            @Override
+            public void close() throws IOException {
+                flush();
+                super.close();
+            }
+        }));
     }
 
     protected void unmute() {
         if (Main.DEBUG) return;
+        System.out.flush();
         System.setOut(origin);
     }
 
@@ -258,7 +265,7 @@ public class Action {
             if (clearOld) {
                 File parentfile = file.getParentFile();
                 if (file.getAbsolutePath().contains("neoforge")) {
-                    int lastSlashIndex = parentfile.getAbsolutePath().replaceAll("\\\\", "/").lastIndexOf("/");
+                    int lastSlashIndex = parentfile.getAbsolutePath().lastIndexOf(File.separator);
                     String result = parentfile.getAbsolutePath().substring(0, lastSlashIndex + 1);
                     File old = new File(result);
                     if (old.exists()) {

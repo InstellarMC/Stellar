@@ -5,7 +5,7 @@
  
      @Override
 -    public boolean hurt(DamageSource p_108772_, float p_108773_) {
-+    public boolean hurt(DamageSource source, float amount) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
          return true;
 +    }
 +

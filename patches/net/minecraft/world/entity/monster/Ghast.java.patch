@@ -20,13 +20,13 @@
 -    public boolean hurt(DamageSource p_32730_, float p_32731_) {
 -        if (isReflectedFireball(p_32730_)) {
 -            super.hurt(p_32730_, 1000.0F);
-+    public boolean hurt(DamageSource source, float amount) {
-+        if (isReflectedFireball(source)) {
-+            super.hurt(source, 1000.0F);
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        if (isReflectedFireball(p_21016_)) {
++            super.hurt(p_21016_, 1000.0F);
              return true;
          } else {
 -            return this.isInvulnerableTo(p_32730_) ? false : super.hurt(p_32730_, p_32731_);
-+            return this.isInvulnerableTo(source) ? false : super.hurt(source, amount);
++            return this.isInvulnerableTo(p_21016_) ? false : super.hurt(p_21016_, p_21017_);
          }
      }
  

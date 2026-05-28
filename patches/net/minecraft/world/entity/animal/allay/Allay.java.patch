@@ -27,8 +27,8 @@
      @Override
 -    public boolean hurt(DamageSource p_218339_, float p_218340_) {
 -        if (p_218339_.getEntity() instanceof Player player) {
-+    public boolean hurt(DamageSource source, float amount) {
-+        if (source.getEntity() instanceof Player player) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        if (p_21016_.getEntity() instanceof Player player) {
              Optional<UUID> optional = this.getBrain().getMemory(MemoryModuleType.LIKED_PLAYER);
              if (optional.isPresent() && player.getUUID().equals(optional.get())) {
                  return false;
@@ -36,7 +36,7 @@
          }
  
 -        return super.hurt(p_218339_, p_218340_);
-+        return super.hurt(source, amount);
++        return super.hurt(p_21016_, p_21017_);
      }
  
      @Override

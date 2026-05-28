@@ -6,14 +6,14 @@
      @Override
 -    public boolean hurt(DamageSource p_34214_, float p_34215_) {
 -        boolean flag = super.hurt(p_34214_, p_34215_);
-+    public boolean hurt(DamageSource source, float amount) {
-+        boolean flag = super.hurt(source, amount);
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        boolean flag = super.hurt(p_21016_, p_21017_);
          if (this.level().isClientSide) {
              return false;
 -        } else if (flag && p_34214_.getEntity() instanceof LivingEntity) {
 -            LivingEntity livingentity = (LivingEntity)p_34214_.getEntity();
-+        } else if (flag && source.getEntity() instanceof LivingEntity) {
-+            LivingEntity livingentity = (LivingEntity)source.getEntity();
++        } else if (flag && p_21016_.getEntity() instanceof LivingEntity) {
++            LivingEntity livingentity = (LivingEntity) p_21016_.getEntity();
              if (this.canAttack(livingentity) && !BehaviorUtils.isOtherTargetMuchFurtherAwayThanCurrentAttackTarget(this, livingentity, 4.0)) {
                  this.setAttackTarget(livingentity);
              }

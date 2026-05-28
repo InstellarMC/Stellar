@@ -18,9 +18,7 @@
 
 package com.mohistmc.youer.commands;
 
-import com.mohistmc.tools.HasteUtils;
 import com.mohistmc.youer.Youer;
-import com.mohistmc.youer.api.ChatComponentAPI;
 import com.mohistmc.youer.api.ServerAPI;
 import com.mohistmc.youer.util.I18n;
 import java.io.File;
@@ -260,22 +258,7 @@ public class DumpCommand extends Command {
     }
 
     private void dump(CommandSender sender, String type, StringBuilder sb, String mode) {
-        switch (mode) {
-            case "file" -> saveToF(type, sb, sender);
-            case "web" -> {
-                try {
-                    String url = HasteUtils.pasteMohist(sb.toString());
-                    if (sender instanceof Player p) {
-                        ChatComponentAPI.sendClickOpenURLChat(p, ChatColor.GREEN + "Successfully dump " + type + ", output path: " + ChatColor.DARK_GRAY + url, url, url);
-                    } else {
-                        dumpmsg(sender, url, type);
-                    }
-                } catch (IOException e) {
-                    sender.sendMessage(ChatColor.RED + "Failed to upload to hastebin.");
-                    saveToF(type, sb, sender);
-                }
-            }
-        }
+        saveToF(type, sb, sender);
     }
 
     private void saveToF(String type, StringBuilder sb, CommandSender sender) {

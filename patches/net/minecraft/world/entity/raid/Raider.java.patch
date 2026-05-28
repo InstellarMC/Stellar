@@ -14,13 +14,13 @@
  
      @Override
 -    public boolean hurt(DamageSource p_37849_, float p_37850_) {
-+    public boolean hurt(DamageSource source, float amount) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
          if (this.hasActiveRaid()) {
              this.getCurrentRaid().updateBossbar();
          }
  
 -        return super.hurt(p_37849_, p_37850_);
-+        return super.hurt(source, amount);
++        return super.hurt(p_21016_, p_21017_);
      }
  
      @Nullable

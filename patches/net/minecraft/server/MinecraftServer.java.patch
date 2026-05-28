@@ -394,7 +394,7 @@
          }
      }
  
-@@ -325,18 +_,82 @@
+@@ -325,18 +_,83 @@
  
      protected abstract boolean initServer() throws IOException;
  
@@ -408,6 +408,7 @@
 +        }
 +        WorldBorder worldborder = serverlevel.getWorldBorder();
 +        worldborder.applySettings(serverleveldata.getWorldBorder()); // CraftBukkit - move up so that WorldBorder is set during WorldInitEvent
++        this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldInitEvent(serverlevel.getWorld())); // CraftBukkit - SPIGOT-5569: Call WorldInitEvent before any chunks are generated
 +
 +        if (!serverleveldata.isInitialized()) {
 +            try {
@@ -788,16 +789,18 @@
              int i = serverchunkcache.getGenerator().getSpawnHeight(p_177897_);
              if (i < p_177897_.getMinBuildHeight()) {
                  BlockPos blockpos = chunkpos.getWorldPosition();
-@@ -484,25 +_,72 @@
+@@ -484,25 +_,79 @@
          serverleveldata.setGameType(GameType.SPECTATOR);
      }
  
++    // CraftBukkit start
 +    public void prepareLevels(ChunkProgressListener worldloadlistener, ServerLevel serverlevel) {
++        this.forceTicks = true;
++        // CraftBukkit end
 +        markWorldsDirty();
 +        if (!serverlevel.getWorld().getKeepSpawnInMemory()) {
 +            return;
 +        }
-+        this.forceTicks = true;
 +        LOGGER.info("Preparing start region for dimension {}", serverlevel.dimension().location());
 +        BlockPos blockpos = serverlevel.getSharedSpawnPos();
 +
@@ -818,6 +821,7 @@
 +        // this.nextTickTimeNanos = SystemUtils.getNanos() + MinecraftServer.PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
 +        this.executeModerately();
 +
++        // Stellar
 +        ForcedChunksSavedData forcedchunkssaveddata = serverlevel.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
 +        if (forcedchunkssaveddata != null) {
 +            LongIterator longiterator = forcedchunkssaveddata.getChunks().iterator();
@@ -833,8 +837,12 @@
 +        Bukkit.getPluginManager().callEvent(new WorldLoadEvent(serverlevel.getWorld()));
 +
 +        // CraftBukkit start
++        // this.nextTickTimeNanos = SystemUtils.getNanos() + MinecraftServer.PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
 +        this.executeModerately();
++        // CraftBukkit end
 +        worldloadlistener.stop();
++        // CraftBukkit start
++        // this.updateMobSpawningFlags();
 +        serverlevel.setSpawnSettings(serverlevel.K.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals()); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
 +
 +        this.forceTicks = false;

@@ -29,6 +29,7 @@ import com.mohistmc.launcher.youer.util.DataParser;
 import com.mohistmc.launcher.youer.util.YouerModuleManager;
 import com.mohistmc.tools.JarTool;
 import com.mohistmc.tools.MojangEulaUtil;
+import com.mohistmc.tools.OSUtil;
 import cpw.mods.bootstraplauncher.BootstrapLauncher;
 import java.lang.management.ManagementFactory;
 import java.net.ProxySelector;
@@ -43,7 +44,6 @@ public class Main {
     public static final List<String> mainArgs = new ArrayList<>();
     public static String MCVERSION;
     public static i18n i18n;
-    public static JarTool jarTool;
 
     public static String getVersion() {
         return (Main.class.getPackage().getImplementationVersion() != null) ? Main.class.getPackage().getImplementationVersion() : MCVERSION;
@@ -56,7 +56,6 @@ public class Main {
         DataParser.parseLaunchArgs();
         YouerConfigUtil.init();
         YouerConfigUtil.i18n();
-        jarTool = new JarTool(Main.class);
         if (YouerConfigUtil.INSTALLATIONFINISHED() && YouerConfigUtil.aBoolean("youer.show_logo", true)) {
             String test = """
                     
@@ -121,7 +120,7 @@ public class Main {
 
         // Stellar start - bypass eula, reduce io ops
         if (!Boolean.getBoolean("stellar.bypass-eula")) {
-        if (!MojangEulaUtil.hasAcceptedEULA()) {
+        if (!MojangEulaUtil.hasAcceptedEULA() && OSUtil.getOS().isWindows()) {
             System.out.println(i18n.as("eula"));
             while (!"true".equals(new Scanner(System.in).next())) {
             }

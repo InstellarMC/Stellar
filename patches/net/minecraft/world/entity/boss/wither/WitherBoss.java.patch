@@ -181,24 +181,24 @@
 -        } else if (p_31461_.is(DamageTypeTags.WITHER_IMMUNE_TO) || p_31461_.getEntity() instanceof WitherBoss) {
 -            return false;
 -        } else if (this.getInvulnerableTicks() > 0 && !p_31461_.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-+    public boolean hurt(DamageSource source, float amount) {
-+        if (this.isInvulnerableTo(source)) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        if (this.isInvulnerableTo(p_21016_)) {
 +            return false;
-+        } else if (source.is(DamageTypeTags.WITHER_IMMUNE_TO) || source.getEntity() instanceof WitherBoss) {
++        } else if (p_21016_.is(DamageTypeTags.WITHER_IMMUNE_TO) || p_21016_.getEntity() instanceof WitherBoss) {
 +            return false;
-+        } else if (this.getInvulnerableTicks() > 0 && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
++        } else if (this.getInvulnerableTicks() > 0 && !p_21016_.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
              return false;
          } else {
              if (this.isPowered()) {
 -                Entity entity = p_31461_.getDirectEntity();
-+                Entity entity = source.getDirectEntity();
++                Entity entity = p_21016_.getDirectEntity();
                  if (entity instanceof AbstractArrow || entity instanceof WindCharge) {
                      return false;
                  }
              }
  
 -            Entity entity1 = p_31461_.getEntity();
-+            Entity entity1 = source.getEntity();
++            Entity entity1 = p_21016_.getEntity();
              if (entity1 != null && entity1.getType().is(EntityTypeTags.WITHER_FRIENDS)) {
                  return false;
              } else {
@@ -207,7 +207,7 @@
                  }
  
 -                return super.hurt(p_31461_, p_31462_);
-+                return super.hurt(source, amount);
++                return super.hurt(p_21016_, p_21017_);
              }
          }
      }

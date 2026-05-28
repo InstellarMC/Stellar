@@ -142,13 +142,13 @@
      @Override
 -    public boolean hurt(DamageSource p_29378_, float p_29379_) {
 -        if (this.isInvulnerableTo(p_29378_)) {
-+    public boolean hurt(DamageSource source, float amount) {
-+        if (this.isInvulnerableTo(source)) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        if (this.isInvulnerableTo(p_21016_)) {
              return false;
          } else {
 -            if (!this.level().isClientSide) {
 +            // CraftBukkit start
-+            boolean result = super.hurt(source, amount);
++            boolean result = super.hurt(p_21016_, p_21017_);
 +            if (!this.level().isClientSide && result) {
 +                // CraftBukkit end
                  this.setOrderedToSit(false);

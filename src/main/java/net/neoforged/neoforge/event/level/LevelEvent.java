@@ -62,16 +62,11 @@ public abstract class LevelEvent extends Event {
     }
 
     /**
-     * This event is fired whenever a level unloads.
-     * This event is fired whenever a level unloads in
-     * {@link Minecraft#setLevel(ClientLevel)},
-     * {@link MinecraftServer#stopServer()},
-     * {@link Minecraft#clearLevel(Screen)}.
+     * Fired whenever a level unloads. This may be due to the server being stopped, or the client switching to another level or server.
      * <p>
-     * This event is not {@linkplain ICancellableEvent cancellable} and does not {@linkplain HasResult have a result}.
+     * This event is not {@linkplain ICancellableEvent cancellable}.
      * <p>
-     * This event is fired on the {@linkplain NeoForge#EVENT_BUS main Forge event bus}
-     * on both logical sides.
+     * This event is fired on the {@linkplain NeoForge#EVENT_BUS game event bus} on both {@linkplain LogicalSide logical sides}.
      **/
     public static class Unload extends LevelEvent {
         public Unload(LevelAccessor level) {

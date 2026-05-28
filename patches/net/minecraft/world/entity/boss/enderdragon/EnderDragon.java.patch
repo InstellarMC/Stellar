@@ -195,8 +195,8 @@
      @Override
 -    public boolean hurt(DamageSource p_31113_, float p_31114_) {
 -        return !this.level().isClientSide ? this.hurt(this.body, p_31113_, p_31114_) : false;
-+    public boolean hurt(DamageSource source, float amount) {
-+        return !this.level().isClientSide ? this.hurt(this.body, source, amount) : false;
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        return !this.level().isClientSide ? this.hurt(this.body, p_21016_, p_21017_) : false;
      }
  
      protected boolean reallyHurt(DamageSource p_31162_, float p_31163_) {

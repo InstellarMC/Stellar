@@ -9,7 +9,7 @@
      public static final int MAX_STRUCTURE_DISTANCE = 8;
      private static final EnumSet<Heightmap.Types> WORLDGEN_HEIGHTMAPS = EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG, Heightmap.Types.WORLD_SURFACE_WG);
      public static final EnumSet<Heightmap.Types> FINAL_HEIGHTMAPS = EnumSet.of(
-@@ -51,8 +_,68 @@
+@@ -51,12 +_,78 @@
          return list;
      }
  
@@ -78,3 +78,30 @@
          this.parent = p_330316_ == null ? this : p_330316_;
          this.chunkType = p_331412_;
          this.heightmapsAfter = p_331442_;
+         this.index = p_330316_ == null ? 0 : p_330316_.getIndex() + 1;
++        EnumSet<Heightmap.Types> chunkSaveHeightmaps = EnumSet.copyOf(this.heightmapsAfter);
++        if (this.chunkType != ChunkType.LEVELCHUNK) {
++            chunkSaveHeightmaps.add(Heightmap.Types.WORLD_SURFACE_WG);
++            chunkSaveHeightmaps.add(Heightmap.Types.OCEAN_FLOOR_WG);
++        }
++        this.chunkSaveHeightmaps = chunkSaveHeightmaps;
+     }
+ 
+     public int getIndex() {
+@@ -107,4 +_,16 @@
+     public String getName() {
+         return BuiltInRegistries.CHUNK_STATUS.getKey(this).toString();
+     }
++
++    /**
++     * Neo: Internal use only.
++     * Patch to fix [MC-308222](https://report.bugs.mojang.com/servicedesk/customer/portal/2/MC-308222)
++     * intended for loading a non-fully generated chunk from disk to keep worldgen heightmap data for
++     * structures and features to heightmap snap properly again.
++     * @return A set of the chunk status's heightmaps alongside _WG heightmaps for worldgen-only chunk statuses
++     */
++    public EnumSet<Heightmap.Types> getChunkSaveHeightmaps() {
++        return this.chunkSaveHeightmaps;
++    }
++    private final EnumSet<Heightmap.Types> chunkSaveHeightmaps;
+ }

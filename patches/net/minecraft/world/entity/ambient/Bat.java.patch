@@ -151,8 +151,8 @@
      @Override
 -    public boolean hurt(DamageSource p_27424_, float p_27425_) {
 -        if (this.isInvulnerableTo(p_27424_)) {
-+    public boolean hurt(DamageSource source, float amount) {
-+        if (this.isInvulnerableTo(source)) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        if (this.isInvulnerableTo(p_21016_)) {
              return false;
          } else {
 -            if (!this.level().isClientSide && this.isResting()) {
@@ -161,7 +161,7 @@
              }
  
 -            return super.hurt(p_27424_, p_27425_);
-+            return super.hurt(source, amount);
++            return super.hurt(p_21016_, p_21017_);
          }
      }
  

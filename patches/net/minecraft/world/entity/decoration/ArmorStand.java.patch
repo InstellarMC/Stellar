@@ -186,7 +186,7 @@
  
      @Override
 -    public boolean hurt(DamageSource p_31579_, float p_31580_) {
-+    public boolean hurt(DamageSource source, float amount) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
          if (this.isRemoved()) {
              return false;
          } else if (this.level() instanceof ServerLevel serverlevel) {
@@ -200,45 +200,45 @@
 -                this.kill();
 -                return false;
 -            } else if (p_31579_.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
-+            if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
++            if (p_21016_.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 +                // CraftBukkit start
-+                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount)) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, p_21016_, p_21017_)) {
 +                    return false;
 +                }
-+                this.kill(source); // CraftBukkit
++                this.kill(p_21016_); // CraftBukkit
 +                // CraftBukkit end
 +                return false;
-+             } else if (this.isInvulnerableTo(source) || this.invisible || this.isMarker()) { // CraftBukkit
++             } else if (this.isInvulnerableTo(p_21016_) || this.invisible || this.isMarker()) { // CraftBukkit
 +                // CraftBukkit start
-+                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount, true, this.invisible)) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, p_21016_, p_21017_, true, this.invisible)) {
 +                    return false;
 +                }
 +                // CraftBukkit end
-+                    if (source.is(DamageTypeTags.IS_EXPLOSION)) {
++                    if (p_21016_.is(DamageTypeTags.IS_EXPLOSION)) {
 +                        // Paper start - avoid duplicate event call
-+                        org.bukkit.event.entity.EntityDeathEvent event = this.brokenByAnything(serverlevel, source);
-+                        if (!event.isCancelled()) this.kill(source, false); // CraftBukkit
++                        org.bukkit.event.entity.EntityDeathEvent event = this.brokenByAnything(serverlevel, p_21016_);
++                        if (!event.isCancelled()) this.kill(p_21016_, false); // CraftBukkit
 +                        // Paper end
 +                        return false;
-+                    } else if (source.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
++                    } else if (p_21016_.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
 +                        if (this.isOnFire()) {
-+                            this.causeDamage(serverlevel, source, 0.15F);
++                            this.causeDamage(serverlevel, p_21016_, 0.15F);
 +                        } else {
 +                            this.igniteForSeconds(5.0F);
 +                        }
 +
 +                        return false;
-+                    } else if (source.is(DamageTypeTags.BURNS_ARMOR_STANDS) && this.getHealth() > 0.5F) {
-+                        this.causeDamage(serverlevel, source, 4.0F);
++                    } else if (p_21016_.is(DamageTypeTags.BURNS_ARMOR_STANDS) && this.getHealth() > 0.5F) {
++                        this.causeDamage(serverlevel, p_21016_, 4.0F);
 +                        return false;
 +                    } else {
-+                        boolean flag = source.is(DamageTypeTags.CAN_BREAK_ARMOR_STAND);
-+                        boolean flag1 = source.is(DamageTypeTags.ALWAYS_KILLS_ARMOR_STANDS);
++                        boolean flag = p_21016_.is(DamageTypeTags.CAN_BREAK_ARMOR_STAND);
++                        boolean flag1 = p_21016_.is(DamageTypeTags.ALWAYS_KILLS_ARMOR_STANDS);
 +
 +                        if (!flag && !flag1) {
 +                            return false;
 +                        } else {
-+                            Entity entity = source.getEntity();
++                            Entity entity = p_21016_.getEntity();
 +
 +                            if (entity instanceof net.minecraft.world.entity.player.Player) {
 +                                net.minecraft.world.entity.player.Player entityhuman = (net.minecraft.world.entity.player.Player) entity;
@@ -248,36 +248,36 @@
 +                                }
 +                            }
 +
-+                            if (source.isCreativePlayer()) {
++                            if (p_21016_.isCreativePlayer()) {
 +                                this.playBrokenSound();
 +                                this.showBreakingParticles();
-+                                this.kill(source); // CraftBukkit
++                                this.kill(p_21016_); // CraftBukkit
 +                                return true;
 +                            } else {
 +                                long i = serverlevel.getGameTime();
 +
 +                                if (i - this.lastHit > 5L && !flag1) {
 +                                    serverlevel.broadcastEntityEvent(this, (byte) 32);
-+                                    this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
++                                    this.gameEvent(GameEvent.ENTITY_DAMAGE, p_21016_.getEntity());
 +                                    this.lastHit = i;
 +                                } else {
-+                                    org.bukkit.event.entity.EntityDeathEvent event = this.brokenByPlayer(serverlevel, source); // Paper
++                                    org.bukkit.event.entity.EntityDeathEvent event = this.brokenByPlayer(serverlevel, p_21016_); // Paper
 +                                    this.showBreakingParticles();
-+                                    if (!event.isCancelled()) this.kill(source, false); // Paper - we still need to kill to follow vanilla logic (emit the game event etc...)
++                                    if (!event.isCancelled()) this.kill(p_21016_, false); // Paper - we still need to kill to follow vanilla logic (emit the game event etc...)
 +                                }
 +
 +                                return true;
 +                            }
 +                        }
 +                    }
-+            } else if (source.is(DamageTypeTags.IS_EXPLOSION)) {
-+                this.brokenByAnything(serverlevel, source);
-+                this.kill(source); // CraftBukkit
++            } else if (p_21016_.is(DamageTypeTags.IS_EXPLOSION)) {
++                this.brokenByAnything(serverlevel, p_21016_);
++                this.kill(p_21016_); // CraftBukkit
 +                return false;
-+            } else if (source.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
++            } else if (p_21016_.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
                  if (this.isOnFire()) {
 -                    this.causeDamage(serverlevel, p_31579_, 0.15F);
-+                    this.causeDamage(serverlevel, source, 0.15F);
++                    this.causeDamage(serverlevel, p_21016_, 0.15F);
                  } else {
                      this.igniteForSeconds(5.0F);
                  }
@@ -285,39 +285,39 @@
                  return false;
 -            } else if (p_31579_.is(DamageTypeTags.BURNS_ARMOR_STANDS) && this.getHealth() > 0.5F) {
 -                this.causeDamage(serverlevel, p_31579_, 4.0F);
-+            } else if (source.is(DamageTypeTags.BURNS_ARMOR_STANDS) && this.getHealth() > 0.5F) {
-+                this.causeDamage(serverlevel, source, 4.0F);
++            } else if (p_21016_.is(DamageTypeTags.BURNS_ARMOR_STANDS) && this.getHealth() > 0.5F) {
++                this.causeDamage(serverlevel, p_21016_, 4.0F);
                  return false;
              } else {
 -                boolean flag1 = p_31579_.is(DamageTypeTags.CAN_BREAK_ARMOR_STAND);
 -                boolean flag = p_31579_.is(DamageTypeTags.ALWAYS_KILLS_ARMOR_STANDS);
-+                boolean flag1 = source.is(DamageTypeTags.CAN_BREAK_ARMOR_STAND);
-+                boolean flag = source.is(DamageTypeTags.ALWAYS_KILLS_ARMOR_STANDS);
++                boolean flag1 = p_21016_.is(DamageTypeTags.CAN_BREAK_ARMOR_STAND);
++                boolean flag = p_21016_.is(DamageTypeTags.ALWAYS_KILLS_ARMOR_STANDS);
                  if (!flag1 && !flag) {
                      return false;
                  } else {
 -                    if (p_31579_.getEntity() instanceof Player player && !player.getAbilities().mayBuild) {
-+                    if (source.getEntity() instanceof Player player && !player.getAbilities().mayBuild) {
++                    if (p_21016_.getEntity() instanceof Player player && !player.getAbilities().mayBuild) {
                          return false;
                      }
  
 -                    if (p_31579_.isCreativePlayer()) {
-+                    if (source.isCreativePlayer()) {
++                    if (p_21016_.isCreativePlayer()) {
                          this.playBrokenSound();
                          this.showBreakingParticles();
 -                        this.kill();
-+                        this.kill(source); // CraftBukkit
++                        this.kill(p_21016_); // CraftBukkit
                          return true;
                      } else {
                          long i = serverlevel.getGameTime();
                          if (i - this.lastHit > 5L && !flag) {
                              serverlevel.broadcastEntityEvent(this, (byte)32);
 -                            this.gameEvent(GameEvent.ENTITY_DAMAGE, p_31579_.getEntity());
-+                            this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
++                            this.gameEvent(GameEvent.ENTITY_DAMAGE, p_21016_.getEntity());
                              this.lastHit = i;
                          } else {
 -                            this.brokenByPlayer(serverlevel, p_31579_);
-+                            this.brokenByPlayer(serverlevel, source);
++                            this.brokenByPlayer(serverlevel, p_21016_);
                              this.showBreakingParticles();
 -                            this.kill();
 +                            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - SPIGOT-4890: remain as this.discard() since above damagesource method will call death event

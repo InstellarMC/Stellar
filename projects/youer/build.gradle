@@ -239,11 +239,11 @@ dependencies {
     moduleLibraries "cpw.mods:bootstraplauncher:${project.bootstraplauncher_version}"
     moduleLibraries "net.neoforged:JarJarFileSystems:${project.jarjar_version}"
 
-    libraries("com.mohistmc.fancymodloader:loader:${project.fancy_mod_loader_version}") {
+    libraries("net.neoforged.fancymodloader:loader:${project.fancy_mod_loader_version}") {
         exclude group: 'org.slf4j'
         exclude group: 'net.fabricmc'
     }
-    libraries("com.mohistmc.fancymodloader:earlydisplay:${project.fancy_mod_loader_version}") {
+    libraries("net.neoforged.fancymodloader:earlydisplay:${project.fancy_mod_loader_version}") {
         exclude group: 'org.lwjgl'
         exclude group: 'org.slf4j'
         exclude group: 'net.fabricmc'
@@ -271,21 +271,26 @@ dependencies {
     compileOnly "org.jetbrains:annotations:${project.jetbrains_annotations_version}"
 
     userdevCompileOnly jarJar("io.github.llamalad7:mixinextras-neoforge:${project.mixin_extras_version}")
+    userdevTestFixtures("net.neoforged.fancymodloader:junit-fml:${project.fancy_mod_loader_version}") {
+        endorseStrictVersions()
+    }
 
     // Must be implementation instead of compileOnly so that running dependent projects such as tests will trigger (re)compilation of coremods.
     // (Only needed when compiling through IntelliJ non-delegated builds - otherwise `compileOnly` would work).
     implementation(jarJar(project(":neoforge-coremods")))
 
-    // craftbukkit
+    // CraftBukkit
     libraries 'org.fusesource.jansi:jansi:2.4.1'
-    libraries 'com.googlecode.json-simple:json-simple:1.1.1'
+    libraries('com.googlecode.json-simple:json-simple:1.1.1') {
+        exclude group: 'junit'
+    }
     libraries 'org.xerial:sqlite-jdbc:3.46.0.0'
     libraries 'com.mysql:mysql-connector-j:8.4.0'
     libraries('net.md-5:SpecialSource:1.11.2') {
         exclude group: 'com.opencsv'
     }
     libraries 'org.apache.logging.log4j:log4j-iostreams:2.22.1'
-    // spigot
+    // Spigot
     libraries 'commons-codec:commons-codec:1.16.0'
     libraries 'net.sf.jopt-simple:jopt-simple:5.0.4'
 
@@ -293,20 +298,21 @@ dependencies {
     libraries 'com.mohistmc:dynamicenum:0.3.1'
     libraries 'com.mohistmc:i18n:0.6'
     libraries 'com.mohistmc:json:0.5'
-    libraries 'com.mohistmc:tools:0.6'
-    libraries ('com.mohistmc:librariesvault:1.21.1-1') {
+    libraries 'com.mohistmc:tools:0.6.3'
+    libraries ('com.mohistmc:librariesvault:1.21.1-2') {
         exclude group: 'org.yaml'
         exclude group: 'io.leangen.geantyref'
         exclude group: 'org.spongepowered'
         exclude group: 'org.apache.httpcomponents'
         exclude group: 'org.apache.commons'
+        exclude group: 'org.mariadb.jdbc'
     }
-    libraries 'com.konghq:unirest-java-core:4.4.5'
+    libraries 'com.konghq:unirest-java-core:4.5.1'
     implementation(jarJar('commons-lang:commons-lang:2.6-mohist'))
     libraries "net.minecrell:terminalconsoleappender:1.4.0"
-    libraries "org.jline:jline-reader:3.21.0"   // Dep of TerminalConsoleAppender
-    libraries "org.jline:jline-terminal:3.21.0" // Dep of TerminalConsoleAppender
-    libraries "org.jline:jline-terminal-jansi:3.21.0" // Dep of TerminalConsoleAppender
+    libraries "org.jline:jline-reader:3.30.6"   // Dep of TerminalConsoleAppender
+    libraries "org.jline:jline-terminal:3.30.6" // Dep of TerminalConsoleAppender
+    libraries "org.jline:jline-terminal-jansi:3.30.6" // Dep of TerminalConsoleAppender
 
     // Paper start
     libraries "org.jspecify:jspecify:1.0.0"
@@ -524,10 +530,6 @@ tasks.register("youerJar", Jar) {
     destinationDirectory = file("build/libs")
 
     manifest {
-        attributes('Class-Path': configurations.libraries.resolvedConfiguration.resolvedArtifacts.collect {
-            def moduleVersion = it.moduleVersion
-            "libraries/${moduleVersion.id.group.replace('.', '/')}/${moduleVersion.id.name}/${moduleVersion.id.version}"
-        }.join(' ') + " libraries/net/minecraft/server/${minecraft_version}-${neoform_version}/server-${minecraft_version}-${neoform_version}-extra.jar")
         attributes([
                 'Main-Class': 'com.mohistmc.launcher.youer.Main'
         ])
@@ -555,7 +557,7 @@ tasks.register("youerJar", Jar) {
 
     configurations.libraries.resolvedConfiguration.resolvedArtifacts.collect {
         def moduleVersion = it.moduleVersion
-        if (!moduleVersion.id.name.startsWith("asm")) {
+        if (!moduleVersion.id.name.startsWith("asm") && !moduleVersion.id.name.startsWith("securejarhandler")) {
             from(it.file) {
                 into("META-INF/libraries/${moduleVersion.id.group.replace('.', '/')}/${moduleVersion.id.name}/${moduleVersion.id.version}/")
             }

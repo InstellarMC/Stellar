@@ -52,10 +52,10 @@
  
      @Override
 -    public boolean hurt(DamageSource p_28848_, float p_28849_) {
-+    public boolean hurt(DamageSource source, float amount) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
          Crackiness.Level crackiness$level = this.getCrackiness();
 -        boolean flag = super.hurt(p_28848_, p_28849_);
-+        boolean flag = super.hurt(source, amount);
++        boolean flag = super.hurt(p_21016_, p_21017_);
          if (flag && this.getCrackiness() != crackiness$level) {
              this.playSound(SoundEvents.IRON_GOLEM_DAMAGE, 1.0F, 1.0F);
          }

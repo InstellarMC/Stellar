@@ -33,8 +33,8 @@
      @Override
 -    public boolean hurt(DamageSource p_29963_, float p_29964_) {
 -        if (super.hurt(p_29963_, p_29964_) && this.getLastHurtByMob() != null) {
-+    public boolean hurt(DamageSource source, float amount) {
-+        if (super.hurt(source, amount) && this.getLastHurtByMob() != null) {
++    public boolean hurt(DamageSource p_21016_, float p_21017_) {
++        if (super.hurt(p_21016_, p_21017_) && this.getLastHurtByMob() != null) {
              if (!this.level().isClientSide) {
                  this.spawnInk();
              }
