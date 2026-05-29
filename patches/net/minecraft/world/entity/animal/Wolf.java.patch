@@ -1,21 +1,5 @@
 --- a/net/minecraft/world/entity/animal/Wolf.java
 +++ b/net/minecraft/world/entity/animal/Wolf.java
-@@ -8,7 +_,6 @@
- import net.minecraft.core.Holder;
- import net.minecraft.core.Registry;
- import net.minecraft.core.RegistryAccess;
--import net.minecraft.core.component.DataComponents;
- import net.minecraft.core.particles.ItemParticleOption;
- import net.minecraft.core.particles.ParticleTypes;
- import net.minecraft.core.registries.Registries;
-@@ -86,6 +_,7 @@
- import net.minecraft.world.level.gameevent.GameEvent;
- import net.minecraft.world.level.pathfinder.PathType;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;import org.bukkit.event.entity.EntityDamageEvent;
- 
- public class Wolf extends TamableAnimal implements NeutralMob, VariantHolder<Holder<WolfVariant>> {
-     private static final EntityDataAccessor<Boolean> DATA_INTERESTED_ID = SynchedEntityData.defineId(Wolf.class, EntityDataSerializers.BOOLEAN);
 @@ -96,6 +_,37 @@
          EntityType<?> entitytype = p_348295_.getType();
          return entitytype == EntityType.SHEEP || entitytype == EntityType.RABBIT || entitytype == EntityType.FOX;
@@ -197,7 +181,7 @@
 -    protected void actuallyHurt(DamageSource p_331935_, float p_330695_) {
 -        if (!this.canArmorAbsorb(p_331935_)) {
 -            super.actuallyHurt(p_331935_, p_330695_);
-+    public boolean actuallyHurt(DamageSource source, float amount, EntityDamageEvent event) { // CraftBukkit - void -> boolean
++    public boolean actuallyHurt(DamageSource source, float amount, org.bukkit.event.entity.EntityDamageEvent event) { // CraftBukkit - void -> boolean
 +        if (!this.canArmorAbsorb(source)) {
 +            return super.actuallyHurt(source, amount, event); // CraftBukkit
          } else {
@@ -281,13 +265,33 @@
                              return InteractionResult.SUCCESS_NO_ITEM_USED;
                          } else {
                              return interactionresult;
+@@ -478,6 +_,19 @@
+                 itemstack.consume(1, p_30412_);
+                 this.tryToTame(p_30412_);
+                 return InteractionResult.SUCCESS;
++                // Purpur start
++            } else if (this.level().purpurConfig.wolfMilkCuresRabies && itemstack.getItem() == Items.MILK_BUCKET && this.isRabid()) {
++                if (!p_30412_.isCreative()) {
++                    p_30412_.setItemInHand(p_30413_, new ItemStack(Items.BUCKET));
++                }
++                this.setRabid(false);
++                for (int i = 0; i < 10; ++i) {
++                    ((ServerLevel) level()).sendParticles(((ServerLevel) level()).players(), null, ParticleTypes.HAPPY_VILLAGER,
++                            getX() + random.nextFloat(), getY() + (random.nextFloat() * 1.5), getZ() + random.nextFloat(), 1,
++                            random.nextGaussian() * 0.05D, random.nextGaussian() * 0.05D, random.nextGaussian() * 0.05D, 0, true);
++                }
++                return InteractionResult.SUCCESS;
++                // Purpur end
+             } else {
+                 return super.mobInteract(p_30412_, p_30413_);
+             }
 @@ -488,7 +_,8 @@
      }
  
      private void tryToTame(Player p_333736_) {
 -        if (this.random.nextInt(3) == 0) {
 +        // CraftBukkit - added event call and isCancelled check.
-+        if (this.random.nextInt(3) == 0  && !net.neoforged.neoforge.event.EventHooks.onAnimalTame(this, p_333736_) && !CraftEventFactory.callEntityTameEvent(this, p_333736_).isCancelled()) {
++        if ((this.level().purpurConfig.alwaysTameInCreative && p_333736_.hasInfiniteMaterials()) || this.random.nextInt(3) == 0  && !net.neoforged.neoforge.event.EventHooks.onAnimalTame(this, p_333736_) && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, p_333736_).isCancelled()) { // Neo // CraftBukkit
              this.tame(p_333736_);
              this.navigation.stop();
              this.setTarget(null);

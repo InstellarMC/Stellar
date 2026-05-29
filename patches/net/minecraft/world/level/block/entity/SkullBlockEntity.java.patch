@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/level/block/entity/SkullBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/SkullBlockEntity.java
-@@ -1,6 +_,6 @@
- package net.minecraft.world.level.block.entity;
- 
--import com.google.common.cache.CacheBuilder;
-+import com.destroystokyo.paper.profile.PaperMinecraftSessionService;import com.google.common.cache.CacheBuilder;
- import com.google.common.cache.CacheLoader;
- import com.google.common.cache.LoadingCache;
- import com.mojang.authlib.GameProfile;
 @@ -41,7 +_,7 @@
      @Nullable
      private static LoadingCache<String, CompletableFuture<Optional<GameProfile>>> profileCacheByName;
@@ -50,7 +42,7 @@
              } else {
 -                ProfileResult profileresult = p_339676_.sessionService().fetchProfile(p_339663_, true);
 +                // Paper start - fill player profile events
-+                if (p_339676_.sessionService() instanceof PaperMinecraftSessionService paperService) {
++                if (p_339676_.sessionService() instanceof com.destroystokyo.paper.profile.PaperMinecraftSessionService paperService) {
 +                    final GameProfile profile = pair.getSecond() != null ? pair.getSecond() : new com.mojang.authlib.GameProfile(pair.getFirst(), "");
 +                    return Optional.ofNullable(paperService.fetchProfile(profile, true)).map(ProfileResult::profile);
 +                }

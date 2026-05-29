@@ -252,11 +252,12 @@ dependencies {
     libraries "net.neoforged:bus:${project.eventbus_version}"
     libraries "net.neoforged:coremods:${project.coremods_version}"
     libraries "cpw.mods:modlauncher:${project.modlauncher_version}"
-    libraries "net.neoforged:mergetool:${project.mergetool_version}" // Stellar - remove api suffix
+    libraries "net.neoforged:mergetool:${project.mergetool_version}:api"
     libraries "com.electronwill.night-config:core:${project.nightconfig_version}"
     libraries "com.electronwill.night-config:toml:${project.nightconfig_version}"
     libraries "org.apache.maven:maven-artifact:${project.apache_maven_artifact_version}"
     libraries "net.jodah:typetools:${project.typetools_version}"
+    libraries "net.minecrell:terminalconsoleappender:${project.terminalconsoleappender_version}"
     libraries("net.fabricmc:sponge-mixin:${project.mixin_version}") { transitive = false }
     libraries "org.openjdk.nashorn:nashorn-core:${project.nashorn_core_version}"
     libraries("net.neoforged:JarJarSelector:${project.jarjar_version}") {
@@ -309,7 +310,6 @@ dependencies {
     }
     libraries 'com.konghq:unirest-java-core:4.5.1'
     implementation(jarJar('commons-lang:commons-lang:2.6-mohist'))
-    libraries "net.minecrell:terminalconsoleappender:1.4.0"
     libraries "org.jline:jline-reader:3.30.6"   // Dep of TerminalConsoleAppender
     libraries "org.jline:jline-terminal:3.30.6" // Dep of TerminalConsoleAppender
     libraries "org.jline:jline-terminal-jansi:3.30.6" // Dep of TerminalConsoleAppender
@@ -521,7 +521,7 @@ tasks.jar {
 }
 
 tasks.register("youerJar", Jar) {
-    dependsOn( youerJar0, downloadMultipleFiles, project(':youerlauncher').tasks.jar )
+    dependsOn( youerJar0, downloadMultipleFiles, project(':launcher').tasks.jar )
     group = "build" // Stellar
     archiveClassifier = "server"
     archiveExtension = "jar"
@@ -544,7 +544,7 @@ tasks.register("youerJar", Jar) {
 
     //println(CLASS_PATH)
 
-    from(zipTree(project(':youerlauncher').tasks.jar.outputs.getFiles().asPath.replace(".jar", "-all.jar"))) {
+    from(zipTree(project(':launcher').tasks.jar.outputs.getFiles().asPath.replace(".jar", "-all.jar"))) {
         into ""
     }
     from(zipTree(youerJar0.outputs.getFiles().asPath)) {

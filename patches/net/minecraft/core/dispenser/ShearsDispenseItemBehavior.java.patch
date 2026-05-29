@@ -1,23 +1,6 @@
 --- a/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
-@@ -1,5 +_,6 @@
- package net.minecraft.core.dispenser;
- 
-+import java.util.concurrent.atomic.AtomicReference;
- import net.minecraft.core.BlockPos;
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.sounds.SoundEvents;
-@@ -7,24 +_,50 @@
- import net.minecraft.tags.BlockTags;
- import net.minecraft.world.entity.EntitySelector;
- import net.minecraft.world.entity.LivingEntity;
--import net.minecraft.world.entity.Shearable;
--import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.level.block.BeehiveBlock;
- import net.minecraft.world.level.block.DispenserBlock;
- import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
--import net.minecraft.world.level.block.state.BlockBehaviour;
+@@ -17,14 +_,42 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.AABB;
@@ -57,38 +40,29 @@
          if (!serverlevel.isClientSide()) {
              BlockPos blockpos = p_302443_.pos().relative(p_302443_.state().getValue(DispenserBlock.FACING));
 -            this.setSuccess(tryShearBeehive(serverlevel, blockpos) || tryShearLivingEntity(serverlevel, blockpos));
-+            bukkitBlockAndcraftItem(bukkitBlock, craftItem); // Mohist
-+            this.setSuccess(net.neoforged.neoforge.common.CommonHooks.tryDispenseShearsHarvestBlock(p_302443_, p_123581_, serverlevel, blockpos) || tryShearBeehive(serverlevel, blockpos) || tryShearLivingEntity(serverlevel, blockpos, p_123581_)); // CraftBukkit
++            this.setSuccess(net.neoforged.neoforge.common.CommonHooks.tryDispenseShearsHarvestBlock(p_302443_, p_123581_, serverlevel, blockpos) || tryShearBeehive(serverlevel, blockpos) || tryShearLivingEntity(serverlevel, blockpos, bukkitBlock, craftItem)); // Neo // CraftBukkit
              if (this.isSuccess()) {
                  p_123581_.hurtAndBreak(1, serverlevel, null, p_348118_ -> {
                  });
-@@ -51,10 +_,27 @@
+@@ -51,10 +_,19 @@
          return false;
      }
  
 -    private static boolean tryShearLivingEntity(ServerLevel p_123583_, BlockPos p_123584_) {
-+    // Mohist start
-+    private static AtomicReference<Block> bukkitBlock0 = new AtomicReference<>();
-+    private static AtomicReference<CraftItemStack> craftItem0 = new AtomicReference<>();
-+    private static void bukkitBlockAndcraftItem(org.bukkit.block.Block bukkitBlock, CraftItemStack craftItem) {
-+        bukkitBlock0.set(bukkitBlock);
-+        craftItem0.set(craftItem);
-+    }
-+
-+    private static boolean tryShearLivingEntity(ServerLevel p_123583_, BlockPos p_123584_, ItemStack stack) { // CraftBukkit - add args
++    private static boolean tryShearLivingEntity(ServerLevel p_123583_, BlockPos p_123584_, org.bukkit.block.Block bukkitBlock, CraftItemStack craftItem) { // CraftBukkit - add args
          for (LivingEntity livingentity : p_123583_.getEntitiesOfClass(LivingEntity.class, new AABB(p_123584_), EntitySelector.NO_SPECTATORS)) {
 -            if (livingentity instanceof Shearable shearable && shearable.readyForShearing()) {
 -                shearable.shear(SoundSource.BLOCKS);
-+            if (livingentity instanceof net.neoforged.neoforge.common.IShearable shearable && shearable.isShearable(null, stack, p_123583_, p_123584_)) {
++            if (livingentity instanceof net.neoforged.neoforge.common.IShearable shearable && shearable.isShearable(null, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(craftItem), p_123583_, p_123584_)) { // Neo
 +                // CraftBukkit start
 +                // Paper start - Add drops to shear events
-+                org.bukkit.event.block.BlockShearEntityEvent event = CraftEventFactory.callBlockShearEntityEvent(livingentity, bukkitBlock0.getAndSet(null), craftItem0.getAndSet(null), shearable.generateDefaultDrops());
++                org.bukkit.event.block.BlockShearEntityEvent event = CraftEventFactory.callBlockShearEntityEvent(livingentity, bukkitBlock, craftItem, shearable.generateDefaultDrops());
 +                if (event.isCancelled()) {
 +                    // Paper end - Add drops to shear events
 +                    continue;
 +                }
 +                // CraftBukkit end
-+                shearable.onSheared(null, stack, p_123583_, p_123584_, CraftItemStack.asNMSCopy(event.getDrops())) // Paper - Add drops to shear events
++                shearable.onSheared(null, craftItem.handle, p_123583_, p_123584_, CraftItemStack.asNMSCopy(event.getDrops())) // Paper - Add drops to shear events
 +                        .forEach(drop -> shearable.spawnShearedDrop(p_123583_, p_123584_, drop));
                  p_123583_.gameEvent(null, GameEvent.SHEAR, p_123584_);
                  return true;

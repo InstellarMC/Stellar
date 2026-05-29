@@ -1,34 +1,6 @@
 --- a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -1,15 +_,21 @@
- package net.minecraft.server.network;
- 
- import com.google.common.primitives.Ints;
-+import com.mohistmc.youer.util.I18n;
- import com.mojang.authlib.GameProfile;
- import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
- import com.mojang.authlib.yggdrasil.ProfileResult;
- import com.mojang.logging.LogUtils;
-+import io.papermc.paper.configuration.GlobalConfiguration;
-+import java.lang.reflect.Field;
-+import java.lang.reflect.InvocationTargetException;
-+import java.lang.reflect.Method;
- import java.math.BigInteger;
- import java.net.InetAddress;
- import java.net.InetSocketAddress;
- import java.net.SocketAddress;
- import java.security.PrivateKey;
-+import java.util.Map;
- import java.util.Objects;
- import java.util.concurrent.atomic.AtomicInteger;
- import javax.annotation.Nullable;
-@@ -20,12 +_,17 @@
- import net.minecraft.DefaultUncaughtExceptionHandler;
- import net.minecraft.core.UUIDUtil;
- import net.minecraft.network.Connection;
-+import net.minecraft.network.ConnectionProtocol;
- import net.minecraft.network.DisconnectionDetails;
-+import net.minecraft.network.FriendlyByteBuf;
+@@ -24,8 +_,11 @@
  import net.minecraft.network.PacketSendListener;
  import net.minecraft.network.TickablePacketListener;
  import net.minecraft.network.chat.Component;
@@ -40,27 +12,12 @@
  import net.minecraft.network.protocol.login.ClientboundGameProfilePacket;
  import net.minecraft.network.protocol.login.ClientboundHelloPacket;
  import net.minecraft.network.protocol.login.ClientboundLoginCompressionPacket;
-@@ -35,42 +_,85 @@
- import net.minecraft.network.protocol.login.ServerboundHelloPacket;
- import net.minecraft.network.protocol.login.ServerboundKeyPacket;
- import net.minecraft.network.protocol.login.ServerboundLoginAcknowledgedPacket;
-+import net.minecraft.resources.ResourceLocation;
- import net.minecraft.server.MinecraftServer;
-+import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.server.players.PlayerList;
- import net.minecraft.util.Crypt;
- import net.minecraft.util.CryptException;
- import net.minecraft.util.RandomSource;
--import net.minecraft.util.StringUtil;
-+import net.neoforged.fml.ModList;
+@@ -44,33 +_,73 @@
  import org.apache.commons.lang3.Validate;
--import org.slf4j.Logger;
--
+ import org.slf4j.Logger;
+ 
 -public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener {
-+import org.bukkit.craftbukkit.entity.CraftPlayer;
-+import org.bukkit.craftbukkit.util.Waitable;import org.bukkit.event.player.AsyncPlayerPreLoginEvent;import org.bukkit.event.player.PlayerPreLoginEvent;import org.slf4j.Logger;
-+
-+public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener, CraftPlayer.TransferCookieConnection {
++public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener, org.bukkit.craftbukkit.entity.CraftPlayer.TransferCookieConnection {
 +
 +    @Override
 +    public boolean isTransferred() {
@@ -68,8 +25,8 @@
 +    }
 +
 +    @Override
-+    public ConnectionProtocol getProtocol() {
-+        return ConnectionProtocol.LOGIN;
++    public net.minecraft.network.ConnectionProtocol getProtocol() {
++        return net.minecraft.network.ConnectionProtocol.LOGIN;
 +    }
 +
 +    @Override
@@ -103,7 +60,7 @@
      private final String serverId = "";
 -    private final boolean transferred;
 +    public final boolean transferred; // Paper
-+    private ServerPlayer player; // CraftBukkit
++    private net.minecraft.server.level.ServerPlayer player; // CraftBukkit
 +    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
 +    private int velocityLoginMessageId = -1; // Paper - Add Velocity IP Forwarding Support
 +    public @Nullable java.util.UUID requestedUuid; // Paper
@@ -194,7 +151,7 @@
              } else {
 -                this.startClientVerification(UUIDUtil.createOfflineProfile(this.requestedUsername));
 +                // Paper start - Add Velocity IP Forwarding Support
-+                if (GlobalConfiguration.get().proxies.velocity.enabled) {
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
 +                    this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
 +                    net.minecraft.network.FriendlyByteBuf buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
 +                    buf.writeByte(com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
@@ -355,7 +312,7 @@
 +        // Paper start - Add more fields to AsyncPlayerPreLoginEvent
 +        final InetAddress rawAddress = ((InetSocketAddress) this.connection.channel.remoteAddress()).getAddress();
 +        com.destroystokyo.paper.profile.PlayerProfile profile = com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(gameprofile); // Paper - setPlayerProfileAPI
-+        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, rawAddress, uniqueId, this.transferred, profile, this.connection.hostname, this.paperLoginConnection);
++        org.bukkit.event.player.AsyncPlayerPreLoginEvent asyncEvent = new org.bukkit.event.player.AsyncPlayerPreLoginEvent(playerName, address, rawAddress, uniqueId, this.transferred, profile, this.connection.hostname, this.paperLoginConnection);
 +        server.getPluginManager().callEvent(asyncEvent);
 +        profile = asyncEvent.getPlayerProfile();
 +        profile.complete(true); // Paper - setPlayerProfileAPI
@@ -364,25 +321,25 @@
 +        uniqueId = gameprofile.getId();
 +        // Paper end - Add more fields to AsyncPlayerPreLoginEvent
 +
-+        if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
-+            final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
-+            if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
++        if (org.bukkit.event.player.PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
++            final org.bukkit.event.player.PlayerPreLoginEvent event = new org.bukkit.event.player.PlayerPreLoginEvent(playerName, address, uniqueId);
++            if (asyncEvent.getResult() != org.bukkit.event.player.PlayerPreLoginEvent.Result.ALLOWED) {
 +                event.disallow(asyncEvent.getResult(), asyncEvent.kickMessage()); // Paper - Adventure
 +            }
-+            Waitable<PlayerPreLoginEvent.Result> waitable = new Waitable<>() {
++            org.bukkit.craftbukkit.util.Waitable<org.bukkit.event.player.PlayerPreLoginEvent.Result> waitable = new org.bukkit.craftbukkit.util.Waitable<>() {
 +                @Override
-+                protected PlayerPreLoginEvent.Result evaluate() {
++                protected org.bukkit.event.player.PlayerPreLoginEvent.Result evaluate() {
 +                    server.getPluginManager().callEvent(event);
 +                    return event.getResult();
 +                }
 +            };
 +
 +            ServerLoginPacketListenerImpl.this.server.processQueue.add(waitable);
-+            if (waitable.get() != PlayerPreLoginEvent.Result.ALLOWED) {
++            if (waitable.get() != org.bukkit.event.player.PlayerPreLoginEvent.Result.ALLOWED) {
 +                this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.kickMessage())); // Paper - Adventure
 +            }
 +        } else {
-+            if (asyncEvent.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
++            if (asyncEvent.getLoginResult() != org.bukkit.event.player.AsyncPlayerPreLoginEvent.Result.ALLOWED) {
 +                this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(asyncEvent.kickMessage())); // Paper - Adventure
 +            }
 +        }
