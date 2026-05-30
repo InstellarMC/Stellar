@@ -1,11 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/net/minecraft/world/entity/projectile/Projectile.java
-@@ -27,35 +_,92 @@
- import net.minecraft.world.phys.EntityHitResult;
- import net.minecraft.world.phys.HitResult;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.projectiles.ProjectileSource;
+@@ -30,32 +_,87 @@
  
  public abstract class Projectile extends Entity implements TraceableEntity {
      @Nullable
@@ -80,7 +75,7 @@
 +        if (fillCache) {
 +            this.getOwner();
 +        }
-+        if (this.cachedOwner != null && !this.cachedOwner.isRemoved() && this.projectileSource == null && this.cachedOwner.getBukkitEntity() instanceof ProjectileSource projSource) {
++        if (this.cachedOwner != null && !this.cachedOwner.isRemoved() && this.projectileSource == null && this.cachedOwner.getBukkitEntity() instanceof org.bukkit.projectiles.ProjectileSource projSource) {
 +            this.projectileSource = projSource;
 +        }
 +    }
@@ -120,7 +115,7 @@
 +
 +    // CraftBukkit start - call projectile hit event
 +    public ProjectileDeflection preHitTargetOrDeflectSelf(HitResult movingobjectposition) {
-+        org.bukkit.event.entity.ProjectileHitEvent event = CraftEventFactory.callProjectileHitEvent(this, movingobjectposition);
++        org.bukkit.event.entity.ProjectileHitEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition);
 +        this.hitCancelled = event != null && event.isCancelled();
 +        if (movingobjectposition.getType() == HitResult.Type.BLOCK || !this.hitCancelled) {
 +            return this.hitTargetOrDeflectSelf(movingobjectposition);

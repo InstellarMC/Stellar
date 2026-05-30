@@ -1,18 +1,7 @@
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -1,7 +_,6 @@
- package net.minecraft.world.level.chunk;
- 
- import com.google.common.collect.ImmutableList;
--import com.google.common.collect.Maps;
- import com.mojang.logging.LogUtils;
- import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
- import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-@@ -48,9 +_,10 @@
- import net.minecraft.world.level.material.Fluids;
- import net.minecraft.world.ticks.LevelChunkTicks;
+@@ -50,7 +_,7 @@
  import net.minecraft.world.ticks.TickContainerAccess;
-+import org.bukkit.craftbukkit.CraftChunk;
  import org.slf4j.Logger;
  
 -public class LevelChunk extends ChunkAccess implements net.neoforged.neoforge.attachment.IAttachmentHolder {

@@ -624,7 +624,7 @@
          this.setYRot(p_19916_ % 360.0F);
          this.setXRot(p_19917_ % 360.0F);
      }
-@@ -416,11 +_,30 @@
+@@ -416,11 +_,27 @@
      }
  
      public void tick() {
@@ -647,9 +647,6 @@
 +    // CraftBukkit end
 +
      public void baseTick() {
-+        if (BanEntity.check(this)) {
-+            this.discard();
-+        }
          this.level().getProfiler().push("entityBaseTick");
 +        if (firstTick && this instanceof net.minecraft.world.entity.NeutralMob neutralMob) neutralMob.tickInitialPersistentAnger(level); // Paper - Prevent entity loading causing async lookups
          this.inBlockState = null;
@@ -686,7 +683,7 @@
          }
  
          this.checkBelowWorld();
-@@ -488,7 +_,13 @@
+@@ -488,7 +_,15 @@
      }
  
      public void checkBelowWorld() {
@@ -696,8 +693,10 @@
 +        // Paper start - Configurable nether ceiling damage
 +        if (this.getY() < (this.level.getMinBuildHeight() + this.level.getWorld().getVoidDamageMinBuildHeightOffset()) || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER // Paper - use configured min build height offset
 +                && LambdaFix.checkBelowWorld(this)
++                && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> this.getY() >= v)
 +                && (!(this instanceof Player player) || !player.getAbilities().invulnerable))) {
 +            // Paper end - Configurable nether ceiling damage
++            if (this.level().purpurConfig.teleportOnNetherCeilingDamage && this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER && this instanceof ServerPlayer player) player.teleport(io.papermc.paper.util.MCUtil.toLocation(this.level, this.level.getSharedSpawnPos())); else // Purpur
              this.onBelowWorld();
          }
      }
@@ -2002,7 +2001,7 @@
                          if (serverlevel.getServer().isLevelEnabled(serverlevel1)
                              && (serverlevel1.dimension() == serverlevel.dimension() || this.canChangeDimensions(serverlevel, serverlevel1))) {
 -                            this.changeDimension(dimensiontransition);
-+                            if (YouerConfig.custom_entity_tp_nether) {
++                            if (com.mohistmc.youer.YouerConfig.custom_entity_tp_nether) {
 +                                this.changeDimension(dimensiontransition);
 +                            }
                          }

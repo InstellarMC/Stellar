@@ -1,15 +1,12 @@
 --- a/net/minecraft/world/item/crafting/RecipeHolder.java
 +++ b/net/minecraft/world/item/crafting/RecipeHolder.java
-@@ -3,8 +_,15 @@
- import net.minecraft.network.RegistryFriendlyByteBuf;
- import net.minecraft.network.codec.StreamCodec;
+@@ -5,6 +_,12 @@
  import net.minecraft.resources.ResourceLocation;
-+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
  
  public record RecipeHolder<T extends Recipe<?>>(ResourceLocation id, T value) {
 +    // CraftBukkit start
 +    public final org.bukkit.inventory.Recipe toBukkitRecipe() {
-+        return this.value.toBukkitRecipe(CraftNamespacedKey.fromMinecraft(this.id));
++        return this.value.toBukkitRecipe(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.id));
 +    }
 +    // CraftBukkit end
 +

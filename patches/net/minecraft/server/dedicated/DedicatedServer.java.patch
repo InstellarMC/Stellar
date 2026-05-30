@@ -1,53 +1,6 @@
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -1,26 +_,27 @@
- package net.minecraft.server.dedicated;
- 
--import com.google.common.collect.Lists;
-+import com.mohistmc.youer.Metrics;
-+import com.mohistmc.youer.YouerConfig;
-+import com.mohistmc.youer.WatchMohist;
-+import com.mohistmc.youer.api.ServerAPI;
-+import com.mohistmc.youer.util.I18n;
- import com.mojang.authlib.GameProfile;
- import com.mojang.datafixers.DataFixer;
- import com.mojang.logging.LogUtils;
--import java.io.BufferedReader;
-+import com.destroystokyo.paper.console.PaperConsole;
- import java.io.IOException;
--import java.io.InputStreamReader;
- import java.io.Writer;
- import java.net.InetAddress;
- import java.net.Proxy;
- import java.net.URI;
--import java.nio.charset.StandardCharsets;
- import java.nio.file.Files;
- import java.nio.file.Path;
--import java.util.Collections;
- import java.util.List;
- import java.util.Locale;
- import java.util.Optional;
- import java.util.function.BooleanSupplier;
- import javax.annotation.Nullable;
--import net.minecraft.DefaultUncaughtExceptionHandler;
-+import io.papermc.paper.ServerBuildInfo;import me.lucko.spark.paper.api.PaperSparkModule;import net.minecraft.DefaultUncaughtExceptionHandler;
- import net.minecraft.DefaultUncaughtExceptionHandlerWithName;
- import net.minecraft.SharedConstants;
- import net.minecraft.SystemReport;
-@@ -58,16 +_,23 @@
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.entity.SkullBlockEntity;
- import net.minecraft.world.level.storage.LevelStorageSource;
-+import org.apache.logging.log4j.LogManager;
-+import org.apache.logging.log4j.io.IoBuilder;
-+import org.bukkit.command.CommandSender;
-+import org.bukkit.craftbukkit.Main;
-+import org.bukkit.craftbukkit.util.ForwardLogHandler;
-+import org.bukkit.event.server.RemoteServerCommandEvent;
-+import org.bukkit.event.server.ServerCommandEvent;
- import org.slf4j.Logger;
- 
- public class DedicatedServer extends MinecraftServer implements ServerInterface {
+@@ -64,10 +_,10 @@
      static final Logger LOGGER = LogUtils.getLogger();
      private static final int CONVERSION_RETRY_DELAY_MS = 5000;
      private static final int CONVERSION_RETRIES = 2;
@@ -92,12 +45,12 @@
 -                } catch (IOException ioexception1) {
 -                    DedicatedServer.LOGGER.error("Exception handling console input", (Throwable)ioexception1);
 +                if (net.neoforged.neoforge.server.console.TerminalHandler.handleCommands(DedicatedServer.this)) return; // Stellar - Delegate to Paper
-+                if (!Main.useConsole) {
++                if (!org.bukkit.craftbukkit.Main.useConsole) {
 +                    return;
                  }
 +                // Paper start - Use TerminalConsoleAppender
 +                if (DedicatedServer.this.gui == null || System.console() != null) // Purpur - has no GUI or has console (did not double-click)
-+                new PaperConsole(DedicatedServer.this).start();
++                new com.destroystokyo.paper.console.PaperConsole(DedicatedServer.this).start();
              }
          };
 +        // CraftBukkit start - TODO: handle command-line logging arguments
@@ -106,11 +59,11 @@
 +        for (java.util.logging.Handler handler : global.getHandlers()) {
 +            global.removeHandler(handler);
 +        }
-+        global.addHandler(new ForwardLogHandler());
++        global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
 +
-+        final org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
-+        System.setOut(IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.INFO).buildPrintStream());
-+        System.setErr(IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.WARN).buildPrintStream());
++        final org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getRootLogger();
++        System.setOut(org.apache.logging.log4j.io.IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.INFO).buildPrintStream());
++        System.setErr(org.apache.logging.log4j.io.IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.WARN).buildPrintStream());
 +        // CraftBukkit end
 +
          thread.setDaemon(true);
@@ -145,8 +98,8 @@
 +        this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
 +        // Paper end - initialize global and world-defaults configuration
 +        // Youer start // Stellar - TODO: deprecate Youer
-+        YouerConfig.init((java.io.File) options.valueOf("youer-settings"));
-+        YouerConfig.registerCommands();
++        com.mohistmc.youer.YouerConfig.init((java.io.File) options.valueOf("youer-settings"));
++        com.mohistmc.youer.YouerConfig.registerCommands();
 +        // Youer end
 +        // Paper start - detect running as root // Plazma - Tweak console logging (moved down)
 +        if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
@@ -179,7 +132,8 @@
          super.setPlayerIdleTimeout(dedicatedserverproperties.playerIdleTimeout.get());
          this.setEnforceWhitelist(dedicatedserverproperties.enforceWhitelist);
 -        this.worldData.setGameType(dedicatedserverproperties.gamemode);
--        LOGGER.info("Default game type: {}", dedicatedserverproperties.gamemode);
++        // this.worldData.setGameType(dedicatedserverproperties.gamemode); // CraftBukkit - moved to world loading
+         LOGGER.info("Default game type: {}", dedicatedserverproperties.gamemode);
 -        InetAddress inetaddress = null;
 -        if (!this.getLocalIp().isEmpty()) {
 -            inetaddress = InetAddress.getByName(this.getLocalIp());
@@ -188,8 +142,6 @@
 -        if (this.getPort() < 0) {
 -            this.setPort(dedicatedserverproperties.serverPort);
 -        }
-+        // this.worldData.setGameType(dedicatedserverproperties.gamemode); // CraftBukkit - moved to world loading
-+        LOGGER.info(I18n.as("minecraftserver.defaultgamemode", dedicatedserverproperties.gamemode));
 +        // Paper start - Unix domain socket support
 +        java.net.SocketAddress bindAddress;
 +        if (this.getLocalIp().startsWith("unix:")) {
@@ -403,7 +355,7 @@
 +        // Neo end
 +
 +        hasFullyShutdown = true; // Paper
-+        if (ServerAPI.yes_steve_model()) {
++        if (com.mohistmc.youer.api.ServerAPI.yes_steve_model()) {
 +            System.exit(0);
 +        } else {
 +            Runtime.getRuntime().halt(this.abnormalExit ? 70 : 0); // CraftBukkit // Paper // Stellar
@@ -436,7 +388,7 @@
 +            Runnable run = () -> {
 +                LOGGER.info("Async debug chunks executing");
 +                ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(this, false);
-+                CommandSender sender = MinecraftServer.getServer().console;
++                org.bukkit.command.CommandSender sender = MinecraftServer.getServer().console;
 +                java.io.File file = ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.getChunkDebugFile();
 +                sender.sendMessage(net.kyori.adventure.text.Component.text("Writing chunk information dump to " + file, net.kyori.adventure.text.format.NamedTextColor.GREEN));
 +                try {
@@ -467,7 +419,7 @@
 +            // Paper end - Perf: use proper queue
 +
 +            // CraftBukkit start - ServerCommand for preprocessing
-+            ServerCommandEvent event = new ServerCommandEvent(this.console, servercommand.msg);
++            org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(this.console, servercommand.msg);
 +            this.server.getPluginManager().callEvent(event);
 +            if (event.isCancelled()) continue;
 +            servercommand = new ConsoleInput(event.getCommand(), servercommand.source);
@@ -502,7 +454,7 @@
 +        org.bukkit.plugin.Plugin[] plugins = this.server.getPluginManager().getPlugins();
 +
 +        result.append(this.server.getName());
-+        result.append(" on ").append(ServerBuildInfo.buildInfo().brandName()).append(" "); // Stellar
++        result.append(" on ").append(io.papermc.paper.ServerBuildInfo.buildInfo().brandName()).append(" "); // Stellar
 +        result.append(this.server.getBukkitVersion());
 +
 +        if (plugins.length > 0 && this.server.getQueryPlugins()) {
@@ -537,7 +489,7 @@
 +        rconConsoleSource.prepareForCommand();
 +        this.executeBlocking(() -> {
 +            CommandSourceStack wrapper = rconConsoleSource.createCommandSourceStack();
-+            RemoteServerCommandEvent event = new RemoteServerCommandEvent(rconConsoleSource.getBukkitSender(wrapper), s);
++            org.bukkit.event.server.RemoteServerCommandEvent event = new org.bukkit.event.server.RemoteServerCommandEvent(rconConsoleSource.getBukkitSender(wrapper), s);
 +            server.getPluginManager().callEvent(event);
 +            if (event.isCancelled()) {
 +                return;
@@ -579,7 +531,7 @@
 +    }
 +
 +    @Override
-+    public CommandSender getBukkitSender(CommandSourceStack wrapper) {
++    public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
 +        return this.console;
 +    }
 +    // CraftBukkit end

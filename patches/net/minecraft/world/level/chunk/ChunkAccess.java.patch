@@ -1,11 +1,7 @@
 --- a/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/net/minecraft/world/level/chunk/ChunkAccess.java
-@@ -55,16 +_,18 @@
- import net.minecraft.world.level.material.Fluid;
- import net.minecraft.world.ticks.SerializableTickContainer;
+@@ -57,14 +_,14 @@
  import net.minecraft.world.ticks.TickContainerAccess;
-+import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
-+import org.bukkit.craftbukkit.persistence.DirtyCraftPersistentDataContainer;
  import org.slf4j.Logger;
  
 -public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiomeSource, LightChunk, StructureAccess, net.neoforged.neoforge.attachment.IAttachmentHolder {
@@ -34,8 +30,8 @@
      protected final LevelHeightAccessor levelHeightAccessor;
      protected final LevelChunkSection[] sections;
 +    // CraftBukkit start - SPIGOT-6814: move to IChunkAccess to account for 1.17 to 1.18 chunk upgrading.
-+    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
-+    public DirtyCraftPersistentDataContainer persistentDataContainer = new DirtyCraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
++    public org.bukkit.craftbukkit.persistence.DirtyCraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.DirtyCraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 +    // CraftBukkit end
 +
 +    // Paper start - rewrite chunk system

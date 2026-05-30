@@ -1,20 +1,5 @@
 --- a/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/net/minecraft/world/entity/decoration/ItemFrame.java
-@@ -1,5 +_,6 @@
- package net.minecraft.world.entity.decoration;
- 
-+import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
- import javax.annotation.Nullable;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.Direction;
-@@ -38,6 +_,7 @@
- import net.minecraft.world.phys.AABB;
- import net.minecraft.world.phys.Vec3;
- import org.apache.commons.lang3.Validate;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public class ItemFrame extends HangingEntity {
-     public static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(ItemFrame.class, EntityDataSerializers.ITEM_STACK);
 @@ -48,6 +_,7 @@
      private static final float HEIGHT = 0.75F;
      public float dropChance = 1.0F;
@@ -53,13 +38,13 @@
          } else if (!p_31776_.is(DamageTypeTags.IS_EXPLOSION) && !this.getItem().isEmpty()) {
              if (!this.level().isClientSide) {
 +                // CraftBukkit start - fire EntityDamageEvent
-+                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, p_31776_, p_31777_, false) || this.isRemoved()) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, p_31776_, p_31777_, false) || this.isRemoved()) {
 +                    return true;
 +                }
 +                // CraftBukkit end
 +                // Paper start - Add PlayerItemFrameChangeEvent
 +                if (p_31776_.getEntity() instanceof Player player) {
-+                    var event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE);
++                    var event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE);
 +                    if (!event.callEvent()) return true; // return true here because you aren't cancelling the damage, just the change
 +                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false);
 +                }
@@ -128,7 +113,7 @@
  
 -                    this.setItem(itemstack);
 +                    // Paper start - Add PlayerItemFrameChangeEvent
-+                    PlayerItemFrameChangeEvent event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) p_31787_.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemstack.asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
++                    io.papermc.paper.event.player.PlayerItemFrameChangeEvent event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) p_31787_.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemstack.asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
 +                    if (!event.callEvent()) {
 +                        return InteractionResult.FAIL;
 +                    }
@@ -139,7 +124,7 @@
                  }
              } else {
 +                // Paper start - Add PlayerItemFrameChangeEvent
-+                PlayerItemFrameChangeEvent event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) p_31787_.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.ROTATE);
++                io.papermc.paper.event.player.PlayerItemFrameChangeEvent event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) p_31787_.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.ROTATE);
 +                if (!event.callEvent()) {
 +                    return InteractionResult.FAIL;
 +                }

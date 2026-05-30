@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/entity/EntitySelector.java
 +++ b/net/minecraft/world/entity/EntitySelector.java
-@@ -6,6 +_,7 @@
- import net.minecraft.world.Container;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.ItemStack;
-+import net.minecraft.world.scores.PlayerTeam;
- import net.minecraft.world.scores.Team;
- 
- public final class EntitySelector {
 @@ -17,41 +_,60 @@
              || !p_20436_.isSpectator() && !((Player)p_20436_).isCreative();
      public static final Predicate<Entity> NO_SPECTATORS = p_20434_ -> !p_20434_.isSpectator();
@@ -69,7 +61,7 @@
 +    }
 +    public static Predicate<Entity> pushable(Entity entity, boolean ignoreClimbing) {
 +        // Paper end - Climbing should not bypass cramming gamerule
-+        PlayerTeam scoreboardteam = entity.getTeam();
++        net.minecraft.world.scores.PlayerTeam scoreboardteam = entity.getTeam();
 +        Team.CollisionRule scoreboardteambase_enumteampush = scoreboardteam == null ? Team.CollisionRule.ALWAYS : scoreboardteam.getCollisionRule();
 +
 +        return (Predicate) (scoreboardteambase_enumteampush == Team.CollisionRule.NEVER ? Predicates.alwaysFalse() : EntitySelector.NO_SPECTATORS.and((entity1) -> {
@@ -78,7 +70,7 @@
 +            } else if (entity1 instanceof Player && entity instanceof Player && !io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions) { // Paper - Configurable player collision
 +                return false;
 +            } else {
-+                PlayerTeam scoreboardteam1 = entity1.getTeam();
++                net.minecraft.world.scores.PlayerTeam scoreboardteam1 = entity1.getTeam();
 +                Team.CollisionRule scoreboardteambase_enumteampush1 = scoreboardteam1 == null ? Team.CollisionRule.ALWAYS : scoreboardteam1.getCollisionRule();
 +
 +                if (scoreboardteambase_enumteampush1 == Team.CollisionRule.NEVER) {

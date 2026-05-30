@@ -1,22 +1,5 @@
 --- a/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/net/minecraft/world/item/crafting/RecipeManager.java
-@@ -3,6 +_,8 @@
- import com.google.common.annotations.VisibleForTesting;
- import com.google.common.collect.ImmutableMap;
- import com.google.common.collect.ImmutableMultimap;
-+import com.google.common.collect.LinkedHashMultimap;
-+import com.google.common.collect.Maps;
- import com.google.common.collect.Multimap;
- import com.google.common.collect.ImmutableMultimap.Builder;
- import com.google.gson.Gson;
-@@ -14,6 +_,7 @@
- import com.mojang.serialization.JsonOps;
- import java.util.Collection;
- import java.util.Comparator;
-+import java.util.Iterator;
- import java.util.List;
- import java.util.Map;
- import java.util.Optional;
 @@ -38,7 +_,7 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private final HolderLookup.Provider registries;
@@ -26,7 +9,7 @@
      private boolean hasErrors;
  
      public RecipeManager(HolderLookup.Provider p_324137_) {
-@@ -50,18 +_,24 @@
+@@ -50,25 +_,47 @@
          this.hasErrors = false;
          Builder<RecipeType<?>, RecipeHolder<?>> builder = ImmutableMultimap.builder();
          com.google.common.collect.ImmutableMap.Builder<ResourceLocation, RecipeHolder<?>> builder1 = ImmutableMap.builder();
@@ -49,11 +32,37 @@
 +                    LOGGER.debug("Skipping loading recipe {} as its conditions were not met", resourcelocation);
 +                });
              } catch (IllegalArgumentException | JsonParseException jsonparseexception) {
--                LOGGER.error("Parsing error loading recipe {}", resourcelocation, jsonparseexception);
-+                if (Boolean.parseBoolean("false")) LOGGER.error("Parsing error loading recipe {}", resourcelocation, jsonparseexception);
+                 LOGGER.error("Parsing error loading recipe {}", resourcelocation, jsonparseexception);
              }
          }
  
+-        this.byType = builder.build();
+-        this.byName = builder1.build();
+-        LOGGER.info("Loaded {} recipes", this.byType.size());
+-    }
++        // CraftBukkit start - mutable
++        this.byType = com.google.common.collect.LinkedHashMultimap.create(builder.build());
++        this.byName = com.google.common.collect.Maps.newHashMap(builder1.build());
++        // CraftBukkit end
++        LOGGER.info("Loaded {} recipes", this.byName.size()); // Paper - Improve logging and errors; log correct number of recipes
++    }
++
++    // CraftBukkit start
++    public void addRecipe(RecipeHolder<?> recipe) {
++        org.spigotmc.AsyncCatcher.catchOp("Recipe Add"); // Spigot
++        Collection<RecipeHolder<?>> map = this.byType.get(recipe.value().getType()); // CraftBukkit
++
++        if (this.byName.containsKey(recipe.id())) {
++            throw new IllegalStateException("Duplicate recipe ignored with ID " + recipe.id());
++        } else {
++            map.add(recipe);
++            this.byName.put(recipe.id(), recipe);
++        }
++    }
++    // CraftBukkit end
+ 
+     public boolean hadErrorsLoading() {
+         return this.hasErrors;
 @@ -88,13 +_,23 @@
      public <I extends RecipeInput, T extends Recipe<I>> Optional<RecipeHolder<T>> getRecipeFor(
          RecipeType<T> p_220249_, I p_345826_, Level p_220251_, @Nullable RecipeHolder<T> p_346407_
@@ -74,7 +83,7 @@
 +                    lastRecipe = recipeHolder;
 +                }
 +            }
-+            return lastRecipe != null ? Optional.of(lastRecipe) : Optional.empty();
++            return lastRecipe != null ? Optional.of(lastRecipe) : Optional.empty(); // CraftBukkit - SPIGOT-4638: last recipe gets priority
 +            // Stellar end - Carpet-Fixes: Use optimized RecipeManager - Remove streams to be faster
          }
 +        // Paper end
@@ -95,58 +104,28 @@
          if (optional.isPresent()) {
              return optional.get().value().getRemainingItems(p_345118_);
          } else {
-@@ -193,5 +_,54 @@
- 
+@@ -194,4 +_,24 @@
      public interface CachedCheck<I extends RecipeInput, T extends Recipe<I>> {
          Optional<RecipeHolder<T>> getRecipeFor(I p_344938_, Level p_220281_);
-+    }
+     }
 +
-+    public synchronized void addRecipe(RecipeHolder<?> recipe) {
-+        // 1. 将当前不可变集合转换为可变集合
-+        Multimap<RecipeType<?>, RecipeHolder<?>> mutableByType = LinkedHashMultimap.create(this.byType);
-+        Map<ResourceLocation, RecipeHolder<?>> mutableByName = Maps.newHashMap(this.byName);
-+
-+        // 2. 检查重复ID
-+        if (mutableByName.containsKey(recipe.id())) {
-+            throw new IllegalStateException("Duplicate recipe ignored with ID " + recipe.id());
-+        }
-+
-+        // 3. 添加新配方
-+        mutableByType.put(recipe.value().getType(), recipe);
-+        mutableByName.put(recipe.id(), recipe);
-+
-+        // 4. 重新转换为不可变集合
-+        this.byType = ImmutableMultimap.copyOf(mutableByType);
-+        this.byName = ImmutableMap.copyOf(mutableByName);
-+    }
-+
-+    public synchronized boolean removeRecipe(ResourceLocation mcKey) {
-+        // 1. 转换为可变集合
-+        Multimap<RecipeType<?>, RecipeHolder<?>> mutableByType = LinkedHashMultimap.create(this.byType);
-+        Map<ResourceLocation, RecipeHolder<?>> mutableByName = Maps.newHashMap(this.byName);
-+
-+        // 2. 移除配方
-+        Iterator<RecipeHolder<?>> iter = mutableByType.values().iterator();
-+        boolean removed = false;
++    // CraftBukkit start
++    public boolean removeRecipe(ResourceLocation mcKey) {
++        org.spigotmc.AsyncCatcher.catchOp("Recipe Remove"); // Stellar - missed catch-op
++        java.util.Iterator<RecipeHolder<?>> iter = this.byType.values().iterator();
 +        while (iter.hasNext()) {
 +            RecipeHolder<?> recipe = iter.next();
 +            if (recipe.id().equals(mcKey)) {
 +                iter.remove();
-+                removed = true;
 +            }
 +        }
-+        removed |= mutableByName.remove(mcKey) != null;
 +
-+        // 3. 更新为不可变集合
-+        if (removed) {
-+            this.byType = ImmutableMultimap.copyOf(mutableByType);
-+            this.byName = ImmutableMap.copyOf(mutableByName);
-+        }
-+        return removed;
++        return this.byName.remove(mcKey) != null;
 +    }
 +
 +    public void clearRecipes() {
-+        this.byType = ImmutableMultimap.of(); // 重置为空的不可变集合
-+        this.byName = ImmutableMap.of();
-     }
++        this.byType = com.google.common.collect.LinkedHashMultimap.create();
++        this.byName = com.google.common.collect.Maps.newHashMap();
++    }
++    // CraftBukkit end
  }

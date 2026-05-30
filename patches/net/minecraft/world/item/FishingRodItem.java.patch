@@ -9,12 +9,12 @@
  
  public class FishingRodItem extends Item {
      public FishingRodItem(Item.Properties p_41285_) {
-@@ -23,8 +_,13 @@
+@@ -23,8 +_,12 @@
          ItemStack itemstack = p_41291_.getItemInHand(p_41292_);
          if (p_41291_.fishing != null) {
              if (!p_41290_.isClientSide) {
-+                p_41291_.fishing.retrieve$hand.set(p_41292_);
-                 int i = p_41291_.fishing.retrieve(itemstack);
+-                int i = p_41291_.fishing.retrieve(itemstack);
++                int i = p_41291_.fishing.retrieve(p_41292_, itemstack); // Paper - Add hand parameter to PlayerFishEvent
 +                ItemStack original = itemstack.copy();
                  itemstack.hurtAndBreak(i, p_41291_, LivingEntity.getSlotForHand(p_41292_));
 +                if(itemstack.isEmpty()) {
@@ -23,7 +23,7 @@
              }
  
              p_41290_.playSound(
-@@ -39,20 +_,30 @@
+@@ -39,20 +_,31 @@
              );
              p_41291_.gameEvent(GameEvent.ITEM_INTERACT_FINISH);
          } else {
@@ -62,6 +62,7 @@
 +                        0.4F / (p_41290_.getRandom().nextFloat() * 0.4F + 0.8F)
 +                );
 +                p_41290_.addFreshEntity(entityfishinghook);
++                // CraftBukkit end
              }
  
              p_41291_.awardStat(Stats.ITEM_USED.get(this));
