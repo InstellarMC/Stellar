@@ -1,23 +1,5 @@
 --- a/net/minecraft/world/inventory/StonecutterMenu.java
 +++ b/net/minecraft/world/inventory/StonecutterMenu.java
-@@ -2,7 +_,6 @@
- 
- import com.google.common.collect.Lists;
- import java.util.List;
--import net.minecraft.core.BlockPos;
- import net.minecraft.sounds.SoundEvents;
- import net.minecraft.sounds.SoundSource;
- import net.minecraft.world.Container;
-@@ -17,6 +_,9 @@
- import net.minecraft.world.item.crafting.StonecutterRecipe;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.Blocks;
-+import org.bukkit.Location;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryStonecutter;
-+import org.bukkit.craftbukkit.inventory.view.CraftStonecutterView;
- 
- public class StonecutterMenu extends AbstractContainerMenu {
-     public static final int INPUT_SLOT = 0;
 @@ -26,7 +_,7 @@
      private static final int USE_ROW_SLOT_START = 29;
      private static final int USE_ROW_SLOT_END = 38;
@@ -34,7 +16,7 @@
 +
 +        // CraftBukkit start
 +        @Override
-+        public Location getLocation() {
++        public org.bukkit.Location getLocation() {
 +            return access.getLocation();
 +        }
 +        // CraftBukkit end
@@ -42,17 +24,17 @@
      final ResultContainer resultContainer = new ResultContainer();
  
 +    // CraftBukkit start
-+    private CraftStonecutterView bukkitEntity = null;
++    private org.bukkit.craftbukkit.inventory.view.CraftStonecutterView bukkitEntity = null;
 +    private org.bukkit.entity.Player player;
 +
 +    @Override
-+    public CraftStonecutterView getBukkitView() {
++    public org.bukkit.craftbukkit.inventory.view.CraftStonecutterView getBukkitView() {
 +        if (bukkitEntity != null) {
 +            return bukkitEntity;
 +        }
 +
-+        CraftInventoryStonecutter inventory = new CraftInventoryStonecutter(this.container, this.resultContainer);
-+        bukkitEntity = new CraftStonecutterView(this.player, inventory, this);
++        org.bukkit.craftbukkit.inventory.CraftInventoryStonecutter inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryStonecutter(this.container, this.resultContainer);
++        bukkitEntity = new org.bukkit.craftbukkit.inventory.view.CraftStonecutterView(this.player, inventory, this);
 +        return bukkitEntity;
 +    }
 +    // CraftBukkit end

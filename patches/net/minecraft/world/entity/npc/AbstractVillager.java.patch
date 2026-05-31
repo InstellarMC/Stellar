@@ -1,23 +1,13 @@
 --- a/net/minecraft/world/entity/npc/AbstractVillager.java
 +++ b/net/minecraft/world/entity/npc/AbstractVillager.java
-@@ -35,6 +_,9 @@
- import net.minecraft.world.level.pathfinder.PathType;
- import net.minecraft.world.level.portal.DimensionTransition;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.entity.CraftAbstractVillager;
-+import org.bukkit.craftbukkit.inventory.CraftMerchant;
-+import org.bukkit.craftbukkit.inventory.CraftMerchantRecipe;
- import org.slf4j.Logger;
- 
- public abstract class AbstractVillager extends AgeableMob implements InventoryCarrier, Npc, Merchant {
 @@ -48,6 +_,13 @@
      protected MerchantOffers offers;
      private final SimpleContainer inventory = new SimpleContainer(8);
  
 +    // CraftBukkit start
 +    @Override
-+    public CraftMerchant getCraftMerchant() {
-+        return (CraftAbstractVillager) getBukkitEntity();
++    public org.bukkit.craftbukkit.inventory.CraftMerchant getCraftMerchant() {
++        return (org.bukkit.craftbukkit.entity.CraftAbstractVillager) getBukkitEntity();
 +    }
 +    // CraftBukkit end
 +
@@ -82,7 +72,7 @@
 +                }
 +                if (!event.isCancelled()) {
 +                    // Paper start - Fix crash from invalid ingredient list
-+                    final CraftMerchantRecipe craftMerchantRecipe = CraftMerchantRecipe.fromBukkit(event.getRecipe());
++                    final org.bukkit.craftbukkit.inventory.CraftMerchantRecipe craftMerchantRecipe = org.bukkit.craftbukkit.inventory.CraftMerchantRecipe.fromBukkit(event.getRecipe());
 +                    if (craftMerchantRecipe.getIngredients().isEmpty()) return;
 +                    p_35278_.add(craftMerchantRecipe.toMinecraft());
 +                    // Paper end - Fix crash from invalid ingredient list

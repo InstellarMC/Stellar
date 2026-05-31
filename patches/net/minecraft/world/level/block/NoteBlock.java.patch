@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/level/block/NoteBlock.java
 +++ b/net/minecraft/world/level/block/NoteBlock.java
-@@ -31,6 +_,7 @@
- import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
- import net.minecraft.world.level.gameevent.GameEvent;
- import net.minecraft.world.phys.BlockHitResult;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public class NoteBlock extends Block {
-     public static final MapCodec<NoteBlock> CODEC = simpleCodec(NoteBlock::new);
 @@ -68,21 +_,25 @@
  
      @Override

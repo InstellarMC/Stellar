@@ -1,17 +1,10 @@
 --- a/net/minecraft/world/inventory/LecternMenu.java
 +++ b/net/minecraft/world/inventory/LecternMenu.java
-@@ -2,8 +_,14 @@
- 
- import net.minecraft.world.Container;
+@@ -4,6 +_,7 @@
  import net.minecraft.world.SimpleContainer;
-+import net.minecraft.world.entity.player.Inventory;
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.level.block.entity.LecternBlockEntity;
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryLectern;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
-+import org.bukkit.event.player.PlayerTakeLecternBookEvent;
  
  public class LecternMenu extends AbstractContainerMenu {
      private static final int DATA_COUNT = 1;
@@ -20,18 +13,18 @@
      private final ContainerData lecternData;
  
 +    // CraftBukkit start
-+    private CraftInventoryView bukkitEntity = null;
++    private org.bukkit.craftbukkit.inventory.CraftInventoryView bukkitEntity = null;
 +    private org.bukkit.entity.Player player;
 +
 +    @Override
-+    public CraftInventoryView getBukkitView() {
++    public org.bukkit.craftbukkit.inventory.CraftInventoryView getBukkitView() {
 +        if (player == null) return null;
 +        if (bukkitEntity != null) {
 +            return bukkitEntity;
 +        }
 +
-+        CraftInventoryLectern inventory = new CraftInventoryLectern(this.lectern);
-+        bukkitEntity = new CraftInventoryView(this.player, inventory, this);
++        org.bukkit.craftbukkit.inventory.CraftInventoryLectern inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryLectern(this.lectern);
++        bukkitEntity = new org.bukkit.craftbukkit.inventory.CraftInventoryView(this.player, inventory, this);
 +        return bukkitEntity;
 +    }
 +    // CraftBukkit end
@@ -44,12 +37,12 @@
      }
  
 +    // Youer start
-+    public LecternMenu player(Inventory playerinventory) {
++    public LecternMenu player(net.minecraft.world.entity.player.Inventory playerinventory) {
 +        player = (org.bukkit.entity.Player) playerinventory.player.getBukkitEntity(); // CraftBukkit
 +        return this;
 +    }
 +
-+    public LecternMenu(int pContainerId, Container pLectern, ContainerData pLecternData, Inventory playerinventory) {
++    public LecternMenu(int pContainerId, Container pLectern, ContainerData pLecternData, net.minecraft.world.entity.player.Inventory playerinventory) {
 +        super(MenuType.LECTERN, pContainerId);
 +        checkContainerSize(pLectern, 1);
 +        checkContainerDataCount(pLecternData, 1);
@@ -68,7 +61,7 @@
 +
      @Override
      public boolean clickMenuButton(Player p_39833_, int p_39834_) {
-+        io.papermc.paper.event.player.PlayerLecternPageChangeEvent playerLecternPageChangeEvent; CraftInventoryLectern bukkitView; // Paper - Add PlayerLecternPageChangeEvent
++        io.papermc.paper.event.player.PlayerLecternPageChangeEvent playerLecternPageChangeEvent; org.bukkit.craftbukkit.inventory.CraftInventoryLectern bukkitView; // Paper - Add PlayerLecternPageChangeEvent
          if (p_39834_ >= 100) {
              int k = p_39834_ - 100;
              this.setData(0, k);
@@ -78,7 +71,7 @@
                      int j = this.lecternData.get(0);
 -                    this.setData(0, j - 1);
 +                    // Paper start - Add PlayerLecternPageChangeEvent
-+                    bukkitView = (CraftInventoryLectern) getBukkitView().getTopInventory();
++                    bukkitView = (org.bukkit.craftbukkit.inventory.CraftInventoryLectern) getBukkitView().getTopInventory();
 +                    playerLecternPageChangeEvent = new io.papermc.paper.event.player.PlayerLecternPageChangeEvent((org.bukkit.entity.Player) p_39833_.getBukkitEntity(), bukkitView.getHolder(), bukkitView.getBook(), io.papermc.paper.event.player.PlayerLecternPageChangeEvent.PageChangeDirection.LEFT, j, j - 1);
 +                    if (!playerLecternPageChangeEvent.callEvent()) {
 +                        return false;
@@ -90,7 +83,7 @@
                      int i = this.lecternData.get(0);
 -                    this.setData(0, i + 1);
 +                    // Paper start - Add PlayerLecternPageChangeEvent
-+                    bukkitView = (CraftInventoryLectern) getBukkitView().getTopInventory();
++                    bukkitView = (org.bukkit.craftbukkit.inventory.CraftInventoryLectern) getBukkitView().getTopInventory();
 +                    playerLecternPageChangeEvent = new io.papermc.paper.event.player.PlayerLecternPageChangeEvent((org.bukkit.entity.Player) p_39833_.getBukkitEntity(), bukkitView.getHolder(), bukkitView.getBook(), io.papermc.paper.event.player.PlayerLecternPageChangeEvent.PageChangeDirection.RIGHT, i, i + 1);
 +                    if (!playerLecternPageChangeEvent.callEvent()) {
 +                        return false;
@@ -104,8 +97,8 @@
                      }
 -
 +                    // CraftBukkit start - Event for taking the book
-+                    PlayerTakeLecternBookEvent event = new PlayerTakeLecternBookEvent(player, ((CraftInventoryLectern) getBukkitView().getTopInventory()).getHolder());
-+                    Bukkit.getServer().getPluginManager().callEvent(event);
++                    org.bukkit.event.player.PlayerTakeLecternBookEvent event = new org.bukkit.event.player.PlayerTakeLecternBookEvent(player, ((org.bukkit.craftbukkit.inventory.CraftInventoryLectern) getBukkitView().getTopInventory()).getHolder());
++                    org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
 +                    if (event.isCancelled()) {
 +                        return false;
 +                    }

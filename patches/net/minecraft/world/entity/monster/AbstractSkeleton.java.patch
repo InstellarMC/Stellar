@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/entity/monster/AbstractSkeleton.java
 +++ b/net/minecraft/world/entity/monster/AbstractSkeleton.java
-@@ -42,6 +_,7 @@
- import net.minecraft.world.level.ServerLevelAccessor;
- import net.minecraft.world.level.block.Blocks;
- import net.minecraft.world.level.block.state.BlockState;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public abstract class AbstractSkeleton extends Monster implements RangedAttackMob {
-     private static final int HARD_ATTACK_INTERVAL = 20;
 @@ -64,6 +_,7 @@
      protected AbstractSkeleton(EntityType<? extends AbstractSkeleton> p_32133_, Level p_32134_) {
          super(p_32133_, p_32134_);
@@ -89,7 +81,7 @@
          double d3 = Math.sqrt(d0 * d0 + d2 * d2);
          abstractarrow.shoot(d0, d1 + d3 * 0.2F, d2, 1.6F, (float)(14 - this.level().getDifficulty().getId() * 4));
 +        // CraftBukkit start
-+        org.bukkit.event.entity.EntityShootBowEvent event = CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), abstractarrow.getPickupItem(), abstractarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true);  // Paper
++        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), abstractarrow.getPickupItem(), abstractarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true);  // Paper
 +        if (event.isCancelled()) {
 +            event.getProjectile().remove();
 +            return;

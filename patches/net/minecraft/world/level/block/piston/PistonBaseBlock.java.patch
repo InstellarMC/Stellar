@@ -1,22 +1,5 @@
 --- a/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 +++ b/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-@@ -5,7 +_,6 @@
- import com.mojang.serialization.Codec;
- import com.mojang.serialization.MapCodec;
- import com.mojang.serialization.codecs.RecordCodecBuilder;
--import com.mojang.serialization.codecs.RecordCodecBuilder.Instance;
- import java.util.List;
- import java.util.Map;
- import java.util.Map.Entry;
-@@ -39,6 +_,8 @@
- import net.minecraft.world.phys.shapes.CollisionContext;
- import net.minecraft.world.phys.shapes.Shapes;
- import net.minecraft.world.phys.shapes.VoxelShape;
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.event.block.BlockPistonRetractEvent;
- 
- public class PistonBaseBlock extends DirectionalBlock {
-     public static final MapCodec<PistonBaseBlock> CODEC = RecordCodecBuilder.mapCodec(
 @@ -186,6 +_,7 @@
          }
  
@@ -40,7 +23,7 @@
 +
 +            // Paper start - Fix sticky pistons and BlockPistonRetractEvent; Move empty piston retract call to fix multiple event fires
 +            if (!this.isSticky) {
-+                if (!new BlockPistonRetractEvent(CraftBlock.at(p_60193_, p_60194_), java.util.Collections.emptyList(), CraftBlock.notchToBlockFace(direction)).callEvent()) {
++                if (!new org.bukkit.event.block.BlockPistonRetractEvent(org.bukkit.craftbukkit.block.CraftBlock.at(p_60193_, p_60194_), java.util.Collections.emptyList(), org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction)).callEvent()) {
 +                    return false;
 +                }
 +            }
@@ -54,7 +37,7 @@
                      } else {
 +                        // Paper start - Fix sticky pistons and BlockPistonRetractEvent; fire BlockPistonRetractEvent for sticky pistons retracting nothing (air)
 +                        if (p_60195_ == TRIGGER_CONTRACT && blockstate1.isAir()) {
-+                            if (!new BlockPistonRetractEvent(CraftBlock.at(p_60193_, p_60194_), java.util.Collections.emptyList(), CraftBlock.notchToBlockFace(direction)).callEvent()) {
++                            if (!new org.bukkit.event.block.BlockPistonRetractEvent(org.bukkit.craftbukkit.block.CraftBlock.at(p_60193_, p_60194_), java.util.Collections.emptyList(), org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction)).callEvent()) {
 +                                return false;
 +                            }
 +                        }
@@ -96,9 +79,9 @@
 +                };
 +                org.bukkit.event.block.BlockPistonEvent event;
 +                if (p_60185_) {
-+                    event = new org.bukkit.event.block.BlockPistonExtendEvent(bblock, blocks, CraftBlock.notchToBlockFace(direction));
++                    event = new org.bukkit.event.block.BlockPistonExtendEvent(bblock, blocks, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction));
 +                } else {
-+                    event = new org.bukkit.event.block.BlockPistonRetractEvent(bblock, blocks, CraftBlock.notchToBlockFace(direction));
++                    event = new org.bukkit.event.block.BlockPistonRetractEvent(bblock, blocks, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction));
 +                }
 +                p_60182_.getCraftServer().getPluginManager().callEvent(event);
 +                if (event.isCancelled()) {

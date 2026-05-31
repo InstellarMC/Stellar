@@ -1,14 +1,5 @@
 --- a/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
 +++ b/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
-@@ -6,7 +_,7 @@
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.Mob;
- import net.minecraft.world.level.Level;
--import net.minecraft.world.level.pathfinder.FlyNodeEvaluator;
-+import net.minecraft.world.level.pathfinder.AmphibiousNodeEvaluator;import net.minecraft.world.level.pathfinder.FlyNodeEvaluator;
- import net.minecraft.world.level.pathfinder.Path;
- import net.minecraft.world.level.pathfinder.PathFinder;
- import net.minecraft.world.phys.Vec3;
 @@ -16,10 +_,23 @@
          super(p_26424_, p_26425_);
      }

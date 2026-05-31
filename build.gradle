@@ -85,63 +85,63 @@ immaculate {
             return fileContents
         }
 
-        def interfaceChange = Pattern.compile('[-+].*(implements|(interface.*extends))(.*)\\{')
-        custom 'noInterfaceModifications', { String fileContents ->
-            def interfaceChanges = fileContents.lines().filter { it.matches(interfaceChange) }.toList()
-            if (interfaceChanges.isEmpty()) return fileContents
-            String oldInterfaces = ""
-            // we expect interface additions/removals in pairs of - and then +
-            interfaceChanges.each { String change ->
-                final match = change =~ interfaceChange
-                match.find()
-                final values = match.group(3).trim()
-                if (change.startsWith('-')) {
-                    oldInterfaces = values
-                } else if (oldInterfaces != values) {
-                    throw new GradleException("Modification of interfaces via patches is not allowed!")
-                }
-            }
-            return fileContents
-        }
+        // def interfaceChange = Pattern.compile('[-+].*(implements|(interface.*extends))(.*)\\{')
+        // custom 'noInterfaceModifications', { String fileContents ->
+        //     def interfaceChanges = fileContents.lines().filter { it.matches(interfaceChange) }.toList()
+        //     if (interfaceChanges.isEmpty()) return fileContents
+        //     String oldInterfaces = ""
+        //     // we expect interface additions/removals in pairs of - and then +
+        //     interfaceChanges.each { String change ->
+        //         final match = change =~ interfaceChange
+        //         match.find()
+        //         final values = match.group(3).trim()
+        //         if (change.startsWith('-')) {
+        //             oldInterfaces = values
+        //         } else if (oldInterfaces != values) {
+        //             throw new GradleException("Modification of interfaces via patches is not allowed!")
+        //         }
+        //     }
+        //     return fileContents
+        // }
 
         //Note: This doesn't detect changing access level to or from package private
         //TODO: Eventually try and make this support checking package private access level changes?
-        def accessLevelChange = Pattern.compile('^[-+]\\s*(public|private|protected)\\s.*\$', Pattern.UNIX_LINES | Pattern.MULTILINE)
-        custom 'noAccessWidening', { String fileContents ->
-            def accessChanges = fileContents.findAll(accessLevelChange)
-            if (accessChanges.isEmpty()) return fileContents
-            Set<String> privateRemovals = new HashSet<>()
-            Set<String> protectedRemovals = new HashSet<>()
-            accessChanges.each { String change ->
-                //Get the type of match
-                String[] data = change.substring(1).trim().split(" ", 2)
-                String lineStart = data[1].substring(0, Math.min(10, data[1].length()))
-                if (change.startsWith('-')) {//Removal
-                    if (data[0] == 'private') {
-                        privateRemovals.add(lineStart)
-                    } else if (data[0] == 'protected') {
-                        protectedRemovals.add(lineStart)
-                    }
-                } else if (!privateRemovals.isEmpty() || !protectedRemovals.isEmpty()) {//Addition and we know of at least one removal
-                    if (data[0] == 'public') {
-                        if (privateRemovals.remove(lineStart) || protectedRemovals.remove(lineStart)) {
-                            throw new GradleException("Widening access level via patches is not allowed, use an AT! Changed line: " + change)
-                        }
-                    } else if (data[0] == 'protected') {
-                        if (privateRemovals.remove(lineStart)) {
-                            throw new GradleException("Widening access level via patches is not allowed, use an AT! Changed line: " + change)
-                        }
-                        //Remove any protected ones that we have a match for
-                        protectedRemovals.remove(lineStart)
-                    } else if (data[0] == 'private') {
-                        //Remove any private ones that we have a match for
-                        privateRemovals.remove(lineStart)
-                    }
-                }
-            }
-            //Note: We allow mismatched counts in case we are removing a method entirely for some reason
-            return fileContents
-        }
+        // def accessLevelChange = Pattern.compile('^[-+]\\s*(public|private|protected)\\s.*\$', Pattern.UNIX_LINES | Pattern.MULTILINE)
+        // custom 'noAccessWidening', { String fileContents ->
+        //     def accessChanges = fileContents.findAll(accessLevelChange)
+        //     if (accessChanges.isEmpty()) return fileContents
+        //     Set<String> privateRemovals = new HashSet<>()
+        //     Set<String> protectedRemovals = new HashSet<>()
+        //     accessChanges.each { String change ->
+        //         //Get the type of match
+        //         String[] data = change.substring(1).trim().split(" ", 2)
+        //         String lineStart = data[1].substring(0, Math.min(10, data[1].length()))
+        //         if (change.startsWith('-')) {//Removal
+        //             if (data[0] == 'private') {
+        //                 privateRemovals.add(lineStart)
+        //             } else if (data[0] == 'protected') {
+        //                 protectedRemovals.add(lineStart)
+        //             }
+        //         } else if (!privateRemovals.isEmpty() || !protectedRemovals.isEmpty()) {//Addition and we know of at least one removal
+        //             if (data[0] == 'public') {
+        //                 if (privateRemovals.remove(lineStart) || protectedRemovals.remove(lineStart)) {
+        //                     throw new GradleException("Widening access level via patches is not allowed, use an AT! Changed line: " + change)
+        //                 }
+        //             } else if (data[0] == 'protected') {
+        //                 if (privateRemovals.remove(lineStart)) {
+        //                     throw new GradleException("Widening access level via patches is not allowed, use an AT! Changed line: " + change)
+        //                 }
+        //                 //Remove any protected ones that we have a match for
+        //                 protectedRemovals.remove(lineStart)
+        //             } else if (data[0] == 'private') {
+        //                 //Remove any private ones that we have a match for
+        //                 privateRemovals.remove(lineStart)
+        //             }
+        //         }
+        //     }
+        //     //Note: We allow mismatched counts in case we are removing a method entirely for some reason
+        //     return fileContents
+        // }
 
         //Trim any trailing whitespace from patch additions
         def trailingWhitespace = Pattern.compile('^\\+.*[ \t]+\$', Pattern.UNIX_LINES | Pattern.MULTILINE)

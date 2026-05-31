@@ -1,34 +1,12 @@
 --- a/net/minecraft/world/inventory/LoomMenu.java
 +++ b/net/minecraft/world/inventory/LoomMenu.java
-@@ -2,7 +_,6 @@
- 
- import com.google.common.collect.ImmutableList;
- import java.util.List;
--import net.minecraft.core.BlockPos;
- import net.minecraft.core.Holder;
- import net.minecraft.core.HolderGetter;
- import net.minecraft.core.component.DataComponents;
-@@ -19,10 +_,12 @@
- import net.minecraft.world.item.DyeColor;
- import net.minecraft.world.item.DyeItem;
- import net.minecraft.world.item.ItemStack;
--import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.Blocks;
- import net.minecraft.world.level.block.entity.BannerPattern;
- import net.minecraft.world.level.block.entity.BannerPatternLayers;
-+import org.bukkit.Location;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryLoom;
-+import org.bukkit.craftbukkit.inventory.view.CraftLoomView;
- 
- public class LoomMenu extends AbstractContainerMenu {
-     private static final int PATTERN_NOT_SET = -1;
 @@ -48,6 +_,12 @@
              LoomMenu.this.slotsChanged(this);
              LoomMenu.this.slotUpdateListener.run();
          }
 +        // CraftBukkit start
 +        @Override
-+        public Location getLocation() {
++        public org.bukkit.Location getLocation() {
 +            return access.getLocation();
 +        }
 +        // CraftBukkit end
@@ -41,24 +19,24 @@
          }
 +        // CraftBukkit start
 +        @Override
-+        public Location getLocation() {
++        public org.bukkit.Location getLocation() {
 +            return access.getLocation();
 +        }
 +        // CraftBukkit end
      };
 +
 +    // CraftBukkit start
-+    private CraftLoomView bukkitEntity = null;
++    private org.bukkit.craftbukkit.inventory.view.CraftLoomView bukkitEntity = null;
 +    private org.bukkit.entity.Player player;
 +
 +    @Override
-+    public CraftLoomView getBukkitView() {
++    public org.bukkit.craftbukkit.inventory.view.CraftLoomView getBukkitView() {
 +        if (bukkitEntity != null) {
 +            return bukkitEntity;
 +        }
 +
-+        CraftInventoryLoom inventory = new CraftInventoryLoom(this.inputContainer, this.outputContainer);
-+        bukkitEntity = new CraftLoomView(this.player, inventory, this);
++        org.bukkit.craftbukkit.inventory.CraftInventoryLoom inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryLoom(this.inputContainer, this.outputContainer);
++        bukkitEntity = new org.bukkit.craftbukkit.inventory.view.CraftLoomView(this.player, inventory, this);
 +        return bukkitEntity;
 +    }
 +    // CraftBukkit end
@@ -85,7 +63,7 @@
 -            this.setupResultSlot(this.selectablePatterns.get(p_39868_));
 +            // Paper start - Add PlayerLoomPatternSelectEvent
 +            int selectablePatternIndex = p_39868_;
-+            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((org.bukkit.entity.Player) p_39867_.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), org.bukkit.craftbukkit.block.banner.CraftPatternType.minecraftHolderToBukkit(this.selectablePatterns.get(selectablePatternIndex)));
++            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((org.bukkit.entity.Player) p_39867_.getBukkitEntity(), ((org.bukkit.craftbukkit.inventory.CraftInventoryLoom) getBukkitView().getTopInventory()), org.bukkit.craftbukkit.block.banner.CraftPatternType.minecraftHolderToBukkit(this.selectablePatterns.get(selectablePatternIndex)));
 +            if (!event.callEvent()) {
 +                p_39867_.containerMenu.sendAllDataToRemote();
 +                return false;

@@ -1,18 +1,5 @@
 --- a/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
 +++ b/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-@@ -9,11 +_,7 @@
- import net.minecraft.world.level.block.Blocks;
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.level.chunk.LevelChunk;
--import net.minecraft.world.level.pathfinder.Node;
--import net.minecraft.world.level.pathfinder.Path;
--import net.minecraft.world.level.pathfinder.PathFinder;
--import net.minecraft.world.level.pathfinder.PathType;
--import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
-+import net.minecraft.world.level.pathfinder.*;
- import net.minecraft.world.phys.Vec3;
- 
- public class GroundPathNavigation extends PathNavigation {
 @@ -23,10 +_,23 @@
          super(p_26448_, p_26449_);
      }

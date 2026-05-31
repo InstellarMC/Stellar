@@ -1,14 +1,5 @@
 --- a/net/minecraft/world/entity/NeutralMob.java
 +++ b/net/minecraft/world/entity/NeutralMob.java
-@@ -7,7 +_,7 @@
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.level.GameRules;
--import net.minecraft.world.level.Level;
-+import net.minecraft.world.level.Level;import org.bukkit.event.entity.EntityTargetEvent;
- 
- public interface NeutralMob {
-     String TAG_ANGER_TIME = "AngerTime";
 @@ -39,18 +_,11 @@
              } else {
                  UUID uuid = p_147287_.getUUID("AngryAt");
@@ -65,12 +56,12 @@
 +
 +        if (entity != null) {
 +            if (entity instanceof Mob mob) {
-+                this.setTarget(mob, EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
++                this.setTarget(mob, org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
 +                this.setLastHurtByMob(mob);
 +            }
 +
 +            if (entity instanceof Player player) {
-+                this.setTarget(player, EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
++                this.setTarget(player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
 +                this.setLastHurtByPlayer(player);
 +            }
 +        }

@@ -43,6 +43,8 @@ public class WorldConfiguration extends ConfigurationPart {
 
         public boolean disableDropItem = false;
 
+        public boolean turtleHelmetCheck = true;
+
     }
 
     public Chunks chunks;

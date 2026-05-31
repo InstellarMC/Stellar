@@ -1,18 +1,5 @@
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -14,10 +_,10 @@
- import java.nio.file.Files;
- import java.nio.file.Path;
- import java.nio.file.StandardCopyOption;
--import java.nio.file.StandardOpenOption;
-+import java.nio.file.StandardOpenOption;import java.util.zip.InflaterInputStream;
- import javax.annotation.Nullable;
- import net.minecraft.Util;
--import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.nbt.CompoundTag;import net.minecraft.nbt.NbtIo;import net.minecraft.resources.ResourceLocation;
- import net.minecraft.util.profiling.jfr.JvmProfiler;
- import net.minecraft.world.level.ChunkPos;
- import org.slf4j.Logger;
 @@ -44,19 +_,369 @@
      private final IntBuffer timestamps;
      @VisibleForTesting
@@ -25,9 +12,9 @@
 +        return sectors + (sign >>> 63);
 +    }
 +
-+    private static final CompoundTag OVERSIZED_COMPOUND = new CompoundTag();
++    private static final net.minecraft.nbt.CompoundTag OVERSIZED_COMPOUND = new net.minecraft.nbt.CompoundTag();
 +
-+    private CompoundTag attemptRead(long sector, int chunkDataLength, long fileLength) throws IOException {
++    private net.minecraft.nbt.CompoundTag attemptRead(long sector, int chunkDataLength, long fileLength) throws IOException {
 +        try {
 +            if (chunkDataLength < 0) {
 +                return null;
@@ -59,7 +46,7 @@
 +
 +            InputStream input = compression.wrap(new ByteArrayInputStream(chunkData.array(), chunkData.position(), chunkDataLength - chunkData.position()));
 +
-+            return NbtIo.read(new DataInputStream(input));
++            return net.minecraft.nbt.NbtIo.read(new DataInputStream(input));
 +        } catch (Exception ex) {
 +            return null;
 +        }
@@ -110,7 +97,7 @@
 +            // try to backup file so maybe it could be sent to us for further investigation
 +
 +            this.backupRegionFile();
-+            CompoundTag[] compounds = new CompoundTag[32 * 32]; // only in the regionfile (i.e exclude mojang/aikar oversized data)
++            net.minecraft.nbt.CompoundTag[] compounds = new net.minecraft.nbt.CompoundTag[32 * 32]; // only in the regionfile (i.e exclude mojang/aikar oversized data)
 +            int[] rawLengths = new int[32 * 32]; // length of chunk data including 4 byte length field, bytes
 +            int[] sectorOffsets = new int[32 * 32]; // in sectors
 +            boolean[] hasAikarOversized = new boolean[32 * 32];
@@ -122,7 +109,7 @@
 +
 +            for (long i = 2, maxSector = Math.min((long)(Integer.MAX_VALUE >>> 8), totalSectors); i < maxSector; ++i) { // first two sectors are header, skip
 +                int chunkDataLength = this.getLength(i);
-+                CompoundTag compound = this.attemptRead(i, chunkDataLength, fileLength);
++                net.minecraft.nbt.CompoundTag compound = this.attemptRead(i, chunkDataLength, fileLength);
 +                if (compound == null || compound == OVERSIZED_COMPOUND) {
 +                    continue;
 +                }
@@ -134,7 +121,7 @@
 +                }
 +                int location = (chunkPos.x & 31) | ((chunkPos.z & 31) << 5);
 +
-+                CompoundTag otherCompound = compounds[location];
++                net.minecraft.nbt.CompoundTag otherCompound = compounds[location];
 +
 +                if (otherCompound != null && ChunkSerializer.getLastWorldSaveTime(otherCompound) > ChunkSerializer.getLastWorldSaveTime(compound)) {
 +                    continue; // don't overwrite newer data.
@@ -145,7 +132,7 @@
 +                boolean isAikarOversized = false;
 +                if (Files.exists(aikarOversizedFile)) {
 +                    try {
-+                        CompoundTag aikarOversizedCompound = this.getOversizedData(chunkPos.x, chunkPos.z);
++                        net.minecraft.nbt.CompoundTag aikarOversizedCompound = this.getOversizedData(chunkPos.x, chunkPos.z);
 +                        if (ChunkSerializer.getLastWorldSaveTime(compound) == ChunkSerializer.getLastWorldSaveTime(aikarOversizedCompound)) {
 +                            // best we got for an id. hope it's good enough
 +                            isAikarOversized = true;
@@ -204,14 +191,14 @@
 +                        continue;
 +                    }
 +
-+                    CompoundTag compound = null;
++                    net.minecraft.nbt.CompoundTag compound = null;
 +
 +                    // We do not know the compression type, as it's stored in the regionfile. So we need to try all of them
 +                    RegionFileVersion compression = null;
 +                    for (RegionFileVersion compressionType : RegionFileVersion.VERSIONS.values()) {
 +                        try {
 +                            DataInputStream in = new DataInputStream(compressionType.wrap(new ByteArrayInputStream(chunkData))); // typical java
-+                            compound = NbtIo.read((java.io.DataInput)in);
++                            compound = net.minecraft.nbt.NbtIo.read((java.io.DataInput)in);
 +                            compression = compressionType;
 +                            break; // reaches here iff readNBT does not throw
 +                        } catch (Exception ex) {
@@ -614,10 +601,10 @@
 +        return this.path.getParent().resolve(this.path.getFileName().toString().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
 +    }
 +
-+    synchronized CompoundTag getOversizedData(int x, int z) throws IOException {
++    synchronized net.minecraft.nbt.CompoundTag getOversizedData(int x, int z) throws IOException {
 +        Path file = getOversizedFile(x, z);
-+        try (DataInputStream out = new DataInputStream(new java.io.BufferedInputStream(new InflaterInputStream(Files.newInputStream(file))))) {
-+            return NbtIo.read((java.io.DataInput) out);
++        try (DataInputStream out = new DataInputStream(new java.io.BufferedInputStream(new java.util.zip.InflaterInputStream(Files.newInputStream(file))))) {
++            return net.minecraft.nbt.NbtIo.read((java.io.DataInput) out);
 +        }
 +
 +    }

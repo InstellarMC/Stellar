@@ -1,71 +1,6 @@
 --- a/net/minecraft/world/entity/player/Player.java
 +++ b/net/minecraft/world/entity/player/Player.java
-@@ -1,16 +_,21 @@
- package net.minecraft.world.entity.player;
- 
-+import com.mohistmc.youer.bukkit.inventory.InventoryOwner;
-+import com.mohistmc.youer.plugins.KeepInventory;
- import com.google.common.collect.ImmutableList;
- import com.google.common.collect.ImmutableMap;
- import com.google.common.collect.Lists;
- import com.mojang.authlib.GameProfile;
- import com.mojang.datafixers.util.Either;
- import com.mojang.logging.LogUtils;
-+import io.papermc.paper.event.entity.EntityKnockbackEvent;
- import java.util.Collection;
- import java.util.List;
- import java.util.Map;
- import java.util.Optional;
- import java.util.OptionalInt;
-+import java.util.concurrent.atomic.AtomicBoolean;
-+import java.util.concurrent.atomic.AtomicReference;
- import java.util.function.Predicate;
- import javax.annotation.Nonnull;
- import javax.annotation.Nullable;
-@@ -24,11 +_,9 @@
- import net.minecraft.nbt.ListTag;
- import net.minecraft.nbt.NbtOps;
- import net.minecraft.nbt.NbtUtils;
--import net.minecraft.nbt.Tag;
- import net.minecraft.network.chat.ClickEvent;
- import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.MutableComponent;
--import net.minecraft.network.chat.Style;
- import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
- import net.minecraft.network.syncher.EntityDataAccessor;
- import net.minecraft.network.syncher.EntityDataSerializers;
-@@ -72,7 +_,6 @@
- import net.minecraft.world.entity.ai.attributes.Attributes;
- import net.minecraft.world.entity.animal.Parrot;
- import net.minecraft.world.entity.animal.horse.AbstractHorse;
--import net.minecraft.world.entity.boss.EnderDragonPart;
- import net.minecraft.world.entity.decoration.ArmorStand;
- import net.minecraft.world.entity.item.ItemEntity;
- import net.minecraft.world.entity.monster.warden.WardenSpawnTracker;
-@@ -85,12 +_,10 @@
- import net.minecraft.world.inventory.ClickAction;
- import net.minecraft.world.inventory.InventoryMenu;
- import net.minecraft.world.inventory.PlayerEnderChestContainer;
--import net.minecraft.world.item.ElytraItem;
- import net.minecraft.world.item.ItemCooldowns;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.item.Items;
- import net.minecraft.world.item.ProjectileWeaponItem;
--import net.minecraft.world.item.SwordItem;
- import net.minecraft.world.item.crafting.RecipeHolder;
- import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
- import net.minecraft.world.item.enchantment.EnchantmentHelper;
-@@ -110,10 +_,16 @@
- import net.minecraft.world.phys.Vec3;
- import net.minecraft.world.scores.PlayerTeam;
- import net.minecraft.world.scores.Scoreboard;
--import net.minecraft.world.scores.Team;
-+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.util.CraftVector;
-+import org.bukkit.event.entity.CreatureSpawnEvent;
-+import org.bukkit.event.entity.EntityExhaustionEvent;
-+import org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason;
+@@ -114,6 +_,7 @@
  import org.slf4j.Logger;
  
  public abstract class Player extends LivingEntity implements net.neoforged.neoforge.common.extensions.IPlayerExtension {
@@ -93,7 +28,7 @@
      protected int jumpTriggerTime;
      public float oBob;
      public float bob;
-@@ -179,25 +_,68 @@
+@@ -179,25 +_,65 @@
      public int enchantmentSeed;
      protected final float defaultFlySpeed = 0.02F;
      private int lastLevelUpTime;
@@ -135,8 +70,8 @@
 +    }
 +
 +    @Override
-+    public CraftHumanEntity getBukkitEntity() {
-+        return (CraftHumanEntity) super.getBukkitEntity();
++    public org.bukkit.craftbukkit.entity.CraftHumanEntity getBukkitEntity() {
++        return (org.bukkit.craftbukkit.entity.CraftHumanEntity) super.getBukkitEntity();
 +    }
 +    // CraftBukkit end
 +
@@ -152,9 +87,6 @@
 +        return false;
 +    }
 +    // Purpur end
-+
-+    // Youer start
-+    private EntityExhaustionEvent.ExhaustionReason causeFoodExhaustion$reason = ExhaustionReason.UNKNOWN;
  
      public Player(Level p_250508_, BlockPos p_250289_, float p_251702_, GameProfile p_252153_) {
          super(EntityType.PLAYER, p_250508_);
@@ -204,19 +136,19 @@
              }
  
 -            if (!this.level().isClientSide && this.level().isDay()) {
-+            if (!this.level().isClientSide && !net.neoforged.neoforge.event.EventHooks.canEntityContinueSleeping(this, this.level().isDay() ? BedSleepingProblem.NOT_POSSIBLE_NOW : null)) {
++            if (!this.level().isClientSide && !net.neoforged.neoforge.event.EventHooks.canEntityContinueSleeping(this, this.level().isDay() ? BedSleepingProblem.NOT_POSSIBLE_NOW : null)) { // Neo
                  this.stopSleepInBed(false, true);
              }
          } else if (this.sleepCounter > 0) {
-@@ -273,6 +_,7 @@
+@@ -273,25 +_,33 @@
          this.updateIsUnderwater();
          super.tick();
          if (!this.level().isClientSide && this.containerMenu != null && !this.containerMenu.stillValid(this)) {
-+            InventoryOwner.setClose$Reason(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper - Inventory close reason
-             this.closeContainer();
+-            this.closeContainer();
++            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper - Inventory close reason
              this.containerMenu = this.inventoryMenu;
          }
-@@ -280,18 +_,26 @@
+ 
          this.moveCloak();
          if (!this.level().isClientSide) {
              this.foodData.tick(this);
@@ -248,11 +180,18 @@
              }
          }
  
-@@ -318,6 +_,7 @@
+@@ -312,12 +_,14 @@
+             this.lastItemInMainHand = itemstack.copy();
+         }
+ 
++        if (this.level().stellarConfig().players.turtleHelmetCheck) // Stellar - Skip turtle helmet check if disabled in config
+         this.turtleHelmetTick();
+         this.cooldowns.tick();
+         this.updatePlayerPose();
          if (this.currentImpulseContextResetGraceTime > 0) {
              this.currentImpulseContextResetGraceTime--;
          }
-+        net.neoforged.neoforge.event.EventHooks.firePlayerTickPost(this);
++        net.neoforged.neoforge.event.EventHooks.firePlayerTickPost(this); // Neo
      }
  
      @Override
@@ -347,14 +286,6 @@
          super.die(p_36152_);
          this.reapplyPosition();
          if (!this.isSpectator() && this.level() instanceof ServerLevel serverlevel) {
-@@ -656,6 +_,7 @@
- 
-     @Override
-     protected void dropEquipment() {
-+        if (KeepInventory.inventory(this)) return;
-         super.dropEquipment();
-         if (!this.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY)) {
-             this.destroyVanishingCursedItems();
 @@ -678,17 +_,24 @@
      }
  
@@ -812,7 +743,7 @@
 +                            // CraftBukkit start - Add Velocity Event
 +                            boolean cancelled = false;
 +                            org.bukkit.entity.Player player = (org.bukkit.entity.Player) p_36347_.getBukkitEntity();
-+                            org.bukkit.util.Vector velocity = CraftVector.toBukkit(vec3);
++                            org.bukkit.util.Vector velocity = org.bukkit.craftbukkit.util.CraftVector.toBukkit(vec3);
 +
 +                            org.bukkit.event.player.PlayerVelocityEvent event = new org.bukkit.event.player.PlayerVelocityEvent(player, velocity.clone());
 +                            this.level().getCraftServer().getPluginManager().callEvent(event);
@@ -919,18 +850,12 @@
          this.inventoryMenu.removed(this);
          if (this.containerMenu != null && this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1384,13 +_,26 @@
+@@ -1384,13 +_,20 @@
          return this.containerMenu != this.inventoryMenu;
      }
  
 -    public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos p_36203_) {
 -        this.startSleeping(p_36203_);
-+    protected AtomicBoolean startSleepInBed_force = new AtomicBoolean(false);
-+    public Player forceSleepInBed(boolean force) {
-+        startSleepInBed_force.set(force);
-+        return this;
-+    }
-+
 +    public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos pos) {
 +        // CraftBukkit start
 +        return this.startSleepInBed(pos, false);
@@ -966,7 +891,7 @@
              this.resetFallDistance();
 -            this.setSharedFlag(7, false);
 +            // CraftBukkit start
-+            if (this.getSharedFlag(7) && !CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) {
++            if (this.getSharedFlag(7) && !org.bukkit.craftbukkit.event.CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) {
 +                this.setSharedFlag(7, false);
 +            }
 +            // CraftBukkit end
@@ -1003,7 +928,7 @@
      public void startFallFlying() {
 -        this.setSharedFlag(7, true);
 +        // CraftBukkit start
-+        if (!CraftEventFactory.callToggleGlideEvent(this, true).isCancelled()) {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callToggleGlideEvent(this, true).isCancelled()) {
 +            this.setSharedFlag(7, true);
 +        } else {
 +            // SPIGOT-5542: must toggle like below
@@ -1017,7 +942,7 @@
 -        this.setSharedFlag(7, true);
 -        this.setSharedFlag(7, false);
 +        // CraftBukkit start
-+        if (!CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) {
 +            this.setSharedFlag(7, true);
 +            this.setSharedFlag(7, false);
 +        }
@@ -1072,7 +997,7 @@
          this.experienceLevel += p_36276_;
          if (this.experienceLevel < 0) {
              this.experienceLevel = 0;
-@@ -1660,11 +_,29 @@
+@@ -1660,11 +_,30 @@
              return this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2;
          }
      }
@@ -1085,33 +1010,24 @@
 +    }
 +    // Paper end - send while respecting visibility
  
--    public void causeFoodExhaustion(float p_36400_) {
+     public void causeFoodExhaustion(float p_36400_) {
 +    // CraftBukkit start
-+    public void causeFoodExhaustion(float exhaustion) {
-+        this.causeFoodExhaustion(exhaustion, EntityExhaustionEvent.ExhaustionReason.UNKNOWN);
++        this.causeFoodExhaustion(p_36400_, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.UNKNOWN);
 +    }
-+    public void causeFoodExhaustion(float f, EntityExhaustionEvent.ExhaustionReason reason) {
-+        // CraftBukkit end
++    public void causeFoodExhaustion(float p_36400_, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason reason) {
++    // CraftBukkit end
          if (!this.abilities.invulnerable) {
              if (!this.level().isClientSide) {
--                this.foodData.addExhaustion(p_36400_);
 +                // CraftBukkit start
-+                EntityExhaustionEvent event = CraftEventFactory.callPlayerExhaustionEvent(this, reason, f);
++                org.bukkit.event.entity.EntityExhaustionEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerExhaustionEvent(this, reason, p_36400_);
 +                if (!event.isCancelled()) {
-+                    this.foodData.addExhaustion(event.getExhaustion());
-+                }
++                p_36400_ = event.getExhaustion();
 +                // CraftBukkit end
+                 this.foodData.addExhaustion(p_36400_);
++                } // CraftBukkit
              }
          }
      }
-@@ -1701,6 +_,7 @@
- 
-     @Override
-     protected int getBaseExperienceReward() {
-+        if (KeepInventory.exp(this)) return 0;
-         if (!this.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) && !this.isSpectator()) {
-             int i = this.experienceLevel * 7;
-             return i > 100 ? 100 : i;
 @@ -1764,6 +_,18 @@
          }
      }
@@ -1131,7 +1047,7 @@
      public boolean addItem(ItemStack p_36357_) {
          return this.inventory.add(p_36357_);
      }
-@@ -1799,28 +_,69 @@
+@@ -1799,27 +_,59 @@
          }
      }
  
@@ -1140,10 +1056,10 @@
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
 -            this.respawnEntityOnShoulder(this.getShoulderEntityLeft());
 +            // CraftBukkit start
-+            if (this.spawnEntityFromShoulder(this.getShoulderEntityLeft())) {
++            if (this.respawnEntityOnShoulder(this.getShoulderEntityLeft())) {
 +                this.setShoulderEntityLeft(new CompoundTag());
 +            }
-+            if (this.spawnEntityFromShoulder(this.getShoulderEntityRight())) {
++            if (this.respawnEntityOnShoulder(this.getShoulderEntityRight())) {
 +                this.setShoulderEntityRight(new CompoundTag());
 +            }
 +            // CraftBukkit end
@@ -1167,49 +1083,40 @@
              this.setShoulderEntityRight(new CompoundTag());
          }
 -    }
+-
+-    private void respawnEntityOnShoulder(CompoundTag p_36371_) {
 +        return entity;
 +    }
 +    // Paper - maintain old signature
 +
-+    // Paper - return entity
-+    private Entity respawnEntityOnShoulder0(CompoundTag nbttagcompound) { // CraftBukkit void->boolean
-+        respawnEntityOnShoulder(nbttagcompound);
-+        return spawnEntityFromShoulder.getAndSet(null);
++    private boolean respawnEntityOnShoulder(CompoundTag p_36371_) { // CraftBukkit void->boolean
++        return this.respawnEntityOnShoulder0(p_36371_) != null;
 +    }
-+    // Paper end
 +
-+    // Youer start
-+    public AtomicReference<Entity> spawnEntityFromShoulder = new AtomicReference<>(null);
- 
-     private void respawnEntityOnShoulder(CompoundTag p_36371_) {
++    // Paper - return entity
++    private Entity respawnEntityOnShoulder0(CompoundTag p_36371_) {
          if (!this.level().isClientSide && !p_36371_.isEmpty()) {
 -            EntityType.create(p_36371_, this.level()).ifPresent(p_352835_ -> {
--                if (p_352835_ instanceof TamableAnimal) {
--                    ((TamableAnimal)p_352835_).setOwnerUUID(this.uuid);
-+            EntityType.create(p_36371_, this.level()).ifPresent((p_276001_) -> {
-+                if (p_276001_ instanceof TamableAnimal) {
-+                    ((TamableAnimal)p_276001_).setOwnerUUID(this.uuid);
++            return EntityType.create(p_36371_, this.level()).map(p_352835_ -> { // CraftBukkit
+                 if (p_352835_ instanceof TamableAnimal) {
+                     ((TamableAnimal)p_352835_).setOwnerUUID(this.uuid);
                  }
  
 -                p_352835_.setPos(this.getX(), this.getY() + 0.7F, this.getZ());
 -                ((ServerLevel)this.level()).addWithUUID(p_352835_);
-+                p_276001_.setPos(this.getX(), this.getY() + (double)0.7F, this.getZ());
-+                boolean canAdd = ((ServerLevel)this.level()).addWithUUID(p_276001_);
-+                if (canAdd) {
-+                    spawnEntityFromShoulder.set(p_276001_);
-+                }
-             });
+-            });
++                p_352835_.setPos(this.getX(), this.getY() + (double)0.7F, this.getZ());
++                boolean addedToWorld = ((ServerLevel)this.level()).addWithUUID(p_352835_, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
++                return addedToWorld ? p_352835_ : null;
++            }).orElse(null); // CraftBukkit // Paper - true -> null
          }
-     }
- 
-+    private boolean spawnEntityFromShoulder(CompoundTag pEntityCompound) { // CraftBukkit void->boolean
-+        return this.respawnEntityOnShoulder0(pEntityCompound) != null;
-+    }
-+    // Youer end
 +
++        return null; // Paper - return null
+     }
++    // Paper end
+ 
      @Override
      public abstract boolean isSpectator();
- 
 @@ -1847,7 +_,11 @@
  
      @Override

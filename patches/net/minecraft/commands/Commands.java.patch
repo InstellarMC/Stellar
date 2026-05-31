@@ -1,141 +1,13 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -1,5 +_,7 @@
- package net.minecraft.commands;
- 
-+import com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent;
-+import com.google.common.base.Joiner;
- import com.google.common.collect.Maps;
- import com.mojang.brigadier.CommandDispatcher;
- import com.mojang.brigadier.ParseResults;
-@@ -8,17 +_,20 @@
- import com.mojang.brigadier.builder.ArgumentBuilder;
- import com.mojang.brigadier.builder.LiteralArgumentBuilder;
- import com.mojang.brigadier.builder.RequiredArgumentBuilder;
--import com.mojang.brigadier.context.CommandContext;
- import com.mojang.brigadier.context.CommandContextBuilder;
- import com.mojang.brigadier.context.ContextChain;
- import com.mojang.brigadier.exceptions.CommandSyntaxException;
- import com.mojang.brigadier.tree.CommandNode;
-+import com.mojang.brigadier.suggestion.SuggestionProvider;
- import com.mojang.brigadier.tree.RootCommandNode;
- import com.mojang.logging.LogUtils;
- import java.util.Collection;
-+import java.util.LinkedHashSet;
- import java.util.Map;
- import java.util.Optional;
- import java.util.Set;
-+import java.util.concurrent.atomic.AtomicBoolean;
-+import java.util.concurrent.atomic.AtomicReference;
- import java.util.function.Consumer;
- import java.util.function.Predicate;
- import java.util.function.UnaryOperator;
-@@ -40,102 +_,19 @@
- import net.minecraft.network.chat.ClickEvent;
- import net.minecraft.network.chat.CommonComponents;
- import net.minecraft.network.chat.Component;
--import net.minecraft.network.chat.ComponentUtils;
+@@ -43,7 +_,6 @@
+ import net.minecraft.network.chat.ComponentUtils;
  import net.minecraft.network.chat.HoverEvent;
  import net.minecraft.network.chat.MutableComponent;
 -import net.minecraft.network.chat.Style;
  import net.minecraft.network.protocol.game.ClientboundCommandsPacket;
  import net.minecraft.resources.ResourceKey;
  import net.minecraft.server.MinecraftServer;
--import net.minecraft.server.commands.AdvancementCommands;
--import net.minecraft.server.commands.AttributeCommand;
--import net.minecraft.server.commands.BanIpCommands;
--import net.minecraft.server.commands.BanListCommands;
--import net.minecraft.server.commands.BanPlayerCommands;
--import net.minecraft.server.commands.BossBarCommands;
--import net.minecraft.server.commands.ClearInventoryCommands;
--import net.minecraft.server.commands.CloneCommands;
--import net.minecraft.server.commands.DamageCommand;
--import net.minecraft.server.commands.DataPackCommand;
--import net.minecraft.server.commands.DeOpCommands;
--import net.minecraft.server.commands.DebugCommand;
--import net.minecraft.server.commands.DebugConfigCommand;
--import net.minecraft.server.commands.DebugMobSpawningCommand;
--import net.minecraft.server.commands.DebugPathCommand;
--import net.minecraft.server.commands.DefaultGameModeCommands;
--import net.minecraft.server.commands.DifficultyCommand;
--import net.minecraft.server.commands.EffectCommands;
--import net.minecraft.server.commands.EmoteCommands;
--import net.minecraft.server.commands.EnchantCommand;
--import net.minecraft.server.commands.ExecuteCommand;
--import net.minecraft.server.commands.ExperienceCommand;
--import net.minecraft.server.commands.FillBiomeCommand;
--import net.minecraft.server.commands.FillCommand;
--import net.minecraft.server.commands.ForceLoadCommand;
--import net.minecraft.server.commands.FunctionCommand;
--import net.minecraft.server.commands.GameModeCommand;
--import net.minecraft.server.commands.GameRuleCommand;
--import net.minecraft.server.commands.GiveCommand;
--import net.minecraft.server.commands.HelpCommand;
--import net.minecraft.server.commands.ItemCommands;
--import net.minecraft.server.commands.JfrCommand;
--import net.minecraft.server.commands.KickCommand;
--import net.minecraft.server.commands.KillCommand;
--import net.minecraft.server.commands.ListPlayersCommand;
--import net.minecraft.server.commands.LocateCommand;
--import net.minecraft.server.commands.LootCommand;
--import net.minecraft.server.commands.MsgCommand;
--import net.minecraft.server.commands.OpCommand;
--import net.minecraft.server.commands.PardonCommand;
--import net.minecraft.server.commands.PardonIpCommand;
--import net.minecraft.server.commands.ParticleCommand;
--import net.minecraft.server.commands.PerfCommand;
--import net.minecraft.server.commands.PlaceCommand;
--import net.minecraft.server.commands.PlaySoundCommand;
--import net.minecraft.server.commands.PublishCommand;
--import net.minecraft.server.commands.RaidCommand;
--import net.minecraft.server.commands.RandomCommand;
--import net.minecraft.server.commands.RecipeCommand;
--import net.minecraft.server.commands.ReloadCommand;
--import net.minecraft.server.commands.ReturnCommand;
--import net.minecraft.server.commands.RideCommand;
--import net.minecraft.server.commands.SaveAllCommand;
--import net.minecraft.server.commands.SaveOffCommand;
--import net.minecraft.server.commands.SaveOnCommand;
--import net.minecraft.server.commands.SayCommand;
--import net.minecraft.server.commands.ScheduleCommand;
--import net.minecraft.server.commands.ScoreboardCommand;
--import net.minecraft.server.commands.SeedCommand;
--import net.minecraft.server.commands.ServerPackCommand;
--import net.minecraft.server.commands.SetBlockCommand;
--import net.minecraft.server.commands.SetPlayerIdleTimeoutCommand;
--import net.minecraft.server.commands.SetSpawnCommand;
--import net.minecraft.server.commands.SetWorldSpawnCommand;
--import net.minecraft.server.commands.SpawnArmorTrimsCommand;
--import net.minecraft.server.commands.SpectateCommand;
--import net.minecraft.server.commands.SpreadPlayersCommand;
--import net.minecraft.server.commands.StopCommand;
--import net.minecraft.server.commands.StopSoundCommand;
--import net.minecraft.server.commands.SummonCommand;
--import net.minecraft.server.commands.TagCommand;
--import net.minecraft.server.commands.TeamCommand;
--import net.minecraft.server.commands.TeamMsgCommand;
--import net.minecraft.server.commands.TeleportCommand;
--import net.minecraft.server.commands.TellRawCommand;
--import net.minecraft.server.commands.TickCommand;
--import net.minecraft.server.commands.TimeCommand;
--import net.minecraft.server.commands.TitleCommand;
--import net.minecraft.server.commands.TransferCommand;
--import net.minecraft.server.commands.TriggerCommand;
--import net.minecraft.server.commands.WardenSpawnTrackerCommand;
--import net.minecraft.server.commands.WeatherCommand;
--import net.minecraft.server.commands.WhitelistCommand;
--import net.minecraft.server.commands.WorldBorderCommand;
-+import net.minecraft.server.commands.*;
- import net.minecraft.server.commands.data.DataCommands;
- import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.tags.TagKey;
- import net.minecraft.util.profiling.jfr.JvmProfiler;
- import net.minecraft.world.level.GameRules;
-+import org.bukkit.event.player.PlayerCommandSendEvent;
-+import org.bukkit.event.server.ServerCommandEvent;
- import org.slf4j.Logger;
- 
- public class Commands {
 @@ -158,7 +_,7 @@
          DamageCommand.register(this.dispatcher, p_230944_);
          DataCommands.register(this.dispatcher);
@@ -145,28 +17,20 @@
          DefaultGameModeCommands.register(this.dispatcher);
          DifficultyCommand.register(this.dispatcher);
          EffectCommands.register(this.dispatcher, p_230944_);
-@@ -196,6 +_,7 @@
-         SetSpawnCommand.register(this.dispatcher);
-         SetWorldSpawnCommand.register(this.dispatcher);
-         SpectateCommand.register(this.dispatcher);
-+        CreateFakePlayersCommand.register(this.dispatcher); // Stellar
-         SpreadPlayersCommand.register(this.dispatcher);
-         StopSoundCommand.register(this.dispatcher);
-         SummonCommand.register(this.dispatcher, p_230944_);
 @@ -214,7 +_,11 @@
              JfrCommand.register(this.dispatcher);
          }
  
 -        if (SharedConstants.IS_RUNNING_IN_IDE) {
 +        if (org.purpurmc.purpur.PurpurConfig.registerMinecraftDisabledCommands) { // Purpur - register disabled minecraft commands
-+            ChaseCommand.register(this.dispatcher);
++            net.minecraft.server.commands.ChaseCommand.register(this.dispatcher);
 +        }
 +
 +        if (org.purpurmc.purpur.PurpurConfig.registerMinecraftDebugCommands || net.neoforged.neoforge.gametest.GameTestHooks.isGametestEnabled()) { // Purpur // Neo
              TestCommand.register(this.dispatcher);
              RaidCommand.register(this.dispatcher, p_230944_);
              DebugPathCommand.register(this.dispatcher);
-@@ -243,12 +_,46 @@
+@@ -243,12 +_,47 @@
              StopCommand.register(this.dispatcher);
              TransferCommand.register(this.dispatcher);
              WhitelistCommand.register(this.dispatcher);
@@ -178,6 +42,7 @@
 +            org.purpurmc.purpur.command.CompassCommand.register(this.dispatcher); // Purpur - Add compass command
 +            org.purpurmc.purpur.command.RamBarCommand.register(this.dispatcher); // Purpur - Add rambar command
 +            org.purpurmc.purpur.command.RamCommand.register(this.dispatcher); // Purpur - Add ram command
++            dev.instellar.stellar.command.brigadier.CreateFakePlayersCommand.register(this.dispatcher); // Stellar
 +            dev.instellar.stellar.command.brigadier.SetMaxPlayersCommand.register(this.dispatcher); // Stellar
          }
  
@@ -225,12 +90,12 @@
 -    public void performCommand(ParseResults<CommandSourceStack> p_242844_, String p_242841_) {
 +    // CraftBukkit start
 +    public void dispatchServerCommand(CommandSourceStack sender, String command) {
-+        Joiner joiner = Joiner.on(" ");
++        com.google.common.base.Joiner joiner = com.google.common.base.Joiner.on(" ");
 +        if (command.startsWith("/")) {
 +            command = command.substring(1);
 +        }
 +
-+        ServerCommandEvent event = new ServerCommandEvent(sender.getBukkitSender(), command);
++        org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(sender.getBukkitSender(), command);
 +        org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +        if (event.isCancelled()) {
 +            return;
@@ -389,13 +254,13 @@
 +        map.keySet().removeIf((node) -> !org.spigotmc.SpigotConfig.sendNamespaced && node.getName().contains( ":" )); // Paper - Remove namedspaced from result nodes to prevent redirect trimming ~ see comment below
 +        // this.fillUsableCommands(this.dispatcher.getRoot(), rootcommandnode, player.createCommandSourceStack(), map);
 +        // FORGE: Use our own command node merging method to handle redirect nodes properly, see issue #7551
-+        net.neoforged.neoforge.server.command.CommandHelper.mergeCommandNode(this.dispatcher.getRoot(), rootcommandnode, map, player.createCommandSourceStack(), ctx -> 0, suggest -> SuggestionProviders.safelySwap((SuggestionProvider<SharedSuggestionProvider>) (SuggestionProvider<?>) suggest));
-+        Collection<String> bukkit = new LinkedHashSet<>();
++        net.neoforged.neoforge.server.command.CommandHelper.mergeCommandNode(this.dispatcher.getRoot(), rootcommandnode, map, player.createCommandSourceStack(), ctx -> 0, suggest -> SuggestionProviders.safelySwap((com.mojang.brigadier.suggestion.SuggestionProvider<SharedSuggestionProvider>) (com.mojang.brigadier.suggestion.SuggestionProvider<?>) suggest));
++        Collection<String> bukkit = new java.util.LinkedHashSet<>();
 +        for (CommandNode node : rootcommandnode.getChildren()) {
 +            bukkit.add(node.getName());
 +        }
 +        // Paper start - Perf: Async command map building
-+        new AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootcommandnode, false).callEvent(); // Paper - Brigadier API
++        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootcommandnode, false).callEvent(); // Paper - Brigadier API
 +        net.minecraft.server.MinecraftServer.getServer().execute(() -> {
 +            runSync(player, bukkit, rootcommandnode);
 +        });
@@ -403,9 +268,9 @@
 +
 +    private void runSync(ServerPlayer player, Collection<String> bukkit, RootCommandNode<SharedSuggestionProvider> rootcommandnode) {
 +        // Paper end - Perf: Async command map building
-+        new AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootcommandnode, true).callEvent(); // Paper - Brigadier API
-+        if (PlayerCommandSendEvent.getHandlerList().getRegisteredListeners().length > 0) { // Purpur - Skip events if there's no listeners
-+        PlayerCommandSendEvent event = new PlayerCommandSendEvent(player.getBukkitEntity(), new LinkedHashSet<>(bukkit));
++        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootcommandnode, true).callEvent(); // Paper - Brigadier API
++        if (org.bukkit.event.player.PlayerCommandSendEvent.getHandlerList().getRegisteredListeners().length > 0) { // Purpur - Skip events if there's no listeners
++        org.bukkit.event.player.PlayerCommandSendEvent event = new org.bukkit.event.player.PlayerCommandSendEvent(player.getBukkitEntity(), new java.util.LinkedHashSet<>(bukkit));
 +        event.getPlayer().getServer().getPluginManager().callEvent(event);
 +
 +        // Remove labels that were removed during the event

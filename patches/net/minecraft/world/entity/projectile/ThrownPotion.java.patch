@@ -1,39 +1,13 @@
 --- a/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/net/minecraft/world/entity/projectile/ThrownPotion.java
-@@ -1,17 +_,24 @@
+@@ -1,6 +_,7 @@
  package net.minecraft.world.entity.projectile;
  
  import it.unimi.dsi.fastutil.doubles.DoubleDoubleImmutablePair;
 +
-+import java.util.HashMap;
-+import java.util.Iterator;
  import java.util.List;
-+import java.util.Map;
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.Direction;
- import net.minecraft.core.Holder;
- import net.minecraft.core.component.DataComponents;
-+import net.minecraft.server.level.ServerLevel;
-+import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.tags.BlockTags;
- import net.minecraft.world.damagesource.DamageSource;
- import net.minecraft.world.effect.MobEffect;
- import net.minecraft.world.effect.MobEffectInstance;
-+import net.minecraft.world.effect.MobEffects;
- import net.minecraft.world.entity.AreaEffectCloud;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.EntityType;
-@@ -30,6 +_,8 @@
- import net.minecraft.world.phys.BlockHitResult;
- import net.minecraft.world.phys.EntityHitResult;
- import net.minecraft.world.phys.HitResult;
-+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplier {
-     public static final double SPLASH_RANGE = 4.0;
 @@ -81,51 +_,88 @@
      @Override
      protected void onHit(HitResult p_37543_) {
@@ -97,10 +71,10 @@
 -        }
 +        // Paper start - Fix potions splash events
 +        List<LivingEntity> list = this.level().getEntitiesOfClass(LivingEntity.class, aabb, ThrownPotion.APPLY_WATER_GET_ENTITIES_PREDICATE);
-+        Map<org.bukkit.entity.LivingEntity, Double> affected = new HashMap<>();
++        java.util.Map<org.bukkit.entity.LivingEntity, Double> affected = new java.util.HashMap<>();
 +        java.util.Set<org.bukkit.entity.LivingEntity> rehydrate = new java.util.HashSet<>();
 +        java.util.Set<org.bukkit.entity.LivingEntity> extinguish = new java.util.HashSet<>();
-+        Iterator iterator = list.iterator();
++        java.util.Iterator iterator = list.iterator();
 +
 +        while (iterator.hasNext()) {
 +            LivingEntity entityliving = (LivingEntity) iterator.next();
@@ -125,13 +99,13 @@
 +        );
 +        if (!event.isCancelled()) {
 +            for (org.bukkit.entity.LivingEntity affectedEntity : event.getToDamage()) {
-+                ((CraftLivingEntity) affectedEntity).getHandle().hurt(this.damageSources().indirectMagic(this, this.getOwner()), 1.0F);
++                ((org.bukkit.craftbukkit.entity.CraftLivingEntity) affectedEntity).getHandle().hurt(this.damageSources().indirectMagic(this, this.getOwner()), 1.0F);
 +            }
 +            for (org.bukkit.entity.LivingEntity toExtinguish : event.getToExtinguish()) {
-+                ((CraftLivingEntity) toExtinguish).getHandle().extinguishFire();
++                ((org.bukkit.craftbukkit.entity.CraftLivingEntity) toExtinguish).getHandle().extinguishFire();
 +            }
 +            for (org.bukkit.entity.LivingEntity toRehydrate : event.getToRehydrate()) {
-+                if (((CraftLivingEntity) toRehydrate).getHandle() instanceof Axolotl axolotl) {
++                if (((org.bukkit.craftbukkit.entity.CraftLivingEntity) toRehydrate).getHandle() instanceof Axolotl axolotl) {
 +                    axolotl.rehydrate();
 +                }
 +            }
@@ -184,24 +158,24 @@
 +        if (!event.isCancelled() && list != null && !list.isEmpty()) { // do not process effects if there are no effects to process
 +            Entity entity1 = this.getEffectSource();
 +            for (org.bukkit.entity.LivingEntity victim : event.getAffectedEntities()) {
-+                if (!(victim instanceof CraftLivingEntity)) {
++                if (!(victim instanceof org.bukkit.craftbukkit.entity.CraftLivingEntity)) {
 +                    continue;
 +                }
 +
-+                net.minecraft.world.entity.LivingEntity entityliving = ((CraftLivingEntity) victim).getHandle();
++                net.minecraft.world.entity.LivingEntity entityliving = ((org.bukkit.craftbukkit.entity.CraftLivingEntity) victim).getHandle();
 +                double d1 = event.getIntensity(victim);
 +                // CraftBukkit end
 +
-+                Iterator iterator1 = p_330815_.iterator();
++                java.util.Iterator iterator1 = p_330815_.iterator();
 +
 +                while (iterator1.hasNext()) {
 +                    MobEffectInstance mobeffect = (MobEffectInstance) iterator1.next();
 +                    Holder<MobEffect> holder = mobeffect.getEffect();
 +                    // CraftBukkit start - Abide by PVP settings - for players only!
-+                    if (!this.level().pvpMode && this.getOwner() instanceof ServerPlayer && entityliving instanceof ServerPlayer && entityliving != this.getOwner()) {
++                    if (!this.level().pvpMode && this.getOwner() instanceof net.minecraft.server.level.ServerPlayer && entityliving instanceof net.minecraft.server.level.ServerPlayer && entityliving != this.getOwner()) {
 +                        MobEffect mobeffectlist = (MobEffect) holder.value();
-+                        if (mobeffectlist == MobEffects.MOVEMENT_SLOWDOWN || mobeffectlist == MobEffects.DIG_SLOWDOWN || mobeffectlist == MobEffects.HARM || mobeffectlist == MobEffects.BLINDNESS
-+                                || mobeffectlist == MobEffects.HUNGER || mobeffectlist == MobEffects.WEAKNESS || mobeffectlist == MobEffects.POISON) {
++                        if (mobeffectlist == net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN || mobeffectlist == net.minecraft.world.effect.MobEffects.DIG_SLOWDOWN || mobeffectlist == net.minecraft.world.effect.MobEffects.HARM || mobeffectlist == net.minecraft.world.effect.MobEffects.BLINDNESS
++                                || mobeffectlist == net.minecraft.world.effect.MobEffects.HUNGER || mobeffectlist == net.minecraft.world.effect.MobEffects.WEAKNESS || mobeffectlist == net.minecraft.world.effect.MobEffects.POISON) {
 +                            continue;
 +                        }
 +                    }
@@ -254,7 +228,7 @@
          if (blockstate.is(BlockTags.FIRE)) {
 -            this.level().destroyBlock(p_150193_, false, this);
 +            // CraftBukkit start
-+            if (CraftEventFactory.callEntityChangeBlockEvent(this, p_150193_, blockstate.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, p_150193_, blockstate.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
 +                this.level().destroyBlock(p_150193_, false, this);
 +            }
 +            // CraftBukkit end

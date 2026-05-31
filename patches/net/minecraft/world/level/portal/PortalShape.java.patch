@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/level/portal/PortalShape.java
 +++ b/net/minecraft/world/level/portal/PortalShape.java
-@@ -11,7 +_,6 @@
- import net.minecraft.util.Mth;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.EntityDimensions;
--import net.minecraft.world.level.BlockGetter;
- import net.minecraft.world.level.LevelAccessor;
- import net.minecraft.world.level.block.Blocks;
- import net.minecraft.world.level.block.NetherPortalBlock;
 @@ -27,7 +_,7 @@
      public static final int MAX_WIDTH = 21;
      private static final int MIN_HEIGHT = 3;

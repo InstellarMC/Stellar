@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/entity/projectile/ThrownExperienceBottle.java
 +++ b/net/minecraft/world/entity/projectile/ThrownExperienceBottle.java
-@@ -10,6 +_,7 @@
- import net.minecraft.world.item.alchemy.Potions;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.phys.HitResult;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public class ThrownExperienceBottle extends ThrowableItemProjectile {
-     public ThrownExperienceBottle(EntityType<? extends ThrownExperienceBottle> p_37510_, Level p_37511_) {
 @@ -38,10 +_,19 @@
      protected void onHit(HitResult p_37521_) {
          super.onHit(p_37521_);
@@ -19,7 +11,7 @@
 -            this.discard();
 +
 +            // CraftBukkit start
-+            org.bukkit.event.entity.ExpBottleEvent event = CraftEventFactory.callExpBottleEvent(this, p_37521_, i);
++            org.bukkit.event.entity.ExpBottleEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callExpBottleEvent(this, p_37521_, i);
 +            i = event.getExperience();
 +            if (event.getShowEffect()) {
 +                this.level().levelEvent(2002, this.blockPosition(), PotionContents.getColor(Potions.WATER));

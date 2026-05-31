@@ -1,21 +1,5 @@
 --- a/net/minecraft/gametest/framework/GameTestServer.java
 +++ b/net/minecraft/gametest/framework/GameTestServer.java
-@@ -18,6 +_,7 @@
- import net.minecraft.ReportType;
- import net.minecraft.SystemReport;
- import net.minecraft.Util;
-+import net.minecraft.commands.CommandSourceStack;
- import net.minecraft.commands.Commands;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.LayeredRegistryAccess;
-@@ -49,6 +_,7 @@
- import net.minecraft.world.level.levelgen.presets.WorldPresets;
- import net.minecraft.world.level.storage.LevelStorageSource;
- import net.minecraft.world.level.storage.PrimaryLevelData;
-+import org.bukkit.command.CommandSender;
- import org.slf4j.Logger;
- 
- public class GameTestServer extends MinecraftServer {
 @@ -62,10 +_,10 @@
      private final BlockPos spawnPos;
      private final Stopwatch stopwatch = Stopwatch.createUnstarted();
@@ -63,7 +47,7 @@
 +    }
 +
 +    @Override
-+    public CommandSender getBukkitSender(CommandSourceStack wrapper) {
++    public org.bukkit.command.CommandSender getBukkitSender(net.minecraft.commands.CommandSourceStack wrapper) {
 +        return null;
      }
  }

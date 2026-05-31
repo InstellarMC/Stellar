@@ -1,31 +1,13 @@
 --- a/net/minecraft/world/entity/monster/EnderMan.java
 +++ b/net/minecraft/world/entity/monster/EnderMan.java
-@@ -5,6 +_,9 @@
+@@ -5,6 +_,7 @@
  import java.util.UUID;
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
 +
-+import com.destroystokyo.paper.event.entity.EndermanAttackPlayerEvent;
-+import com.destroystokyo.paper.event.entity.EndermanEscapeEvent;
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
  import net.minecraft.core.component.DataComponents;
-@@ -54,7 +_,6 @@
- import net.minecraft.world.item.enchantment.EnchantmentHelper;
- import net.minecraft.world.item.enchantment.providers.VanillaEnchantmentProviders;
- import net.minecraft.world.level.ClipContext;
--import net.minecraft.world.level.GameRules;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.Block;
- import net.minecraft.world.level.block.Blocks;
-@@ -66,6 +_,7 @@
- import net.minecraft.world.phys.AABB;
- import net.minecraft.world.phys.BlockHitResult;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public class EnderMan extends Monster implements NeutralMob {
-     private static final ResourceLocation SPEED_MODIFIER_ATTACKING_ID = ResourceLocation.withDefaultNamespace("attacking");
 @@ -118,7 +_,6 @@
  
      @Override
@@ -43,8 +25,8 @@
 +    }
 +
 +    // Paper start - EndermanEscapeEvent
-+    private boolean tryEscape(EndermanEscapeEvent.Reason reason) {
-+        return new EndermanEscapeEvent((org.bukkit.craftbukkit.entity.CraftEnderman) this.getBukkitEntity(), reason).callEvent();
++    private boolean tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason reason) {
++        return new com.destroystokyo.paper.event.entity.EndermanEscapeEvent((org.bukkit.craftbukkit.entity.CraftEnderman) this.getBukkitEntity(), reason).callEvent();
 +    }
 +    // Paper end - EndermanEscapeEvent
  
@@ -55,7 +37,7 @@
  
      boolean isLookingAtMe(Player p_32535_) {
 +        boolean shouldAttack = isLookingAtMe_check(p_32535_);
-+        EndermanAttackPlayerEvent event = new EndermanAttackPlayerEvent((org.bukkit.entity.Enderman) getBukkitEntity(), (org.bukkit.entity.Player) p_32535_.getBukkitEntity());
++        com.destroystokyo.paper.event.entity.EndermanAttackPlayerEvent event = new com.destroystokyo.paper.event.entity.EndermanAttackPlayerEvent((org.bukkit.entity.Enderman) getBukkitEntity(), (org.bukkit.entity.Player) p_32535_.getBukkitEntity());
 +        event.setCancelled(!shouldAttack);
 +        return event.callEvent();
 +    }
@@ -72,7 +54,7 @@
          if (this.level().isDay() && this.tickCount >= this.targetChangeTime + 600) {
              float f = this.getLightLevelDependentMagicValue();
 -            if (f > 0.5F && this.level().canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
-+            if (f > 0.5F && this.level().canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.tryEscape(EndermanEscapeEvent.Reason.RUNAWAY)) { // Paper - EndermanEscapeEvent
++            if (f > 0.5F && this.level().canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.RUNAWAY)) { // Paper - EndermanEscapeEvent
                  this.setTarget(null);
                  this.teleport();
              }
@@ -124,7 +106,7 @@
 +                boolean flag1 = flag && this.hurtWithCleanWater(p_21016_, (ThrownPotion) p_21016_.getDirectEntity(), p_21017_);
  
 -                for (int i = 0; i < 64; i++) {
-+                if (this.tryEscape(EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - EndermanEscapeEvent
++                if (this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - EndermanEscapeEvent
 +                    for (int i = 0; i < 64; i++) {
                      if (this.teleport()) {
                          return true;
@@ -169,7 +151,7 @@
 -                    level.gameEvent(GameEvent.BLOCK_PLACE, blockpos, GameEvent.Context.of(this.enderman, blockstate2));
 -                    this.enderman.setCarriedBlock(null);
 +                if (this.canPlaceBlock(level, blockpos, blockstate2, blockstate, blockstate1, blockpos1) && !net.neoforged.neoforge.event.EventHooks.onBlockPlace(enderman, net.neoforged.neoforge.common.util.BlockSnapshot.create(level.dimension(), level, blockpos1), net.minecraft.core.Direction.UP)) {
-+                    if (CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockpos, blockstate2)) { // CraftBukkit - Place event
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockpos, blockstate2)) { // CraftBukkit - Place event
 +                        level.setBlock(blockpos, blockstate2, 3);
 +                        level.gameEvent(GameEvent.BLOCK_PLACE, blockpos, GameEvent.Context.of(this.enderman, blockstate2));
 +                        this.enderman.setCarriedBlock(null);
@@ -190,7 +172,7 @@
                  if (this.target != null && !this.enderman.isPassenger()) {
                      if (this.enderman.isLookingAtMe((Player)this.target)) {
 -                        if (this.target.distanceToSqr(this.enderman) < 16.0) {
-+                        if (this.target.distanceToSqr(this.enderman) < 16.0 && this.enderman.tryEscape(EndermanEscapeEvent.Reason.STARE)) { // Paper - EndermanEscapeEvent
++                        if (this.target.distanceToSqr(this.enderman) < 16.0 && this.enderman.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.STARE)) { // Paper - EndermanEscapeEvent
                              this.enderman.teleport();
                          }
  
@@ -210,7 +192,7 @@
 -                level.removeBlock(blockpos, false);
 -                level.gameEvent(GameEvent.BLOCK_DESTROY, blockpos, GameEvent.Context.of(this.enderman, blockstate));
 -                this.enderman.setCarriedBlock(blockstate.getBlock().defaultBlockState());
-+                if (CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockpos, blockstate.getFluidState().createLegacyBlock())) { // CraftBukkit - Place event // Paper - fix wrong block state
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockpos, blockstate.getFluidState().createLegacyBlock())) { // CraftBukkit - Place event // Paper - fix wrong block state
 +                    level.removeBlock(blockpos, false);
 +                    level.gameEvent(GameEvent.BLOCK_DESTROY, blockpos, GameEvent.Context.of(this.enderman, blockstate));
 +                    this.enderman.setCarriedBlock(blockstate.getBlock().defaultBlockState());
