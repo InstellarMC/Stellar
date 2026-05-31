@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.event.EventHooks;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 
 /**
  * A registry which defines the interactions a source fluid can have with its
@@ -129,7 +130,11 @@ public final class FluidInteractionRegistry {
          */
         public InteractionInformation(HasFluidInteraction predicate, Function<FluidState, BlockState> getState) {
             this(predicate, (level, currentPos, relativePos, currentState) -> {
-                level.setBlockAndUpdate(currentPos, EventHooks.fireFluidPlaceBlockEvent(level, currentPos, currentPos, getState.apply(currentState)));
+                // Stellar start
+                BlockState newState = getState.apply(currentState);
+                level.setBlockAndUpdate(currentPos, EventHooks.fireFluidPlaceBlockEvent(level, currentPos, currentPos, newState));
+                if (CraftEventFactory.handleBlockFormEvent(level, currentPos, newState))
+                // Stellar end
                 level.levelEvent(1501, currentPos, 0);
             });
         }

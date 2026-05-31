@@ -67,7 +67,7 @@
 +            return new dev.kaiijumc.kaiiju.path.AsyncPath(
 +                Lists.newArrayList(),
 +                p_77430_,
-+                () -> this.processPath(evaluator, node, map, p_77431_, p_77432_, p_77433_),
++                () -> this.processPath(p_77428_.getProfiler(), evaluator, node, map, p_77431_, p_77432_, p_77433_),
 +                () -> {
 +                    evaluator.done();
 +                    dev.kaiijumc.kaiiju.path.NodeEvaluatorCache.returnEvaluator(evaluator);

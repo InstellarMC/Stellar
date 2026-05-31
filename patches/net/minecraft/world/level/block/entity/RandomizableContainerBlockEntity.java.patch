@@ -1,22 +1,15 @@
 --- a/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-@@ -1,5 +_,6 @@
- package net.minecraft.world.level.block.entity;
- 
-+import com.destroystokyo.paper.loottable.PaperLootableInventoryData;
- import javax.annotation.Nullable;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.component.DataComponentMap;
 @@ -115,4 +_,13 @@
          p_331200_.remove("LootTable");
          p_331200_.remove("LootTableSeed");
      }
 +
 +    // Paper start - LootTable API
-+    final PaperLootableInventoryData lootableData = new PaperLootableInventoryData(); // Paper
++    final com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData(); // Paper
 +
 +    @Override
-+    public PaperLootableInventoryData lootableData() {
++    public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData() {
 +        return this.lootableData;
 +    }
 +    // Paper end - LootTable API

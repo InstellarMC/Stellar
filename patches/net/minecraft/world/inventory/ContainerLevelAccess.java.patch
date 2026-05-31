@@ -1,10 +1,7 @@
 --- a/net/minecraft/world/inventory/ContainerLevelAccess.java
 +++ b/net/minecraft/world/inventory/ContainerLevelAccess.java
-@@ -5,17 +_,58 @@
- import java.util.function.BiFunction;
- import net.minecraft.core.BlockPos;
+@@ -7,15 +_,55 @@
  import net.minecraft.world.level.Level;
-+import org.bukkit.craftbukkit.CraftWorld;
  
  public interface ContainerLevelAccess {
 +
@@ -23,7 +20,7 @@
 +            return null;
 +        } else {
 +            Level level = getWorld();
-+            CraftWorld world = level == null ? null : level.getWorld();
++            org.bukkit.craftbukkit.CraftWorld world = level == null ? null : level.getWorld();
 +            return new org.bukkit.Location(world, blockPos.getX(), blockPos.getY(), blockPos.getZ());
 +        }
 +    }

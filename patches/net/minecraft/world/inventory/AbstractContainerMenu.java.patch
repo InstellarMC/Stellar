@@ -30,24 +30,14 @@
  import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.util.Mth;
  import net.minecraft.world.Container;
-@@ -28,9 +_,16 @@
+@@ -28,7 +_,6 @@
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.flag.FeatureFlagSet;
  import net.minecraft.world.item.ItemStack;
 -import net.minecraft.world.level.Level;
  import net.minecraft.world.level.block.Block;
  import net.minecraft.world.level.block.entity.BlockEntity;
-+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-+import org.bukkit.craftbukkit.inventory.CraftInventory;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.event.Event;
-+import org.bukkit.event.inventory.InventoryDragEvent;
-+import org.bukkit.event.inventory.InventoryType;
-+import org.bukkit.inventory.InventoryView;
  import org.slf4j.Logger;
- 
- public abstract class AbstractContainerMenu {
 @@ -45,22 +_,93 @@
      public static final int CARRIED_SLOT_SIZE = Integer.MAX_VALUE;
      public NonNullList<ItemStack> lastSlots = NonNullList.create();
@@ -76,44 +66,44 @@
 +    @Nullable protected ItemStack activeQuickItem = null; // Purpur - Anvil API
 +
 +    // Stellar start - Support for modded inventories
-+    public @Nullable InventoryView bukkitView ;
++    public @Nullable org.bukkit.inventory.InventoryView bukkitView ;
 +    public @Nullable Player containerOwner = null;
 +
-+    public InventoryView getBukkitView() {
++    public org.bukkit.inventory.InventoryView getBukkitView() {
 +        if (bukkitView == null && containerOwner != null) {
-+            org.bukkit.inventory.Inventory view = new CraftInventory(new YouerModsInventory(this, containerOwner));
++            org.bukkit.inventory.Inventory view = new org.bukkit.craftbukkit.inventory.CraftInventory(new YouerModsInventory(this, containerOwner));
 +            view.getType().setMods(true);
-+            bukkitView = new CraftInventoryView<>(containerOwner.getBukkitEntity(), view, this);
++            bukkitView = new org.bukkit.craftbukkit.inventory.CraftInventoryView<>(containerOwner.getBukkitEntity(), view, this);
 +        }
 +        return bukkitView;
 +    }
-+    public InventoryView getBukkitView(AbstractContainerMenu other) {
++    public org.bukkit.inventory.InventoryView getBukkitView(AbstractContainerMenu other) {
 +        if (other.bukkitView == null && other.containerOwner != null) {
-+            org.bukkit.inventory.Inventory view = new CraftInventory(new YouerModsInventory(other, containerOwner));
++            org.bukkit.inventory.Inventory view = new org.bukkit.craftbukkit.inventory.CraftInventory(new YouerModsInventory(other, containerOwner));
 +            view.getType().setMods(true);
-+            return new CraftInventoryView<>(other.containerOwner.getBukkitEntity(), view, other);
++            return new org.bukkit.craftbukkit.inventory.CraftInventoryView<>(other.containerOwner.getBukkitEntity(), view, other);
 +        }
 +        return other.bukkitView;
 +    }
 +    // Stellar end - Support for modded inventories
 +    // CraftBukkit start
 +    public boolean checkReachable = true;
-+    public void transferTo(AbstractContainerMenu other, CraftHumanEntity player) {
++    public void transferTo(AbstractContainerMenu other, org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
 +        other.containerOwner = player.getHandle(); // Stellar - Handle null
 +        this.containerOwner = player.getHandle(); // Stellar - Handle null
-+        InventoryView source = this.getBukkitView(), destination = other.getBukkitView();
++        org.bukkit.inventory.InventoryView source = this.getBukkitView(), destination = other.getBukkitView();
 +        // Stellar start - Handle null
 +        if (destination == null) destination = this.getBukkitView(other);
 +        if (source == null) {
-+            org.bukkit.inventory.Inventory view = new CraftInventory(new YouerModsInventory(other, containerOwner));
++            org.bukkit.inventory.Inventory view = new org.bukkit.craftbukkit.inventory.CraftInventory(new YouerModsInventory(other, containerOwner));
 +            view.getType().setMods(true);
-+            source = new CraftInventoryView<>(other.containerOwner.getBukkitEntity(), view, other);
++            source = new org.bukkit.craftbukkit.inventory.CraftInventoryView<>(other.containerOwner.getBukkitEntity(), view, other);
 +        }
 +        // Stellar end - Handle null
-+        ((CraftInventory) source.getTopInventory()).getInventory().onClose(player);
-+        ((CraftInventory) source.getBottomInventory()).getInventory().onClose(player);
-+        ((CraftInventory) destination.getTopInventory()).getInventory().onOpen(player);
-+        ((CraftInventory) destination.getBottomInventory()).getInventory().onOpen(player);
++        ((org.bukkit.craftbukkit.inventory.CraftInventory) source.getTopInventory()).getInventory().onClose(player);
++        ((org.bukkit.craftbukkit.inventory.CraftInventory) source.getBottomInventory()).getInventory().onClose(player);
++        ((org.bukkit.craftbukkit.inventory.CraftInventory) destination.getTopInventory()).getInventory().onOpen(player);
++        ((org.bukkit.craftbukkit.inventory.CraftInventory) destination.getBottomInventory()).getInventory().onOpen(player);
 +    }
 +
 +    private Component title = null;
@@ -257,32 +247,32 @@
 +                    }
 +
 +                    // CraftBukkit start - InventoryDragEvent
-+                    InventoryView view = getBukkitView();
-+                    org.bukkit.inventory.ItemStack newcursor = CraftItemStack.asCraftMirror(itemstack3);
++                    org.bukkit.inventory.InventoryView view = getBukkitView();
++                    org.bukkit.inventory.ItemStack newcursor = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack3);
 +                    newcursor.setAmount(k1);
 +                    Map<Integer, org.bukkit.inventory.ItemStack> eventmap = new HashMap<Integer, org.bukkit.inventory.ItemStack>();
 +                    for (Map.Entry<Integer, ItemStack> ditem : draggedSlots.entrySet()) {
-+                        eventmap.put(ditem.getKey(), CraftItemStack.asBukkitCopy(ditem.getValue()));
++                        eventmap.put(ditem.getKey(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(ditem.getValue()));
 +                    }
 +
 +                    // It's essential that we set the cursor to the new value here to prevent item duplication if a plugin closes the inventory.
 +                    ItemStack oldCursor = this.getCarried();
-+                    this.setCarried(CraftItemStack.asNMSCopy(newcursor));
++                    this.setCarried(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(newcursor));
 +
-+                    InventoryDragEvent event = new InventoryDragEvent(view, (newcursor.getType() != org.bukkit.Material.AIR ? newcursor : null), CraftItemStack.asBukkitCopy(oldCursor), this.quickcraftType == 1, eventmap);
++                    org.bukkit.event.inventory.InventoryDragEvent event = new org.bukkit.event.inventory.InventoryDragEvent(view, (newcursor.getType() != org.bukkit.Material.AIR ? newcursor : null), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(oldCursor), this.quickcraftType == 1, eventmap);
 +                    p_150434_.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                    // Whether or not a change was made to the inventory that requires an update.
-+                    boolean needsUpdate = event.getResult() != Event.Result.DEFAULT;
++                    boolean needsUpdate = event.getResult() != org.bukkit.event.Event.Result.DEFAULT;
 +
-+                    if (event.getResult() != Event.Result.DENY) {
++                    if (event.getResult() != org.bukkit.event.Event.Result.DENY) {
 +                        for (Map.Entry<Integer, ItemStack> dslot : draggedSlots.entrySet()) {
-+                            view.setItem(dslot.getKey(), CraftItemStack.asBukkitCopy(dslot.getValue()));
++                            view.setItem(dslot.getKey(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(dslot.getValue()));
 +                        }
 +                        // The only time the carried item will be set to null is if the inventory is closed by the server.
 +                        // If the inventory is closed by the server, then the cursor items are dropped.  This is why we change the cursor early.
 +                        if (this.getCarried() != null) {
-+                            this.setCarried(CraftItemStack.asNMSCopy(event.getCursor()));
++                            this.setCarried(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getCursor()));
 +                            needsUpdate = true;
 +                        }
 +                    } else {
@@ -314,7 +304,7 @@
 +                if (p_150434_ instanceof ServerPlayer serverPlayer && slot7.getMaxStackSize() != 64) {
 +                    serverPlayer.connection.send(new ClientboundContainerSetSlotPacket(this.containerId, this.incrementStateId(), slot7.index, slot7.getItem()));
 +                    // Updating a crafting inventory makes the client reset the result slot, have to send it again
-+                    if (this.getBukkitView().getType() == InventoryType.WORKBENCH || this.getBukkitView().getType() == InventoryType.CRAFTING) {
++                    if (this.getBukkitView().getType() == org.bukkit.event.inventory.InventoryType.WORKBENCH || this.getBukkitView().getType() == org.bukkit.event.inventory.InventoryType.CRAFTING) {
 +                        serverPlayer.connection.send(new ClientboundContainerSetSlotPacket(this.containerId, this.incrementStateId(), 0, this.getSlot(0).getItem()));
 +                    }
 +                }

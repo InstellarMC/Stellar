@@ -1,10 +1,9 @@
 --- a/net/minecraft/world/entity/ai/sensing/Sensing.java
 +++ b/net/minecraft/world/entity/ai/sensing/Sensing.java
-@@ -4,38 +_,77 @@
+@@ -4,38 +_,76 @@
  import it.unimi.dsi.fastutil.ints.IntSet;
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.Mob;
-+import org.jspecify.annotations.NonNull;
 +import org.jspecify.annotations.Nullable;
  
  public class Sensing {
@@ -14,7 +13,7 @@
 +    // private final IntSet seen = new IntOpenHashSet(2); // Stellar(Gale) - Initialize line of sight cache with low capacity
 +    private final it.unimi.dsi.fastutil.ints.Int2IntMap seen = new it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap(2); // Stellar(Gale) - Initialize line of sight cache with low capacity
 +    // Stellar start - Petal: reduce line of sight updates - expiring entity id lists
-+    private final @NonNull it.unimi.dsi.fastutil.ints.IntList @Nullable[] expiring;
++    private final it.unimi.dsi.fastutil.ints.IntList @Nullable[] expiring;
 +    private int currentCacheAddIndex = 0;
 +    private int nextToExpireIndex = 1;
 +    // Stellar end - Petal: reduce line of sight updates - expiring entity id lists

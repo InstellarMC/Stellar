@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/inventory/LecternMenu.java
 +++ b/net/minecraft/world/inventory/LecternMenu.java
-@@ -4,6 +_,7 @@
- import net.minecraft.world.SimpleContainer;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.ItemStack;
-+import net.minecraft.world.level.block.entity.LecternBlockEntity;
- 
- public class LecternMenu extends AbstractContainerMenu {
-     private static final int DATA_COUNT = 1;
 @@ -15,6 +_,23 @@
      private final Container lectern;
      private final ContainerData lecternData;
@@ -110,7 +102,7 @@
  
      @Override
      public boolean stillValid(Player p_39831_) {
-+        if (lectern instanceof LecternBlockEntity.LecternInventory && !((LecternBlockEntity.LecternInventory) lectern).getLectern().hasBook()) return false; // CraftBukkit
++        if (lectern instanceof net.minecraft.world.level.block.entity.LecternBlockEntity.LecternInventory && !((net.minecraft.world.level.block.entity.LecternBlockEntity.LecternInventory) lectern).getLectern().hasBook()) return false; // CraftBukkit
 +        if (!this.checkReachable) return true; // CraftBukkit
          return this.lectern.stillValid(p_39831_);
      }

@@ -1097,19 +1097,18 @@
              }
          }
  
-@@ -542,8 +_,11 @@
+@@ -542,8 +_,9 @@
          BlockPos blockpos = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, p_295060_);
          BlockPos blockpos1 = blockpos.below();
          Biome biome = this.getBiome(blockpos).value();
 +        if (this.isAreaLoaded(blockpos1, 1)) // Forge: check area to avoid loading neighbors in unloaded chunks
          if (biome.shouldFreeze(this, blockpos1)) {
-+            this.callEvent(true);
-             this.setBlockAndUpdate(blockpos1, Blocks.ICE.defaultBlockState());
-+            CraftEventFactory.handleBlockFormEvent(this, blockpos1, this.mohist$defaultBlockState, null); // CraftBukkit
+-            this.setBlockAndUpdate(blockpos1, Blocks.ICE.defaultBlockState());
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockpos1, Blocks.ICE.defaultBlockState(), null); // CraftBukkit
          }
  
          if (this.isRaining()) {
-@@ -553,12 +_,45 @@
+@@ -553,12 +_,41 @@
                  if (blockstate.is(Blocks.SNOW)) {
                      int j = blockstate.getValue(SnowLayerBlock.LAYERS);
                      if (j < Math.min(i, 8)) {
@@ -1143,17 +1142,13 @@
                          BlockState blockstate1 = blockstate.setValue(SnowLayerBlock.LAYERS, Integer.valueOf(j + 1));
                          Block.pushEntitiesUp(blockstate, blockstate1, this, blockpos);
 -                        this.setBlockAndUpdate(blockpos, blockstate1);
-+                        this.callEvent(true);
-+                        this.setBlockAndUpdate(blockpos1, blockstate1);
-+                        CraftEventFactory.handleBlockFormEvent(this, blockpos, this.mohist$defaultBlockState, null); // CraftBukkit
++                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockpos, blockstate1, null); // CraftBukkit
 +                        }
 +                        // Stellar end - smooth snow accumulation
                      }
                  } else {
 -                    this.setBlockAndUpdate(blockpos, Blocks.SNOW.defaultBlockState());
-+                    this.callEvent(true);
-+                    this.setBlockAndUpdate(blockpos1, Blocks.SNOW.defaultBlockState());
-+                    CraftEventFactory.handleBlockFormEvent(this, blockpos, this.mohist$defaultBlockState, null); // CraftBukkit
++                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockpos, Blocks.SNOW.defaultBlockState(), null); // CraftBukkit
                  }
              }
  
@@ -1227,28 +1222,70 @@
                      component = Component.translatable("sleep.players_sleeping", this.sleepStatus.amountSleeping(), this.sleepStatus.sleepersNeeded(i));
                  }
  
-@@ -714,24 +_,30 @@
+@@ -680,8 +_,8 @@
+                 this.serverLevelData.setThunderTime(j);
+                 this.serverLevelData.setRainTime(k);
+                 this.serverLevelData.setClearWeatherTime(i);
+-                this.serverLevelData.setThundering(flag1);
+-                this.serverLevelData.setRaining(flag2);
++                this.serverLevelData.setThundering(flag1, org.bukkit.event.weather.ThunderChangeEvent.Cause.NATURAL); // Paper - Add cause to Weather/ThunderChangeEvents
++                this.serverLevelData.setRaining(flag2, org.bukkit.event.weather.WeatherChangeEvent.Cause.NATURAL); // Paper - Add cause to Weather/ThunderChangeEvents
+             }
+ 
+             this.oThunderLevel = this.thunderLevel;
+@@ -702,6 +_,7 @@
+             this.rainLevel = Mth.clamp(this.rainLevel, 0.0F, 1.0F);
+         }
+ 
++        /* CraftBukkit start
+         if (this.oRainLevel != this.rainLevel) {
+             this.server
+                 .getPlayerList()
+@@ -714,24 +_,50 @@
                  .broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel), this.dimension());
          }
  
-+        /* The function in use here has been replaced in order to only send the weather info to players in the correct dimension,
-+         * rather than to all players on the server. This is what causes the client-side rain, as the
-+         * client believes that it has started raining locally, rather than in another dimension.
-+         */
++        // The function in use here has been replaced in order to only send the weather info to players in the correct dimension,
++        // rather than to all players on the server. This is what causes the client-side rain, as the
++        // client believes that it has started raining locally, rather than in another dimension.
          if (flag != this.isRaining()) {
              if (flag) {
 -                this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
 +                this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F), this.dimension());
              } else {
 -                this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
-+                this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F), this.dimension());
-             }
- 
+-            }
+-
 -            this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.rainLevel));
 -            this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
+-        }
++                this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F), this.dimension());
++            }
++
 +            this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.rainLevel), this.dimension());
 +            this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel), this.dimension());
-         }
++        }
++        // */
++        for (int idx = 0; idx < this.players.size(); ++idx) {
++            if (((ServerPlayer) this.players.get(idx)).level() == this) {
++                ((ServerPlayer) this.players.get(idx)).tickWeather();
++            }
++        }
++
++        if (flag != this.isRaining()) {
++            // Only send weather packets to those affected
++            for (int idx = 0; idx < this.players.size(); ++idx) {
++                if (((ServerPlayer) this.players.get(idx)).level() == this) {
++                    ((ServerPlayer) this.players.get(idx)).setPlayerWeather((!flag ? org.bukkit.WeatherType.DOWNFALL : org.bukkit.WeatherType.CLEAR), false);
++                }
++            }
++        }
++        for (int idx = 0; idx < this.players.size(); ++idx) {
++            if (((ServerPlayer) this.players.get(idx)).level() == this) {
++                ((ServerPlayer) this.players.get(idx)).updateWeather(this.oRainLevel, this.rainLevel, this.oThunderLevel, this.thunderLevel);
++            }
++        }
++        // CraftBukkit end
      }
  
      @VisibleForTesting

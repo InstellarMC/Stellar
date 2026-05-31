@@ -1,21 +1,5 @@
 --- a/net/minecraft/world/entity/TamableAnimal.java
 +++ b/net/minecraft/world/entity/TamableAnimal.java
-@@ -2,6 +_,7 @@
- 
- import java.util.Optional;
- import java.util.UUID;
-+import java.util.concurrent.atomic.AtomicBoolean;
- import javax.annotation.Nullable;
- import net.minecraft.advancements.CriteriaTriggers;
- import net.minecraft.core.BlockPos;
-@@ -26,6 +_,7 @@
- import net.minecraft.world.level.pathfinder.PathType;
- import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
- import net.minecraft.world.scores.PlayerTeam;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public abstract class TamableAnimal extends Animal implements OwnableEntity {
-     public static final int TELEPORT_WHEN_DISTANCE_IS_SQ = 144;
 @@ -80,7 +_,7 @@
          }
  
@@ -84,7 +68,7 @@
          } else {
 -            this.moveTo((double)p_350930_ + 0.5, (double)p_350303_, (double)p_350410_ + 0.5, this.getYRot(), this.getXRot());
 +            // CraftBukkit start
-+            org.bukkit.event.entity.EntityTeleportEvent event = CraftEventFactory.callEntityTeleportEvent(this, (double) p_350930_ + 0.5D, (double) p_350303_, (double) p_350410_ + 0.5D);
++            org.bukkit.event.entity.EntityTeleportEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(this, (double) p_350930_ + 0.5D, (double) p_350303_, (double) p_350410_ + 0.5D);
 +            if (event.isCancelled() || event.getTo() == null) { // Paper - prevent NP on null event to location
 +                return false;
 +            }
