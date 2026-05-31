@@ -41,14 +41,14 @@
              }
          }
  
-@@ -138,24 +_,32 @@
+@@ -138,25 +_,29 @@
          super.entityInside(p_49260_, p_49261_, p_49262_, p_49263_);
      }
  
 +
-+    public UseOnContext onPlace$context;
      @Override
-     protected void onPlace(BlockState p_49279_, Level p_49280_, BlockPos p_49281_, BlockState p_49282_, boolean p_49283_) {
+-    protected void onPlace(BlockState p_49279_, Level p_49280_, BlockPos p_49281_, BlockState p_49282_, boolean p_49283_) {
++    protected void onPlace(BlockState p_49279_, Level p_49280_, BlockPos p_49281_, BlockState p_49282_, boolean p_49283_, net.minecraft.world.item.context.UseOnContext context) { // Craftbukkit - context
          if (!p_49282_.is(p_49279_.getBlock())) {
              if (inPortalDimension(p_49280_)) {
                  Optional<PortalShape> optional = PortalShape.findEmptyPortalShape(p_49280_, p_49281_, Direction.Axis.X);
@@ -56,8 +56,7 @@
                  if (optional.isPresent()) {
 -                    optional.get().createPortalBlocks();
 +                    PortalShape portalShape = optional.get();
-+                    portalShape.createPortalBlocks$Entity = (onPlace$context == null) ? null : onPlace$context.getPlayer();
-+                    portalShape.createPortalBlocks();
++                    portalShape.createPortalBlocks((context == null) ? null : context.getPlayer()); // CraftBukkit - player
                      return;
                  }
              }
@@ -70,12 +69,12 @@
      }
  
      private static boolean inPortalDimension(Level p_49249_) {
-+        if (Boolean.parseBoolean("true")) {
-+            return p_49249_.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.OVERWORLD || p_49249_.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER; // CraftBukkit - getTypeKey()
-+        }
-         return p_49249_.dimension() == Level.OVERWORLD || p_49249_.dimension() == Level.NETHER;
+-        return p_49249_.dimension() == Level.OVERWORLD || p_49249_.dimension() == Level.NETHER;
++        // return p_49249_.dimension() == Level.OVERWORLD || p_49249_.dimension() == Level.NETHER;
++        return p_49249_.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.OVERWORLD || p_49249_.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER; // CraftBukkit - getTypeKey()
      }
  
+     @Override
 @@ -185,7 +_,7 @@
              boolean flag = false;
  

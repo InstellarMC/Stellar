@@ -1,13 +1,6 @@
 --- a/net/minecraft/world/entity/npc/WanderingTrader.java
 +++ b/net/minecraft/world/entity/npc/WanderingTrader.java
-@@ -45,12 +_,17 @@
- import net.minecraft.world.level.Level;
- import net.minecraft.world.phys.Vec3;
- import org.apache.commons.lang3.tuple.Pair;
-+import org.bukkit.craftbukkit.inventory.CraftMerchantRecipe;
- 
- public class WanderingTrader extends AbstractVillager {
-     private static final int NUMBER_OF_TRADE_OFFERS = 5;
+@@ -51,6 +_,10 @@
      @Nullable
      private BlockPos wanderTarget;
      private int despawnDelay;
@@ -48,7 +41,7 @@
 +                        org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +                    }
 +                    if (!event.isCancelled()) {
-+                        merchantoffers.add(CraftMerchantRecipe.fromBukkit(event.getRecipe()).toMinecraft());
++                        merchantoffers.add(org.bukkit.craftbukkit.inventory.CraftMerchantRecipe.fromBukkit(event.getRecipe()).toMinecraft());
 +                    }
 +                    // CraftBukkit end
                  }

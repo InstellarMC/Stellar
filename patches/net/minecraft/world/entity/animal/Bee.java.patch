@@ -212,7 +212,24 @@
          private static final int MAX_BLACKLISTED_TARGETS = 3;
          final List<BlockPos> blacklistedTargets = Lists.newArrayList();
          @Nullable
-@@ -864,7 +_,7 @@
+@@ -799,7 +_,7 @@
+                         } else {
+                             Bee.this.pathfindRandomlyTowards(Bee.this.hivePos);
+                         }
+-                    } else {
++                    } else if (navigation.getPath() != null && navigation.getPath().isProcessed()) { // Stellar - Process pathfinding asynchronously
+                         boolean flag = this.pathfindDirectlyTowards(Bee.this.hivePos);
+                         if (!flag) {
+                             this.dropAndBlacklistHive();
+@@ -857,14 +_,14 @@
+                 return true;
+             } else {
+                 Path path = Bee.this.navigation.getPath();
+-                return path != null && path.getTarget().equals(p_28002_) && path.canReach() && path.isDone();
++                return path != null && path.isProcessed() && path.getTarget().equals(p_28002_) && path.canReach() && path.isDone(); // Stellar - Process pathfinding asynchronously
+             }
+         }
+     }
  
      public class BeeGoToKnownFlowerGoal extends Bee.BaseBeeGoal {
          private static final int MAX_TRAVELLING_TICKS = 600;

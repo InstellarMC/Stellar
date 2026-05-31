@@ -1,11 +1,9 @@
 --- a/net/minecraft/world/entity/ai/Brain.java
 +++ b/net/minecraft/world/entity/ai/Brain.java
-@@ -15,7 +_,8 @@
- import com.mojang.serialization.MapCodec;
+@@ -16,6 +_,7 @@
  import com.mojang.serialization.MapLike;
  import com.mojang.serialization.RecordBuilder;
--import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-+import it.unimi.dsi.fastutil.objects.*;
+ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +
  import java.util.Collection;
  import java.util.List;
@@ -25,12 +23,12 @@
 -    private final Map<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>> memories = Maps.newHashMap();
 -    private final Map<SensorType<? extends Sensor<? super E>>, Sensor<? super E>> sensors = Maps.newLinkedHashMap();
 -    private final Map<Integer, Map<Activity, Set<BehaviorControl<? super E>>>> availableBehaviorsByPriority = Maps.newTreeMap();
-+    private final Reference2ObjectOpenHashMap<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>> memories = new Reference2ObjectOpenHashMap<>(); // Stellar - lithium: Use fastutil
-+    private final Map<SensorType<? extends Sensor<? super E>>, Sensor<? super E>> sensors = new Reference2ReferenceLinkedOpenHashMap<>(); // Stellar - lithium: Use fastutil
++    private final it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap<MemoryModuleType<?>, Optional<? extends ExpirableValue<?>>> memories = new it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap<>(); // Stellar - lithium: Use fastutil
++    private final Map<SensorType<? extends Sensor<? super E>>, Sensor<? super E>> sensors = new it.unimi.dsi.fastutil.objects.Reference2ReferenceLinkedOpenHashMap<>(); // Stellar - lithium: Use fastutil
 +    private final Map<Integer, Map<Activity, Set<BehaviorControl<? super E>>>> availableBehaviorsByPriority = new it.unimi.dsi.fastutil.objects.Object2ObjectRBTreeMap<>(); // Stellar - Leaf: Replace brain maps with optimized collection
      private Schedule schedule = Schedule.EMPTY;
 -    private final Map<Activity, Set<Pair<MemoryModuleType<?>, MemoryStatus>>> activityRequirements = Maps.newHashMap();
-+    private final Map<Activity, Set<Pair<MemoryModuleType<?>, MemoryStatus>>> activityRequirements = new Object2ObjectOpenHashMap<>(); // Stellar - lithium: Use fastutil
++    private final Map<Activity, Set<Pair<MemoryModuleType<?>, MemoryStatus>>> activityRequirements = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(); // Stellar - lithium: Use fastutil
      private final Map<Activity, Set<MemoryModuleType<?>>> activityMemoriesToEraseWhenStopped = Maps.newHashMap();
      private Set<Activity> coreActivities = Sets.newHashSet();
      private final Set<Activity> activeActivities = Sets.newHashSet();

@@ -1,21 +1,7 @@
 --- a/net/minecraft/world/level/storage/loot/LootDataType.java
 +++ b/net/minecraft/world/level/storage/loot/LootDataType.java
-@@ -2,9 +_,7 @@
- 
- import com.mojang.logging.LogUtils;
- import com.mojang.serialization.Codec;
--import com.mojang.serialization.DataResult;
- import com.mojang.serialization.DynamicOps;
--import com.mojang.serialization.DataResult.Error;
- import java.util.Optional;
- import java.util.stream.Stream;
- import net.minecraft.core.Registry;
-@@ -14,9 +_,11 @@
- import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
- import net.minecraft.world.level.storage.loot.functions.LootItemFunctions;
+@@ -16,7 +_,7 @@
  import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
-+import org.bukkit.craftbukkit.CraftLootTable;
-+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
  import org.slf4j.Logger;
  
 -public record LootDataType<T>(ResourceKey<Registry<T>> registryKey, Codec<T> codec, LootDataType.Validator<T> validator) {
@@ -75,7 +61,7 @@
 +            p_279406_.validate(
 +                    p_279333_.setParams(p_279406_.getParamSet()).enterElement("{" + p_279227_.registry() + ":" + p_279227_.location() + "}", p_279227_)
              );
-+            p_279406_.craftLootTable = new CraftLootTable(CraftNamespacedKey.fromMinecraft(p_279227_.location()), p_279406_); // CraftBukkit
++            p_279406_.craftLootTable = new org.bukkit.craftbukkit.CraftLootTable(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(p_279227_.location()), p_279406_); // CraftBukkit
 +        };
      }
  

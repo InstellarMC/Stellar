@@ -1,13 +1,5 @@
 --- a/net/minecraft/server/PlayerAdvancements.java
 +++ b/net/minecraft/server/PlayerAdvancements.java
-@@ -34,7 +_,6 @@
- import net.minecraft.advancements.CriterionProgress;
- import net.minecraft.advancements.CriterionTrigger;
- import net.minecraft.advancements.CriterionTriggerInstance;
--import net.minecraft.advancements.DisplayInfo;
- import net.minecraft.core.registries.BuiltInRegistries;
- import net.minecraft.network.protocol.game.ClientboundSelectAdvancementsTabPacket;
- import net.minecraft.network.protocol.game.ClientboundUpdateAdvancementsPacket;
 @@ -48,7 +_,7 @@
  
  public class PlayerAdvancements {

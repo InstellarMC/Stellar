@@ -1,20 +1,5 @@
 --- a/net/minecraft/network/chat/Component.java
 +++ b/net/minecraft/network/chat/Component.java
-@@ -16,12 +_,8 @@
- import java.io.StringReader;
- import java.lang.reflect.Type;
- import java.net.URI;
--import java.util.ArrayList;
--import java.util.Collections;
--import java.util.Date;
--import java.util.List;
--import java.util.Optional;
--import java.util.UUID;
-+import java.util.*;
-+import java.util.stream.Stream;
- import javax.annotation.Nullable;
- import net.minecraft.core.HolderLookup;
- import net.minecraft.network.chat.contents.DataSource;
 @@ -35,7 +_,7 @@
  import net.minecraft.util.FormattedCharSequence;
  import net.minecraft.world.level.ChunkPos;
@@ -30,12 +15,12 @@
      }
 +
 +    // CraftBukkit start
-+    default Stream<Component> stream() {
-+        return com.google.common.collect.Streams.concat(new Stream[]{Stream.of(this), this.getSiblings().stream().flatMap(Component::stream)});
++    default java.util.stream.Stream<Component> stream() {
++        return com.google.common.collect.Streams.concat(new java.util.stream.Stream[]{java.util.stream.Stream.of(this), this.getSiblings().stream().flatMap(Component::stream)});
 +    }
 +
 +    @Override
-+    default Iterator<Component> iterator() {
++    default java.util.Iterator<Component> iterator() {
 +        return this.stream().iterator();
 +    }
 +    // CraftBukkit end

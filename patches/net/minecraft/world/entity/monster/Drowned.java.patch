@@ -27,6 +27,15 @@
          return this.isInWater() ? SoundEvents.DROWNED_DEATH_WATER : SoundEvents.DROWNED_DEATH;
      }
  
+@@ -238,7 +_,7 @@
+ 
+     protected boolean closeToNextPos() {
+         Path path = this.getNavigation().getPath();
+-        if (path != null) {
++        if (path != null && path.isProcessed()) { // Stellar - Process pathfinding asynchronously
+             BlockPos blockpos = path.getTarget();
+             if (blockpos != null) {
+                 double d0 = this.distanceToSqr((double)blockpos.getX(), (double)blockpos.getY(), (double)blockpos.getZ());
 @@ -253,7 +_,7 @@
  
      @Override

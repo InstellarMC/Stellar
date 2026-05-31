@@ -1,0 +1,30 @@
+--- a/net/minecraft/world/entity/ai/behavior/SetClosestHomeAsWalkTarget.java
++++ b/net/minecraft/world/entity/ai/behavior/SetClosestHomeAsWalkTarget.java
+@@ -63,6 +_,27 @@
+                                                 p_217372_ -> p_217372_.is(PoiTypes.HOME), predicate, p_258639_.blockPosition(), 48, PoiManager.Occupancy.ANY
+                                             )
+                                             .collect(Collectors.toSet());
++                                        // Stellar start - Process Pathfinding asynchronously
++                                        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.asyncPathProcess.enabled) {
++                                            Path possible = AcquirePoi.findPathToPois(p_258639_, set);
++
++                                            dev.kaiijumc.kaiiju.path.AsyncPathProcessor.awaitProcess(p_258639_, possible, path -> {
++                                                if (path == null || !path.canReach() || mutableint.getValue() < 5) {
++                                                    long2longmap.long2LongEntrySet().removeIf(entry -> entry.getLongValue() < mutablelong.getValue());
++                                                    return;
++                                                }
++
++                                                BlockPos pos = path.getTarget();
++                                                Optional<Holder<PoiType>> poiType = poimanager.getType(pos);
++                                                if (poiType.isEmpty()) return;
++
++                                                p_258626_.set(new WalkTarget(pos, p_259960_, 1));
++                                                DebugPackets.sendPoiTicketCountPacket(p_258638_, pos);
++                                            });
++
++                                            return true;
++                                        }
++                                        // Stellar end - Process Pathfinding asynchronously
+                                         Path path = AcquirePoi.findPathToPois(p_258639_, set);
+                                         if (path != null && path.canReach()) {
+                                             BlockPos blockpos = path.getTarget();

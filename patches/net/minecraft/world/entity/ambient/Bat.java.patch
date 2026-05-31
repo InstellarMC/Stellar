@@ -165,3 +165,54 @@
          }
      }
  
+@@ -225,7 +_,7 @@
+         } else {
+             int i = p_218100_.getMaxLocalRawBrightness(p_218102_);
+             int j = 4;
+-            if (isHalloween()) {
++            if (isSpookySeason(p_218100_.getMinecraftWorld())) { // Purpur // Stellar - Port SparklyPaper patches; Optimize Spooky Season
+                 j = 7;
+             } else if (p_218103_.nextBoolean()) {
+                 return false;
+@@ -235,12 +_,40 @@
+         }
+     }
+ 
++    // Pufferfish start - only check for spooky season once an hour
++    private static boolean isSpookySeason = false;
++    private static final int ONE_HOUR = 20 * 60 * 60;
++    private static int lastSpookyCheck = -ONE_HOUR;
++    // Stellar start - Port SparklyPaper patches; Optimize Spooky Season
++    private static boolean isSpookySeason(Level level) {
++        if (level.purpurConfig.forceHalloweenSeason) return true;
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.spookyOptimize)
++            return net.sparklypower.sparklypaper.HalloweenManager.isSpookySeason()
++                || net.sparklypower.sparklypaper.HalloweenManager.isHalloween();
++        return isHalloween();
++    }
++
++    public static boolean isHalloweenSeason(Level level) {
++        if (level.purpurConfig.forceHalloweenSeason) return true;
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.spookyOptimize)
++            return net.sparklypower.sparklypaper.HalloweenManager.isHalloween();
++        return isHalloween();
++    }
++
++    @SuppressWarnings("RedundantExplicitChronoField")
++    // Stellar end - Port SparklyPaper patches; Optimize Spooky Season
+     private static boolean isHalloween() {
++        if (net.minecraft.server.MinecraftServer.currentTick - lastSpookyCheck > ONE_HOUR) {
+         LocalDate localdate = LocalDate.now();
+         int i = localdate.get(ChronoField.DAY_OF_MONTH);
+         int j = localdate.get(ChronoField.MONTH_OF_YEAR);
+-        return j == 10 && i >= 20 || j == 11 && i <= 3;
++
++        isSpookySeason = j == 10 && i >= 20 || j == 11 && i <= 3;
++        lastSpookyCheck = net.minecraft.server.MinecraftServer.currentTick;
++        }
++        return isSpookySeason;
+     }
++    // Pufferfish end
+ 
+     private void setupAnimationStates() {
+         if (this.isResting()) {

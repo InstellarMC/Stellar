@@ -26,6 +26,7 @@ public final class ReloadCommand implements PaperSubcommand {
 
         MinecraftServer server = ((CraftServer) sender.getServer()).getServer();
         server.stellarConfigurations.reloadConfigs(server);
+        dev.kaiijumc.kaiiju.path.AsyncPathProcessor.updateExecutor(); // Process pathfinding asynchronously
         server.server.reloadCount++;
 
         Command.broadcastCommandMessage(sender, text("Stellar config reload complete.", GREEN));

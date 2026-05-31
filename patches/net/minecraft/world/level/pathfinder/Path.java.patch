@@ -16,3 +16,20 @@
  
      public Path(List<Node> p_77371_, BlockPos p_77372_, boolean p_77373_) {
          this.nodes = p_77371_;
+@@ -99,6 +_,7 @@
+     }
+ 
+     public boolean sameAs(@Nullable Path p_77386_) {
++        if (p_77386_ == this) return true; // Stellar - Process Pathfinding asynchronously
+         if (p_77386_ == null) {
+             return false;
+         } else if (p_77386_.nodes.size() != this.nodes.size()) {
+@@ -189,6 +_,8 @@
+         path.nextNodeIndex = this.nextNodeIndex;
+         return path;
+     }
++
++    public boolean isProcessed() { return true; } // Stellar - Async Path Processing
+ 
+     public static record DebugData(Node[] openSet, Node[] closedSet, Set<Target> targetNodes) {
+         public void write(FriendlyByteBuf p_296345_) {

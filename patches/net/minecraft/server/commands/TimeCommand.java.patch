@@ -1,21 +1,5 @@
 --- a/net/minecraft/server/commands/TimeCommand.java
 +++ b/net/minecraft/server/commands/TimeCommand.java
-@@ -2,12 +_,14 @@
- 
- import com.mojang.brigadier.CommandDispatcher;
- import com.mojang.brigadier.arguments.IntegerArgumentType;
--import com.mojang.brigadier.context.CommandContext;
-+import java.util.Iterator;import java.util.List;
- import net.minecraft.commands.CommandSourceStack;
- import net.minecraft.commands.Commands;
- import net.minecraft.commands.arguments.TimeArgument;
- import net.minecraft.network.chat.Component;
- import net.minecraft.server.level.ServerLevel;
-+import org.bukkit.Bukkit;
-+import org.bukkit.event.world.TimeSkipEvent;
- 
- public class TimeCommand {
-     public static void register(CommandDispatcher<CommandSourceStack> p_139072_) {
 @@ -59,8 +_,16 @@
      }
  
@@ -26,8 +10,8 @@
 +        while (it.hasNext()) {
 +            ServerLevel serverlevel = it.next();
 +            // CraftBukkit start
-+            TimeSkipEvent event = new TimeSkipEvent(serverlevel.getWorld(), TimeSkipEvent.SkipReason.COMMAND, p_139079_ - serverlevel.getDayTime());
-+            Bukkit.getPluginManager().callEvent(event);
++            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(serverlevel.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, p_139079_ - serverlevel.getDayTime());
++            org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +            if (!event.isCancelled()) {
 +                serverlevel.setDayTime((long) serverlevel.getDayTime() + event.getSkipAmount());
 +            }
@@ -45,8 +29,8 @@
 +        while (it.hasNext()) {
 +            ServerLevel serverlevel = it.next();
 +            // CraftBukkit start
-+            TimeSkipEvent event = new TimeSkipEvent(serverlevel.getWorld(), TimeSkipEvent.SkipReason.COMMAND, p_139084_);
-+            Bukkit.getPluginManager().callEvent(event);
++            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(serverlevel.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, p_139084_);
++            org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +            if (!event.isCancelled()) {
 +                serverlevel.setDayTime(serverlevel.getDayTime() + event.getSkipAmount());
 +            }
