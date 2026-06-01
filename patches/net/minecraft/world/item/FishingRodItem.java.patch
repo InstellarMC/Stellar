@@ -1,14 +1,5 @@
 --- a/net/minecraft/world/item/FishingRodItem.java
 +++ b/net/minecraft/world/item/FishingRodItem.java
-@@ -12,6 +_,8 @@
- import net.minecraft.world.item.enchantment.EnchantmentHelper;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.gameevent.GameEvent;
-+import org.bukkit.craftbukkit.CraftEquipmentSlot;
-+import org.bukkit.event.player.PlayerFishEvent;
- 
- public class FishingRodItem extends Item {
-     public FishingRodItem(Item.Properties p_41285_) {
 @@ -23,8 +_,12 @@
          ItemStack itemstack = p_41291_.getItemInHand(p_41292_);
          if (p_41291_.fishing != null) {
@@ -44,7 +35,7 @@
 +
 +                // CraftBukkit start
 +                FishingHook entityfishinghook = new FishingHook(p_41291_, p_41290_, k, j);
-+                PlayerFishEvent playerFishEvent = new PlayerFishEvent((org.bukkit.entity.Player) p_41291_.getBukkitEntity(), null, (org.bukkit.entity.FishHook) entityfishinghook.getBukkitEntity(), CraftEquipmentSlot.getHand(p_41292_), PlayerFishEvent.State.FISHING);
++                org.bukkit.event.player.PlayerFishEvent playerFishEvent = new org.bukkit.event.player.PlayerFishEvent((org.bukkit.entity.Player) p_41291_.getBukkitEntity(), null, (org.bukkit.entity.FishHook) entityfishinghook.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(p_41292_), org.bukkit.event.player.PlayerFishEvent.State.FISHING);
 +                p_41290_.getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +
 +                if (playerFishEvent.isCancelled()) {

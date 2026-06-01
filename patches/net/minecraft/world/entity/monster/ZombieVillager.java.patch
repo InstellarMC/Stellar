@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/entity/monster/ZombieVillager.java
 +++ b/net/minecraft/world/entity/monster/ZombieVillager.java
-@@ -4,6 +_,7 @@
- import com.mojang.serialization.DataResult;
- import com.mojang.serialization.Dynamic;
- import java.util.UUID;
-+import java.util.concurrent.atomic.AtomicBoolean;
- import javax.annotation.Nullable;
- import net.minecraft.Util;
- import net.minecraft.advancements.CriteriaTriggers;
 @@ -68,6 +_,7 @@
      @Nullable
      private MerchantOffers tradeOffers;

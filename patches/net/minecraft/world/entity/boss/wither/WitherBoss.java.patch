@@ -1,17 +1,5 @@
 --- a/net/minecraft/world/entity/boss/wither/WitherBoss.java
 +++ b/net/minecraft/world/entity/boss/wither/WitherBoss.java
-@@ -52,10 +_,10 @@
- import net.minecraft.world.entity.projectile.WitherSkull;
- import net.minecraft.world.entity.projectile.windcharge.WindCharge;
- import net.minecraft.world.item.Items;
--import net.minecraft.world.level.GameRules;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob {
-     private static final EntityDataAccessor<Integer> DATA_TARGET_A = SynchedEntityData.defineId(WitherBoss.class, EntityDataSerializers.INT);
 @@ -78,6 +_,12 @@
      private static final Predicate<LivingEntity> LIVING_ENTITY_SELECTOR = p_348303_ -> !p_348303_.getType().is(EntityTypeTags.WITHER_FRIENDS)
              && p_348303_.attackable();
@@ -125,7 +113,7 @@
                              .getNearbyEntities(LivingEntity.class, TARGETING_CONDITIONS, this, this.getBoundingBox().inflate(20.0, 8.0, 20.0));
                          if (!list.isEmpty()) {
                              LivingEntity livingentity1 = list.get(this.random.nextInt(list.size()));
-+                            if (CraftEventFactory.callEntityTargetLivingEvent(this, livingentity1, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_ENTITY).isCancelled()) continue; // CraftBukkit
++                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this, livingentity1, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_ENTITY).isCancelled()) continue; // CraftBukkit
                              this.setAlternativeTarget(i, livingentity1.getId());
                          }
                      }
@@ -145,7 +133,7 @@
 -                        if (canDestroy(blockstate)) {
 +                        if (blockstate.canEntityDestroy(this.level(), blockpos, this) && net.neoforged.neoforge.event.EventHooks.onEntityDestroyBlock(this, blockpos, blockstate)) {
 +                            // CraftBukkit start
-+                            if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockpos, blockstate.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
++                            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockpos, blockstate.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
 +                                continue;
 +                            }
 +                            // CraftBukkit end
