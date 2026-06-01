@@ -1,22 +1,5 @@
 --- a/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-@@ -45,6 +_,16 @@
- import net.minecraft.world.level.block.Blocks;
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-+import org.bukkit.craftbukkit.inventory.CraftItemType;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.entity.HumanEntity;
-+import org.bukkit.event.block.BlockExpEvent;
-+import org.bukkit.event.inventory.FurnaceExtractEvent;
-+import org.bukkit.event.inventory.FurnaceSmeltEvent;
-+import org.bukkit.event.inventory.FurnaceStartSmeltEvent;
- 
- public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntity implements WorldlyContainer, RecipeCraftingHolder, StackedContentsCompatible {
-     protected static final int SLOT_INPUT = 0;
 @@ -60,9 +_,11 @@
      public static final int NUM_DATA_VALUES = 4;
      public static final int BURN_TIME_STANDARD = 200;
@@ -140,9 +123,9 @@
 -                p_155017_.litTime = p_155017_.getBurnDuration(itemstack);
 +            if (!p_155017_.isLit() && canBurn(p_155014_.registryAccess(), recipeholder, p_155017_.items, i, p_155017_)) {
 +                // CraftBukkit start
-+                CraftItemStack fuel = CraftItemStack.asCraftMirror(itemstack);
++                org.bukkit.craftbukkit.inventory.CraftItemStack fuel = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack);
 +
-+                org.bukkit.event.inventory.FurnaceBurnEvent furnaceBurnEvent = new org.bukkit.event.inventory.FurnaceBurnEvent(CraftBlock.at(p_155014_, p_155015_), fuel, p_155017_.getBurnDuration(itemstack));
++                org.bukkit.event.inventory.FurnaceBurnEvent furnaceBurnEvent = new org.bukkit.event.inventory.FurnaceBurnEvent(org.bukkit.craftbukkit.block.CraftBlock.at(p_155014_, p_155015_), fuel, p_155017_.getBurnDuration(itemstack));
 +                p_155014_.getCraftServer().getPluginManager().callEvent(furnaceBurnEvent);
 +
 +                if (furnaceBurnEvent.isCancelled()) {
@@ -175,9 +158,9 @@
 +            if (p_155017_.isLit() && canBurn(p_155014_.registryAccess(), recipeholder, p_155017_.items, i, p_155017_)) {
 +                // CraftBukkit start
 +                if (recipeholder != null && p_155017_.cookingProgress == 0) {
-+                    CraftItemStack source = CraftItemStack.asCraftMirror(p_155017_.items.get(0));
++                    org.bukkit.craftbukkit.inventory.CraftItemStack source = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(p_155017_.items.get(0));
 +                    org.bukkit.inventory.CookingRecipe<?> recipe = (org.bukkit.inventory.CookingRecipe<?>) recipeholder.toBukkitRecipe();
-+                    FurnaceStartSmeltEvent event = new FurnaceStartSmeltEvent(CraftBlock.at(p_155014_, p_155015_), source, recipe, AbstractFurnaceBlockEntity.getTotalCookTime(p_155014_, p_155017_.recipeType, p_155017_, p_155017_.cookSpeedMultiplier)); // Paper - cook speed multiplier API
++                    org.bukkit.event.inventory.FurnaceStartSmeltEvent event = new org.bukkit.event.inventory.FurnaceStartSmeltEvent(org.bukkit.craftbukkit.block.CraftBlock.at(p_155014_, p_155015_), source, recipe, AbstractFurnaceBlockEntity.getTotalCookTime(p_155014_, p_155017_.recipeType, p_155017_, p_155017_.cookSpeedMultiplier)); // Paper - cook speed multiplier API
 +                    p_155014_.getCraftServer().getPluginManager().callEvent(event);
 +                    p_155017_.cookingTotalTime = event.getTotalCookTime();
 +                }
@@ -231,23 +214,23 @@
 +            ItemStack itemstack1 = ((RecipeHolder<? extends AbstractCookingRecipe>) p_300910_).value().assemble(new SingleRecipeInput(furnace.getItem(0)), p_266740_);
              ItemStack itemstack2 = p_267073_.get(2);
 +            // CraftBukkit start - fire FurnaceSmeltEvent
-+            CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
-+            org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
++            org.bukkit.craftbukkit.inventory.CraftItemStack source = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack);
++            org.bukkit.inventory.ItemStack result = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack1);
 +
-+            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(CraftBlock.at(furnace.level, furnace.worldPosition), source, result, (org.bukkit.inventory.CookingRecipe<?>) p_300910_.toBukkitRecipe()); // Paper - Add recipe to cook events
-+            Bukkit.getPluginManager().callEvent(furnaceSmeltEvent);
++            org.bukkit.event.inventory.FurnaceSmeltEvent furnaceSmeltEvent = new org.bukkit.event.inventory.FurnaceSmeltEvent(org.bukkit.craftbukkit.block.CraftBlock.at(furnace.level, furnace.worldPosition), source, result, (org.bukkit.inventory.CookingRecipe<?>) p_300910_.toBukkitRecipe()); // Paper - Add recipe to cook events
++            org.bukkit.Bukkit.getPluginManager().callEvent(furnaceSmeltEvent);
 +
 +            if (furnaceSmeltEvent.isCancelled()) {
 +                return false;
 +            }
 +
 +            result = furnaceSmeltEvent.getResult();
-+            itemstack1 = CraftItemStack.asNMSCopy(result);
++            itemstack1 = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(result);
 +
 +            if (!itemstack1.isEmpty()) {
 +                if (itemstack2.isEmpty()) {
 +                    p_267073_.set(2, itemstack1.copy());
-+                } else if (CraftItemStack.asCraftMirror(itemstack2).isSimilar(result)) {
++                } else if (org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack2).isSimilar(result)) {
 +                    itemstack2.grow(itemstack1.getCount());
 +                } else {
 +                    return false;
@@ -363,13 +346,13 @@
  
 -        ExperienceOrb.award(p_154999_, p_155000_, i);
 +        // CraftBukkit start - fire FurnaceExtractEvent / BlockExpEvent
-+        BlockExpEvent event;
++        org.bukkit.event.block.BlockExpEvent event;
 +        if (amount != 0) {
-+            event = new FurnaceExtractEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), CraftBlock.at(p_154999_, blockposition), CraftItemType.minecraftToBukkit(itemstack.getItem()), amount, i);
++            event = new org.bukkit.event.inventory.FurnaceExtractEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(p_154999_, blockposition), org.bukkit.craftbukkit.inventory.CraftItemType.minecraftToBukkit(itemstack.getItem()), amount, i);
 +        } else {
-+            event = new BlockExpEvent(CraftBlock.at(p_154999_, blockposition), i);
++            event = new org.bukkit.event.block.BlockExpEvent(org.bukkit.craftbukkit.block.CraftBlock.at(p_154999_, blockposition), i);
 +        }
-+        Bukkit.getPluginManager().callEvent(event);
++        org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +        i = event.getExpToDrop();
 +        // CraftBukkit end
 +
@@ -406,21 +389,21 @@
 +
 +    // CraftBukkit start - add fields and methods
 +    private int maxStack = MAX_STACK;
-+    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
++    public List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<org.bukkit.entity.HumanEntity>();
 +
 +    public List<ItemStack> getContents() {
 +        return this.items;
 +    }
 +
-+    public void onOpen(CraftHumanEntity who) {
++    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
 +        transaction.add(who);
 +    }
 +
-+    public void onClose(CraftHumanEntity who) {
++    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
 +        transaction.remove(who);
 +    }
 +
-+    public List<HumanEntity> getViewers() {
++    public List<org.bukkit.entity.HumanEntity> getViewers() {
 +        return transaction;
 +    }
 +

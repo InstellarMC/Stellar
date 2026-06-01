@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/level/block/entity/BannerBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BannerBlockEntity.java
-@@ -1,6 +_,7 @@
- package net.minecraft.world.level.block.entity;
- 
- import com.mojang.logging.LogUtils;
-+import java.util.List;
- import javax.annotation.Nullable;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.HolderLookup;
 @@ -23,7 +_,7 @@
      public static final int MAX_PATTERNS = 6;
      private static final String TAG_PATTERNS = "patterns";
@@ -72,7 +64,7 @@
 +    // CraftBukkit start
 +    public void setPatterns(BannerPatternLayers bannerpatternlayers) {
 +        if (bannerpatternlayers.layers().size() > 20) {
-+            bannerpatternlayers = new BannerPatternLayers(List.copyOf(bannerpatternlayers.layers().subList(0, 20)));
++            bannerpatternlayers = new BannerPatternLayers(java.util.List.copyOf(bannerpatternlayers.layers().subList(0, 20)));
 +        }
 +        this.patterns = bannerpatternlayers;
 +    }

@@ -1,22 +1,5 @@
 --- a/net/minecraft/world/level/block/LayeredCauldronBlock.java
 +++ b/net/minecraft/world/level/block/LayeredCauldronBlock.java
-@@ -2,7 +_,6 @@
- 
- import com.mojang.serialization.MapCodec;
- import com.mojang.serialization.codecs.RecordCodecBuilder;
--import com.mojang.serialization.codecs.RecordCodecBuilder.Instance;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.cauldron.CauldronInteraction;
- import net.minecraft.world.entity.Entity;
-@@ -16,6 +_,8 @@
- import net.minecraft.world.level.gameevent.GameEvent;
- import net.minecraft.world.level.material.Fluid;
- import net.minecraft.world.level.material.Fluids;
-+import org.bukkit.craftbukkit.block.CraftBlockState;
-+import org.bukkit.craftbukkit.block.CraftBlockStates;import org.bukkit.event.block.CauldronLevelChangeEvent;
- 
- public class LayeredCauldronBlock extends AbstractCauldronBlock {
-     public static final MapCodec<LayeredCauldronBlock> CODEC = RecordCodecBuilder.mapCodec(
 @@ -61,11 +_,16 @@
  
      @Override
@@ -56,13 +39,13 @@
 +
 +    // CraftBukkit start
 +    // Paper start - Call CauldronLevelChangeEvent
-+    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason) { // Paper - entity is nullable
++    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason) { // Paper - entity is nullable
 +        return changeLevel(iblockdata, world, blockposition, newBlock, entity, reason, true);
 +    }
 +
-+    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason, boolean sendGameEvent) { // Paper - entity is nullable
++    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason, boolean sendGameEvent) { // Paper - entity is nullable
 +    // Paper end - Call CauldronLevelChangeEvent
-+        CraftBlockState newState = CraftBlockStates.getBlockState(world, blockposition);
++        org.bukkit.craftbukkit.block.CraftBlockState newState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(world, blockposition);
 +        newState.setData(newBlock);
 +
 +        org.bukkit.event.block.CauldronLevelChangeEvent event = new org.bukkit.event.block.CauldronLevelChangeEvent(

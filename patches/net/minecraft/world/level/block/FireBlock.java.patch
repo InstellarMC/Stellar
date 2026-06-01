@@ -1,25 +1,13 @@
 --- a/net/minecraft/world/level/block/FireBlock.java
 +++ b/net/minecraft/world/level/block/FireBlock.java
-@@ -5,7 +_,7 @@
- import it.unimi.dsi.fastutil.objects.Object2IntMap;
+@@ -6,6 +_,7 @@
  import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  import java.util.Map;
--import java.util.Map.Entry;
+ import java.util.Map.Entry;
 +import java.util.concurrent.atomic.AtomicReference;
  import java.util.function.Function;
  import java.util.stream.Collectors;
  import net.minecraft.Util;
-@@ -29,6 +_,10 @@
- import net.minecraft.world.phys.shapes.CollisionContext;
- import net.minecraft.world.phys.shapes.Shapes;
- import net.minecraft.world.phys.shapes.VoxelShape;
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.block.CraftBlockState;
-+import org.bukkit.craftbukkit.block.CraftBlockStates;
- 
- public class FireBlock extends BaseFireBlock {
-     public static final MapCodec<FireBlock> CODEC = simpleCodec(FireBlock::new);
 @@ -114,9 +_,25 @@
  
      @Override
@@ -34,7 +22,7 @@
 +            if (!(p_53461_ instanceof Level)) {
 +                return Blocks.AIR.defaultBlockState();
 +            }
-+            CraftBlockState blockState = CraftBlockStates.getBlockState(p_53461_, p_53462_);
++            org.bukkit.craftbukkit.block.CraftBlockState blockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(p_53461_, p_53462_);
 +            blockState.setData(Blocks.AIR.defaultBlockState());
 +
 +            org.bukkit.event.block.BlockFadeEvent event = new org.bukkit.event.block.BlockFadeEvent(blockState.getBlock(), blockState);
@@ -72,7 +60,8 @@
 +    private AtomicReference<BlockPos> sourceposition = new AtomicReference(BlockPos.ZERO);
      @Override
      protected void tick(BlockState p_221160_, ServerLevel p_221161_, BlockPos p_221162_, RandomSource p_221163_) {
-         p_221161_.scheduleTick(p_221162_, this, getFireTickDelay(p_221161_.random));
+-        p_221161_.scheduleTick(p_221162_, this, getFireTickDelay(p_221161_.random));
++        p_221161_.scheduleTick(p_221162_, this, getFireTickDelay(p_221161_));  // Paper - Add fire-tick-delay option
          if (p_221161_.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
              if (!p_221160_.canSurvive(p_221161_, p_221162_)) {
 -                p_221161_.removeBlock(p_221162_, false);
@@ -127,7 +116,7 @@
                  BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
  
                  for (int l = -1; l <= 1; l++) {
-@@ -221,7 +_,19 @@
+@@ -221,7 +_,21 @@
                                          && p_221163_.nextInt(k1) <= i2
                                          && (!p_221161_.isRaining() || !this.isNearRain(p_221161_, blockpos$mutableblockpos))) {
                                          int j2 = Math.min(15, i + p_221163_.nextInt(5) / 4);
@@ -135,14 +124,16 @@
 +
 +                                        // CraftBukkit start - Call to stop spread of fire
 +                                        if (p_221161_.getBlockState(blockpos$mutableblockpos).getBlock() != Blocks.FIRE) {
-+                                            if (CraftEventFactory.callBlockIgniteEvent(p_221161_, blockpos$mutableblockpos, p_221162_).isCancelled()) {
++                                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(p_221161_, blockpos$mutableblockpos, p_221162_).isCancelled()) {
 +                                                continue;
 +                                            }
 +
-+                                            CraftEventFactory.fixBlockSpreadMixin.set(false);
-+                                            if (CraftEventFactory.handleBlockSpreadEvent(p_221161_, p_221162_, blockpos$mutableblockpos, this.getStateWithAge(p_221161_, blockpos$mutableblockpos, j2), 3)) {
++                                            // Youer start
++                                            org.bukkit.craftbukkit.event.CraftEventFactory.fixBlockSpreadMixin.set(false);
++                                            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(p_221161_, p_221162_, blockpos$mutableblockpos, this.getStateWithAge(p_221161_, blockpos$mutableblockpos, j2), 3)) {
 +                                                p_221161_.setBlock(blockpos$mutableblockpos, this.getStateWithAge(p_221161_, blockpos$mutableblockpos, j2), 3);
 +                                            }
++                                            // Youer end
 +                                        }
 +                                        // CraftBukkit end
                                      }
@@ -181,7 +172,7 @@
 +
 +            // CraftBukkit start
 +            org.bukkit.block.Block theBlock = p_221151_.getWorld().getBlockAt(p_221152_.getX(), p_221152_.getY(), p_221152_.getZ());
-+            org.bukkit.block.Block sourceBlock = CraftBlock.at(p_221151_, sourceposition.get());
++            org.bukkit.block.Block sourceBlock = org.bukkit.craftbukkit.block.CraftBlock.at(p_221151_, sourceposition.get());
 +
 +            org.bukkit.event.block.BlockBurnEvent event = new org.bukkit.event.block.BlockBurnEvent(theBlock, sourceBlock);
 +            p_221151_.getCraftServer().getPluginManager().callEvent(event);
@@ -190,7 +181,7 @@
 +                return;
 +            }
 +
-+            if (blockstate.getBlock() instanceof TntBlock && !CraftEventFactory.callTNTPrimeEvent(p_221151_, p_221152_, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.FIRE, null, sourceposition.getAndSet(BlockPos.ZERO))) {
++            if (blockstate.getBlock() instanceof TntBlock && !org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(p_221151_, p_221152_, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.FIRE, null, sourceposition.getAndSet(BlockPos.ZERO))) {
 +                return;
 +            }
 +            // CraftBukkit end
@@ -229,7 +220,7 @@
              }
  
              return i;
-@@ -301,6 +_,7 @@
+@@ -301,18 +_,21 @@
      }
  
      @Override
@@ -237,6 +228,25 @@
      protected boolean canBurn(BlockState p_53489_) {
          return this.getIgniteOdds(p_53489_) > 0;
      }
+ 
+     @Override
+-    protected void onPlace(BlockState p_53479_, Level p_53480_, BlockPos p_53481_, BlockState p_53482_, boolean p_53483_) {
+-        super.onPlace(p_53479_, p_53480_, p_53481_, p_53482_, p_53483_);
+-        p_53480_.scheduleTick(p_53481_, this, getFireTickDelay(p_53480_.random));
++    // CraftBukkit start - context
++    protected void onPlace(BlockState p_53479_, Level p_53480_, BlockPos p_53481_, BlockState p_53482_, boolean p_53483_, net.minecraft.world.item.context.UseOnContext context) {
++        super.onPlace(p_53479_, p_53480_, p_53481_, p_53482_, p_53483_, context);
++        // CraftBukkit end
++        p_53480_.scheduleTick(p_53481_, this, getFireTickDelay(p_53480_)); // Paper - Add fire-tick-delay option
+     }
+ 
+-    private static int getFireTickDelay(RandomSource p_221149_) {
+-        return 30 + p_221149_.nextInt(10);
++    private static int getFireTickDelay(Level world) { // Paper - Add fire-tick-delay option
++        return world.paperConfig().environment.fireTickDelay + world.random.nextInt(10); // Paper - Add fire-tick-delay option
+     }
+ 
+     @Override
 @@ -321,8 +_,21 @@
      }
  

@@ -1,18 +1,5 @@
 --- a/net/minecraft/world/level/block/EndPortalBlock.java
 +++ b/net/minecraft/world/level/block/EndPortalBlock.java
-@@ -25,6 +_,12 @@
- import net.minecraft.world.phys.shapes.CollisionContext;
- import net.minecraft.world.phys.shapes.Shapes;
- import net.minecraft.world.phys.shapes.VoxelShape;
-+import org.bukkit.Location;
-+import org.bukkit.craftbukkit.CraftWorld;
-+import org.bukkit.craftbukkit.event.CraftPortalEvent;
-+import org.bukkit.craftbukkit.util.CraftLocation;
-+import org.bukkit.event.player.PlayerRespawnEvent;
-+import org.bukkit.event.player.PlayerTeleportEvent;
- 
- public class EndPortalBlock extends BaseEntityBlock implements Portal {
-     public static final MapCodec<EndPortalBlock> CODEC = simpleCodec(EndPortalBlock::new);
 @@ -51,15 +_,19 @@
  
      @Override
@@ -61,7 +48,7 @@
              } else {
                  if (p_350274_ instanceof ServerPlayer serverplayer) {
 -                    return serverplayer.findRespawnPositionAndUseSpawnBlock(false, DimensionTransition.DO_NOTHING);
-+                    return serverplayer.findRespawnPositionAndUseSpawnBlock(false, DimensionTransition.DO_NOTHING, PlayerRespawnEvent.RespawnReason.END_PORTAL); // CraftBukkit
++                    return serverplayer.findRespawnPositionAndUseSpawnBlock(false, DimensionTransition.DO_NOTHING, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason.END_PORTAL); // CraftBukkit
                  }
  
                  vec3 = p_350274_.adjustSpawnLocation(serverlevel, blockpos).getBottomCenter();
@@ -76,13 +63,13 @@
 -                DimensionTransition.PLAY_PORTAL_SOUND.then(DimensionTransition.PLACE_PORTAL_TICKET)
 -            );
 +            // CraftBukkit start
-+            CraftPortalEvent event = p_350274_.callPortalEvent(p_350274_, CraftLocation.toBukkit(vec3, serverlevel.getWorld(), f, p_350274_.getXRot()), PlayerTeleportEvent.TeleportCause.END_PORTAL, 0, 0);
++            org.bukkit.craftbukkit.event.CraftPortalEvent event = p_350274_.callPortalEvent(p_350274_, org.bukkit.craftbukkit.util.CraftLocation.toBukkit(vec3, serverlevel.getWorld(), f, p_350274_.getXRot()), org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_PORTAL, 0, 0);
 +            if (event == null) {
 +                return null;
 +            }
-+            Location to = event.getTo();
++            org.bukkit.Location to = event.getTo();
 +
-+            return new DimensionTransition(((CraftWorld) to.getWorld()).getHandle(), CraftLocation.toVec3D(to), p_350274_.getDeltaMovement(), to.getYaw(), to.getPitch(), DimensionTransition.PLAY_PORTAL_SOUND.then(DimensionTransition.PLACE_PORTAL_TICKET), PlayerTeleportEvent.TeleportCause.END_PORTAL);
++            return new DimensionTransition(((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3D(to), p_350274_.getDeltaMovement(), to.getYaw(), to.getPitch(), DimensionTransition.PLAY_PORTAL_SOUND.then(DimensionTransition.PLACE_PORTAL_TICKET), org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_PORTAL);
 +            // CraftBukkit end
          }
      }

@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
 +++ b/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
-@@ -15,6 +_,7 @@
- import net.minecraft.world.level.block.state.properties.IntegerProperty;
- import net.minecraft.world.level.material.Fluids;
- import net.minecraft.world.phys.shapes.VoxelShape;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public abstract class GrowingPlantHeadBlock extends GrowingPlantBlock implements BonemealableBlock {
-     public static final IntegerProperty AGE = BlockStateProperties.AGE_25;
 @@ -42,10 +_,25 @@
  
      @Override
@@ -25,14 +17,14 @@
 +            modifier = p_221351_.spigotConfig.caveVinesModifier;
 +        }
 +
-+        if (p_221350_.getValue(AGE) < 25 && net.neoforged.neoforge.common.CommonHooks.canCropGrow(p_221351_, p_221352_.relative(this.growthDirection), p_221350_, p_221353_.nextDouble() < ((modifier / 100.0D) * this.growPerTickProbability))) { // Spigot - SPIGOT-7159: Better modifier resolution
++        if (p_221350_.getValue(AGE) < 25 && net.neoforged.neoforge.common.CommonHooks.canCropGrow(p_221351_, p_221352_.relative(this.growthDirection), p_221350_, p_221353_.nextDouble() < ((modifier / 100.0D) * this.growPerTickProbability))) { // Neo // Spigot - SPIGOT-7159: Better modifier resolution
              BlockPos blockpos = p_221352_.relative(this.growthDirection);
              if (this.canGrowInto(p_221351_.getBlockState(blockpos))) {
 -                p_221351_.setBlockAndUpdate(blockpos, this.getGrowIntoState(p_221350_, p_221351_.random));
 +                // CraftBukkit start - Use event for block spread
-+                CraftEventFactory.handleBlockSpreadEvent(p_221351_, p_221352_, blockpos, this.getGrowIntoState(p_221350_, p_221351_.random));
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(p_221351_, p_221352_, blockpos, this.getGrowIntoState(p_221350_, p_221351_.random));
 +                // CraftBukkit end
-+                net.neoforged.neoforge.common.CommonHooks.fireCropGrowPost(p_221351_, blockpos, p_221351_.getBlockState(blockpos));
++                net.neoforged.neoforge.common.CommonHooks.fireCropGrowPost(p_221351_, blockpos, p_221351_.getBlockState(blockpos)); // Neo
              }
          }
      }

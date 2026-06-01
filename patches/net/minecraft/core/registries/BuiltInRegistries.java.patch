@@ -1,13 +1,5 @@
 --- a/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -5,6 +_,7 @@
- import com.mojang.serialization.Lifecycle;
- import com.mojang.serialization.MapCodec;
- import java.util.Map;
-+import java.util.concurrent.atomic.AtomicReference;
- import java.util.function.Supplier;
- import net.minecraft.Util;
- import net.minecraft.advancements.CriteriaTriggers;
 @@ -288,6 +_,17 @@
          Registries.ENCHANTMENT_PROVIDER_TYPE, EnchantmentProviderTypes::bootstrap
      );

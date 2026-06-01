@@ -1,22 +1,5 @@
 --- a/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/net/minecraft/world/level/block/ComposterBlock.java
-@@ -1,5 +_,6 @@
- package net.minecraft.world.level.block;
- 
-+import com.google.common.util.concurrent.AtomicDouble;
- import com.mojang.serialization.MapCodec;
- import it.unimi.dsi.fastutil.objects.Object2FloatMap;
- import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
-@@ -41,6 +_,9 @@
- import net.minecraft.world.phys.shapes.CollisionContext;
- import net.minecraft.world.phys.shapes.Shapes;
- import net.minecraft.world.phys.shapes.VoxelShape;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.inventory.CraftBlockInventoryHolder;
-+import org.bukkit.craftbukkit.util.DummyGeneratorAccess;
- 
- public class ComposterBlock extends Block implements WorldlyContainerHolder {
-     public static final MapCodec<ComposterBlock> CODEC = simpleCodec(ComposterBlock::new);
 @@ -48,6 +_,8 @@
      public static final int MIN_LEVEL = 0;
      public static final int MAX_LEVEL = 7;
@@ -113,8 +96,8 @@
 +        if (i < 7 && getValue(p_270253_) > 0) {
 +            // CraftBukkit start
 +            double rand = p_270284_.getRandom().nextDouble();
-+            BlockState blockstate = addItem(p_270919_, p_270087_, DummyGeneratorAccess.INSTANCE, p_270678_, p_270253_, rand);
-+            if (p_270087_ == blockstate || !CraftEventFactory.callEntityChangeBlockEvent(p_270919_, p_270678_, blockstate)) {
++            BlockState blockstate = addItem(p_270919_, p_270087_, org.bukkit.craftbukkit.util.DummyGeneratorAccess.INSTANCE, p_270678_, p_270253_, rand);
++            if (p_270087_ == blockstate || !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(p_270919_, p_270678_, blockstate)) {
 +                return p_270087_;
 +            }
 +            blockstate = addItem(p_270919_, p_270087_, p_270284_, p_270678_, p_270253_, rand);
@@ -128,8 +111,8 @@
      public static BlockState extractProduce(Entity p_270467_, BlockState p_51999_, Level p_52000_, BlockPos p_52001_) {
 +        // CraftBukkit start
 +        if (p_270467_ != null && !(p_270467_ instanceof Player)) {
-+            BlockState blockstate1 = empty(p_270467_, p_51999_, DummyGeneratorAccess.INSTANCE, p_52001_);
-+            if (!CraftEventFactory.callEntityChangeBlockEvent(p_270467_, p_52001_, blockstate1)) {
++            BlockState blockstate1 = empty(p_270467_, p_51999_, org.bukkit.craftbukkit.util.DummyGeneratorAccess.INSTANCE, p_52001_);
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(p_270467_, p_52001_, blockstate1)) {
 +                return p_51999_;
 +            }
 +        }
@@ -202,7 +185,7 @@
 -        public EmptyContainer() {
 +        public EmptyContainer(LevelAccessor p_52043_, BlockPos p_52044_) { // CraftBukkit
              super(0);
-+            this.bukkitOwner = new CraftBlockInventoryHolder(p_52043_, p_52044_, this); // CraftBukkit
++            this.bukkitOwner = new org.bukkit.craftbukkit.inventory.CraftBlockInventoryHolder(p_52043_, p_52044_, this); // CraftBukkit
          }
  
          @Override
@@ -210,7 +193,7 @@
  
          public InputContainer(BlockState p_52022_, LevelAccessor p_52023_, BlockPos p_52024_) {
              super(1);
-+            this.bukkitOwner = new CraftBlockInventoryHolder(p_52023_, p_52024_, this); // CraftBukkit
++            this.bukkitOwner = new org.bukkit.craftbukkit.inventory.CraftBlockInventoryHolder(p_52023_, p_52024_, this); // CraftBukkit
              this.state = p_52022_;
              this.level = p_52023_;
              this.pos = p_52024_;
@@ -239,7 +222,7 @@
              this.state = p_52042_;
              this.level = p_52043_;
              this.pos = p_52044_;
-+            this.bukkitOwner = new CraftBlockInventoryHolder(p_52043_, p_52044_, this); // CraftBukkit
++            this.bukkitOwner = new org.bukkit.craftbukkit.inventory.CraftBlockInventoryHolder(p_52043_, p_52044_, this); // CraftBukkit
          }
  
          @Override
