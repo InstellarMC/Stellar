@@ -199,14 +199,13 @@
          @Override
          public void dataChanged(AbstractContainerMenu p_143462_, int p_143463_, int p_143464_) {
          }
-@@ -276,6 +_,73 @@
+@@ -276,6 +_,72 @@
      public final Object object;
      private int containerCounter;
      public boolean wonGame;
 +    private int containerUpdateDelay; // Paper - Configurable container update tick rate
 +    public long loginTime; // Paper - Replace OfflinePlayer#getLastPlayed
 +
-+    // Mohist start
 +    public boolean initialized = false;
 +    // Mohist end
 +    // Paper start - cancellable death event

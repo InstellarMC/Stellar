@@ -1,20 +1,6 @@
 --- a/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/net/minecraft/world/entity/item/FallingBlockEntity.java
-@@ -21,7 +_,6 @@
- import net.minecraft.server.level.ServerEntity;
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.tags.BlockTags;
--import net.minecraft.tags.FluidTags;
- import net.minecraft.util.Mth;
- import net.minecraft.world.damagesource.DamageSource;
- import net.minecraft.world.entity.Entity;
-@@ -47,11 +_,13 @@
- import net.minecraft.world.phys.BlockHitResult;
- import net.minecraft.world.phys.HitResult;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.event.entity.EntityRemoveEvent;
- import org.slf4j.Logger;
+@@ -51,7 +_,7 @@
  
  public class FallingBlockEntity extends Entity {
      private static final Logger LOGGER = LogUtils.getLogger();
@@ -55,7 +41,7 @@
 +                    this.spawnAtLocation(block);
 +                }
 +
-+                this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.OUT_OF_WORLD);
 +                return;
 +            }
 +            // Paper end - Configurable falling blocks height nerf
@@ -82,7 +68,7 @@
                                  }
  
 +                                // CraftBukkit start
-+                                if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockpos, this.blockState)) {
++                                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockpos, this.blockState)) {
 +                                    this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // SPIGOT-6586 called before the event in previous versions
 +                                    return;
 +                                }

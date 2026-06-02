@@ -92,7 +92,7 @@
 +    }
 +
 +    @SuppressWarnings("DataFlowIssue")
-+    @org.jetbrains.annotations.NotNull
++    // @org.jetbrains.annotations.NotNull // Stellar - NotNull is always implied
 +    private synchronized Path processPath(ProfilerFiller p_164717_, NodeEvaluator nodeEvaluator, Node p_164718_, List<Map.Entry<Target, BlockPos>> p_164719_, float p_164720_, int p_164721_, float p_164722_) {
 +        org.apache.commons.lang3.Validate.isTrue(!p_164719_.isEmpty());
 +        // Stellar end - Process pathfinding asynchronously

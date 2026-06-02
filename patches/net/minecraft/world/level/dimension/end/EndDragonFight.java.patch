@@ -170,47 +170,73 @@
              }
          }
      }
-@@ -477,6 +_,10 @@
+@@ -477,7 +_,13 @@
          return this.previouslyKilled;
      }
  
-+    private AtomicBoolean tryRespawnBoolean = new AtomicBoolean(false);
-+    public boolean tryRespawnBoolean(){
-+        return tryRespawnBoolean.getAndSet(false);
+-    public void tryRespawn() {
++    public boolean tryRespawn() { // CraftBukkit - return boolean
++        // Paper start - Perf: Do crystal-portal proximity check before entity lookup
++        return this.tryRespawn(null);
 +    }
-     public void tryRespawn() {
++
++    public boolean tryRespawn(@Nullable BlockPos placedEndCrystalPos) { // placedEndCrystalPos is null if the tryRespawn() call was not caused by a placed end crystal
++        // Paper end - Perf: Do crystal-portal proximity check before entity lookup
          if (this.dragonKilled && this.respawnStage == null) {
              BlockPos blockpos = this.portalLocation;
-@@ -499,6 +_,7 @@
+             if (blockpos == null) {
+@@ -493,24 +_,41 @@
+                 blockpos = this.portalLocation;
+             }
+ 
++            // Paper start - Perf: Do crystal-portal proximity check before entity lookup
++            if (placedEndCrystalPos != null) {
++                // The end crystal must be 0 or 1 higher than the portal origin
++                int dy = placedEndCrystalPos.getY() - blockpos.getY();
++                if (dy != 0 && dy != 1) {
++                    return false;
++                }
++                // The end crystal must be within a distance of 1 in one planar direction, and 3 in the other
++                int dx = placedEndCrystalPos.getX() - blockpos.getX();
++                int dz = placedEndCrystalPos.getZ() - blockpos.getZ();
++                if (!((dx >= -1 && dx <= 1 && dz >= -3 && dz <= 3) || (dx >= -3 && dx <= 3 && dz >= -1 && dz <= 1))) {
++                    return false;
++                }
++            }
++            // Paper end - Perf: Do crystal-portal proximity check before entity lookup
++
+             List<EndCrystal> list1 = Lists.newArrayList();
+             BlockPos blockpos1 = blockpos.above(1);
+ 
              for (Direction direction : Direction.Plane.HORIZONTAL) {
                  List<EndCrystal> list = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(blockpos1.relative(direction, 2)));
                  if (list.isEmpty()) {
-+                    tryRespawnBoolean.set(false);
-                     return;
+-                    return;
++                    return false; // CraftBukkit - return value
                  }
  
-@@ -507,7 +_,14 @@
+                 list1.addAll(list);
+             }
  
              LOGGER.debug("Found all crystals, respawning dragon.");
-             this.respawnDragon(list1);
-+            tryRespawnBoolean.set(respawnDragonBoolean());
+-            this.respawnDragon(list1);
++            return this.respawnDragon(list1); // CraftBukkit - return value
          }
-+        tryRespawnBoolean.set(false);
-+    }
-+
-+    private AtomicBoolean respawnDragonBoolean = new AtomicBoolean(false);
-+    public boolean respawnDragonBoolean(){
-+        return tryRespawnBoolean.getAndSet(false);
++        return false; // CraftBukkit - return value
      }
  
-     public void respawnDragon(List<EndCrystal> p_64092_) {
+-    public void respawnDragon(List<EndCrystal> p_64092_) {
++    public boolean respawnDragon(List<EndCrystal> p_64092_) { // CraftBukkit - return boolean
+         if (this.dragonKilled && this.respawnStage == null) {
+             for (BlockPattern.BlockPatternMatch blockpattern$blockpatternmatch = this.findExitPortal();
+                 blockpattern$blockpatternmatch != null;
 @@ -532,7 +_,9 @@
              this.respawnTime = 0;
              this.spawnExitPortal(false);
              this.respawnCrystals = p_64092_;
-+            respawnDragonBoolean.set(true);
++            return true; // CraftBukkit - return value
          }
-+        respawnDragonBoolean.set(false);
++        return false; // CraftBukkit - return value
      }
  
      public void resetSpikeCrystals() {

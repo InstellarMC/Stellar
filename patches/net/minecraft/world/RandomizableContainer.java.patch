@@ -1,14 +1,5 @@
 --- a/net/minecraft/world/RandomizableContainer.java
 +++ b/net/minecraft/world/RandomizableContainer.java
-@@ -1,5 +_,8 @@
- package net.minecraft.world;
- 
-+import com.destroystokyo.paper.loottable.PaperLootableInventory;
-+import com.destroystokyo.paper.loottable.PaperLootableInventoryData;
-+import java.util.concurrent.atomic.AtomicBoolean;
- import javax.annotation.Nullable;
- import net.minecraft.advancements.CriteriaTriggers;
- import net.minecraft.core.BlockPos;
 @@ -28,7 +_,7 @@
  
      void setLootTable(@Nullable ResourceKey<LootTable> p_335578_);
@@ -63,7 +54,7 @@
 -        if (resourcekey != null && level != null && level.getServer() != null) {
 +        // Paper start - LootTable API
 +        lootReplenish: if (resourcekey != null && level != null && level.getServer() != null) {
-+            if (this.lootableData() != null && !this.lootableData().shouldReplenish(this, PaperLootableInventoryData.CONTAINER, p_309628_)) {
++            if (this.lootableData() != null && !this.lootableData().shouldReplenish(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, p_309628_)) {
 +                if (forceClearLootTable) {
 +                    this.setLootTable(null);
 +                }
@@ -77,7 +68,7 @@
  
 -            this.setLootTable(null);
 +            // Paper start - LootTable API
-+            if (forceClearLootTable || this.lootableData() == null || this.lootableData().shouldClearLootTable(this, PaperLootableInventoryData.CONTAINER, p_309628_)) {
++            if (forceClearLootTable || this.lootableData() == null || this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, p_309628_)) {
 +                this.setLootTable(null);
 +            }
 +            // Paper end - LootTable API
@@ -94,13 +85,13 @@
 +
 +    // Paper start - LootTable API
 +    @Nullable @org.jetbrains.annotations.Contract(pure = true)
-+    default PaperLootableInventoryData lootableData() {
++    default com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData() {
 +        return null; // some containers don't really have a "replenish" ability like decorated pots
 +    }
 +
-+    default PaperLootableInventory getLootableInventory() {
++    default com.destroystokyo.paper.loottable.PaperLootableInventory getLootableInventory() {
 +        final org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(java.util.Objects.requireNonNull(this.getLevel(), "Cannot manage loot tables on block entities not in world"), this.getBlockPos());
-+        return (PaperLootableInventory) block.getState(false);
++        return (com.destroystokyo.paper.loottable.PaperLootableInventory) block.getState(false);
 +    }
 +    // Paper end - LootTable API
  }

@@ -1,14 +1,5 @@
 --- a/net/minecraft/client/gui/screens/worldselection/CreateWorldScreen.java
 +++ b/net/minecraft/client/gui/screens/worldselection/CreateWorldScreen.java
-@@ -61,7 +_,7 @@
- import net.minecraft.server.RegistryLayer;
- import net.minecraft.server.ReloadableServerResources;
- import net.minecraft.server.WorldLoader;
--import net.minecraft.server.packs.repository.PackRepository;
-+import net.minecraft.server.level.ServerLevel;import net.minecraft.server.packs.repository.PackRepository;
- import net.minecraft.server.packs.repository.ServerPacksSource;
- import net.minecraft.server.packs.resources.CloseableResourceManager;
- import net.minecraft.world.Difficulty;
 @@ -118,6 +_,7 @@
      public static void openFresh(Minecraft p_232897_, @Nullable Screen p_232898_) {
          queueLoadScreen(p_232897_, PREPARING_WORLD_DATA);
@@ -33,7 +24,7 @@
          if (p_205448_) {
              GameRules gamerules = new GameRules();
 -            gamerules.getRule(GameRules.RULE_DAYLIGHT).set(false, null);
-+            gamerules.getRule(GameRules.RULE_DAYLIGHT).set(false, (ServerLevel) null);
++            gamerules.getRule(GameRules.RULE_DAYLIGHT).set(false, (net.minecraft.server.level.ServerLevel) null);
              return new LevelSettings(s, GameType.SPECTATOR, false, Difficulty.PEACEFUL, true, gamerules, WorldDataConfiguration.DEFAULT);
          } else {
              return new LevelSettings(

@@ -1,24 +1,14 @@
 --- a/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
-@@ -17,14 +_,42 @@
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.level.gameevent.GameEvent;
- import net.minecraft.world.phys.AABB;
-+import org.bukkit.block.Block;
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.event.block.BlockDispenseEvent;
- 
- public class ShearsDispenseItemBehavior extends OptionalDispenseItemBehavior {
+@@ -22,9 +_,32 @@
      @Override
      protected ItemStack execute(BlockSource p_302443_, ItemStack p_123581_) {
          ServerLevel serverlevel = p_302443_.level();
 +        // CraftBukkit start
-+        org.bukkit.block.Block bukkitBlock = CraftBlock.at(serverlevel, p_302443_.pos());
-+        CraftItemStack craftItem = CraftItemStack.asCraftMirror(p_123581_); // Paper - ignore stack size on damageable items
++        org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(serverlevel, p_302443_.pos());
++        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(p_123581_); // Paper - ignore stack size on damageable items
 +
-+        BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
++        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
 +        if (!DispenserBlock.eventFired) {
 +            serverlevel.getCraftServer().getPluginManager().callEvent(event);
 +        }
@@ -29,7 +19,7 @@
 +
 +        if (!event.getItem().equals(craftItem)) {
 +            // Chain to handler for new item
-+            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++            ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
 +            DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
 +            if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != this) {
 +                idispensebehavior.dispense(p_302443_, eventStack);
@@ -49,20 +39,20 @@
      }
  
 -    private static boolean tryShearLivingEntity(ServerLevel p_123583_, BlockPos p_123584_) {
-+    private static boolean tryShearLivingEntity(ServerLevel p_123583_, BlockPos p_123584_, org.bukkit.block.Block bukkitBlock, CraftItemStack craftItem) { // CraftBukkit - add args
++    private static boolean tryShearLivingEntity(ServerLevel p_123583_, BlockPos p_123584_, org.bukkit.block.Block bukkitBlock, org.bukkit.craftbukkit.inventory.CraftItemStack craftItem) { // CraftBukkit - add args
          for (LivingEntity livingentity : p_123583_.getEntitiesOfClass(LivingEntity.class, new AABB(p_123584_), EntitySelector.NO_SPECTATORS)) {
 -            if (livingentity instanceof Shearable shearable && shearable.readyForShearing()) {
 -                shearable.shear(SoundSource.BLOCKS);
 +            if (livingentity instanceof net.neoforged.neoforge.common.IShearable shearable && shearable.isShearable(null, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(craftItem), p_123583_, p_123584_)) { // Neo
 +                // CraftBukkit start
 +                // Paper start - Add drops to shear events
-+                org.bukkit.event.block.BlockShearEntityEvent event = CraftEventFactory.callBlockShearEntityEvent(livingentity, bukkitBlock, craftItem, shearable.generateDefaultDrops());
++                org.bukkit.event.block.BlockShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockShearEntityEvent(livingentity, bukkitBlock, craftItem, shearable.generateDefaultDrops());
 +                if (event.isCancelled()) {
 +                    // Paper end - Add drops to shear events
 +                    continue;
 +                }
 +                // CraftBukkit end
-+                shearable.onSheared(null, craftItem.handle, p_123583_, p_123584_, CraftItemStack.asNMSCopy(event.getDrops())) // Paper - Add drops to shear events
++                shearable.onSheared(null, craftItem.handle, p_123583_, p_123584_, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops())) // Paper - Add drops to shear events
 +                        .forEach(drop -> shearable.spawnShearedDrop(p_123583_, p_123584_, drop));
                  p_123583_.gameEvent(null, GameEvent.SHEAR, p_123584_);
                  return true;

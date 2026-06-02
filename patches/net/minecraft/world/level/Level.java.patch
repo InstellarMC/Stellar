@@ -1,91 +1,11 @@
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -5,13 +_,13 @@
- import java.io.IOException;
- import java.util.Iterator;
- import java.util.List;
-+import java.util.concurrent.atomic.AtomicBoolean;
- import java.util.function.Consumer;
- import java.util.function.Predicate;
- import java.util.function.Supplier;
- import javax.annotation.Nullable;
- import net.minecraft.CrashReport;
- import net.minecraft.CrashReportCategory;
--import net.minecraft.ReportedException;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.Direction;
- import net.minecraft.core.Holder;
-@@ -22,14 +_,14 @@
- import net.minecraft.core.registries.BuiltInRegistries;
- import net.minecraft.core.registries.Registries;
- import net.minecraft.network.protocol.Packet;
--import net.minecraft.resources.ResourceKey;
-+import net.minecraft.network.protocol.game.*;import net.minecraft.resources.ResourceKey;
- import net.minecraft.resources.ResourceLocation;
- import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.level.FullChunkStatus;
-+import net.minecraft.server.level.ServerLevel;
- import net.minecraft.sounds.SoundEvent;
- import net.minecraft.sounds.SoundEvents;
- import net.minecraft.sounds.SoundSource;
--import net.minecraft.util.AbortableIterationConsumer;
- import net.minecraft.util.Mth;
- import net.minecraft.util.RandomSource;
- import net.minecraft.util.StringRepresentable;
-@@ -39,8 +_,7 @@
- import net.minecraft.world.damagesource.DamageSource;
- import net.minecraft.world.damagesource.DamageSources;
- import net.minecraft.world.entity.Entity;
--import net.minecraft.world.entity.boss.EnderDragonPart;
--import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-+import net.minecraft.world.entity.item.ItemEntity;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.item.alchemy.PotionBrewing;
-@@ -54,11 +_,12 @@
- import net.minecraft.world.level.block.entity.BlockEntity;
- import net.minecraft.world.level.block.entity.TickingBlockEntity;
- import net.minecraft.world.level.block.state.BlockState;
--import net.minecraft.world.level.border.WorldBorder;
-+import net.minecraft.world.level.border.BorderChangeListener;import net.minecraft.world.level.border.WorldBorder;
- import net.minecraft.world.level.chunk.ChunkAccess;
--import net.minecraft.world.level.chunk.LevelChunk;
-+import net.minecraft.world.level.chunk.ChunkSource;import net.minecraft.world.level.chunk.LevelChunk;
- import net.minecraft.world.level.chunk.status.ChunkStatus;
- import net.minecraft.world.level.dimension.DimensionType;
-+import net.minecraft.world.level.dimension.LevelStem;
- import net.minecraft.world.level.entity.EntityTypeTest;
- import net.minecraft.world.level.entity.LevelEntityGetter;
- import net.minecraft.world.level.gameevent.GameEvent;
-@@ -74,9 +_,29 @@
- import net.minecraft.world.level.storage.WritableLevelData;
- import net.minecraft.world.phys.AABB;
+@@ -76,7 +_,7 @@
  import net.minecraft.world.phys.Vec3;
--import net.minecraft.world.scores.Scoreboard;
-+import net.minecraft.world.phys.shapes.VoxelShape;import net.minecraft.world.scores.Scoreboard;
-+import net.neoforged.neoforge.attachment.AttachmentHolder;
-+import net.neoforged.neoforge.common.extensions.ILevelExtension;
-+import net.neoforged.neoforge.common.util.BlockSnapshot;
-+import net.neoforged.neoforge.event.EventHooks;
-+import net.neoforged.neoforge.server.timings.TimeTracker;
-+import org.bukkit.Bukkit;
-+import org.bukkit.Location;
-+import org.bukkit.World;
-+import org.bukkit.craftbukkit.CraftServer;
-+import org.bukkit.craftbukkit.CraftWorld;
-+import org.bukkit.craftbukkit.block.CapturedBlockState;
-+import org.bukkit.craftbukkit.block.CraftBlockState;
-+import org.bukkit.craftbukkit.block.data.CraftBlockData;
-+import org.bukkit.craftbukkit.util.CraftSpawnCategory;
-+import org.bukkit.entity.SpawnCategory;
-+import org.bukkit.event.block.BlockPhysicsEvent;
-+import org.bukkit.generator.BiomeProvider;
-+import org.bukkit.generator.ChunkGenerator;
-+import org.jetbrains.annotations.ApiStatus;
-+import org.spigotmc.SpigotWorldConfig;
+ import net.minecraft.world.scores.Scoreboard;
  
 -public abstract class Level implements LevelAccessor, AutoCloseable, net.neoforged.neoforge.common.extensions.ILevelExtension {
-+public abstract class Level extends AttachmentHolder implements LevelAccessor, AutoCloseable, ILevelExtension, ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel, ca.spottedleaf.moonrise.patches.chunk_system.world.ChunkSystemEntityGetter, ca.spottedleaf.moonrise.patches.collisions.world.CollisionLevel { // Paper - rewrite chunk system // Paper - optimise collisions
++public abstract class Level extends net.neoforged.neoforge.attachment.AttachmentHolder implements LevelAccessor, AutoCloseable, net.neoforged.neoforge.common.extensions.ILevelExtension, ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel, ca.spottedleaf.moonrise.patches.chunk_system.world.ChunkSystemEntityGetter, ca.spottedleaf.moonrise.patches.collisions.world.CollisionLevel { // Paper - rewrite chunk system // Paper - optimise collisions
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
      public static final ResourceKey<Level> NETHER = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("the_nether"));
@@ -105,17 +25,17 @@
 +    // Neo start
 +    public boolean restoringBlockSnapshots = false;
 +    public boolean captureBlockSnapshots = false;
-+    public java.util.ArrayList<BlockSnapshot> capturedBlockSnapshots = new java.util.ArrayList<>();
++    public java.util.ArrayList<net.neoforged.neoforge.common.util.BlockSnapshot> capturedBlockSnapshots = new java.util.ArrayList<>();
 +    private final java.util.ArrayList<BlockEntity> freshBlockEntities = new java.util.ArrayList<>();
 +    private final java.util.ArrayList<BlockEntity> pendingFreshBlockEntities = new java.util.ArrayList<>();
 +    // Neo end
 +
 +    // CraftBukkit start Added the following
-+    public CraftWorld world;
++    public org.bukkit.craftbukkit.CraftWorld world;
 +    public boolean pvpMode;
-+    public static ChunkGenerator generator;
-+    public static World.Environment environment;
-+    public static BiomeProvider biomeProvider;
++    public static org.bukkit.generator.ChunkGenerator generator;
++    public static org.bukkit.World.Environment environment;
++    public static org.bukkit.generator.BiomeProvider biomeProvider;
 +
 +    public boolean preventPoiUpdated = false; // CraftBukkit - SPIGOT-5710
 +    public boolean captureBlockStates = false;
@@ -123,8 +43,8 @@
 +    public boolean isBlockPlaceCancelled = false; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
 +    public java.util.Map<BlockPos, org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates = new java.util.LinkedHashMap<>(); // Paper
 +    public java.util.Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper - Retain block place order when capturing blockstates
-+    public List<ItemEntity> captureDrops;
-+    public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
++    public List<net.minecraft.world.entity.item.ItemEntity> captureDrops;
++    public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<org.bukkit.entity.SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
 +    // Paper start - EAR 2
 +    public int wakeupInactiveRemainingAnimals;
 +    public int wakeupInactiveRemainingFlying;
@@ -132,7 +52,7 @@
 +    public int wakeupInactiveRemainingVillagers;
 +    // Paper end - EAR 2
 +    public boolean populating;
-+    public SpigotWorldConfig spigotConfig; // Spigot
++    public org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
 +    public String name; // Youer?
 +    // Paper start - add paper world config
 +    public io.papermc.paper.configuration.WorldConfiguration paperConfig;
@@ -195,15 +115,15 @@
 +    }
 +    // Purpur end
 +
-+    public CraftWorld getWorld() {
++    public org.bukkit.craftbukkit.CraftWorld getWorld() {
 +        return this.world;
 +    }
 +
-+    public CraftServer getCraftServer() {
-+        return (CraftServer) Bukkit.getServer();
++    public org.bukkit.craftbukkit.CraftServer getCraftServer() {
++        return (org.bukkit.craftbukkit.CraftServer) org.bukkit.Bukkit.getServer();
 +    }
 +
-+    public ResourceKey<LevelStem> getTypeKey() {
++    public ResourceKey<net.minecraft.world.level.dimension.LevelStem> getTypeKey() {
 +        return Registries.levelToLevelStem(dimension);
 +    }
 +
@@ -295,7 +215,7 @@
 +
 +    /**
 +     * Route to faster lookup.
-+     * See {@link EntityGetter#isUnobstructed(Entity, VoxelShape)} for expected behavior
++     * See {@link EntityGetter#isUnobstructed(Entity, net.minecraft.world.phys.shapes.VoxelShape)} for expected behavior
 +     * @author Spottedleaf
 +     */
 +    @Override
@@ -409,11 +329,11 @@
 +
 +            final BlockState blockState;
 +            if (lastSection != null && !(blockState = lastSection.get((currX & 15) | ((currZ & 15) << 4) | ((currY & 15) << (4+4)))).isAir()) {
-+                final VoxelShape blockCollision = clipContext.getBlockShape(blockState, level, currPos);
++                final net.minecraft.world.phys.shapes.VoxelShape blockCollision = clipContext.getBlockShape(blockState, level, currPos);
 +
 +                final net.minecraft.world.phys.BlockHitResult blockHit = blockCollision.isEmpty() ? null : level.clipWithInteractionOverride(from, to, currPos, blockCollision, blockState);
 +
-+                final VoxelShape fluidCollision;
++                final net.minecraft.world.phys.shapes.VoxelShape fluidCollision;
 +                final FluidState fluidState;
 +                if (clipContext.fluid != ClipContext.Fluid.NONE && (fluidState = blockState.getFluidState()) != AIR_FLUIDSTATE) {
 +                    fluidCollision = clipContext.getFluidShape(fluidState, level, currPos);
@@ -485,7 +405,7 @@
 +        );
 +    }
 +
-+    private static VoxelShape inflateAABBToVoxel(final AABB aabb, final double x, final double y, final double z) {
++    private static net.minecraft.world.phys.shapes.VoxelShape inflateAABBToVoxel(final AABB aabb, final double x, final double y, final double z) {
 +        return net.minecraft.world.phys.shapes.Shapes.create(
 +            aabb.minX - x,
 +            aabb.minY - y,
@@ -502,7 +422,7 @@
 +     * @author Spottedleaf
 +     */
 +    @Override
-+    public final java.util.Optional<net.minecraft.world.phys.Vec3> findFreePosition(final Entity entity, final VoxelShape boundsShape, final Vec3 fromPosition,
++    public final java.util.Optional<net.minecraft.world.phys.Vec3> findFreePosition(final Entity entity, final net.minecraft.world.phys.shapes.VoxelShape boundsShape, final Vec3 fromPosition,
 +                                                                                    final double rangeX, final double rangeY, final double rangeZ) {
 +        if (boundsShape.isEmpty()) {
 +            return java.util.Optional.empty();
@@ -516,7 +436,7 @@
 +        final AABB collectionVolume = boundsShape.bounds().inflate(expandByX, expandByY, expandByZ);
 +
 +        final List<AABB> aabbs = new java.util.ArrayList<>();
-+        final List<VoxelShape> voxels = new java.util.ArrayList<>();
++        final List<net.minecraft.world.phys.shapes.VoxelShape> voxels = new java.util.ArrayList<>();
 +
 +        ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getCollisionsForBlocksOrWorldBorder(
 +            (Level)(Object)this, entity, collectionVolume, voxels, aabbs,
@@ -529,7 +449,7 @@
 +            aabbs.removeIf((final AABB aabb) -> {
 +                return !worldBorder.isWithinBounds(aabb);
 +            });
-+            voxels.removeIf((final VoxelShape shape) -> {
++            voxels.removeIf((final net.minecraft.world.phys.shapes.VoxelShape shape) -> {
 +                return !worldBorder.isWithinBounds(shape.bounds());
 +            });
 +        }
@@ -540,19 +460,19 @@
 +        }
 +
 +        // expand AABBs
-+        final VoxelShape first = aabbs.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.empty() : inflateAABBToVoxel(aabbs.get(0), expandByX, expandByY, expandByZ);
-+        final VoxelShape[] rest = new VoxelShape[Math.max(0, aabbs.size() - 1)];
++        final net.minecraft.world.phys.shapes.VoxelShape first = aabbs.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.empty() : inflateAABBToVoxel(aabbs.get(0), expandByX, expandByY, expandByZ);
++        final net.minecraft.world.phys.shapes.VoxelShape[] rest = new net.minecraft.world.phys.shapes.VoxelShape[Math.max(0, aabbs.size() - 1)];
 +
 +        for (int i = 1, len = aabbs.size(); i < len; ++i) {
 +            rest[i - 1] = inflateAABBToVoxel(aabbs.get(i), expandByX, expandByY, expandByZ);
 +        }
 +
 +        // use optimized implementation of ORing the shapes together
-+        final VoxelShape joined = net.minecraft.world.phys.shapes.Shapes.or(first, rest);
++        final net.minecraft.world.phys.shapes.VoxelShape joined = net.minecraft.world.phys.shapes.Shapes.or(first, rest);
 +
 +        // find free space
 +        // can use unoptimized join here (instead of join()), as closestPointTo uses toAabbs()
-+        final VoxelShape freeSpace = net.minecraft.world.phys.shapes.Shapes.joinUnoptimized(boundsShape, joined, net.minecraft.world.phys.shapes.BooleanOp.ONLY_FIRST);
++        final net.minecraft.world.phys.shapes.VoxelShape freeSpace = net.minecraft.world.phys.shapes.Shapes.joinUnoptimized(boundsShape, joined, net.minecraft.world.phys.shapes.BooleanOp.ONLY_FIRST);
 +
 +        return freeSpace.closestPointTo(fromPosition);
 +    }
@@ -584,7 +504,7 @@
 +        int lastChunkX = Integer.MIN_VALUE;
 +        int lastChunkZ = Integer.MIN_VALUE;
 +
-+        final ChunkSource chunkSource = this.getChunkSource();
++        final net.minecraft.world.level.chunk.ChunkSource chunkSource = this.getChunkSource();
 +
 +        for (int currZ = minBlockZ; currZ <= maxBlockZ; ++currZ) {
 +            pos.setZ(currZ);
@@ -623,7 +543,7 @@
 +                        continue;
 +                    }
 +
-+                    VoxelShape blockCollision = ((ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState)state).moonrise$getConstantCollisionShape();
++                    net.minecraft.world.phys.shapes.VoxelShape blockCollision = ((ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState)state).moonrise$getConstantCollisionShape();
 +
 +                    if ((edgeCount != 1 || state.hasLargeCollisionShape()) && (edgeCount != 2 || state.getBlock() == Blocks.MOVING_PISTON)) {
 +                        if (collisionContext == null) {
@@ -684,7 +604,7 @@
 +    }
 +    // Paper end - optimise random ticking
 +
-+    public static void craftWorldData(World.Environment env, ChunkGenerator cg, BiomeProvider bp) {
++    public static void craftWorldData(org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator cg, org.bukkit.generator.BiomeProvider bp) {
 +        environment = env;
 +        biomeProvider = bp;
 +        generator = cg;
@@ -697,8 +617,8 @@
          this.profiler = p_270692_;
          this.levelData = p_270739_;
 +        // CraftBukkit Ticks things
-+        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
-+            if (CraftSpawnCategory.isValidForLimits(spawnCategory) && getCraftServer() != null) {
++        for (org.bukkit.entity.SpawnCategory spawnCategory : org.bukkit.entity.SpawnCategory.values()) {
++            if (org.bukkit.craftbukkit.util.CraftSpawnCategory.isValidForLimits(spawnCategory) && getCraftServer() != null) {
 +                this.ticksPerSpawnCategory.put(spawnCategory, (long) this.getCraftServer().getTicksPerSpawns(spawnCategory));
 +            }
 +        }
@@ -725,32 +645,32 @@
          this.registryAccess = p_270200_;
          this.damageSources = new DamageSources(p_270200_);
 +        // CraftBukkit start
-+        this.getWorldBorder().world = (ServerLevel) this;
++        this.getWorldBorder().world = (net.minecraft.server.level.ServerLevel) this;
 +        // From PlayerList.setPlayerFileData
-+        this.getWorldBorder().addListener(new BorderChangeListener() {
++        this.getWorldBorder().addListener(new net.minecraft.world.level.border.BorderChangeListener() {
 +            @Override
 +            public void onBorderSizeSet(WorldBorder border, double size) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderSizePacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderSizePacket(border), border.world);
 +            }
 +
 +            @Override
 +            public void onBorderSizeLerping(WorldBorder border, double fromSize, double toSize, long time) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderLerpSizePacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderLerpSizePacket(border), border.world);
 +            }
 +
 +            @Override
 +            public void onBorderCenterSet(WorldBorder border, double centerX, double centerZ) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderCenterPacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderCenterPacket(border), border.world);
 +            }
 +
 +            @Override
 +            public void onBorderSetWarningTime(WorldBorder border, int warningTime) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderWarningDelayPacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderWarningDelayPacket(border), border.world);
 +            }
 +
 +            @Override
 +            public void onBorderSetWarningBlocks(WorldBorder border, int warningBlockDistance) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderWarningDistancePacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePacket(border), border.world);
 +            }
 +
 +            @Override
@@ -795,7 +715,7 @@
      @Nullable
      @Override
 +    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
-+        return ((ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
++        return ((net.minecraft.server.level.ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
 +    }
 +
 +    @Override
@@ -803,7 +723,7 @@
 +    public final BlockState getBlockStateIfLoaded(BlockPos pos) {
 +        // CraftBukkit start - tree generation
 +        if (this.captureTreeGeneration) {
-+            CraftBlockState previous = this.capturedBlockStates.get(pos);
++            org.bukkit.craftbukkit.block.CraftBlockState previous = this.capturedBlockStates.get(pos);
 +            if (previous != null) {
 +                return previous.getHandle();
 +            }
@@ -823,10 +743,10 @@
 +    }
 +
 +    public @Nullable LevelChunk getChunkIfLoaded(int x, int z) { // Overridden in WorldServer for ABI compat which has final
-+        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(x, z);
++        return ((net.minecraft.server.level.ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(x, z);
 +    }
 +    public final @Nullable LevelChunk getChunkIfLoaded(BlockPos blockposition) {
-+        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return ((net.minecraft.server.level.ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +    }
 +
 +    //  reduces need to do isLoaded before getType
@@ -859,8 +779,8 @@
      public boolean setBlock(BlockPos p_46605_, BlockState p_46606_, int p_46607_, int p_46608_) {
 +        {
 +            if (com.mohistmc.youer.api.event.block.SetBlockEvent.getHandlerList().getRegisteredListeners().length > 0 && this.getWorld() != null) {
-+                com.mohistmc.youer.api.event.block.SetBlockEvent event = new com.mohistmc.youer.api.event.block.SetBlockEvent(new Location(this.getWorld(), p_46605_.getX(), p_46605_.getY(), p_46605_.getZ()));
-+                Bukkit.getPluginManager().callEvent(event);
++                com.mohistmc.youer.api.event.block.SetBlockEvent event = new com.mohistmc.youer.api.event.block.SetBlockEvent(new org.bukkit.Location(this.getWorld(), p_46605_.getX(), p_46605_.getY(), p_46605_.getZ()));
++                org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +                if (event.isCancelled()) {
 +                    org.bukkit.block.Block block = event.getLocation().getBlock();
 +                    block.getState().update();
@@ -870,9 +790,9 @@
 +        }
 +        // CraftBukkit start - tree generation
 +        if (this.captureTreeGeneration) {
-+            CraftBlockState blockstate = capturedBlockStates.get(p_46605_);
++            org.bukkit.craftbukkit.block.CraftBlockState blockstate = capturedBlockStates.get(p_46605_);
 +            if (blockstate == null) {
-+                blockstate = CapturedBlockState.getTreeBlockState(this, p_46605_, p_46607_);
++                blockstate = org.bukkit.craftbukkit.block.CapturedBlockState.getTreeBlockState(this, p_46605_, p_46607_);
 +                this.capturedBlockStates.put(p_46605_.immutable(), blockstate);
 +            }
 +            blockstate.setData(p_46606_);
@@ -891,16 +811,16 @@
 -            BlockState blockstate = levelchunk.setBlockState(p_46605_, p_46606_, (p_46607_ & 64) != 0);
 +
 +            p_46605_ = p_46605_.immutable(); // Forge - prevent mutable BlockPos leaks
-+            BlockSnapshot blockSnapshot = null;
++            net.neoforged.neoforge.common.util.BlockSnapshot blockSnapshot = null;
 +            if (this.captureBlockSnapshots && !this.isClientSide) {
-+                 blockSnapshot = BlockSnapshot.create(this.dimension, this, p_46605_, p_46607_);
++                 blockSnapshot = net.neoforged.neoforge.common.util.BlockSnapshot.create(this.dimension, this, p_46605_, p_46607_);
 +                 this.capturedBlockSnapshots.add(blockSnapshot);
 +            }
 +
 +            // CraftBukkit start - capture blockstates
 +            boolean captured = false;
 +            if (this.captureBlockStates && !this.capturedBlockStates.containsKey(p_46605_)) {
-+                CraftBlockState blockstate = (CraftBlockState) world.getBlockAt(p_46605_.getX(), p_46605_.getY(), p_46605_.getZ()).getState(); // Paper - use CB getState to get a suitable snapshot
++                org.bukkit.craftbukkit.block.CraftBlockState blockstate = (org.bukkit.craftbukkit.block.CraftBlockState) world.getBlockAt(p_46605_.getX(), p_46605_.getY(), p_46605_.getZ()).getState(); // Paper - use CB getState to get a suitable snapshot
 +                blockstate.setFlag(p_46607_); // Paper - set flag
 +                this.capturedBlockStates.put(p_46605_.immutable(), blockstate);
 +                captured = true;
@@ -988,9 +908,9 @@
 +
 +                // CraftBukkit start
 +                iblockdata1.updateIndirectNeighbourShapes(this, blockposition, k, j - 1); // Don't call an event for the old block to limit event spam
-+                CraftWorld world = ((ServerLevel) this).getWorld();
-+                if (world != null && ((ServerLevel)this).hasPhysicsEvent) { // Paper - BlockPhysicsEvent
-+                    BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
++                org.bukkit.craftbukkit.CraftWorld world = ((net.minecraft.server.level.ServerLevel) this).getWorld();
++                if (world != null && ((net.minecraft.server.level.ServerLevel)this).hasPhysicsEvent) { // Paper - BlockPhysicsEvent
++                    org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(iblockdata));
 +                    this.getCraftServer().getPluginManager().callEvent(event);
 +
 +                    if (event.isCancelled()) {
@@ -1024,13 +944,13 @@
 +            // it doesn't imply destruction of a block that plays a sound effect / drops an item.
 +            boolean playEffect = true;
 +            BlockState effectType = blockstate;
-+            int xp = blockstate.getBlock().getExpDrop(blockstate, (ServerLevel) this, p_46626_, ItemStack.EMPTY, true);
++            int xp = blockstate.getBlock().getExpDrop(blockstate, (net.minecraft.server.level.ServerLevel) this, p_46626_, ItemStack.EMPTY, true);
 +            if (com.destroystokyo.paper.event.entity.BlockDestroyEvent.getHandlerList().getRegisteredListeners().length > 0) {
 +                com.destroystokyo.paper.event.entity.BlockDestroyEvent event = new com.destroystokyo.paper.event.entity.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, p_46626_), fluidstate.createLegacyBlock().createCraftBlockData(), effectType.createCraftBlockData(), xp, p_46627_);
 +                if (!event.callEvent()) {
 +                    return false;
 +                }
-+                effectType = ((CraftBlockData) event.getEffectBlock()).getState();
++                effectType = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getEffectBlock()).getState();
 +                playEffect = event.playEffect();
 +                p_46627_ = event.willDrop();
 +                xp = event.getExpToDrop();
@@ -1045,7 +965,7 @@
      }
  
      public void updateNeighborsAt(BlockPos p_46673_, Block p_46674_) {
-+        EventHooks.onNeighborNotify(this, p_46673_, this.getBlockState(p_46673_), java.util.EnumSet.allOf(Direction.class), false).isCanceled();
++        net.neoforged.neoforge.event.EventHooks.onNeighborNotify(this, p_46673_, this.getBlockState(p_46673_), java.util.EnumSet.allOf(Direction.class), false).isCanceled();
      }
  
      public void updateNeighborsAtExceptFromFacing(BlockPos p_46591_, Block p_46592_, Direction p_46593_) {
@@ -1079,7 +999,7 @@
 -        }
 +        // CraftBukkit start - tree generation
 +        if (captureTreeGeneration) {
-+            CraftBlockState previous = capturedBlockStates.get(p_46732_);
++            org.bukkit.craftbukkit.block.CraftBlockState previous = capturedBlockStates.get(p_46732_);
 +            if (previous != null) {
 +                return previous.getHandle();
 +            }
@@ -1202,7 +1122,7 @@
 +
      public <T extends Entity> void guardEntityTick(Consumer<T> p_46654_, T p_46655_) {
          try {
-+            TimeTracker.ENTITY_UPDATE.trackStart(p_46655_);
++            net.neoforged.neoforge.server.timings.TimeTracker.ENTITY_UPDATE.trackStart(p_46655_);
              p_46654_.accept(p_46655_);
          } catch (Throwable throwable) {
 -            CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking entity");
@@ -1219,7 +1139,7 @@
 +            p_46655_.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
 +            // Paper end - Prevent block entity and entity crashes
 +        } finally {
-+            TimeTracker.ENTITY_UPDATE.trackEnd(p_46655_);
++            net.neoforged.neoforge.server.timings.TimeTracker.ENTITY_UPDATE.trackEnd(p_46655_);
 +        }
 +        this.moonrise$midTickTasks(); // Paper - rewrite chunk system // Pufferfish - diff on change ServerLevel.tick
 +    }
@@ -1417,7 +1337,7 @@
              case NONE -> Explosion.BlockInteraction.KEEP;
              case BLOCK -> this.getDestroyType(GameRules.RULE_BLOCK_EXPLOSION_DROP_DECAY);
 -            case MOB -> this.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)
-+            case MOB -> EventHooks.canEntityGrief(this, entity)
++            case MOB -> net.neoforged.neoforge.event.EventHooks.canEntityGrief(this, entity)
              ? this.getDestroyType(GameRules.RULE_MOB_EXPLOSION_DROP_DECAY)
              : Explosion.BlockInteraction.KEEP;
              case TNT -> this.getDestroyType(GameRules.RULE_TNT_EXPLOSION_DROP_DECAY);
@@ -1451,7 +1371,7 @@
 +            soundEvent
          );
 +        if (configurator != null) configurator.accept(explosion); // Paper - Allow explosions to damage source
-+        if (EventHooks.onExplosionStart(this, explosion)) return explosion; // Neo
++        if (net.neoforged.neoforge.event.EventHooks.onExplosionStart(this, explosion)) return explosion; // Neo
          explosion.explode();
 -        explosion.finalizeExplosion(p_312145_);
 +        explosion.finalizeExplosion(particles);
@@ -1626,7 +1546,7 @@
 +    }
 +
 +    public org.bukkit.entity.Entity[] getChunkEntities(int chunkX, int chunkZ) {
-+        ca.spottedleaf.moonrise.patches.chunk_system.level.entity.ChunkEntitySlices slices = ((ServerLevel)this).moonrise$getEntityLookup().getChunk(chunkX, chunkZ);
++        ca.spottedleaf.moonrise.patches.chunk_system.level.entity.ChunkEntitySlices slices = ((net.minecraft.server.level.ServerLevel)this).moonrise$getEntityLookup().getChunk(chunkX, chunkZ);
 +        if (slices == null) {
 +            return new org.bukkit.entity.Entity[0];
 +        }
@@ -1704,7 +1624,7 @@
 +    }
 +    // Paper start - respect global sound events gamerule
 +    public List<net.minecraft.server.level.ServerPlayer> getPlayersForGlobalSoundGamerule() {
-+        return this.getGameRules().getBoolean(GameRules.RULE_GLOBAL_SOUND_EVENTS) ? ((ServerLevel) this).getServer().getPlayerList().players : ((ServerLevel) this).players();
++        return this.getGameRules().getBoolean(GameRules.RULE_GLOBAL_SOUND_EVENTS) ? ((net.minecraft.server.level.ServerLevel) this).getServer().getPlayerList().players : ((net.minecraft.server.level.ServerLevel) this).players();
 +    }
 +
 +    public double getGlobalSoundRangeSquared(java.util.function.Function<org.spigotmc.SpigotWorldConfig, Integer> rangeFunction) {
@@ -1713,7 +1633,7 @@
 +    }
 +    // Paper end - respect global sound events gamerule
 +    // Paper start - notify observers even if grow failed
-+    public void checkCapturedTreeStateForObserverNotify(final BlockPos pos, final CraftBlockState craftBlockState) {
++    public void checkCapturedTreeStateForObserverNotify(final BlockPos pos, final org.bukkit.craftbukkit.block.CraftBlockState craftBlockState) {
 +        // notify observers if the block state is the same and the Y level equals the original y level (for mega trees)
 +        // blocks at the same Y level with the same state can be assumed to be saplings which trigger observers regardless of if the
 +        // tree grew or not
@@ -1744,10 +1664,10 @@
 +
 +    // Neo: Variable day time code
 +
-+    @ApiStatus.Internal
++    @org.jetbrains.annotations.ApiStatus.Internal
 +    public abstract void setDayTimeFraction(float dayTimeFraction);
 +
-+    @ApiStatus.Internal
++    @org.jetbrains.annotations.ApiStatus.Internal
 +    public abstract float getDayTimeFraction();
 +
 +    /**
@@ -1759,12 +1679,12 @@
 +    /**
 +     * DO NOT CALL.
 +     * <p>
-+     * Use {@link ServerLevel#setDayTimePerTick(float)} instead.
++     * Use {@link net.minecraft.server.level.ServerLevel#setDayTimePerTick(float)} instead.
 +     */
 +    public abstract void setDayTimePerTick(float dayTimePerTick);
 +
 +    // advances the fractional daytime, returns the integer part of it
-+    @ApiStatus.Internal
++    @org.jetbrains.annotations.ApiStatus.Internal
 +    protected long advanceDaytime() {
 +        if (getDayTimePerTick() < 0) {
 +            return 1L; // avoid doing math (and rounding errors) if no speed has been set

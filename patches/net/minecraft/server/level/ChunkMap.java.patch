@@ -1,96 +1,5 @@
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -1,42 +_,38 @@
- package net.minecraft.server.level;
- 
-+import com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent;
- import com.google.common.collect.ImmutableList;
- import com.google.common.collect.Iterables;
- import com.google.common.collect.Lists;
--import com.google.common.collect.Queues;
--import com.google.common.collect.Sets;
- import com.google.common.collect.ImmutableList.Builder;
- import com.mojang.datafixers.DataFixer;
--import com.mojang.datafixers.util.Pair;
- import com.mojang.logging.LogUtils;
-+import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
- import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
- import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
- import it.unimi.dsi.fastutil.longs.Long2ByteMap;
- import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
- import it.unimi.dsi.fastutil.longs.Long2LongMap;
- import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
--import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
--import it.unimi.dsi.fastutil.longs.LongIterator;
- import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
- import it.unimi.dsi.fastutil.longs.LongSet;
--import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
--import it.unimi.dsi.fastutil.objects.ObjectIterator;
-+
- import java.io.IOException;
- import java.io.Writer;
- import java.nio.file.Path;
- import java.util.ArrayList;
- import java.util.HashMap;
- import java.util.List;
--import java.util.Locale;
- import java.util.Map;
- import java.util.Objects;
- import java.util.Optional;
--import java.util.Queue;
- import java.util.Set;
- import java.util.concurrent.CancellationException;
- import java.util.concurrent.CompletableFuture;
- import java.util.concurrent.CompletionException;
-+import java.util.concurrent.ConcurrentLinkedQueue;
- import java.util.concurrent.Executor;
-+import java.util.concurrent.atomic.AtomicBoolean;
- import java.util.concurrent.atomic.AtomicInteger;
- import java.util.function.BooleanSupplier;
- import java.util.function.Consumer;
-@@ -55,7 +_,6 @@
- import net.minecraft.nbt.NbtException;
- import net.minecraft.network.protocol.Packet;
- import net.minecraft.network.protocol.game.ClientboundChunksBiomesPacket;
--import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
- import net.minecraft.server.level.progress.ChunkProgressListener;
- import net.minecraft.server.network.ServerPlayerConnection;
- import net.minecraft.util.CsvOutput;
-@@ -68,13 +_,11 @@
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.EntityType;
- import net.minecraft.world.entity.ai.village.poi.PoiManager;
--import net.minecraft.world.entity.boss.EnderDragonPart;
- import net.minecraft.world.level.ChunkPos;
- import net.minecraft.world.level.GameRules;
- import net.minecraft.world.level.chunk.ChunkAccess;
- import net.minecraft.world.level.chunk.ChunkGenerator;
- import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
--import net.minecraft.world.level.chunk.ImposterProtoChunk;
- import net.minecraft.world.level.chunk.LevelChunk;
- import net.minecraft.world.level.chunk.LightChunkGetter;
- import net.minecraft.world.level.chunk.ProtoChunk;
-@@ -83,19 +_,17 @@
- import net.minecraft.world.level.chunk.status.ChunkStep;
- import net.minecraft.world.level.chunk.status.ChunkType;
- import net.minecraft.world.level.chunk.status.WorldGenContext;
--import net.minecraft.world.level.chunk.storage.ChunkSerializer;
- import net.minecraft.world.level.chunk.storage.ChunkStorage;
- import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
- import net.minecraft.world.level.entity.ChunkStatusUpdateListener;
- import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
- import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
- import net.minecraft.world.level.levelgen.RandomState;
--import net.minecraft.world.level.levelgen.structure.StructureStart;
- import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
- import net.minecraft.world.level.storage.DimensionDataStorage;
- import net.minecraft.world.level.storage.LevelStorageSource;
- import net.minecraft.world.phys.Vec3;
--import org.apache.commons.lang3.mutable.MutableBoolean;
-+import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
- import org.slf4j.Logger;
- 
- public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider, GeneratingChunkMap {
 @@ -113,34 +_,57 @@
      public static final int MIN_VIEW_DISTANCE = 2;
      public static final int MAX_VIEW_DISTANCE = 32;
@@ -122,7 +31,7 @@
      private final String storageName;
      private final PlayerMap playerMap = new PlayerMap();
 -    public final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap = new Int2ObjectOpenHashMap<>();
-+    public final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap = new Int2ObjectLinkedOpenHashMap<>();
++    public final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap = new it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap<>();
      private final Long2ByteMap chunkTypeCache = new Long2ByteOpenHashMap();
      private final Long2LongMap chunkSaveCooldowns = new Long2LongOpenHashMap();
 -    private final Queue<Runnable> unloadQueue = Queues.newConcurrentLinkedQueue();
@@ -135,7 +44,7 @@
 +    public final CallbackExecutor callbackExecutor = new CallbackExecutor();
 +    public static final class CallbackExecutor implements java.util.concurrent.Executor, Runnable {
 +
-+        private final java.util.Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
++        private final java.util.Queue<Runnable> queue = new java.util.concurrent.ConcurrentLinkedQueue<>();
 +
 +        @Override
 +        public void execute(Runnable runnable) {
@@ -168,7 +77,7 @@
 +
 +        // CraftBukkit start - SPIGOT-7051: It's a rigged game! Use delegate for random state creation, otherwise it is not so random.
 +        ChunkGenerator randomGenerator = p_214843_;
-+        if (randomGenerator instanceof CustomChunkGenerator customChunkGenerator) {
++        if (randomGenerator instanceof org.bukkit.craftbukkit.generator.CustomChunkGenerator customChunkGenerator) {
 +            randomGenerator = customChunkGenerator.getDelegate();
 +        }
 +        if (randomGenerator instanceof NoiseBasedChunkGenerator noisebasedchunkgenerator) {
@@ -992,7 +901,7 @@
              for (ServerPlayer serverplayer : this.playerMap.getAllPlayers()) {
 -                if (this.playerIsCloseEnoughForSpawning(serverplayer, p_183880_)) {
 +                // Paper start - PlayerNaturallySpawnCreaturesEvent
-+                PlayerNaturallySpawnCreaturesEvent event;
++                com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event;
 +                blockRange = 16384.0D;
 +                if (reducedRange) {
 +                    event = serverplayer.playerNaturallySpawnedEvent;
@@ -1489,7 +1398,7 @@
 +    }
 +
 +    public void setChunkGenerator(ChunkGenerator generator) {
-+        if (generator instanceof CustomChunkGenerator custom) {
++        if (generator instanceof org.bukkit.craftbukkit.generator.CustomChunkGenerator custom) {
 +            generator = custom.getDelegate();
 +        }
 +        if (generator instanceof NoiseBasedChunkGenerator noisebasedchunkgenerator) {

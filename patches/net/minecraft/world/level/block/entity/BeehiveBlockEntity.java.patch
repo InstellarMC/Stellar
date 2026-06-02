@@ -1,15 +1,5 @@
 --- a/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
-@@ -36,8 +_,8 @@
- import net.minecraft.world.level.block.BeehiveBlock;
- import net.minecraft.world.level.block.CampfireBlock;
- import net.minecraft.world.level.block.FireBlock;
--import net.minecraft.world.level.block.state.BlockBehaviour;
- import net.minecraft.world.level.block.state.BlockState;
-+import net.minecraft.world.level.block.state.BlockBehaviour;
- import net.minecraft.world.level.gameevent.GameEvent;
- import org.slf4j.Logger;
- 
 @@ -81,9 +_,10 @@
      private static final int MIN_TICKS_BEFORE_REENTERING_HIVE = 400;
      private static final int MIN_OCCUPATION_TICKS_NECTAR = 2400;
