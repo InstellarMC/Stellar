@@ -30,7 +30,7 @@
      private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
 -    static final Logger LOGGER = LogUtils.getLogger();
 +    public static final Logger LOGGER = LogUtils.getLogger();
-+    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setThreadFactory(dev.instellar.stellar.configuration.GlobalConfiguration.get().performance.useVT4UserAuthentication ? Thread.ofVirtual().factory() : java.util.concurrent.Executors.defaultThreadFactory()).setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads // Stellar - Virtual Thread for user authenticator
++    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("User Authenticator #", 0).uncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).factory()); // Paper - Virtual authenticator threads
      private static final int MAX_TICKS_BEFORE_LOGIN = 600;
      private final byte[] challenge;
 -    final MinecraftServer server;
@@ -149,7 +149,7 @@
 +                }
 +                // Paper end - Add Velocity IP Forwarding Support
 +                // CraftBukkit start
-+                // Paper start - Cache authenticator threads
++                // Paper start - Virtual authenticator threads
 +                authenticatorPool.execute(() -> {
 +                    try {
 +                        GameProfile gameprofile = createOfflineProfile(ServerLoginPacketListenerImpl.this.requestedUsername); // Spigot
@@ -162,7 +162,7 @@
 +                        ServerLoginPacketListenerImpl.this.server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.requestedUsername, ex);
 +                    }
 +                });
-+                // Paper end - Cache authenticator threads
++                // Paper end - Virtual authenticator threads
 +                // CraftBukkit end
              }
          }
@@ -226,7 +226,7 @@
  
 -        Thread thread = new Thread("User Authenticator #" + UNIQUE_THREAD_ID.incrementAndGet()) {
 -            @Override
-+        // Paper start - Cache authenticator threads
++        // Paper start - Virtual authenticator threads
 +        authenticatorPool.execute(new Runnable() {
              public void run() {
                  String s1 = Objects.requireNonNull(ServerLoginPacketListenerImpl.this.requestedUsername, "Player name not initialized");
@@ -281,7 +281,7 @@
 -        thread.start();
 -    }
 +        });
-+        // Paper end - Cache authenticator threads
++        // Paper end - Virtual authenticator threads
 +    }
 +
 +    // CraftBukkit start

@@ -16,8 +16,9 @@ public class PaperConfigurationTask implements ConfigurationTask {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private static final ExecutorService CONFIGURATION_POOL = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Configuration Thread #%d")
-            .setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build());
+    private static final ExecutorService CONFIGURATION_POOL = Executors.newThreadPerTaskExecutor(
+            Thread.ofVirtual().name("Configuration Thread #", 0).uncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).factory()
+    );
 
     public static final ConfigurationTask.Type TYPE = new ConfigurationTask.Type("paper_event_handling");
 
