@@ -66,7 +66,7 @@
 +        }
 +
 +        // CraftBukkit start
-+        org.bukkit.entity.Player player = ((net.minecraft.server.level.net.minecraft.server.level.ServerPlayer) p_277396_).getBukkitEntity();
++        org.bukkit.entity.Player player = ((net.minecraft.server.level.ServerPlayer) p_277396_).getBukkitEntity();
 +        List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>(); // Paper - adventure
 +
 +        for (int i = 0; i < p_277744_.size(); ++i) {
