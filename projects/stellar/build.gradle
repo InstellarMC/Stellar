@@ -392,7 +392,7 @@ dependencies {
         exclude(module: "slf4j-api")
     }
     libraries("com.h2database:h2:2.3.232")
-    libraries("org.mariadb.jdbc:mariadb-java-client:3.4.1")
+    // libraries("org.mariadb.jdbc:mariadb-java-client:3.4.1")
 
     libraries("com.github.luben:zstd-jni:1.5.7-4")
 
