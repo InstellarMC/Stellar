@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/BeeNestDestroyedTrigger.java
++++ b/net/minecraft/advancements/critereon/BeeNestDestroyedTrigger.java
+@@ -20,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_146652_, BlockState p_146653_, ItemStack p_146654_, int p_146655_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_146652_, p_146660_ -> p_146660_.matches(p_146653_, p_146654_, p_146655_));
+     }
+ 

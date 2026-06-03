@@ -1,21 +1,5 @@
 --- a/net/minecraft/server/level/ServerEntity.java
 +++ b/net/minecraft/server/level/ServerEntity.java
-@@ -6,6 +_,7 @@
- import java.util.ArrayList;
- import java.util.Collection;
- import java.util.Collections;
-+import java.util.HashSet;
- import java.util.List;
- import java.util.Set;
- import java.util.function.Consumer;
-@@ -28,6 +_,7 @@
- import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
- import net.minecraft.network.protocol.game.VecDeltaCodec;
- import net.minecraft.network.syncher.SynchedEntityData;
-+import net.minecraft.server.network.ServerPlayerConnection;
- import net.minecraft.util.Mth;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.EquipmentSlot;
 @@ -62,13 +_,18 @@
      private Vec3 lastSentMovement;
      private int tickCount;
@@ -27,11 +11,11 @@
      @Nullable
      private List<SynchedEntityData.DataValue<?>> trackedDataValues;
 +    // CraftBukkit start
-+    public Set<ServerPlayerConnection> trackedPlayers; // Purpur - private -> public
++    public Set<net.minecraft.server.network.ServerPlayerConnection> trackedPlayers; // Purpur - private -> public
 +    public static boolean skipSqrWhenNoDeltaChanges = false; // Stellar - SparklyPaper port; Skip distanceToSqr if the delta movement hasn't changed
  
 -    public ServerEntity(ServerLevel p_8528_, Entity p_8529_, int p_8530_, boolean p_8531_, Consumer<Packet<?>> p_8532_) {
-+    public ServerEntity(ServerLevel p_8528_, Entity p_8529_, int p_8530_, boolean p_8531_, Consumer<Packet<?>> p_8532_, Set<ServerPlayerConnection> trackedPlayers) {
++    public ServerEntity(ServerLevel p_8528_, Entity p_8529_, int p_8530_, boolean p_8531_, Consumer<Packet<?>> p_8532_, Set<net.minecraft.server.network.ServerPlayerConnection> trackedPlayers) {
 +        this.trackedPlayers = trackedPlayers;
 +        // CraftBukkit end
          this.level = p_8528_;

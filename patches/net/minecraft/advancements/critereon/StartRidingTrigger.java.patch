@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/StartRidingTrigger.java
++++ b/net/minecraft/advancements/critereon/StartRidingTrigger.java
+@@ -15,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_160388_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_160388_, p_160394_ -> true);
+     }
+ 

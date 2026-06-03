@@ -1,15 +1,5 @@
 --- a/net/minecraft/CrashReport.java
 +++ b/net/minecraft/CrashReport.java
-@@ -15,8 +_,8 @@
- import java.util.concurrent.CompletionException;
- import javax.annotation.Nullable;
- import net.minecraft.util.MemoryReserve;
--import org.apache.commons.io.IOUtils;
- import org.apache.commons.lang3.ArrayUtils;
-+import org.bukkit.craftbukkit.CraftCrashReport;
- import org.slf4j.Logger;
- 
- public class CrashReport {
 @@ -30,10 +_,13 @@
      private boolean trackingStackTrace = true;
      private StackTraceElement[] uncategorizedStackTrace = new StackTraceElement[0];
@@ -20,7 +10,7 @@
 +        io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(p_127510_); // Paper
          this.title = p_127509_;
          this.exception = p_127510_;
-+        this.systemReport.setDetail("Stellar Information", new CraftCrashReport()); // CraftBukkit // Stellar - Rebrand
++        this.systemReport.setDetail("Stellar Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit // Stellar - Rebrand
      }
  
      public String getTitle() {

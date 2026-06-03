@@ -1,28 +1,5 @@
 --- a/net/minecraft/world/inventory/CraftingMenu.java
 +++ b/net/minecraft/world/inventory/CraftingMenu.java
-@@ -1,8 +_,8 @@
- package net.minecraft.world.inventory;
- 
-+import com.mohistmc.youer.plugins.ban.bans.BanItem;
- import java.util.Optional;
- import javax.annotation.Nullable;
--import net.minecraft.core.BlockPos;
- import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
- import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.world.Container;
-@@ -14,8 +_,12 @@
- import net.minecraft.world.item.crafting.CraftingRecipe;
- import net.minecraft.world.item.crafting.RecipeHolder;
- import net.minecraft.world.item.crafting.RecipeType;
-+import net.minecraft.world.item.crafting.RepairItemRecipe;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.Blocks;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
- 
- public class CraftingMenu extends RecipeBookMenu<CraftingInput, CraftingRecipe> {
-     public static final int RESULT_SLOT = 0;
 @@ -25,11 +_,24 @@
      private static final int INV_SLOT_END = 37;
      private static final int USE_ROW_SLOT_START = 37;
@@ -35,15 +12,15 @@
      private final Player player;
      private boolean placingRecipe;
 +    // CraftBukkit start
-+    private CraftInventoryView bukkitEntity = null;
++    private org.bukkit.craftbukkit.inventory.CraftInventoryView bukkitEntity = null;
 +    @Override
-+    public CraftInventoryView getBukkitView() {
++    public org.bukkit.craftbukkit.inventory.CraftInventoryView getBukkitView() {
 +        if (bukkitEntity != null) {
 +            return bukkitEntity;
 +        }
 +
-+        CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.craftSlots, this.resultSlots);
-+        bukkitEntity = new CraftInventoryView(this.player.getBukkitEntity(), inventory, this);
++        org.bukkit.craftbukkit.inventory.CraftInventoryCrafting inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryCrafting(this.craftSlots, this.resultSlots);
++        bukkitEntity = new org.bukkit.craftbukkit.inventory.CraftInventoryView(this.player.getBukkitEntity(), inventory, this);
 +        return bukkitEntity;
 +    }
 +    // CraftBukkit end
@@ -78,14 +55,14 @@
                      ItemStack itemstack1 = craftingrecipe.assemble(craftinginput, p_150548_.registryAccess());
 -                    if (itemstack1.isItemEnabled(p_150548_.enabledFeatures())) {
 -                        itemstack = itemstack1;
-+                    if (!BanItem.check(serverplayer, itemstack1)) {
++                    if (!com.mohistmc.youer.plugins.ban.bans.BanItem.check(serverplayer, itemstack1)) {
 +                        if (itemstack1.isItemEnabled(p_150548_.enabledFeatures())) {
 +                            itemstack = itemstack1;
 +                        }
                      }
                  }
              }
-+            itemstack = CraftEventFactory.callPreCraftEvent(p_150550_, p_150551_, itemstack, p_150547_.getBukkitView(), optional.map(RecipeHolder::value).orElse(null) instanceof RepairItemRecipe); // CraftBukkit
++            itemstack = org.bukkit.craftbukkit.event.CraftEventFactory.callPreCraftEvent(p_150550_, p_150551_, itemstack, p_150547_.getBukkitView(), optional.map(RecipeHolder::value).orElse(null) instanceof net.minecraft.world.item.crafting.RepairItemRecipe); // CraftBukkit
  
              p_150551_.setItem(0, itemstack);
              p_150547_.setRemoteSlot(0, itemstack);

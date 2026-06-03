@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/LevitationTrigger.java
++++ b/net/minecraft/advancements/critereon/LevitationTrigger.java
+@@ -16,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_49117_, Vec3 p_49118_, int p_49119_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_49117_, p_49124_ -> p_49124_.matches(p_49117_, p_49118_, p_49119_));
+     }
+ 

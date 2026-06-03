@@ -168,8 +168,8 @@ immaculate {
         }
 
         //Replace any FQN versions of javax.annotation.Nullable with the jetbrains variant
-        custom 'jetbrainsNullablePatches', { String fileContents ->
-            fileContents.replace('@javax.annotation.Nullable', '@org.jetbrains.annotations.Nullable')
-        }
+        // custom 'jetbrainsNullablePatches', { String fileContents ->
+        //     fileContents.replace('@javax.annotation.Nullable', '@org.jetbrains.annotations.Nullable')
+        // }
     }
 }

@@ -1,17 +1,5 @@
 --- a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -24,8 +_,11 @@
- import net.minecraft.network.PacketSendListener;
- import net.minecraft.network.TickablePacketListener;
- import net.minecraft.network.chat.Component;
-+import net.minecraft.network.protocol.Packet;
-+import net.minecraft.network.protocol.PacketUtils;
- import net.minecraft.network.protocol.configuration.ConfigurationProtocols;
- import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
-+import net.minecraft.network.protocol.login.ClientboundCustomQueryPacket;
- import net.minecraft.network.protocol.login.ClientboundGameProfilePacket;
- import net.minecraft.network.protocol.login.ClientboundHelloPacket;
- import net.minecraft.network.protocol.login.ClientboundLoginCompressionPacket;
 @@ -44,33 +_,73 @@
  import org.apache.commons.lang3.Validate;
  import org.slf4j.Logger;
@@ -30,7 +18,7 @@
 +    }
 +
 +    @Override
-+    public void sendPacket(Packet<?> packet) {
++    public void sendPacket(net.minecraft.network.protocol.Packet<?> packet) {
 +        this.connection.send(packet);
 +    }
 +
@@ -155,7 +143,7 @@
 +                    this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
 +                    net.minecraft.network.FriendlyByteBuf buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
 +                    buf.writeByte(com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
-+                    ClientboundCustomQueryPacket packet1 = new ClientboundCustomQueryPacket(this.velocityLoginMessageId, ClientboundCustomQueryPacket.readPayload(com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, buf));
++                    net.minecraft.network.protocol.login.ClientboundCustomQueryPacket packet1 = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(this.velocityLoginMessageId, net.minecraft.network.protocol.login.ClientboundCustomQueryPacket.readPayload(com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, buf));
 +                    this.connection.send(packet1);
 +                    return;
 +                }
@@ -399,7 +387,7 @@
  
      @Override
      public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket p_295661_) {
-+        PacketUtils.ensureRunningOnSameThread(p_295661_, this, this.server); // CraftBukkit
++        net.minecraft.network.protocol.PacketUtils.ensureRunningOnSameThread(p_295661_, this, this.server); // CraftBukkit
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet");
          this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
          CommonListenerCookie commonlistenercookie = CommonListenerCookie.createInitial(Objects.requireNonNull(this.authenticatedProfile), this.transferred);

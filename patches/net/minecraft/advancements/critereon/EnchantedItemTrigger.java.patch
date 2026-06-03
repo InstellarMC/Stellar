@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/EnchantedItemTrigger.java
++++ b/net/minecraft/advancements/critereon/EnchantedItemTrigger.java
+@@ -16,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_27669_, ItemStack p_27670_, int p_27671_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_27669_, p_27675_ -> p_27675_.matches(p_27670_, p_27671_));
+     }
+ 

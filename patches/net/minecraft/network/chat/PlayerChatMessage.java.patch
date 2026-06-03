@@ -9,7 +9,7 @@
 +        private AdventureView() {
 +        }
 +        @Override
-+        public @org.jetbrains.annotations.NotNull Instant timestamp() {
++        public /* @0org.jetbrains.annotations.NotNull */ Instant timestamp() { // Stellar - NotNull is always implied
 +            return PlayerChatMessage.this.timeStamp();
 +        }
 +        @Override
@@ -25,11 +25,11 @@
 +            return PlayerChatMessage.this.unsignedContent() == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(PlayerChatMessage.this.unsignedContent());
 +        }
 +        @Override
-+        public @org.jetbrains.annotations.NotNull String message() {
++        public /* @0org.jetbrains.annotations.NotNull */ String message() { // Stellar - NotNull is always implied
 +            return PlayerChatMessage.this.signedContent();
 +        }
 +        @Override
-+        public @org.jetbrains.annotations.NotNull net.kyori.adventure.identity.Identity identity() {
++        public /* @0org.jetbrains.annotations.NotNull */ net.kyori.adventure.identity.Identity identity() { // Stellar - NotNull is always implied
 +            return net.kyori.adventure.identity.Identity.identity(PlayerChatMessage.this.sender());
 +        }
 +        public PlayerChatMessage playerChatMessage() {

@@ -244,7 +244,7 @@
 +    public final BlockPos.MutableBlockPos cachedBlockPos = new BlockPos.MutableBlockPos(); // Pufferfish - reduce entity allocations
 +    public @Nullable Boolean immuneToFire = null; // Purpur - Fire immune API
 +
-+    public void setOrigin(@javax.annotation.Nonnull org.bukkit.Location location) {
++    public void setOrigin(/* @0javax.annotation.Nonnull */ org.bukkit.Location location) { // Stellar - Nonnull is always implied
 +        this.origin = location.toVector();
 +        this.originWorld = location.getWorld().getUID();
 +    }

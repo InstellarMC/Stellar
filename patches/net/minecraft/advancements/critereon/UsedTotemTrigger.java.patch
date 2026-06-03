@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/UsedTotemTrigger.java
++++ b/net/minecraft/advancements/critereon/UsedTotemTrigger.java
+@@ -17,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_74432_, ItemStack p_74433_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_74432_, p_74436_ -> p_74436_.matches(p_74433_));
+     }
+ 

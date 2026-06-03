@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/SlideDownBlockTrigger.java
++++ b/net/minecraft/advancements/critereon/SlideDownBlockTrigger.java
+@@ -20,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_66979_, BlockState p_66980_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_66979_, p_66986_ -> p_66986_.matches(p_66980_));
+     }
+ 

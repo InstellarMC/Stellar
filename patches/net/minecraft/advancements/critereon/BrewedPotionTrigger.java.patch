@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/BrewedPotionTrigger.java
++++ b/net/minecraft/advancements/critereon/BrewedPotionTrigger.java
+@@ -17,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_19121_, Holder<Potion> p_312693_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_19121_, p_311404_ -> p_311404_.matches(p_312693_));
+     }
+ 

@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/EntityHurtPlayerTrigger.java
++++ b/net/minecraft/advancements/critereon/EntityHurtPlayerTrigger.java
+@@ -16,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_35175_, DamageSource p_35176_, float p_35177_, float p_35178_, boolean p_35179_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_35175_, p_35186_ -> p_35186_.matches(p_35175_, p_35176_, p_35177_, p_35178_, p_35179_));
+     }
+ 

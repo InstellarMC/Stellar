@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/level/dimension/end/EndDragonFight.java
 +++ b/net/minecraft/world/level/dimension/end/EndDragonFight.java
-@@ -15,6 +_,7 @@
- import java.util.Optional;
- import java.util.Set;
- import java.util.UUID;
-+import java.util.concurrent.atomic.AtomicBoolean;
- import java.util.function.Predicate;
- import javax.annotation.Nullable;
- import net.minecraft.Util;
 @@ -68,18 +_,19 @@
      public static final int TIME_BETWEEN_PLAYER_SCANS = 20;
      private static final int ARENA_SIZE_CHUNKS = 8;
