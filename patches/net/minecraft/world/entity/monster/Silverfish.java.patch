@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/entity/monster/Silverfish.java
 +++ b/net/minecraft/world/entity/monster/Silverfish.java
-@@ -29,6 +_,7 @@
- import net.minecraft.world.level.block.Block;
- import net.minecraft.world.level.block.InfestedBlock;
- import net.minecraft.world.level.block.state.BlockState;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public class Silverfish extends Monster {
-     @Nullable
 @@ -70,7 +_,7 @@
      }
  
@@ -60,7 +52,7 @@
                  BlockState blockstate = levelaccessor.getBlockState(blockpos);
                  if (InfestedBlock.isCompatibleHostBlock(blockstate)) {
 +                    // CraftBukkit start
-+                    if (!CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockpos, InfestedBlock.infestedStateByHost(blockstate))) {
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockpos, InfestedBlock.infestedStateByHost(blockstate))) {
 +                        return;
 +                    }
 +                    // CraftBukkit end
@@ -78,7 +70,7 @@
 -                                if (level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
 +                                // CraftBukkit start
 +                                BlockState afterState = level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? blockstate.getFluidState().createLegacyBlock() : ((InfestedBlock) block).hostStateByInfested(level.getBlockState(blockpos1)); // Paper - fix wrong block state
-+                                if (!CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockpos1, afterState)) { // Paper - fix wrong block state
++                                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockpos1, afterState)) { // Paper - fix wrong block state
 +                                    continue;
 +                                }
 +                                // CraftBukkit end

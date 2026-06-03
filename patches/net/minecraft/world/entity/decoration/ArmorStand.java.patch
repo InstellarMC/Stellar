@@ -1,30 +1,5 @@
 --- a/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/net/minecraft/world/entity/decoration/ArmorStand.java
-@@ -1,5 +_,6 @@
- package net.minecraft.world.entity.decoration;
- 
-+import java.util.Collection;
- import java.util.function.Predicate;
- import javax.annotation.Nullable;
- import net.minecraft.core.BlockPos;
-@@ -30,6 +_,7 @@
- import net.minecraft.world.entity.Pose;
- import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
- import net.minecraft.world.entity.ai.attributes.Attributes;
-+import net.minecraft.world.entity.item.ItemEntity;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.entity.vehicle.AbstractMinecart;
- import net.minecraft.world.item.ItemStack;
-@@ -43,6 +_,9 @@
- import net.minecraft.world.level.material.PushReaction;
- import net.minecraft.world.phys.AABB;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.CraftEquipmentSlot;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
- 
- public class ArmorStand extends LivingEntity {
-     public static final int WOBBLE_TIME = 5;
 @@ -73,7 +_,7 @@
      public static final EntityDataAccessor<Rotations> DATA_LEFT_LEG_POSE = SynchedEntityData.defineId(ArmorStand.class, EntityDataSerializers.ROTATIONS);
      public static final EntityDataAccessor<Rotations> DATA_RIGHT_LEG_POSE = SynchedEntityData.defineId(ArmorStand.class, EntityDataSerializers.ROTATIONS);
@@ -157,14 +132,14 @@
 -        } else if (p_31589_.hasInfiniteMaterials() && itemstack.isEmpty() && !p_31591_.isEmpty()) {
 +            // CraftBukkit start
 +        } else {
-+            org.bukkit.inventory.ItemStack armorStandItem = CraftItemStack.asCraftMirror(itemstack);
-+            org.bukkit.inventory.ItemStack playerHeldItem = CraftItemStack.asCraftMirror(p_31591_);
++            org.bukkit.inventory.ItemStack armorStandItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack);
++            org.bukkit.inventory.ItemStack playerHeldItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(p_31591_);
 +
 +            org.bukkit.entity.Player player = (org.bukkit.entity.Player) p_31589_.getBukkitEntity();
 +            org.bukkit.entity.ArmorStand self = (org.bukkit.entity.ArmorStand) this.getBukkitEntity();
 +
-+            org.bukkit.inventory.EquipmentSlot slot = CraftEquipmentSlot.getSlot(p_31590_);
-+            org.bukkit.inventory.EquipmentSlot hand = CraftEquipmentSlot.getHand(p_31592_);
++            org.bukkit.inventory.EquipmentSlot slot = org.bukkit.craftbukkit.CraftEquipmentSlot.getSlot(p_31590_);
++            org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(p_31592_);
 +            org.bukkit.event.player.PlayerArmorStandManipulateEvent armorStandManipulateEvent = new org.bukkit.event.player.PlayerArmorStandManipulateEvent(player, self, playerHeldItem, armorStandItem, slot, hand);
 +            this.level().getCraftServer().getPluginManager().callEvent(armorStandManipulateEvent);
 +

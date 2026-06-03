@@ -1,23 +1,5 @@
 --- a/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
-@@ -3,13 +_,15 @@
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.Direction;
- import net.minecraft.server.level.ServerLevel;
--import net.minecraft.tags.FluidTags;
--import net.minecraft.world.entity.EntityType;
-+import net.minecraft.tags.FluidTags;import net.minecraft.world.entity.EntityType;
- import net.minecraft.world.entity.vehicle.Boat;
- import net.minecraft.world.entity.vehicle.ChestBoat;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.level.block.DispenserBlock;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.event.block.BlockDispenseEvent;
- 
- public class BoatDispenseItemBehavior extends DefaultDispenseItemBehavior {
-     private final DefaultDispenseItemBehavior defaultDispenseItemBehavior = new DefaultDispenseItemBehavior();
 @@ -36,22 +_,52 @@
          double d3 = vec3.z() + (double)direction.getStepZ() * d0;
          BlockPos blockpos = p_302460_.pos().relative(direction);
@@ -40,10 +22,10 @@
 +
 +        // CraftBukkit start
 +        ItemStack itemstack1 = p_123376_.copyWithCount(1); // Paper - shrink at end and single item in event
-+        org.bukkit.block.Block block = CraftBlock.at(serverlevel, p_302460_.pos());
-+        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
++        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(serverlevel, p_302460_.pos());
++        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack1);
 +
-+        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(d1, d2 + d4, d3));
++        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(d1, d2 + d4, d3));
 +        if (!DispenserBlock.eventFired) {
 +            serverlevel.getCraftServer().getPluginManager().callEvent(event);
 +        }
@@ -57,7 +39,7 @@
 +        if (!event.getItem().equals(craftItem)) {
 +            shrink = false; // Paper - shrink below
 +            // Chain to handler for new item
-+            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++            ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
 +            DispenseItemBehavior idispensebehavior = DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
 +            if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != this) {
 +                idispensebehavior.dispense(p_302460_, eventStack);

@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
 +++ b/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
-@@ -10,6 +_,7 @@
- import net.minecraft.world.level.block.state.BlockBehaviour;
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.level.lighting.LightEngine;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public abstract class SpreadingSnowyDirtBlock extends SnowyDirtBlock {
-     protected SpreadingSnowyDirtBlock(BlockBehaviour.Properties p_56817_) {
 @@ -41,17 +_,29 @@
  
      @Override
@@ -16,7 +8,7 @@
          if (!canBeGrass(p_222508_, p_222509_, p_222510_)) {
 +            if (!p_222509_.isAreaLoaded(p_222510_, 1)) return; // Forge: prevent loading unloaded chunks when checking neighbor's light and spreading
 +            // CraftBukkit start
-+            if (CraftEventFactory.callBlockFadeEvent(p_222509_, p_222510_, Blocks.DIRT.defaultBlockState()).isCancelled()) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(p_222509_, p_222510_, Blocks.DIRT.defaultBlockState()).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
@@ -32,7 +24,7 @@
 -                        p_222509_.setBlockAndUpdate(
 -                            blockpos, blockstate.setValue(SNOWY, Boolean.valueOf(p_222509_.getBlockState(blockpos.above()).is(Blocks.SNOW)))
 +                        // CraftBukkit start - Call BlockSpreadEvent
-+                        CraftEventFactory.handleBlockSpreadEvent(
++                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(
 +                            p_222509_,
 +                            p_222510_,
 +                            blockpos,

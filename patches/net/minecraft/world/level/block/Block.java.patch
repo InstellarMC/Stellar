@@ -1,25 +1,6 @@
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
-@@ -6,8 +_,10 @@
- import com.google.common.collect.ImmutableMap;
- import com.mojang.logging.LogUtils;
- import com.mojang.serialization.MapCodec;
--import it.unimi.dsi.fastutil.objects.Object2ByteLinkedOpenHashMap;
-+import io.papermc.paper.event.block.BlockBreakBlockEvent;import it.unimi.dsi.fastutil.objects.Object2ByteLinkedOpenHashMap;
- import java.util.List;
-+import java.util.concurrent.atomic.AtomicBoolean;
-+import java.util.concurrent.atomic.AtomicReference;
- import java.util.function.Function;
- import java.util.function.Supplier;
- import javax.annotation.Nullable;
-@@ -59,13 +_,13 @@
- import net.minecraft.world.phys.shapes.BooleanOp;
- import net.minecraft.world.phys.shapes.Shapes;
- import net.minecraft.world.phys.shapes.VoxelShape;
--import org.slf4j.Logger;
-+import net.neoforged.neoforge.common.NeoForge;import net.neoforged.neoforge.event.level.BlockDropsEvent;import org.bukkit.craftbukkit.block.CraftBlock;import org.bukkit.craftbukkit.inventory.CraftItemStack;import org.slf4j.Logger;
- 
- public class Block extends BlockBehaviour implements ItemLike, net.neoforged.neoforge.common.extensions.IBlockExtension {
+@@ -65,7 +_,7 @@
      public static final MapCodec<Block> CODEC = simpleCodec(Block::new);
      private static final Logger LOGGER = LogUtils.getLogger();
      private final Holder.Reference<Block> builtInRegistryHolder = BuiltInRegistries.BLOCK.createIntrusiveHolder(this);
@@ -62,12 +43,14 @@
              String s = this.getClass().getSimpleName();
              if (!s.endsWith("Block")) {
                  LOGGER.error("Block classes should end with Block and {} doesn't.", s);
-@@ -208,6 +_,8 @@
+@@ -208,6 +_,10 @@
          BlockState blockstate = p_152446_.getBlockState(p_152449_);
          if (p_152445_.skipRendering(blockstate, p_152448_)) {
              return false;
++        // Neo start
 +        } else if (blockstate.hidesNeighborFace(p_152446_, p_152449_, p_152445_, p_152448_.getOpposite()) && p_152445_.supportsExternalFaceHiding()) {
 +            return false;
++        // Neo end
          } else if (blockstate.canOcclude()) {
              Block.BlockStatePairKey block$blockstatepairkey = new Block.BlockStatePairKey(p_152445_, blockstate, p_152448_);
              Object2ByteLinkedOpenHashMap<Block.BlockStatePairKey> object2bytelinkedopenhashmap = OCCLUSION_CACHE.get();
@@ -84,23 +67,23 @@
  
      public static void dropResources(BlockState p_49951_, Level p_49952_, BlockPos p_49953_) {
          if (p_49952_ instanceof ServerLevel) {
-+            beginCapturingDrops();
++            beginCapturingDrops(); // Neo
              getDrops(p_49951_, (ServerLevel)p_49952_, p_49953_, null).forEach(p_152406_ -> popResource(p_49952_, p_49953_, p_152406_));
 -            p_49951_.spawnAfterBreak((ServerLevel)p_49952_, p_49953_, ItemStack.EMPTY, true);
-+            List<ItemEntity> captured = stopCapturingDrops();
-+            net.neoforged.neoforge.common.CommonHooks.handleBlockDrops((ServerLevel) p_49952_, p_49953_, p_49951_, null, captured, null, ItemStack.EMPTY);
++            List<ItemEntity> captured = stopCapturingDrops(); // Neo
++            net.neoforged.neoforge.common.CommonHooks.handleBlockDrops((ServerLevel) p_49952_, p_49953_, p_49951_, null, captured, null, ItemStack.EMPTY); // Neo
          }
      }
  
      public static void dropResources(BlockState p_49893_, LevelAccessor p_49894_, BlockPos p_49895_, @Nullable BlockEntity p_49896_) {
          if (p_49894_ instanceof ServerLevel) {
-+            beginCapturingDrops();
++            beginCapturingDrops(); // Neo
              getDrops(p_49893_, (ServerLevel)p_49894_, p_49895_, p_49896_).forEach(p_49859_ -> popResource((ServerLevel)p_49894_, p_49895_, p_49859_));
 -            p_49893_.spawnAfterBreak((ServerLevel)p_49894_, p_49895_, ItemStack.EMPTY, true);
 -        }
 -    }
-+            List<ItemEntity> captured = stopCapturingDrops();
-+            net.neoforged.neoforge.common.CommonHooks.handleBlockDrops((ServerLevel) p_49894_, p_49895_, p_49893_, p_49896_, captured, null, ItemStack.EMPTY);
++            List<ItemEntity> captured = stopCapturingDrops(); // Neo
++            net.neoforged.neoforge.common.CommonHooks.handleBlockDrops((ServerLevel) p_49894_, p_49895_, p_49893_, p_49896_, captured, null, ItemStack.EMPTY); // Neo
 +        }
 +    }
 +
@@ -111,23 +94,23 @@
 +            beginCapturingDrops();
 +            getDrops(p_49893_, serverLevel, p_49895_, p_49896_).forEach(p_49859_ -> popResource(serverLevel, p_49895_, p_49859_));
 +            List<ItemEntity> captured = stopCapturingDrops();
-+            BlockDropsEvent event = new BlockDropsEvent(serverLevel, p_49895_, p_49893_, p_49896_, captured, null, ItemStack.EMPTY);
-+            if (NeoForge.EVENT_BUS.post(event).isCanceled()) {
++            net.neoforged.neoforge.event.level.BlockDropsEvent event = new net.neoforged.neoforge.event.level.BlockDropsEvent(serverLevel, p_49895_, p_49893_, p_49896_, captured, null, ItemStack.EMPTY);
++            if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(event).isCanceled()) {
 +                return true;
 +            }
 +            // Stellar end - respect neo
 +
 +            List<org.bukkit.inventory.ItemStack> items = new java.util.ArrayList<>();
 +            for (ItemEntity itementity : captured) { // Stellar - respect neo
-+                items.add(CraftItemStack.asBukkitCopy(itementity.getItem()));
++                items.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itementity.getItem()));
 +            }
 +
 +            Block block = p_49893_.getBlock(); // Paper - Properly handle xp dropping
-+            BlockBreakBlockEvent eventCB = new BlockBreakBlockEvent(CraftBlock.at(p_49894_, p_49895_), CraftBlock.at(p_49894_, source), items);
++            io.papermc.paper.event.block.BlockBreakBlockEvent eventCB = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(p_49894_, p_49895_), org.bukkit.craftbukkit.block.CraftBlock.at(p_49894_, source), items);
 +            eventCB.setExpToDrop(event.getDroppedExperience()); // Paper - Properly handle xp dropping // Stellar - respect neo
 +            eventCB.callEvent();
 +            for (org.bukkit.inventory.ItemStack drop : eventCB.getDrops()) {
-+                popResource(serverLevel, p_49895_, CraftItemStack.asNMSCopy(drop));
++                popResource(serverLevel, p_49895_, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
 +            }
 +            p_49893_.spawnAfterBreak(serverLevel, p_49895_, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
 +            block.popExperience(serverLevel, p_49895_, eventCB.getExpToDrop()); // Paper - Properly handle xp dropping
@@ -137,8 +120,7 @@
 +    // Paper end - Add BlockBreakBlockEvent
  
      public static void dropResources(
--        BlockState p_49882_, Level p_49883_, BlockPos p_49884_, @Nullable BlockEntity p_49885_, @Nullable Entity p_49886_, ItemStack p_49887_
-+            BlockState p_49882_, Level p_49883_, BlockPos p_49884_, @Nullable BlockEntity p_49885_, @Nullable Entity p_49886_, ItemStack p_49887_
+         BlockState p_49882_, Level p_49883_, BlockPos p_49884_, @Nullable BlockEntity p_49885_, @Nullable Entity p_49886_, ItemStack p_49887_
      ) {
 -        if (p_49883_ instanceof ServerLevel) {
 -            getDrops(p_49882_, (ServerLevel)p_49883_, p_49884_, p_49885_, p_49886_, p_49887_).forEach(p_49944_ -> popResource(p_49883_, p_49884_, p_49944_));
@@ -274,7 +256,7 @@
      public boolean dropFromExplosion(Explosion p_49826_) {
          return true;
      }
-@@ -485,11 +_,52 @@
+@@ -485,11 +_,49 @@
          return this.stateDefinition.getPossibleStates().stream().collect(ImmutableMap.toImmutableMap(Function.identity(), p_152459_));
      }
  
@@ -320,17 +302,19 @@
          return this.builtInRegistryHolder;
      }
  
-+    public int getExpDrop(BlockState p_220827_, ServerLevel p_220828_, BlockPos p_220829_, ItemStack p_220830_, boolean flag) {
-+        return 0;
-+    }
-+
++    // CraftBukkit start
      protected void tryDropExperience(ServerLevel p_220823_, BlockPos p_220824_, ItemStack p_220825_, IntProvider p_220826_) {
          int i = EnchantmentHelper.processBlockExperience(p_220823_, p_220825_, p_220826_.sample(p_220823_.getRandom()));
          if (i > 0) {
-@@ -497,15 +_,33 @@
+@@ -497,15 +_,38 @@
          }
      }
  
++    public int getExpDrop(BlockState p_220827_, ServerLevel p_220828_, BlockPos p_220829_, ItemStack p_220830_, boolean flag) {
++        return 0;
++    }
++    // CraftBukkit end
++
 +    // Spigot start
 +    public static float range(float min, float value, float max) {
 +        if (value < min) {

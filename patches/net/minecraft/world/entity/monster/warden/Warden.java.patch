@@ -62,3 +62,19 @@
                  this.setAttackTarget(livingentity);
              }
          }
+@@ -567,6 +_,15 @@
+             protected PathFinder createPathFinder(int p_219479_) {
+                 this.nodeEvaluator = new WalkNodeEvaluator();
+                 this.nodeEvaluator.setCanPassDoors(true);
++                // Stellar start - Process pathfinding asynchronously
++                if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.asyncPathProcess.enabled)
++                return new PathFinder(this.nodeEvaluator, p_219479_, GroundPathNavigation.GENERATOR) {
++                    @Override
++                    protected float distance(Node a, Node b) {
++                        return a.distanceToXZ(b);
++                    }
++                };
++                // Stellar end - Process pathfinding asynchronously
+                 return new PathFinder(this.nodeEvaluator, p_219479_) {
+                     @Override
+                     protected float distance(Node p_219486_, Node p_219487_) {

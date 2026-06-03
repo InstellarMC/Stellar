@@ -1,20 +1,6 @@
 --- a/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-@@ -12,30 +_,88 @@
- import net.minecraft.CrashReportCategory;
- import net.minecraft.ReportedException;
- import net.minecraft.SharedConstants;
-+import net.minecraft.core.BlockPos;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.NbtUtils;
- import net.minecraft.resources.ResourceKey;
-+import net.minecraft.server.level.ServerChunkCache;
-+import net.minecraft.server.level.ServerLevel;
- import net.minecraft.util.datafix.DataFixTypes;
- import net.minecraft.world.level.ChunkPos;
- import net.minecraft.world.level.Level;
-+import net.minecraft.world.level.LevelAccessor;
- import net.minecraft.world.level.chunk.ChunkGenerator;
+@@ -22,20 +_,74 @@
  import net.minecraft.world.level.levelgen.structure.LegacyStructureDataHandler;
  import net.minecraft.world.level.storage.DimensionDataStorage;
  
@@ -81,12 +67,12 @@
 +    }
 +    // CraftBukkit end
 +    public ChunkPos pos; // CraftBukkit
-+    public @Nullable LevelAccessor generatoraccess; // CraftBukkit
++    public @Nullable net.minecraft.world.level.LevelAccessor generatoraccess; // CraftBukkit
 +
 +    public CompoundTag upgradeChunkTag(ResourceKey<Level> p_188289_,
 +                                       Supplier<DimensionDataStorage> p_188290_,
 +                                       CompoundTag p_188291_,
-+                                       Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> p_188292_, ChunkPos pos, @Nullable LevelAccessor generatoraccess) {
++                                       Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> p_188292_, ChunkPos pos, @Nullable net.minecraft.world.level.LevelAccessor generatoraccess) {
 +        this.pos = pos;
 +        this.generatoraccess = generatoraccess;
 +        return this.upgradeChunkTag(p_188289_, p_188290_, p_188291_, p_188292_);
@@ -101,7 +87,7 @@
 +                if (i < 1466 && pos != null) { // Paper - no longer needed, data converter system / DFU handles it now
 +                    CompoundTag level = p_188291_.getCompound("Level");
 +                    if (level.getBoolean("TerrainPopulated") && !level.getBoolean("LightPopulated")) {
-+                        ServerChunkCache cps = (generatoraccess == null) ? null : ((ServerLevel) generatoraccess).getChunkSource();
++                        net.minecraft.server.level.ServerChunkCache cps = (generatoraccess == null) ? null : ((net.minecraft.server.level.ServerLevel) generatoraccess).getChunkSource();
 +                        if (this.check(cps, pos.x - 1, pos.z) && this.check(cps, pos.x - 1, pos.z - 1) && this.check(cps, pos.x, pos.z - 1)) {
 +                            level.putBoolean("LightPopulated", true);
 +                        }
@@ -122,7 +108,7 @@
 +
 +                // Spigot start - SPIGOT-6806: Quick and dirty way to prevent below zero generation in old chunks, by setting the status to heightmap instead of empty
 +                boolean stopBelowZero = false;
-+                boolean belowZeroGenerationInExistingChunks = (generatoraccess != null) ? ((ServerLevel)generatoraccess).spigotConfig.belowZeroGenerationInExistingChunks : org.spigotmc.SpigotConfig.belowZeroGenerationInExistingChunks;
++                boolean belowZeroGenerationInExistingChunks = (generatoraccess != null) ? ((net.minecraft.server.level.ServerLevel)generatoraccess).spigotConfig.belowZeroGenerationInExistingChunks : org.spigotmc.SpigotConfig.belowZeroGenerationInExistingChunks;
 +                generatoraccess = null;
 +                if (i <= 2730 && !belowZeroGenerationInExistingChunks) {
 +                    stopBelowZero = "full".equals(p_188291_.getCompound("Level").getString("Status"));

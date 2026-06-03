@@ -1,22 +1,10 @@
 --- a/net/minecraft/world/level/border/WorldBorder.java
 +++ b/net/minecraft/world/level/border/WorldBorder.java
-@@ -6,9 +_,11 @@
- import net.minecraft.Util;
- import net.minecraft.core.BlockPos;
- import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.server.level.ServerLevel;
- import net.minecraft.util.Mth;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.level.ChunkPos;
-+import net.minecraft.world.level.Level;
- import net.minecraft.world.phys.AABB;
- import net.minecraft.world.phys.Vec3;
- import net.minecraft.world.phys.shapes.BooleanOp;
 @@ -28,6 +_,7 @@
      int absoluteMaxSize = 29999984;
      private WorldBorder.BorderExtent extent = new WorldBorder.StaticBorderExtent(5.999997E7F);
      public static final WorldBorder.Settings DEFAULT_SETTINGS = new WorldBorder.Settings(0.0, 0.0, 0.2, 5.0, 5, 15, 5.999997E7F, 0L, 0.0);
-+    public ServerLevel world = null; // CraftBukkit
++    public net.minecraft.server.level.ServerLevel world = null; // CraftBukkit
  
      public boolean isWithinBounds(BlockPos p_61938_) {
          return this.isWithinBounds((double)p_61938_.getX(), (double)p_61938_.getZ());

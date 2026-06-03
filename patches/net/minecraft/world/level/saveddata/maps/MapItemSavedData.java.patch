@@ -1,33 +1,5 @@
 --- a/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 +++ b/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
-@@ -5,12 +_,14 @@
- import com.mojang.logging.LogUtils;
- import com.mojang.serialization.Dynamic;
- import io.netty.buffer.ByteBuf;
-+import io.papermc.paper.adventure.PaperAdventure;
- import java.util.Collection;
- import java.util.Iterator;
- import java.util.List;
- import java.util.Map;
- import java.util.Objects;
- import java.util.Optional;
-+import java.util.UUID;
- import java.util.function.Predicate;
- import javax.annotation.Nullable;
- import net.minecraft.core.BlockPos;
-@@ -41,6 +_,12 @@
- import net.minecraft.world.level.LevelAccessor;
- import net.minecraft.world.level.dimension.DimensionType;
- import net.minecraft.world.level.saveddata.SavedData;
-+import org.bukkit.craftbukkit.CraftServer;
-+import org.bukkit.craftbukkit.CraftWorld;
-+import org.bukkit.craftbukkit.map.CraftMapView;
-+import org.bukkit.craftbukkit.entity.CraftPlayer;
-+import org.bukkit.craftbukkit.map.CraftMapCursor;
-+import org.bukkit.craftbukkit.map.RenderData;
- import org.slf4j.Logger;
- 
- public class MapItemSavedData extends SavedData {
 @@ -58,6 +_,7 @@
      public byte scale;
      public byte[] colors = new byte[16384];
@@ -41,9 +13,9 @@
      private int trackedDecorationCount;
  
 +    // CraftBukkit start
-+    public final CraftMapView mapView;
-+    private CraftServer server;
-+    public UUID uniqueId = null;
++    public final org.bukkit.craftbukkit.map.CraftMapView mapView;
++    private org.bukkit.craftbukkit.CraftServer server;
++    public java.util.UUID uniqueId = null;
 +    public MapId id;
 +    // CraftBukkit end
 +    public boolean isExplorerMap; // Purpur
@@ -56,8 +28,8 @@
          this.locked = p_164773_;
          this.setDirty();
 +        // CraftBukkit start
-+        mapView = new CraftMapView(this);
-+        server = (CraftServer) org.bukkit.Bukkit.getServer();
++        mapView = new org.bukkit.craftbukkit.map.CraftMapView(this);
++        server = (org.bukkit.craftbukkit.CraftServer) org.bukkit.Bukkit.getServer();
 +        // CraftBukkit end
 +        this.setDirty(false); // Stellar - SparklyPaper: reset dirty flag when loading maps from the disk (context for updates: this modification is at the end of the map "load" function)
      }
@@ -78,7 +50,7 @@
 +                if (least != 0L && most != 0L) {
 +                    java.util.UUID uniqueId = new java.util.UUID(most, least);
 +
-+                    CraftWorld world = (CraftWorld) org.bukkit.Bukkit.getWorld(uniqueId);
++                    org.bukkit.craftbukkit.CraftWorld world = (org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(uniqueId);
 +                    // Check if the stored world details are correct.
 +                    if (world == null) {
 +                        /* All Maps which do not have their valid world loaded are set to a dimension which hopefully won't be reached.
@@ -113,7 +85,7 @@
 +        if (true) {
 +            if (this.uniqueId == null) {
 +                for (org.bukkit.World world : server.getWorlds()) {
-+                    CraftWorld cWorld = (CraftWorld) world;
++                    org.bukkit.craftbukkit.CraftWorld cWorld = (org.bukkit.craftbukkit.CraftWorld) world;
 +                    if (cWorld.getHandle().dimension() == this.dimension) {
 +                        this.uniqueId = cWorld.getUID();
 +                        break;
@@ -187,11 +159,11 @@
              this.player = p_77970_;
          }
  
-+        private RenderData render;
++        private org.bukkit.craftbukkit.map.RenderData render;
 +        private byte[] buffer;
          private MapItemSavedData.MapPatch createPatch() {
 +            // CraftBukkit start
-+            render = MapItemSavedData.this.mapView.render((CraftPlayer) this.player.getBukkitEntity());
++            render = MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity());
 +            buffer = render.buffer;
 +
              int i = this.minDirtyX;
@@ -242,11 +214,11 @@
 +                for (org.bukkit.map.MapCursor cursor : render.cursors) {
 +                    if (cursor.isVisible()) {
 +                        icons.add(new MapDecoration(
-+                            CraftMapCursor.CraftType.bukkitToMinecraftHolder(cursor.getType()),
++                            org.bukkit.craftbukkit.map.CraftMapCursor.CraftType.bukkitToMinecraftHolder(cursor.getType()),
 +                            cursor.getX(),
 +                            cursor.getY(),
 +                            cursor.getDirection(),
-+                            Optional.ofNullable(PaperAdventure.asVanilla(cursor.caption())
++                            Optional.ofNullable(io.papermc.paper.adventure.PaperAdventure.asVanilla(cursor.caption())
 +                        )));
 +                    }
 +                }

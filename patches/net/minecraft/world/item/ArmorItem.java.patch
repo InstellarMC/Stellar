@@ -1,16 +1,5 @@
 --- a/net/minecraft/world/item/ArmorItem.java
 +++ b/net/minecraft/world/item/ArmorItem.java
-@@ -26,6 +_,10 @@
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.DispenserBlock;
- import net.minecraft.world.phys.AABB;
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.event.block.BlockDispenseArmorEvent;
- 
- public class ArmorItem extends Item implements Equipable {
-     public static final DispenseItemBehavior DISPENSE_ITEM_BEHAVIOR = new DefaultDispenseItemBehavior() {
 @@ -38,7 +_,13 @@
      protected final Holder<ArmorMaterial> material;
      private final Supplier<ItemAttributeModifiers> defaultModifiers;
@@ -38,9 +27,9 @@
 +            ItemStack itemstack = p_40400_.copyWithCount(1); // Paper - shrink below and single item in event
 +            // CraftBukkit start
 +            Level world = p_302421_.level();
-+            org.bukkit.block.Block block = CraftBlock.at(world, p_302421_.pos());
-+            CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
-+            BlockDispenseArmorEvent event = new BlockDispenseArmorEvent(block, craftItem.clone(), (CraftLivingEntity) livingentity.getBukkitEntity());
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, p_302421_.pos());
++            org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack);
++            org.bukkit.event.block.BlockDispenseArmorEvent event = new org.bukkit.event.block.BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.entity.CraftLivingEntity) livingentity.getBukkitEntity());
 +            if (!DispenserBlock.eventFired) {
 +                world.getCraftServer().getPluginManager().callEvent(event);
 +            }
@@ -54,7 +43,7 @@
 +            if (!event.getItem().equals(craftItem)) {
 +                shrink = false; // Paper - shrink below
 +                // Chain to handler for new item
-+                ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++                ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
 +                DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
 +                if (idispensebehavior != DispenseItemBehavior.NOOP && (currentBehavior == null || idispensebehavior != currentBehavior)) { // Paper - fix possible StackOverflowError
 +                    idispensebehavior.dispense(p_302421_, eventStack);
@@ -62,7 +51,7 @@
 +                }
 +            }
 +
-+            livingentity.setItemSlot(equipmentslot, CraftItemStack.asNMSCopy(event.getItem()));
++            livingentity.setItemSlot(equipmentslot, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()));
 +            // CraftBukkit end
              if (livingentity instanceof Mob) {
                  ((Mob)livingentity).setDropChance(equipmentslot, 2.0F);

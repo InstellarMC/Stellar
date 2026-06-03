@@ -1,14 +1,5 @@
 --- a/net/minecraft/world/entity/animal/camel/Camel.java
 +++ b/net/minecraft/world/entity/animal/camel/Camel.java
-@@ -48,7 +_,7 @@
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.level.gameevent.GameEvent;
- import net.minecraft.world.phys.Vec2;
--import net.minecraft.world.phys.Vec3;
-+import net.minecraft.world.phys.Vec3;import org.bukkit.event.entity.EntityDamageEvent;
- 
- public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddleable {
-     public static final float BABY_SCALE = 0.45F;
 @@ -83,6 +_,17 @@
          groundpathnavigation.setCanWalkOverFences(true);
      }
@@ -64,7 +55,7 @@
  
      @Override
 -    protected void actuallyHurt(DamageSource p_250410_, float p_251451_) {
-+    public boolean actuallyHurt(DamageSource source, float amount, EntityDamageEvent event) { // CraftBukkit start - void -> boolean
++    public boolean actuallyHurt(DamageSource source, float amount, org.bukkit.event.entity.EntityDamageEvent event) { // CraftBukkit start - void -> boolean
 +        final var result = super.actuallyHurt(source, amount, event); // CraftBukkit
 +        if (!result) {
 +            return false;

@@ -1,22 +1,5 @@
 --- a/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/net/minecraft/world/entity/item/ItemEntity.java
-@@ -1,5 +_,6 @@
- package net.minecraft.world.entity.item;
- 
-+import com.mohistmc.youer.plugins.ban.bans.BanItem;
- import java.util.Objects;
- import java.util.UUID;
- import javax.annotation.Nullable;
-@@ -31,6 +_,9 @@
- import net.minecraft.world.level.gameevent.GameEvent;
- import net.minecraft.world.level.portal.DimensionTransition;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.event.entity.EntityRemoveEvent;
-+import org.bukkit.event.player.PlayerAttemptPickupItemEvent;
- 
- public class ItemEntity extends Entity implements TraceableEntity {
-     private static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(ItemEntity.class, EntityDataSerializers.ITEM_STACK);
 @@ -41,7 +_,7 @@
      private static final int INFINITE_LIFETIME = -32768;
      public int age;
@@ -167,7 +150,7 @@
 +                this.lifespan = Mth.clamp(lifespan + net.neoforged.neoforge.event.EventHooks.onItemExpire(this), 0, Short.MAX_VALUE - 1);
 +                if (this.age >= lifespan) {
 +                    // CraftBukkit start - fire ItemDespawnEvent
-+                    if (CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 +                        this.age = 0;
 +                        return;
 +                    }
@@ -223,7 +206,7 @@
  
      private static void merge(ItemEntity p_32018_, ItemStack p_32019_, ItemEntity p_32020_, ItemStack p_32021_) {
 +        // CraftBukkit start
-+        if (!CraftEventFactory.callItemMergeEvent(p_32020_, p_32018_)) {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callItemMergeEvent(p_32020_, p_32018_)) {
 +            return;
 +        }
 +        // CraftBukkit end
@@ -259,7 +242,7 @@
              return true;
          } else {
 +            // CraftBukkit start
-+            if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, p_32013_, p_32014_)) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, p_32013_, p_32014_)) {
 +                return false;
 +            }
 +            // CraftBukkit end
@@ -325,7 +308,7 @@
      public void playerTouch(Player p_32040_) {
          if (!this.level().isClientSide) {
              ItemStack itemstack = this.getItem();
-+            if (BanItem.checkMoShou(p_32040_, itemstack)) return;
++            if (com.mohistmc.youer.plugins.ban.bans.BanItem.checkMoShou(p_32040_, itemstack)) return;
              Item item = itemstack.getItem();
              int i = itemstack.getCount();
 -            if (this.pickupDelay == 0 && (this.target == null || this.target.equals(p_32040_.getUUID())) && p_32040_.getInventory().add(itemstack)) {
@@ -337,7 +320,7 @@
 +
 +            // Paper start - PlayerAttemptPickupItemEvent
 +            if (this.pickupDelay <= 0) {
-+                PlayerAttemptPickupItemEvent attemptEvent = new PlayerAttemptPickupItemEvent((org.bukkit.entity.Player) p_32040_.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                org.bukkit.event.player.PlayerAttemptPickupItemEvent attemptEvent = new org.bukkit.event.player.PlayerAttemptPickupItemEvent((org.bukkit.entity.Player) p_32040_.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
 +                this.level().getCraftServer().getPluginManager().callEvent(attemptEvent);
 +
 +                flyAtPlayer = attemptEvent.getFlyAtPlayer();

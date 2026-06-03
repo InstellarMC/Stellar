@@ -173,10 +173,9 @@
      }
  
      @Override
--    protected void setDirty(long p_27036_) {
+     public void setDirty(long p_27036_) {
 -        super.setDirty(p_27036_);
 -        this.distanceTracker.update(p_27036_, this.distanceTracker.getLevelFromSource(p_27036_), false);
-+    public void setDirty(long p_27036_) { // Paper - public
 +        // Paper start - rewrite chunk system
 +        final int chunkX = ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkSectionX(p_27036_);
 +        final int chunkZ = ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkSectionZ(p_27036_);

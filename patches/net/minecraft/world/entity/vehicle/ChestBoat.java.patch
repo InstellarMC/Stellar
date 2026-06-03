@@ -1,24 +1,5 @@
 --- a/net/minecraft/world/entity/vehicle/ChestBoat.java
 +++ b/net/minecraft/world/entity/vehicle/ChestBoat.java
-@@ -1,5 +_,7 @@
- package net.minecraft.world.entity.vehicle;
- 
-+import com.destroystokyo.paper.loottable.PaperLootableInventoryData;
-+import java.util.List;
- import javax.annotation.Nullable;
- import net.minecraft.core.NonNullList;
- import net.minecraft.nbt.CompoundTag;
-@@ -23,6 +_,10 @@
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.gameevent.GameEvent;
- import net.minecraft.world.level.storage.loot.LootTable;
-+import org.bukkit.Location;
-+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-+import org.bukkit.entity.HumanEntity;
-+import org.bukkit.inventory.InventoryHolder;
- 
- public class ChestBoat extends Boat implements HasCustomInventoryScreen, ContainerEntity {
-     private static final int CONTAINER_SIZE = 27;
 @@ -73,11 +_,18 @@
  
      @Override
@@ -55,41 +36,41 @@
      }
 +
 +    // Paper start - LootTable API
-+    final PaperLootableInventoryData lootableData = new PaperLootableInventoryData();
++    final com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData();
 +
 +    @Override
-+    public PaperLootableInventoryData lootableData() {
++    public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData() {
 +        return this.lootableData;
 +    }
 +    // Paper end - LootTable API
 +    // CraftBukkit start
-+    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
++    public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
 +    private int maxStack = MAX_STACK;
 +
 +    @Override
-+    public List<ItemStack> getContents() {
++    public java.util.List<ItemStack> getContents() {
 +        return this.itemStacks;
 +    }
 +
 +    @Override
-+    public void onOpen(CraftHumanEntity who) {
++    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
 +        transaction.add(who);
 +    }
 +
 +    @Override
-+    public void onClose(CraftHumanEntity who) {
++    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
 +        transaction.remove(who);
 +    }
 +
 +    @Override
-+    public List<HumanEntity> getViewers() {
++    public java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
 +        return transaction;
 +    }
 +
 +    @Override
-+    public InventoryHolder getOwner() {
++    public org.bukkit.inventory.InventoryHolder getOwner() {
 +        org.bukkit.entity.Entity entity = getBukkitEntity();
-+        if (entity instanceof InventoryHolder) return (InventoryHolder) entity;
++        if (entity instanceof org.bukkit.inventory.InventoryHolder holder) return holder;
 +        return null;
 +    }
 +
@@ -104,7 +85,7 @@
 +    }
 +
 +    @Override
-+    public Location getLocation() {
++    public org.bukkit.Location getLocation() {
 +        return getBukkitEntity().getLocation();
 +    }
 +    // CraftBukkit end

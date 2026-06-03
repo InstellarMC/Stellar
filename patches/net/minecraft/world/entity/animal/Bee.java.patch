@@ -1,29 +1,5 @@
 --- a/net/minecraft/world/entity/animal/Bee.java
 +++ b/net/minecraft/world/entity/animal/Bee.java
-@@ -11,7 +_,6 @@
- import java.util.stream.Stream;
- import javax.annotation.Nullable;
- import net.minecraft.core.BlockPos;
--import net.minecraft.core.Holder;
- import net.minecraft.core.particles.ParticleOptions;
- import net.minecraft.core.particles.ParticleTypes;
- import net.minecraft.nbt.CompoundTag;
-@@ -77,7 +_,6 @@
- import net.minecraft.world.level.block.SweetBerryBushBlock;
- import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
- import net.minecraft.world.level.block.entity.BlockEntity;
--import net.minecraft.world.level.block.entity.BlockEntityType;
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.level.block.state.properties.BlockStateProperties;
- import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-@@ -85,6 +_,7 @@
- import net.minecraft.world.level.pathfinder.Path;
- import net.minecraft.world.level.pathfinder.PathType;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public class Bee extends Animal implements NeutralMob, FlyingAnimal {
-     public static final float FLAP_DEGREES_PER_TICK = 120.32113F;
 @@ -136,7 +_,36 @@
  
      public Bee(EntityType<? extends Bee> p_27717_, Level p_27718_) {
@@ -212,7 +188,24 @@
          private static final int MAX_BLACKLISTED_TARGETS = 3;
          final List<BlockPos> blacklistedTargets = Lists.newArrayList();
          @Nullable
-@@ -864,7 +_,7 @@
+@@ -799,7 +_,7 @@
+                         } else {
+                             Bee.this.pathfindRandomlyTowards(Bee.this.hivePos);
+                         }
+-                    } else {
++                    } else if (navigation.getPath() != null && navigation.getPath().isProcessed()) { // Stellar - Process pathfinding asynchronously
+                         boolean flag = this.pathfindDirectlyTowards(Bee.this.hivePos);
+                         if (!flag) {
+                             this.dropAndBlacklistHive();
+@@ -857,14 +_,14 @@
+                 return true;
+             } else {
+                 Path path = Bee.this.navigation.getPath();
+-                return path != null && path.getTarget().equals(p_28002_) && path.canReach() && path.isDone();
++                return path != null && path.isProcessed() && path.getTarget().equals(p_28002_) && path.canReach() && path.isDone(); // Stellar - Process pathfinding asynchronously
+             }
+         }
+     }
  
      public class BeeGoToKnownFlowerGoal extends Bee.BaseBeeGoal {
          private static final int MAX_TRAVELLING_TICKS = 600;
@@ -226,7 +219,7 @@
                          }
  
 -                        if (blockstate1 != null) {
-+                        if (blockstate1 != null && CraftEventFactory.callEntityChangeBlockEvent(Bee.this, blockpos, blockstate1)) { // CraftBukkit
++                        if (blockstate1 != null && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(Bee.this, blockpos, blockstate1)) { // CraftBukkit
                              Bee.this.level().levelEvent(2011, blockpos, 15);
                              Bee.this.level().setBlockAndUpdate(blockpos, blockstate1);
                              Bee.this.incrementNumCropsGrownSincePollination();

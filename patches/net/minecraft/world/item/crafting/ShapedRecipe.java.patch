@@ -1,21 +1,8 @@
 --- a/net/minecraft/world/item/crafting/ShapedRecipe.java
 +++ b/net/minecraft/world/item/crafting/ShapedRecipe.java
-@@ -3,15 +_,19 @@
- import com.mojang.serialization.Codec;
- import com.mojang.serialization.MapCodec;
- import com.mojang.serialization.codecs.RecordCodecBuilder;
--import com.mojang.serialization.codecs.RecordCodecBuilder.Instance;
- import net.minecraft.core.HolderLookup;
- import net.minecraft.core.NonNullList;
- import net.minecraft.network.RegistryFriendlyByteBuf;
- import net.minecraft.network.codec.StreamCodec;
+@@ -11,7 +_,7 @@
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.level.Level;
-+import org.bukkit.NamespacedKey;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.inventory.CraftRecipe;
-+import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
-+import org.bukkit.inventory.RecipeChoice;
  
 -public class ShapedRecipe implements CraftingRecipe {
 +public class ShapedRecipe extends io.papermc.paper.inventory.recipe.RecipeBookExactChoiceRecipe<CraftingInput> implements CraftingRecipe {
@@ -35,11 +22,11 @@
  
 +    // CraftBukkit start
 +    @Override
-+    public org.bukkit.inventory.ShapedRecipe toBukkitRecipe(NamespacedKey id) {
-+        CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
-+        CraftShapedRecipe recipe = new CraftShapedRecipe(id, result, this);
++    public org.bukkit.inventory.ShapedRecipe toBukkitRecipe(org.bukkit.NamespacedKey id) {
++        org.bukkit.craftbukkit.inventory.CraftItemStack result = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.result);
++        org.bukkit.craftbukkit.inventory.CraftShapedRecipe recipe = new org.bukkit.craftbukkit.inventory.CraftShapedRecipe(id, result, this);
 +        recipe.setGroup(this.group);
-+        recipe.setCategory(CraftRecipe.getCategory(this.category()));
++        recipe.setCategory(org.bukkit.craftbukkit.inventory.CraftRecipe.getCategory(this.category()));
 +
 +        switch (this.pattern.height()) {
 +            case 1:
@@ -84,8 +71,8 @@
 +        }
 +        char c = 'a';
 +        for (Ingredient list : this.pattern.ingredients()) {
-+            RecipeChoice choice = CraftRecipe.toBukkit(list);
-+            if (choice != RecipeChoice.empty()) { // Paper
++            org.bukkit.inventory.RecipeChoice choice = org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(list);
++            if (choice != org.bukkit.inventory.RecipeChoice.empty()) { // Paper
 +                recipe.setIngredient(c, choice);
 +            }
 +

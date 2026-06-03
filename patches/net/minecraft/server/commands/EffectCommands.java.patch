@@ -1,21 +1,5 @@
 --- a/net/minecraft/server/commands/EffectCommands.java
 +++ b/net/minecraft/server/commands/EffectCommands.java
-@@ -4,7 +_,6 @@
- import com.mojang.brigadier.CommandDispatcher;
- import com.mojang.brigadier.arguments.BoolArgumentType;
- import com.mojang.brigadier.arguments.IntegerArgumentType;
--import com.mojang.brigadier.context.CommandContext;
- import com.mojang.brigadier.exceptions.CommandSyntaxException;
- import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
- import java.util.Collection;
-@@ -21,6 +_,7 @@
- import net.minecraft.world.effect.MobEffectInstance;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.LivingEntity;
-+import org.bukkit.event.entity.EntityPotionEffectEvent;
- 
- public class EffectCommands {
-     private static final SimpleCommandExceptionType ERROR_GIVE_FAILED = new SimpleCommandExceptionType(Component.translatable("commands.effect.give.failed"));
 @@ -181,7 +_,7 @@
          for (Entity entity : p_250411_) {
              if (entity instanceof LivingEntity) {
@@ -45,7 +29,7 @@
 -            if (entity instanceof LivingEntity && ((LivingEntity)entity).removeEffect(p_249198_)) {
 -                i++;
 +            if (entity instanceof LivingEntity livingEntity) {
-+                if (livingEntity.removeEffect(p_249198_, EntityPotionEffectEvent.Cause.COMMAND)) { // CraftBukkit
++                if (livingEntity.removeEffect(p_249198_, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.COMMAND)) { // CraftBukkit
 +                    i++;
 +                }
              }

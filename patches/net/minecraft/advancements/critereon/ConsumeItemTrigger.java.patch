@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/ConsumeItemTrigger.java
++++ b/net/minecraft/advancements/critereon/ConsumeItemTrigger.java
+@@ -17,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_23683_, ItemStack p_23684_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_23683_, p_23687_ -> p_23687_.matches(p_23684_));
+     }
+ 

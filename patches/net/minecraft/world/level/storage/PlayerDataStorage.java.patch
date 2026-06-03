@@ -1,16 +1,5 @@
 --- a/net/minecraft/world/level/storage/PlayerDataStorage.java
 +++ b/net/minecraft/world/level/storage/PlayerDataStorage.java
-@@ -14,8 +_,10 @@
- import net.minecraft.nbt.NbtAccounter;
- import net.minecraft.nbt.NbtIo;
- import net.minecraft.nbt.NbtUtils;
-+import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.util.datafix.DataFixTypes;
- import net.minecraft.world.entity.player.Player;
-+import org.bukkit.craftbukkit.entity.CraftPlayer;
- import org.slf4j.Logger;
- 
- public class PlayerDataStorage {
 @@ -23,6 +_,7 @@
      private final File playerDir;
      protected final DataFixer fixerUpper;
@@ -180,8 +169,8 @@
  
 -        return optional.or(() -> this.load(p_78436_, ".dat_old")).map(p_316252_ -> {
 +        return optional.or(() -> this.load(p_78436_.getName().getString(), p_78436_.getStringUUID(), p_78436_.getUUID())).map(p_316252_ -> { // Stellar - Nitori: Async playerdata saving
-+            if (p_78436_ instanceof ServerPlayer) {
-+                CraftPlayer player1 = (CraftPlayer) p_78436_.getBukkitEntity();
++            if (p_78436_ instanceof net.minecraft.server.level.ServerPlayer) {
++                org.bukkit.craftbukkit.entity.CraftPlayer player1 = (org.bukkit.craftbukkit.entity.CraftPlayer) p_78436_.getBukkitEntity();
 +                // Only update first played if it is older than the one we have
 +                long modified = new File(this.playerDir, p_78436_.getStringUUID() + ".dat").lastModified();
 +                if (modified < player1.getFirstPlayed()) {

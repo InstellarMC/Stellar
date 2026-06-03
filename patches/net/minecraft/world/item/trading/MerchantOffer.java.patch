@@ -1,19 +1,5 @@
 --- a/net/minecraft/world/item/trading/MerchantOffer.java
 +++ b/net/minecraft/world/item/trading/MerchantOffer.java
-@@ -2,12 +_,12 @@
- 
- import com.mojang.serialization.Codec;
- import com.mojang.serialization.codecs.RecordCodecBuilder;
--import com.mojang.serialization.codecs.RecordCodecBuilder.Instance;
- import java.util.Optional;
- import net.minecraft.network.RegistryFriendlyByteBuf;
- import net.minecraft.network.codec.StreamCodec;
- import net.minecraft.util.Mth;
- import net.minecraft.world.item.ItemStack;
-+import org.bukkit.craftbukkit.inventory.CraftMerchantRecipe;
- 
- public class MerchantOffer {
-     public static final Codec<MerchantOffer> CODEC = RecordCodecBuilder.create(
 @@ -21,7 +_,8 @@
                      Codec.INT.lenientOptionalFieldOf("specialPrice", Integer.valueOf(0)).forGetter(p_324423_ -> p_324423_.specialPriceDiff),
                      Codec.INT.lenientOptionalFieldOf("demand", Integer.valueOf(0)).forGetter(p_324040_ -> p_324040_.demand),
@@ -30,13 +16,13 @@
      public int xp;
 +    public boolean ignoreDiscounts; // Paper - Add ignore discounts API
 +    // CraftBukkit start
-+    private CraftMerchantRecipe bukkitHandle;
++    private org.bukkit.craftbukkit.inventory.CraftMerchantRecipe bukkitHandle;
 +
-+    public CraftMerchantRecipe asBukkit() {
-+        return (bukkitHandle == null) ? bukkitHandle = new CraftMerchantRecipe(this) : bukkitHandle;
++    public org.bukkit.craftbukkit.inventory.CraftMerchantRecipe asBukkit() {
++        return (bukkitHandle == null) ? bukkitHandle = new org.bukkit.craftbukkit.inventory.CraftMerchantRecipe(this) : bukkitHandle;
 +    }
 +
-+    public MerchantOffer(ItemCost baseCostA, Optional<ItemCost> costB, ItemStack result, int uses, int maxUses, int experience, float priceMultiplier, int demand, final boolean ignoreDiscounts, CraftMerchantRecipe bukkit) {
++    public MerchantOffer(ItemCost baseCostA, Optional<ItemCost> costB, ItemStack result, int uses, int maxUses, int experience, float priceMultiplier, int demand, final boolean ignoreDiscounts, org.bukkit.craftbukkit.inventory.CraftMerchantRecipe bukkit) {
 +        this(baseCostA, costB, result, uses, maxUses, experience, priceMultiplier, demand);
 +        this.bukkitHandle = bukkit;
 +    }

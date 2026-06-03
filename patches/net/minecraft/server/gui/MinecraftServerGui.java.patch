@@ -1,14 +1,5 @@
 --- a/net/minecraft/server/gui/MinecraftServerGui.java
 +++ b/net/minecraft/server/gui/MinecraftServerGui.java
-@@ -11,7 +_,7 @@
- import java.awt.event.FocusEvent;
- import java.awt.event.WindowAdapter;
- import java.awt.event.WindowEvent;
--import java.util.Collection;
-+import java.io.Serial;import java.util.Collection;
- import java.util.concurrent.atomic.AtomicBoolean;
- import javax.swing.JComponent;
- import javax.swing.JFrame;
 @@ -40,6 +_,11 @@
      private Thread logAppenderThread;
      private final Collection<Runnable> finalizers = Lists.newArrayList();
@@ -191,7 +182,7 @@
 +
 +    // Purpur start
 +    public static class CommandHistory extends java.util.LinkedList<String> {
-+        @Serial private static final long serialVersionUID = -1779173310706268504L;
++        @java.io.Serial private static final long serialVersionUID = -1779173310706268504L;
 +
 +        @Override
 +        public boolean add(String command) {

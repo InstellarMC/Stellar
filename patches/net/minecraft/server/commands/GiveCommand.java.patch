@@ -1,13 +1,5 @@
 --- a/net/minecraft/server/commands/GiveCommand.java
 +++ b/net/minecraft/server/commands/GiveCommand.java
-@@ -2,7 +_,6 @@
- 
- import com.mojang.brigadier.CommandDispatcher;
- import com.mojang.brigadier.arguments.IntegerArgumentType;
--import com.mojang.brigadier.context.CommandContext;
- import com.mojang.brigadier.exceptions.CommandSyntaxException;
- import java.util.Collection;
- import net.minecraft.commands.CommandBuildContext;
 @@ -52,6 +_,7 @@
  
      private static int giveItem(CommandSourceStack p_137779_, ItemInput p_137780_, Collection<ServerPlayer> p_137781_, int p_137782_) throws CommandSyntaxException {

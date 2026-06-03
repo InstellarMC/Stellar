@@ -1,0 +1,26 @@
+--- a/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
++++ b/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
+@@ -23,10 +_,23 @@
+         super(p_26448_, p_26449_);
+     }
+ 
++    // Stellar start - Process pathfinding asynchronously
++    protected static final dev.kaiijumc.kaiiju.path.NodeEvaluatorGenerator GENERATOR =
++        (dev.kaiijumc.kaiiju.path.NodeEvaluatorFeatures features) -> {
++            WalkNodeEvaluator evaluator = new WalkNodeEvaluator();
++            evaluator.setCanPassDoors(features.canPassDoors());
++            evaluator.setCanOpenDoors(features.canOpenDoors());
++            evaluator.setCanFloat(features.canFloat());
++            evaluator.setCanWalkOverFences(features.canWalkOverFences());
++            return evaluator;
++        };
++    // Stellar end - Process pathfinding asynchronously
++
+     @Override
+     protected PathFinder createPathFinder(int p_26453_) {
+         this.nodeEvaluator = new WalkNodeEvaluator();
+         this.nodeEvaluator.setCanPassDoors(true);
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.asyncPathProcess.enabled) return new PathFinder(this.nodeEvaluator, p_26453_, GENERATOR); // Stellar - Process pathfinding asynchronously
+         return new PathFinder(this.nodeEvaluator, p_26453_);
+     }
+ 

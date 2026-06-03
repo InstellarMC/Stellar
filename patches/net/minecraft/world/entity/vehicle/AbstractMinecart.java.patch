@@ -1,22 +1,5 @@
 --- a/net/minecraft/world/entity/vehicle/AbstractMinecart.java
 +++ b/net/minecraft/world/entity/vehicle/AbstractMinecart.java
-@@ -4,7 +_,6 @@
- import com.google.common.collect.ImmutableMap;
- import com.google.common.collect.Maps;
- import com.mojang.datafixers.util.Pair;
--import java.util.EnumMap;
- import java.util.List;
- import java.util.Map;
- import javax.annotation.Nullable;
-@@ -44,6 +_,8 @@
- import net.minecraft.world.level.block.state.properties.RailShape;
- import net.minecraft.world.phys.AABB;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.util.CraftLocation;
-+import org.bukkit.util.Vector;
- 
- public abstract class AbstractMinecart extends VehicleEntity implements net.neoforged.neoforge.common.extensions.IAbstractMinecartExtension {
-     private static final Vec3 LOWERED_PASSENGER_ATTACHMENT = new Vec3(0.0, 0.0, 0.0);
 @@ -63,6 +_,7 @@
      private double lerpYRot;
      private double lerpXRot;
@@ -126,7 +109,7 @@
 +            // CraftBukkit start
 +            org.bukkit.World bworld = this.level().getWorld();
 +            org.bukkit.Location from = new org.bukkit.Location(bworld, prevX, prevY, prevZ, prevYaw, prevPitch);
-+            org.bukkit.Location to = CraftLocation.toBukkit(this.position(), bworld, this.getYRot(), this.getXRot());
++            org.bukkit.Location to = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(this.position(), bworld, this.getYRot(), this.getXRot());
 +            org.bukkit.entity.Vehicle vehicle = (org.bukkit.entity.Vehicle) this.getBukkitEntity();
 +
 +            this.level().getCraftServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
@@ -447,21 +430,21 @@
      }
 +
 +    // CraftBukkit start - Methods for getting and setting flying and derailed velocity modifiers
-+    public Vector getFlyingVelocityMod() {
-+        return new Vector(flyingX, flyingY, flyingZ);
++    public org.bukkit.util.Vector getFlyingVelocityMod() {
++        return new org.bukkit.util.Vector(flyingX, flyingY, flyingZ);
 +    }
 +
-+    public void setFlyingVelocityMod(Vector flying) {
++    public void setFlyingVelocityMod(org.bukkit.util.Vector flying) {
 +        flyingX = flying.getX();
 +        flyingY = flying.getY();
 +        flyingZ = flying.getZ();
 +    }
 +
-+    public Vector getDerailedVelocityMod() {
-+        return new Vector(derailedX, derailedY, derailedZ);
++    public org.bukkit.util.Vector getDerailedVelocityMod() {
++        return new org.bukkit.util.Vector(derailedX, derailedY, derailedZ);
 +    }
 +
-+    public void setDerailedVelocityMod(Vector derailed) {
++    public void setDerailedVelocityMod(org.bukkit.util.Vector derailed) {
 +        derailedX = derailed.getX();
 +        derailedY = derailed.getY();
 +        derailedZ = derailed.getZ();

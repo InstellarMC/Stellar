@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/ConstructBeaconTrigger.java
++++ b/net/minecraft/advancements/critereon/ConstructBeaconTrigger.java
+@@ -15,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_148030_, int p_148031_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_148030_, p_148028_ -> p_148028_.matches(p_148031_));
+     }
+ 

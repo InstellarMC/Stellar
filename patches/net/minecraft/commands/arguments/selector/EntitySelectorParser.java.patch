@@ -1,13 +1,5 @@
 --- a/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
 +++ b/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
-@@ -12,6 +_,7 @@
- import java.util.List;
- import java.util.UUID;
- import java.util.concurrent.CompletableFuture;
-+import java.util.concurrent.atomic.AtomicBoolean;
- import java.util.function.BiConsumer;
- import java.util.function.BiFunction;
- import java.util.function.Consumer;
 @@ -115,15 +_,23 @@
      private boolean hasScores;
      private boolean hasAdvancements;
@@ -34,47 +26,45 @@
          }
  
          return false;
-@@ -204,8 +_,14 @@
+@@ -204,8 +_,10 @@
          };
      }
  
-+    public AtomicBoolean parseSelector$overridePermissions = new AtomicBoolean(false);
-+    protected void parseSelector(boolean overridePermissions) throws CommandSyntaxException {
-+        parseSelector$overridePermissions.set(overridePermissions);
-+        parseSelector();
-+    }
-+
-     protected void parseSelector() throws CommandSyntaxException {
+-    protected void parseSelector() throws CommandSyntaxException {
 -        this.usesSelectors = true;
-+        this.usesSelectors = !parseSelector$overridePermissions.getAndSet(false);
++    // CraftBukkit start
++    protected void parseSelector(boolean overridePermissions) throws CommandSyntaxException {
++        this.usesSelectors = !overridePermissions;
++        // CraftBukkit end
          this.suggestions = this::suggestSelector;
          if (!this.reader.canRead()) {
              throw ERROR_MISSING_SELECTOR_TYPE.createWithContext(this.reader);
-@@ -472,6 +_,12 @@
-         this.order = p_121269_;
+@@ -473,6 +_,12 @@
      }
  
-+    public AtomicBoolean parse$overridePermissions = new AtomicBoolean(false);
-+    public EntitySelector parse(boolean overridePermissions) throws CommandSyntaxException {
-+        parse$overridePermissions.set(overridePermissions);
-+        return parse();
+     public EntitySelector parse() throws CommandSyntaxException {
++        // CraftBukkit start
++        return this.parse(false);
 +    }
 +
-     public EntitySelector parse() throws CommandSyntaxException {
++    public EntitySelector parse(boolean overridePermissions) throws CommandSyntaxException {
++        // CraftBukkit end
          this.startPosition = this.reader.getCursor();
          this.suggestions = this::suggestNameOrSelector;
-@@ -481,6 +_,11 @@
+         if (this.reader.canRead() && this.reader.peek() == '@') {
+@@ -481,7 +_,11 @@
              }
  
              this.reader.skip();
+-            this.parseSelector();
 +            EntitySelector forgeSelector = net.neoforged.neoforge.common.command.EntitySelectorManager.parseSelector(this);
 +            if (forgeSelector != null)
 +                return forgeSelector;
 +
-+            parseSelector$overridePermissions.set(parse$overridePermissions.getAndSet(false));
-             this.parseSelector();
++            this.parseSelector(overridePermissions); // CraftBukkit
          } else {
              this.parseNameOrUUID();
+         }
 @@ -497,6 +_,7 @@
          p_121248_.suggest("@s", Component.translatable("argument.entity.selector.self"));
          p_121248_.suggest("@e", Component.translatable("argument.entity.selector.allEntities"));

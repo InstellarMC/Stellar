@@ -8,7 +8,7 @@
                                      PoiManager poimanager = p_258292_.getPoiManager();
                                      long2objectmap.long2ObjectEntrySet().removeIf(p_22338_ -> !p_22338_.getValue().isStillValid(p_258294_));
                                      Predicate<BlockPos> predicate = p_258266_ -> {
-@@ -73,11 +_,11 @@
+@@ -73,11 +_,40 @@
                                              return true;
                                          }
                                      };
@@ -22,6 +22,35 @@
 +                                    io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poimanager, p_260007_, predicate, p_258293_.blockPosition(), p_258292_.purpurConfig.villagerAcquirePoiSearchRadius, p_258292_.purpurConfig.villagerAcquirePoiSearchRadius*p_258292_.purpurConfig.villagerAcquirePoiSearchRadius, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes); // Purpur
 +                                    Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes);
 +                                    // Paper end - optimise POI access
++                                    // Stellar start - Process Pathfinding Asynchronously
++                                    if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.asyncPathProcess.enabled) {
++                                        Path possible = findPathToPois(p_258293_, set);
++                                        dev.kaiijumc.kaiiju.path.AsyncPathProcessor.awaitProcess(p_258293_, possible, path -> {
++                                            if (path == null || !path.canReach()) {
++                                                for (Pair<Holder<PoiType>, BlockPos> pair : set) long2objectmap.computeIfAbsent(
++                                                    pair.getSecond().asLong(),
++                                                    ignored -> new JitteredLinearRetry(p_258293_.level().random, p_258294_)
++                                                );
++                                                return;
++                                            }
++
++                                            BlockPos pos = path.getTarget();
++                                            poimanager.getType(pos).ifPresent(poiType -> {
++                                                poimanager.take(
++                                                    p_260007_,
++                                                    (holder, blockPos) -> blockPos.equals(pos),
++                                                    pos,
++                                                    1
++                                                );
++                                                p_258300_.set(GlobalPos.of(p_258292_.dimension(), pos));
++                                                p_260129_.ifPresent(status -> p_258292_.broadcastEntityEvent(p_258293_, status));
++                                                long2objectmap.clear();
++                                                DebugPackets.sendPoiTicketCountPacket(p_258292_, pos);
++                                            });
++                                        });
++                                        return true;
++                                    }
++                                    // Stellar end - Process Pathfinding Asynchronously
                                      Path path = findPathToPois(p_258293_, set);
                                      if (path != null && path.canReach()) {
                                          BlockPos blockpos = path.getTarget();

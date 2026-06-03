@@ -1,24 +1,7 @@
 --- a/net/minecraft/world/level/NaturalSpawner.java
 +++ b/net/minecraft/world/level/NaturalSpawner.java
-@@ -6,6 +_,7 @@
- import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
- import java.util.Objects;
- import java.util.Optional;
-+import java.util.concurrent.atomic.AtomicReference;
- import java.util.function.Consumer;
- import java.util.stream.Stream;
- import javax.annotation.Nullable;
-@@ -40,89 +_,159 @@
- import net.minecraft.world.level.levelgen.Heightmap;
- import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
- import net.minecraft.world.level.levelgen.structure.Structure;
--import net.minecraft.world.level.levelgen.structure.structures.NetherFortressStructure;
- import net.minecraft.world.level.material.FluidState;
-+import net.minecraft.world.level.storage.LevelData;
+@@ -45,84 +_,151 @@
  import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.util.CraftSpawnCategory;
-+import org.bukkit.entity.SpawnCategory;
-+import org.bukkit.event.entity.CreatureSpawnEvent;
  import org.slf4j.Logger;
  
 +// TODO: ForgeHooks.canEntitySpawn
@@ -110,7 +93,7 @@
 -        p_47030_.getProfiler().push("spawner");
 +    public static void spawnForChunk(ServerLevel world, LevelChunk chunk, NaturalSpawner.SpawnState info, boolean spawnAnimals, boolean spawnMonsters, boolean rareSpawn) {
 +        world.getProfiler().push("spawner");
-+        LevelData worlddata = world.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
++        net.minecraft.world.level.storage.LevelData worlddata = world.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
  
          for (MobCategory mobcategory : SPAWNING_CATEGORIES) {
 -            if ((p_47033_ || !mobcategory.isFriendly())
@@ -134,8 +117,8 @@
 +            // CraftBukkit start - Use per-world spawn limits
 +            boolean spawnThisTick = true;
 +            int limit = mobcategory.getMaxInstancesPerChunk();
-+            SpawnCategory spawnCategory = CraftSpawnCategory.toBukkit(mobcategory);
-+            if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
++            org.bukkit.entity.SpawnCategory spawnCategory = org.bukkit.craftbukkit.util.CraftSpawnCategory.toBukkit(mobcategory);
++            if (org.bukkit.craftbukkit.util.CraftSpawnCategory.isValidForLimits(spawnCategory)) {
 +                spawnThisTick = world.ticksPerSpawnCategory.getLong(spawnCategory) != 0 && worlddata.getGameTime() % world.ticksPerSpawnCategory.getLong(spawnCategory) == 0;
 +                limit = world.getWorld().getSpawnLimit(spawnCategory);
 +            }
@@ -180,7 +163,7 @@
 +
 +    // Paper start - Add mobcaps commands
 +    public static int globalLimitForCategory(final ServerLevel level, final MobCategory category, final int spawnableChunkCount) {
-+        final int categoryLimit = level.getWorld().getSpawnLimitUnsafe(CraftSpawnCategory.toBukkit(category));
++        final int categoryLimit = level.getWorld().getSpawnLimitUnsafe(org.bukkit.craftbukkit.util.CraftSpawnCategory.toBukkit(category));
 +        if (categoryLimit < 1) {
 +            return categoryLimit;
 +        }
@@ -395,7 +378,7 @@
 +        // Paper start - PreCreatureSpawnEvent
 +        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
 +                io.papermc.paper.util.MCUtil.toLocation(world, pos),
-+                org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(entitytype), CreatureSpawnEvent.SpawnReason.NATURAL
++                org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(entitytype), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL
 +        );
 +        if (!event.callEvent()) {
 +            if (event.shouldAbortSpawn()) {
@@ -492,7 +475,7 @@
                                          p_220451_, p_220451_.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.CHUNK_GENERATION, spawngroupdata
                                      );
 -                                    p_220451_.addFreshEntityWithPassengers(mob);
-+                                    p_220451_.addFreshEntityWithPassengers(mob, CreatureSpawnEvent.SpawnReason.CHUNK_GEN); // CraftBukkit
++                                    p_220451_.addFreshEntityWithPassengers(mob, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN); // CraftBukkit
                                      flag = true;
                                  }
                              }

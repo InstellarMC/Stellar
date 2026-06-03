@@ -1,21 +1,5 @@
 --- a/net/minecraft/server/commands/SetSpawnCommand.java
 +++ b/net/minecraft/server/commands/SetSpawnCommand.java
-@@ -1,7 +_,6 @@
- package net.minecraft.server.commands;
- 
- import com.mojang.brigadier.CommandDispatcher;
--import com.mojang.brigadier.context.CommandContext;
- import java.util.Collection;
- import java.util.Collections;
- import net.minecraft.commands.CommandSourceStack;
-@@ -14,6 +_,7 @@
- import net.minecraft.resources.ResourceKey;
- import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.world.level.Level;
-+import org.bukkit.event.player.PlayerSpawnChangeEvent;
- 
- public class SetSpawnCommand {
-     public static void register(CommandDispatcher<CommandSourceStack> p_138644_) {
 @@ -67,12 +_,22 @@
      private static int setSpawn(CommandSourceStack p_138650_, Collection<ServerPlayer> p_138651_, BlockPos p_138652_, float p_138653_) {
          ResourceKey<Level> resourcekey = p_138650_.getLevel().dimension();

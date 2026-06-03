@@ -1,17 +1,7 @@
 --- a/net/minecraft/server/level/DistanceManager.java
 +++ b/net/minecraft/server/level/DistanceManager.java
-@@ -27,68 +_,68 @@
- import java.util.Set;
- import java.util.concurrent.CompletableFuture;
- import java.util.concurrent.Executor;
-+import java.util.concurrent.atomic.AtomicBoolean;
- import javax.annotation.Nullable;
- import net.minecraft.core.SectionPos;
- import net.minecraft.util.SortedArraySet;
- import net.minecraft.util.thread.ProcessorHandle;
- import net.minecraft.world.level.ChunkPos;
+@@ -35,60 +_,58 @@
  import net.minecraft.world.level.chunk.LevelChunk;
-+import org.bukkit.plugin.Plugin;
  import org.slf4j.Logger;
  
 -public abstract class DistanceManager {

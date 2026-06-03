@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/EnterBlockTrigger.java
++++ b/net/minecraft/advancements/critereon/EnterBlockTrigger.java
+@@ -20,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_31270_, BlockState p_31271_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_31270_, p_31277_ -> p_31277_.matches(p_31271_));
+     }
+ 

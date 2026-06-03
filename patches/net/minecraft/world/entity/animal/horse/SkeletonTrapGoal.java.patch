@@ -1,11 +1,10 @@
 --- a/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
 +++ b/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
-@@ -1,6 +_,8 @@
+@@ -1,6 +_,7 @@
  package net.minecraft.world.entity.animal.horse;
  
  import javax.annotation.Nullable;
 +
-+import com.destroystokyo.paper.event.entity.SkeletonHorseTrapEvent;
  import net.minecraft.core.component.DataComponents;
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.world.DifficultyInstance;
@@ -28,7 +27,7 @@
      @Override
      public void tick() {
          ServerLevel serverlevel = (ServerLevel)this.horse.level();
-+        if (!new SkeletonHorseTrapEvent((org.bukkit.entity.SkeletonHorse) this.horse.getBukkitEntity(), eligiblePlayers).callEvent()) return; // Paper
++        if (!new com.destroystokyo.paper.event.entity.SkeletonHorseTrapEvent((org.bukkit.entity.SkeletonHorse) this.horse.getBukkitEntity(), eligiblePlayers).callEvent()) return; // Paper
 +        // Forge: Trigger the trap in a tick task to avoid crashes when mods add goals to skeleton horses
 +        // (MC-206338/Forge PR #7509)
 +        serverlevel.getServer().tell(new net.minecraft.server.TickTask(serverlevel.getServer().getTickCount(), () -> {

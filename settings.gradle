@@ -45,17 +45,17 @@ dependencyResolutionManagement {
     }
 }
 
-if (rootProject.name.toLowerCase() == "youer") {
+if (rootProject.name.toLowerCase() == "stellar") {
     // Solve name clashes between projects/neoforge and the rootProject for Eclipse.
-    rootProject.name = "Youer-Root"
+    rootProject.name = "Stellar-Root"
 }
 
 include ':base'
 project(':base').projectDir = file('projects/base')
-include ':youer'
-project(':youer').projectDir = file('projects/youer')
+include ':stellar'
+project(':stellar').projectDir = file('projects/stellar')
 
-include 'youerlauncher'
+include 'launcher'
 
 include ':coremods'
 // Ensure a unique artifact id within JIJ that does not conflict with net.neoforged:coremods, which is

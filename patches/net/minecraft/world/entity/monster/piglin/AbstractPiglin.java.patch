@@ -9,16 +9,16 @@
              this.playConvertedSound();
              this.finishConversion((ServerLevel)this.level());
          }
-@@ -93,10 +_,17 @@
+@@ -93,10 +_,16 @@
      }
  
      protected void finishConversion(ServerLevel p_34663_) {
-+        this.transformReasonAndspawnReason(org.bukkit.event.entity.EntityTransformEvent.TransformReason.PIGLIN_ZOMBIFIED, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.PIGLIN_ZOMBIFIED);  // CraftBukkit - add spawn and transform reasons
-         ZombifiedPiglin zombifiedpiglin = this.convertTo(EntityType.ZOMBIFIED_PIGLIN, true);
+-        ZombifiedPiglin zombifiedpiglin = this.convertTo(EntityType.ZOMBIFIED_PIGLIN, true);
++        ZombifiedPiglin zombifiedpiglin = this.convertTo(EntityType.ZOMBIFIED_PIGLIN, true, org.bukkit.event.entity.EntityTransformEvent.TransformReason.PIGLIN_ZOMBIFIED, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.PIGLIN_ZOMBIFIED);  // CraftBukkit - add spawn and transform reasons
          if (zombifiedpiglin != null) {
              zombifiedpiglin.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0));
 -        }
-+            net.neoforged.neoforge.event.EventHooks.onLivingConvert(this, zombifiedpiglin);
++            net.neoforged.neoforge.event.EventHooks.onLivingConvert(this, zombifiedpiglin); // Neo
 +        }
 +        // Paper start - Fix issues with mob conversion; reset to prevent event spam
 +        else {

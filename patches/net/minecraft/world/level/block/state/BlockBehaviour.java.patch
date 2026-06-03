@@ -1,29 +1,6 @@
 --- a/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -3,7 +_,6 @@
- import com.mojang.serialization.Codec;
- import com.mojang.serialization.MapCodec;
- import com.mojang.serialization.codecs.RecordCodecBuilder;
--import com.mojang.serialization.codecs.RecordCodecBuilder.Instance;
- import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
- import java.util.Arrays;
- import java.util.Collections;
-@@ -45,7 +_,7 @@
- import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.item.context.BlockPlaceContext;
--import net.minecraft.world.level.BlockGetter;
-+import net.minecraft.world.item.context.UseOnContext;import net.minecraft.world.level.BlockGetter;
- import net.minecraft.world.level.EmptyBlockGetter;
- import net.minecraft.world.level.Explosion;
- import net.minecraft.world.level.Level;
-@@ -81,13 +_,14 @@
- import net.minecraft.world.phys.shapes.CollisionContext;
- import net.minecraft.world.phys.shapes.Shapes;
- import net.minecraft.world.phys.shapes.VoxelShape;
-+import org.bukkit.craftbukkit.block.data.CraftBlockData;
- 
- public abstract class BlockBehaviour implements FeatureElement {
+@@ -86,8 +_,8 @@
      protected static final Direction[] UPDATE_SHAPE_ORDER = new Direction[]{
          Direction.WEST, Direction.EAST, Direction.NORTH, Direction.SOUTH, Direction.DOWN, Direction.UP
      };
@@ -61,7 +38,7 @@
 +    }
 +
 +    // CraftBukkit start
-+    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, @Nullable UseOnContext context) {
++    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, @Nullable net.minecraft.world.item.context.UseOnContext context) {
 +        this.onPlace(state, world, pos, oldState, notify);
 +    }
 +    // CraftBukkit end
@@ -234,11 +211,11 @@
          }
  
 +        // Paper start - Perf: impl cached craft block data, lazy load to fix issue with loading at the wrong time
-+        private CraftBlockData cachedCraftBlockData;
++        private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
 +
-+        public CraftBlockData createCraftBlockData() {
-+            if (cachedCraftBlockData == null) cachedCraftBlockData = CraftBlockData.createData(asState());
-+            return (CraftBlockData) cachedCraftBlockData.clone();
++        public org.bukkit.craftbukkit.block.data.CraftBlockData createCraftBlockData() {
++            if (cachedCraftBlockData == null) cachedCraftBlockData = org.bukkit.craftbukkit.block.data.CraftBlockData.createData(asState());
++            return (org.bukkit.craftbukkit.block.data.CraftBlockData) cachedCraftBlockData.clone();
 +        }
 +        // Paper end - Perf: impl cached craft block data, lazy load to fix issue with loading at the wrong time
 +
@@ -354,7 +331,7 @@
 +            this.onPlace(p_60697_, p_60698_, p_60699_, p_60700_, null);
 +        }
 +
-+        public void onPlace(Level world, BlockPos blockposition, BlockState iblockdata, boolean flag, @Nullable UseOnContext context) {
++        public void onPlace(Level world, BlockPos blockposition, BlockState iblockdata, boolean flag, @Nullable net.minecraft.world.item.context.UseOnContext context) {
 +            this.getBlock().onPlace(this.asState(), world, blockposition, iblockdata, flag, context);
 +            // CraftBukkit end
          }

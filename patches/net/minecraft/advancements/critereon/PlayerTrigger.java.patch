@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/PlayerTrigger.java
++++ b/net/minecraft/advancements/critereon/PlayerTrigger.java
+@@ -17,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_222619_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_222619_, p_222625_ -> true);
+     }
+ 

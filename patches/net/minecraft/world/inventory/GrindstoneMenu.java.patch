@@ -1,24 +1,5 @@
 --- a/net/minecraft/world/inventory/GrindstoneMenu.java
 +++ b/net/minecraft/world/inventory/GrindstoneMenu.java
-@@ -1,7 +_,6 @@
- package net.minecraft.world.inventory;
- 
- import it.unimi.dsi.fastutil.objects.Object2IntMap.Entry;
--import net.minecraft.core.BlockPos;
- import net.minecraft.core.Holder;
- import net.minecraft.core.component.DataComponents;
- import net.minecraft.server.level.ServerLevel;
-@@ -19,6 +_,10 @@
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.Blocks;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.Location;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryGrindstone;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
- 
- public class GrindstoneMenu extends AbstractContainerMenu {
-     public static final int MAX_NAME_LENGTH = 35;
 @@ -36,8 +_,32 @@
              super.setChanged();
              GrindstoneMenu.this.slotsChanged(this);
@@ -26,7 +7,7 @@
 +
 +        // CraftBukkit start
 +        @Override
-+        public Location getLocation() {
++        public org.bukkit.Location getLocation() {
 +            return access.getLocation();
 +        }
 +            // CraftBukkit end
@@ -35,17 +16,17 @@
 +    private int xp = -1;
 +
 +    // CraftBukkit start
-+    private CraftInventoryView bukkitEntity = null;
++    private org.bukkit.craftbukkit.inventory.CraftInventoryView bukkitEntity = null;
 +    private org.bukkit.entity.Player player;
 +
 +    @Override
-+    public CraftInventoryView getBukkitView() {
++    public org.bukkit.craftbukkit.inventory.CraftInventoryView getBukkitView() {
 +        if (bukkitEntity != null) {
 +            return bukkitEntity;
 +        }
 +
-+        CraftInventoryGrindstone inventory = new CraftInventoryGrindstone(this.repairSlots, this.resultSlots);
-+        bukkitEntity = new CraftInventoryView(this.player, inventory, this);
++        org.bukkit.craftbukkit.inventory.CraftInventoryGrindstone inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryGrindstone(this.repairSlots, this.resultSlots);
++        bukkitEntity = new org.bukkit.craftbukkit.inventory.CraftInventoryView(this.player, inventory, this);
 +        return bukkitEntity;
 +    }
 +    // CraftBukkit end
@@ -109,7 +90,7 @@
 -        this.resultSlots.setItem(0, this.computeResult(this.repairSlots.getItem(0), this.repairSlots.getItem(1)));
 +        this.xp = net.neoforged.neoforge.common.CommonHooks.onGrindstoneChange(this.repairSlots.getItem(0), this.repairSlots.getItem(1), this.resultSlots, -1);
 +        if (this.xp == Integer.MIN_VALUE)
-+        CraftEventFactory.callPrepareGrindstoneEvent(getBukkitView(), this.computeResult(this.repairSlots.getItem(0), this.repairSlots.getItem(1))); // CraftBukkit
++        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareGrindstoneEvent(getBukkitView(), this.computeResult(this.repairSlots.getItem(0), this.repairSlots.getItem(1))); // CraftBukkit
 +        sendAllDataToRemote(); // CraftBukkit - SPIGOT-6686: Always send completed inventory to stay in sync with client
 +
          this.broadcastChanges();

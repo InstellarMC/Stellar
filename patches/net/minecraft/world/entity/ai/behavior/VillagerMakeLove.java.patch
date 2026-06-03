@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/entity/ai/behavior/VillagerMakeLove.java
 +++ b/net/minecraft/world/entity/ai/behavior/VillagerMakeLove.java
-@@ -16,6 +_,7 @@
- import net.minecraft.world.entity.ai.village.poi.PoiTypes;
- import net.minecraft.world.entity.npc.Villager;
- import net.minecraft.world.level.pathfinder.Path;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public class VillagerMakeLove extends Behavior<Villager> {
-     private long birthTimestamp;
 @@ -107,11 +_,19 @@
          if (villager == null) {
              return Optional.empty();
@@ -18,7 +10,7 @@
              villager.moveTo(p_24657_.getX(), p_24657_.getY(), p_24657_.getZ(), 0.0F, 0.0F);
 -            p_24656_.addFreshEntityWithPassengers(villager);
 +            // CraftBukkit start - call EntityBreedEvent
-+            if (CraftEventFactory.callEntityBreedEvent(villager, p_24657_, p_24658_, null, null, 0).isCancelled()) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(villager, p_24657_, p_24658_, null, null, 0).isCancelled()) {
 +                return Optional.empty();
 +            }
 +            // Move age setting down

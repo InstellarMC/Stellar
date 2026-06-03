@@ -32,6 +32,35 @@ public final class GlobalConfiguration extends ConfigurationPart {
     public class Entities extends ConfigurationPart {
 
         public boolean enableFMA = false;
+
+        boolean skipSqrWhenNoDeltaChanges = false;
+        public boolean spookyOptimize = false;
+
+        public AsyncPathProcess asyncPathProcess;
+        public class AsyncPathProcess extends ConfigurationPart {
+
+            public boolean enabled = false;
+
+            int maxThreadSize = 0;
+            public int keepAliveTime = 60;
+
+            public int maxThreadSize() {
+                if (!enabled) return 0;
+                if (maxThreadSize == 0)
+                    return Math.max(Runtime.getRuntime().availableProcessors() / 4, 1);
+                else if (maxThreadSize < 0)
+                    return Math.max(Runtime.getRuntime().availableProcessors() + maxThreadSize, 1);
+
+                return maxThreadSize;
+            }
+
+        }
+
+        @PostProcess
+        public void post() {
+            net.minecraft.server.level.ServerEntity.skipSqrWhenNoDeltaChanges = this.skipSqrWhenNoDeltaChanges;
+        }
+
     }
 
     public Players players;

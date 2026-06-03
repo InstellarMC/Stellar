@@ -1,0 +1,26 @@
+--- a/net/minecraft/world/entity/ai/navigation/WaterBoundPathNavigation.java
++++ b/net/minecraft/world/entity/ai/navigation/WaterBoundPathNavigation.java
+@@ -15,10 +_,23 @@
+         super(p_26594_, p_26595_);
+     }
+ 
++    // Stellar start - Process pathfinding asynchronously
++    private static final dev.kaiijumc.kaiiju.path.NodeEvaluatorGenerator GENERATOR =
++        (dev.kaiijumc.kaiiju.path.NodeEvaluatorFeatures features) -> {
++            SwimNodeEvaluator evaluator = new SwimNodeEvaluator(features.allowBreaching());
++            evaluator.setCanPassDoors(features.canOpenDoors());
++            evaluator.setCanOpenDoors(features.canOpenDoors());
++            evaluator.setCanFloat(features.canFloat());
++            evaluator.setCanWalkOverFences(features.canWalkOverFences());
++            return evaluator;
++        };
++    // Stellar end - Process pathfinding asynchronously
++
+     @Override
+     protected PathFinder createPathFinder(int p_26598_) {
+         this.allowBreaching = this.mob.getType() == EntityType.DOLPHIN;
+         this.nodeEvaluator = new SwimNodeEvaluator(this.allowBreaching);
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.asyncPathProcess.enabled) return new PathFinder(this.nodeEvaluator, p_26598_, GENERATOR); // Stellar - Process pathfinding asynchronously
+         return new PathFinder(this.nodeEvaluator, p_26598_);
+     }
+ 

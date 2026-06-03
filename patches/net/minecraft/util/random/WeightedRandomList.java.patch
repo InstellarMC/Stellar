@@ -1,17 +1,10 @@
 --- a/net/minecraft/util/random/WeightedRandomList.java
 +++ b/net/minecraft/util/random/WeightedRandomList.java
-@@ -2,19 +_,27 @@
- 
- import com.google.common.collect.ImmutableList;
- import com.mojang.serialization.Codec;
-+
-+import java.util.Collections;
- import java.util.List;
+@@ -6,15 +_,20 @@
  import java.util.Objects;
  import java.util.Optional;
  import javax.annotation.Nullable;
 +
-+import net.caffeinemc.mods.lithium.common.util.collections.HashedReferenceList;
  import net.minecraft.util.RandomSource;
  
  public class WeightedRandomList<E extends WeightedEntry> {
@@ -24,7 +17,7 @@
          this.totalWeight = WeightedRandom.getTotalWeight(p_146327_);
 +        // Stellar - lithium: Uses custom hashset/list combination for faster mob spawn checks
 +        // We are using reference equality here, because all vanilla implementations of Weighted use reference equality
-+        this.entryHashList = this.items.size() > 4 ? Collections.unmodifiableList(new HashedReferenceList<>(this.items)) : this.items;
++        this.entryHashList = this.items.size() > 4 ? java.util.Collections.unmodifiableList(new net.caffeinemc.mods.lithium.common.util.collections.HashedReferenceList<>(this.items)) : this.items;
      }
  
      public static <E extends WeightedEntry> WeightedRandomList<E> create() {

@@ -955,7 +955,7 @@ public class CraftEventFactory {
     }
 
     public static BlockPos sourceBlockOverride = null; // SPIGOT-7068: Add source block override, not the most elegant way but better than passing down a BlockPosition up to five methods deep.
-    public static AtomicBoolean fixBlockSpreadMixin = new AtomicBoolean(true);
+    public static AtomicBoolean fixBlockSpreadMixin = new AtomicBoolean(true); // Youer
     public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState block, int flag) {
         // Suppress during worldgen
         if (!(world instanceof Level)) {
@@ -970,9 +970,9 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(event);
 
         if (!event.isCancelled()) {
-            if (fixBlockSpreadMixin.getAndSet(true)) {
-                state.update(true);
-            }
+            if (fixBlockSpreadMixin.getAndSet(true)) { // Youer
+            state.update(true);
+            } // Youer
         }
         return !event.isCancelled();
     }

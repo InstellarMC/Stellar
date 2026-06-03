@@ -1,41 +1,12 @@
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -1,11 +_,13 @@
- package net.minecraft.server.level;
- 
-+import com.mohistmc.youer.plugins.ban.bans.BanItem;
- import com.mojang.logging.LogUtils;
- import java.util.Objects;
- import javax.annotation.Nullable;
- import net.minecraft.advancements.CriteriaTriggers;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.Direction;
-+import net.minecraft.core.registries.Registries;
- import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
- import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
- import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
-@@ -15,13 +_,11 @@
- import net.minecraft.world.ItemInteractionResult;
- import net.minecraft.world.MenuProvider;
- import net.minecraft.world.entity.EquipmentSlot;
--import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.item.context.UseOnContext;
- import net.minecraft.world.item.enchantment.EnchantmentHelper;
- import net.minecraft.world.level.GameType;
- import net.minecraft.world.level.Level;
--import net.minecraft.world.level.block.Block;
- import net.minecraft.world.level.block.GameMasterBlock;
- import net.minecraft.world.level.block.entity.BlockEntity;
- import net.minecraft.world.level.block.state.BlockState;
-@@ -29,9 +_,24 @@
+@@ -29,9 +_,23 @@
  import net.minecraft.world.phys.Vec3;
  import org.slf4j.Logger;
  
 +// Stellar start
 +import java.util.ArrayList;
 +
-+import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.block.Blocks;
 +
 +import net.neoforged.neoforge.common.CommonHooks;
@@ -489,11 +460,11 @@
 +    public ItemStack interactItemStack;
      public InteractionResult useItemOn(ServerPlayer p_9266_, Level p_9267_, ItemStack p_9268_, InteractionHand p_9269_, BlockHitResult p_9270_) {
 +        // Youer start
-+        if (BanItem.checkMoShou(p_9266_, p_9266_.getItemInHand(p_9269_))) {
++        if (com.mohistmc.youer.plugins.ban.bans.BanItem.checkMoShou(p_9266_, p_9266_.getItemInHand(p_9269_))) {
 +            p_9266_.setItemInHand(p_9269_, ItemStack.EMPTY);
 +            return InteractionResult.FAIL;
 +        }
-+        if (BanItem.check(p_9266_, p_9268_)) return InteractionResult.FAIL;
++        if (com.mohistmc.youer.plugins.ban.bans.BanItem.check(p_9266_, p_9268_)) return InteractionResult.FAIL;
 +        // Youer end
 +        if (shiftClickMended(p_9268_)) return InteractionResult.SUCCESS; // Purpur
          BlockPos blockpos = p_9270_.getBlockPos();
@@ -595,7 +566,7 @@
 +    public boolean shiftClickMended(ItemStack itemstack) {
 +        if (this.player.level().purpurConfig.shiftRightClickRepairsMendingPoints > 0 && this.player.isShiftKeyDown() && this.player.getBukkitEntity().hasPermission("purpur.mending_shift_click")) {
 +            int points = Math.min(this.player.totalExperience, this.player.level().purpurConfig.shiftRightClickRepairsMendingPoints);
-+            if (points > 0 && itemstack.isDamaged() && net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(this.player.registryAccess().lookup(Registries.ENCHANTMENT).orElseThrow().getOrThrow(net.minecraft.world.item.enchantment.Enchantments.MENDING), itemstack) > 0) {
++            if (points > 0 && itemstack.isDamaged() && net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(this.player.registryAccess().lookup(net.minecraft.core.registries.Registries.ENCHANTMENT).orElseThrow().getOrThrow(net.minecraft.world.item.enchantment.Enchantments.MENDING), itemstack) > 0) {
 +                this.player.giveExperiencePoints(-points);
 +                this.player.level().addFreshEntity(new net.minecraft.world.entity.ExperienceOrb(this.player.level(), this.player.getX(), this.player.getY(), this.player.getZ(), points, org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN, this.player, this.player));
 +                return true;

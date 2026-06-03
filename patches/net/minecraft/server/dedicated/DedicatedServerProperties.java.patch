@@ -1,11 +1,10 @@
 --- a/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/net/minecraft/server/dedicated/DedicatedServerProperties.java
-@@ -18,6 +_,8 @@
+@@ -18,6 +_,7 @@
  import java.util.concurrent.TimeUnit;
  import java.util.regex.Pattern;
  import javax.annotation.Nullable;
 +
-+import joptsimple.OptionSet;
  import net.minecraft.core.Holder;
  import net.minecraft.core.Registry;
  import net.minecraft.core.RegistryAccess;
@@ -50,7 +49,7 @@
 +        // Paper end - Configurable rcon ip
 +    }
 +
-+    public DedicatedServerProperties(Properties properties, OptionSet optionset) {
++    public DedicatedServerProperties(Properties properties, joptsimple.OptionSet optionset) {
 +        this(properties);
      }
  
@@ -58,11 +57,11 @@
          return new DedicatedServerProperties(loadFromFile(p_180930_));
 +    }
 +
-+    public static DedicatedServerProperties fromFile(Path path, OptionSet optionset) {
++    public static DedicatedServerProperties fromFile(Path path, joptsimple.OptionSet optionset) {
 +        return new DedicatedServerProperties(loadFromFile(path), optionset);
 +    }
 +
-+    public DedicatedServerProperties reload(RegistryAccess iregistrycustom, Properties properties, OptionSet optionset) {
++    public DedicatedServerProperties reload(RegistryAccess iregistrycustom, Properties properties, joptsimple.OptionSet optionset) {
 +        return new DedicatedServerProperties(properties, optionset);
      }
  

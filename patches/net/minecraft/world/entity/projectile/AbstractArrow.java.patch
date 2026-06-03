@@ -1,29 +1,5 @@
 --- a/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/net/minecraft/world/entity/projectile/AbstractArrow.java
-@@ -4,6 +_,7 @@
- import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
- import java.util.Arrays;
- import java.util.List;
-+import java.util.concurrent.atomic.AtomicBoolean;
- import javax.annotation.Nullable;
- import net.minecraft.advancements.CriteriaTriggers;
- import net.minecraft.core.BlockPos;
-@@ -34,7 +_,6 @@
- import net.minecraft.world.entity.SlotAccess;
- import net.minecraft.world.entity.ai.attributes.Attributes;
- import net.minecraft.world.entity.player.Player;
--import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.item.Items;
- import net.minecraft.world.item.enchantment.EnchantmentHelper;
-@@ -48,6 +_,7 @@
- import net.minecraft.world.phys.HitResult;
- import net.minecraft.world.phys.Vec3;
- import net.minecraft.world.phys.shapes.VoxelShape;
-+import org.bukkit.craftbukkit.entity.CraftItem;
- 
- public abstract class AbstractArrow extends Projectile {
-     private static final double ARROW_BASE_DAMAGE = 2.0;
 @@ -72,6 +_,18 @@
      @Nullable
      public ItemStack firedFromWeapon = null;
@@ -202,29 +178,23 @@
          return super.canHitEntity(p_36743_) && (this.piercingIgnoreEntityIds == null || !this.piercingIgnoreEntityIds.contains(p_36743_.getId()));
      }
  
-@@ -566,10 +_,12 @@
-         }
-     }
+@@ -568,8 +_,14 @@
  
-+    public AtomicBoolean setOwner$resetPickup = new AtomicBoolean(true);
-+
      @Override
      public void setOwner(@Nullable Entity p_36770_) {
++        // Paper start - Fix PickupStatus getting reset
++        this.setOwner(p_36770_, true);
++    }
++
++    public void setOwner(@Nullable Entity p_36770_, boolean resetPickup) {
++        // Paper end - Fix PickupStatus getting reset
          super.setOwner(p_36770_);
 -
-+        if (!setOwner$resetPickup.getAndSet(true)) return; // Paper - Fix PickupStatus getting reset
++        if (!resetPickup) return; // Paper - Fix PickupStatus getting reset
          this.pickup = switch (p_36770_) {
              case Player player when this.pickup == AbstractArrow.Pickup.DISALLOWED -> AbstractArrow.Pickup.ALLOWED;
              case OminousItemSpawner ominousitemspawner -> AbstractArrow.Pickup.DISALLOWED;
-@@ -577,12 +_,32 @@
-         };
-     }
- 
-+    public void setOwner(@Nullable Entity entity, boolean resetPickup) {
-+        setOwner$resetPickup.set(resetPickup);
-+        this.setOwner(entity);
-+    }
-+
+@@ -580,9 +_,24 @@
      @Override
      public void playerTouch(Player p_36766_) {
          if (!this.level().isClientSide && (this.inGround || this.isNoPhysics()) && this.shakeTime <= 0) {
@@ -233,7 +203,7 @@
 +            ItemStack itemstack = this.getPickupItem();
 +            if (this.pickup == Pickup.ALLOWED && !itemstack.isEmpty() && p_36766_.getInventory().canHold(itemstack) > 0) {
 +                net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemstack);
-+                org.bukkit.event.player.PlayerPickupArrowEvent event = new org.bukkit.event.player.PlayerPickupArrowEvent((org.bukkit.entity.Player) p_36766_.getBukkitEntity(), new CraftItem(this.level().getCraftServer(), item), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
++                org.bukkit.event.player.PlayerPickupArrowEvent event = new org.bukkit.event.player.PlayerPickupArrowEvent((org.bukkit.entity.Player) p_36766_.getBukkitEntity(), new org.bukkit.craftbukkit.entity.CraftItem(this.level().getCraftServer(), item), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
 +                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
 +                this.level().getCraftServer().getPluginManager().callEvent(event);
 +

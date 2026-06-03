@@ -1,47 +1,11 @@
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -1,13 +_,18 @@
- package net.minecraft.server.network;
- 
-+import com.mohistmc.youer.YouerConfig;
-+import com.mohistmc.youer.bukkit.messaging.PluginChannel;
- import com.mojang.authlib.GameProfile;
- import com.mojang.logging.LogUtils;
-+import java.nio.charset.StandardCharsets;
-+import java.util.concurrent.ExecutionException;
- import javax.annotation.Nullable;
- import net.minecraft.CrashReport;
- import net.minecraft.CrashReportCategory;
- import net.minecraft.ReportedException;
- import net.minecraft.Util;
- import net.minecraft.network.Connection;
-+import net.minecraft.network.ConnectionProtocol;
- import net.minecraft.network.DisconnectionDetails;
- import net.minecraft.network.PacketSendListener;
- import net.minecraft.network.chat.Component;
-@@ -20,36 +_,106 @@
- import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
- import net.minecraft.network.protocol.common.ServerboundPongPacket;
- import net.minecraft.network.protocol.common.ServerboundResourcePackPacket;
-+import net.minecraft.network.protocol.common.custom.DiscardedPayload;
- import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
-+import net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket;
-+import net.minecraft.resources.ResourceLocation;
- import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.level.ClientInformation;
-+import net.minecraft.server.level.ServerPlayer;
+@@ -26,30 +_,89 @@
  import net.minecraft.util.VisibleForDebug;
-+import net.minecraft.util.thread.BlockableEventLoop;
-+import org.bukkit.craftbukkit.CraftServer;
-+import org.bukkit.craftbukkit.entity.CraftPlayer;
-+import org.bukkit.craftbukkit.util.CraftLocation;
-+import org.bukkit.craftbukkit.util.Waitable;
-+import org.bukkit.event.player.PlayerKickEvent;
-+import org.bukkit.event.player.PlayerResourcePackStatusEvent;
  import org.slf4j.Logger;
  
 -public abstract class ServerCommonPacketListenerImpl implements ServerCommonPacketListener {
-+public abstract class ServerCommonPacketListenerImpl implements ServerCommonPacketListener, CraftPlayer.TransferCookieConnection {
++public abstract class ServerCommonPacketListenerImpl implements ServerCommonPacketListener, org.bukkit.craftbukkit.entity.CraftPlayer.TransferCookieConnection {
 +
 +    @Override
 +    public boolean isTransferred() {
@@ -49,7 +13,7 @@
 +    }
 +
 +    @Override
-+    public ConnectionProtocol getProtocol() {
++    public net.minecraft.network.ConnectionProtocol getProtocol() {
 +        return protocol();
 +    }
 +
@@ -85,13 +49,13 @@
 +    private final io.papermc.paper.util.KeepAlive keepAlive; // Paper - improve keepalives
      private volatile boolean suspendFlushingOnServerThread = false;
 +    // CraftBukkit start
-+    public CraftServer cserver; // Paper - public
++    public org.bukkit.craftbukkit.CraftServer cserver; // Paper - public
 +    public boolean processedDisconnect;
 +    // CraftBukkit end
 +    public final java.util.Map<java.util.UUID, net.kyori.adventure.resource.ResourcePackCallback> packCallbacks = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - adventure resource pack callbacks
 +    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
-+    protected static final ResourceLocation MINECRAFT_BRAND = ResourceLocation.withDefaultNamespace("brand"); // Paper - Brand support
-+    protected static final ResourceLocation PURPUR_CLIENT = ResourceLocation.fromNamespaceAndPath("purpur", "client"); // Purpur
++    protected static final net.minecraft.resources.ResourceLocation MINECRAFT_BRAND = net.minecraft.resources.ResourceLocation.withDefaultNamespace("brand"); // Paper - Brand support
++    protected static final net.minecraft.resources.ResourceLocation PURPUR_CLIENT = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("purpur", "client"); // Purpur
 +    // Paper start - retain certain values
 +    public @Nullable String playerBrand;
 +    public final java.util.Set<String> pluginMessagerChannels;
@@ -103,7 +67,7 @@
 +     */
 +    protected net.neoforged.neoforge.network.connection.ConnectionType connectionType; // Neo
 +
-+    public CraftServer getCraftServer() {
++    public org.bukkit.craftbukkit.CraftServer getCraftServer() {
 +        return cserver;
 +    }
  
@@ -212,20 +176,20 @@
      @Override
      public void handleCustomPayload(ServerboundCustomPayloadPacket p_294276_) {
 -    }
-+        if (p_294276_.payload() instanceof DiscardedPayload discardedPayload && YouerConfig.pluginchannel_debug) {
++        if (p_294276_.payload() instanceof net.minecraft.network.protocol.common.custom.DiscardedPayload discardedPayload && com.mohistmc.youer.YouerConfig.pluginchannel_debug) {
 +            System.out.println("Received plugins discarded payload");
-+            ResourceLocation identifier = discardedPayload.type().id();
++            net.minecraft.resources.ResourceLocation identifier = discardedPayload.type().id();
 +            System.out.println("Identifier: " + identifier);
-+            System.out.println("Identifier data: " + discardedPayload.data().toString(StandardCharsets.UTF_8));
++            System.out.println("Identifier data: " + discardedPayload.data().toString(java.nio.charset.StandardCharsets.UTF_8));
 +        }
 +
 +        // Neo: Unconditionally handle register/unregister payloads.
-+        if (p_294276_.payload() instanceof net.neoforged.neoforge.network.payload.MinecraftRegisterPayload(java.util.Set<ResourceLocation> newChannels)) { // Stellar - record pattern
++        if (p_294276_.payload() instanceof net.neoforged.neoforge.network.payload.MinecraftRegisterPayload(java.util.Set<net.minecraft.resources.ResourceLocation> newChannels)) { // Stellar - record pattern
 +            net.neoforged.neoforge.network.registration.NetworkRegistry.onMinecraftRegister(this.getConnection(), newChannels);
 +            return;
 +        }
 +
-+        if (p_294276_.payload() instanceof net.neoforged.neoforge.network.payload.MinecraftUnregisterPayload(java.util.Set<ResourceLocation> forgottenChannels)) { // Stellar - record pattern
++        if (p_294276_.payload() instanceof net.neoforged.neoforge.network.payload.MinecraftUnregisterPayload(java.util.Set<net.minecraft.resources.ResourceLocation> forgottenChannels)) { // Stellar - record pattern
 +            net.neoforged.neoforge.network.registration.NetworkRegistry.onMinecraftUnregister(this.getConnection(), forgottenChannels);
 +            return;
 +        }
@@ -436,9 +400,9 @@
  
 +    // Paper start - adventure
 +    public void disconnect(final net.kyori.adventure.text.Component reason) {
-+        this.disconnect(reason, PlayerKickEvent.Cause.UNKNOWN);
++        this.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
 +    }
-+    public void disconnect(final net.kyori.adventure.text.Component reason, PlayerKickEvent.Cause cause) {
++    public void disconnect(final net.kyori.adventure.text.Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
 +        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(reason), cause);
 +        // Paper end - kick event causes
 +    }
@@ -455,7 +419,7 @@
 +        this.disconnect(p_294116_, io.papermc.paper.connection.DisconnectionReason.UNKNOWN);
 +    }
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - kick event causes // Stellar - legacy
-+    public void disconnect(final Component reason, PlayerKickEvent.Cause compatibleCause) {
++    public void disconnect(final Component reason, org.bukkit.event.player.PlayerKickEvent.Cause compatibleCause) {
 +        final var cause = switch (compatibleCause) {
 +            case TIMEOUT -> io.papermc.paper.connection.DisconnectionReason.TIMEOUT;
 +            case RESOURCE_PACK_REJECTION -> io.papermc.paper.connection.DisconnectionReason.RESOURCE_PACK_REJECTION;
@@ -477,7 +441,7 @@
 +            return;
 +        }
 +        if (!this.cserver.isPrimaryThread()) {
-+            Waitable waitable = new Waitable() {
++            org.bukkit.craftbukkit.util.Waitable waitable = new org.bukkit.craftbukkit.util.Waitable() {
 +                @Override
 +                protected Object evaluate() {
 +                    ServerCommonPacketListenerImpl.this.disconnect(disconnectionDetails); // Paper - kick event causes

@@ -1,19 +1,6 @@
 --- a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
-@@ -1,5 +_,6 @@
- package net.minecraft.server.network;
- 
-+import com.destroystokyo.paper.event.player.PlayerHandshakeEvent;import io.papermc.paper.network.PaperNetworkClient;
- import net.minecraft.SharedConstants;
- import net.minecraft.network.Connection;
- import net.minecraft.network.DisconnectionDetails;
-@@ -12,10 +_,22 @@
- import net.minecraft.network.protocol.status.StatusProtocols;
- import net.minecraft.server.MinecraftServer;
- 
-+import java.net.InetAddress;
-+
- public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketListener {
+@@ -16,6 +_,16 @@
      private static final Component IGNORE_STATUS_REASON = Component.translatable("disconnect.ignoring_status_request");
      private final MinecraftServer server;
      private final Connection connection;
@@ -23,7 +10,7 @@
 +    static final java.util.regex.Pattern PROP_PATTERN = java.util.regex.Pattern.compile("\\w{0,16}");
 +    // Spigot end
 +    // CraftBukkit start - add fields
-+    private static final it.unimi.dsi.fastutil.objects.Object2LongMap<InetAddress> throttleTracker = new  it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>(); // Stellar
++    private static final it.unimi.dsi.fastutil.objects.Object2LongMap<java.net.InetAddress> throttleTracker = new  it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>(); // Stellar
 +    private static int throttleCounter = 0;
 +    // CraftBukkit end
 +    private static final boolean BYPASS_HOSTCHECK = Boolean.getBoolean("Paper.bypassHostCheck"); // Paper
@@ -45,7 +32,7 @@
 +
 +        // Paper start - NetworkClient implementation
 +        this.connection.protocolVersion = p_9975_.protocolVersion();
-+        this.connection.virtualHost = PaperNetworkClient.prepareVirtualHost(p_9975_.hostName(), p_9975_.port());
++        this.connection.virtualHost = io.papermc.paper.network.PaperNetworkClient.prepareVirtualHost(p_9975_.hostName(), p_9975_.port());
 +        // Paper end
      }
  
@@ -56,7 +43,7 @@
 +            if (!(this.connection.channel.localAddress() instanceof io.netty.channel.unix.DomainSocketAddress)) { // Paper - Unix domain socket support; the connection throttle is useless when you have a Unix domain socket
 +                long currentTime = System.currentTimeMillis();
 +                long connectionThrottle = this.server.server.getConnectionThrottle();
-+                InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
++                java.net.InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
 +
 +                synchronized (throttleTracker) {
 +                    if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.getLong(address) < connectionThrottle) { // Stellar
@@ -104,10 +91,10 @@
 +            boolean proxyLogicEnabled = org.spigotmc.SpigotConfig.bungee;
 +            boolean handledByEvent = false;
 +            // Try and handle the handshake through the event
-+            if (PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
++            if (com.destroystokyo.paper.event.player.PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
 +                java.net.SocketAddress socketAddress = this.connection.address;
-+                String hostnameOfRemote = socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getHostString() : InetAddress.getLoopbackAddress().getHostAddress();
-+                PlayerHandshakeEvent event = new PlayerHandshakeEvent(p_320524_.hostName(), hostnameOfRemote, !proxyLogicEnabled);
++                String hostnameOfRemote = socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getHostString() : java.net.InetAddress.getLoopbackAddress().getHostAddress();
++                com.destroystokyo.paper.event.player.PlayerHandshakeEvent event = new com.destroystokyo.paper.event.player.PlayerHandshakeEvent(p_320524_.hostName(), hostnameOfRemote, !proxyLogicEnabled);
 +                if (event.callEvent()) {
 +                    // If we've failed somehow, let the client know so and go no further.
 +                    if (event.isFailed()) {

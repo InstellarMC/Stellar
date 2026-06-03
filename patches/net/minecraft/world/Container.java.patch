@@ -1,54 +1,35 @@
 --- a/net/minecraft/world/Container.java
 +++ b/net/minecraft/world/Container.java
-@@ -1,5 +_,7 @@
- package net.minecraft.world;
- 
-+import com.mohistmc.youer.bukkit.inventory.InventoryOwner;
-+import java.util.Collections;
- import java.util.Set;
- import java.util.function.Predicate;
- import net.minecraft.core.BlockPos;
-@@ -8,6 +_,8 @@
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.entity.BlockEntity;
-+import org.bukkit.Location;
-+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
- 
- public interface Container extends Clearable {
-     float DEFAULT_DISTANCE_BUFFER = 4.0F;
 @@ -24,7 +_,7 @@
  
      void setItem(int p_18944_, ItemStack p_18945_);
  
 -    default int getMaxStackSize() {
-+    default int getMaxStackSize() { // CraftBukkit // Stellar - signature change -> default; modded container support
++    default int getMaxStackSize() { // CraftBukkit // Stellar - modded container support
          return 99;
      }
  
-@@ -91,4 +_,38 @@
+@@ -91,4 +_,36 @@
              return level.getBlockEntity(blockpos) != p_272877_ ? false : p_272670_.canInteractWithBlock(blockpos, (double)p_320837_);
          }
      }
 +
 +    // CraftBukkit start // Stellar start - modded container support
 +    default java.util.List<ItemStack> getContents() {
-+        return Collections.emptyList();
++        return java.util.Collections.emptyList();
 +    }
 +
-+    default void onOpen(CraftHumanEntity who) {
++    default void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
 +    }
 +
-+    default void onClose(CraftHumanEntity who) {
++    default void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
 +    }
 +
 +    default java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
-+        return Collections.emptyList();
++        return java.util.Collections.emptyList();
 +    }
 +
-+    default @org.jetbrains.annotations.Nullable org.bukkit.inventory.InventoryHolder getOwner() { // Paper - annotation
-+        return this instanceof BlockEntity blockEntity ? InventoryOwner.get(blockEntity) : null;
-+    }
++    @org.jetbrains.annotations.Nullable org.bukkit.inventory.InventoryHolder getOwner(); // Paper - annotation
 +
 +    default void setMaxStackSize(int size) {
 +    }
@@ -56,7 +37,7 @@
 +    default org.bukkit.Location getLocation() {
 +        if (this instanceof BlockEntity entity) {
 +            BlockPos blockPos = entity.getBlockPos();
-+            return new Location(entity.getLevel().getWorld(), blockPos.getX(), blockPos.getY(), blockPos.getZ());
++            return new org.bukkit.Location(entity.getLevel().getWorld(), blockPos.getX(), blockPos.getY(), blockPos.getZ());
 +        } else {
 +            return null;
 +        }

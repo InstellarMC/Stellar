@@ -1,21 +1,5 @@
 --- a/net/minecraft/world/entity/EntityType.java
 +++ b/net/minecraft/world/entity/EntityType.java
-@@ -5,6 +_,7 @@
- import java.util.List;
- import java.util.Optional;
- import java.util.Spliterator;
-+import java.util.concurrent.atomic.AtomicReference;
- import java.util.function.Consumer;
- import java.util.function.Function;
- import java.util.stream.Stream;
-@@ -168,6 +_,7 @@
- import net.minecraft.world.phys.Vec3;
- import net.minecraft.world.phys.shapes.Shapes;
- import net.minecraft.world.phys.shapes.VoxelShape;
-+import org.bukkit.event.entity.CreatureSpawnEvent;
- import org.slf4j.Logger;
- 
- public class EntityType<T extends Entity> implements FeatureElement, EntityTypeTest<Entity, T> {
 @@ -190,7 +_,7 @@
              .fireImmune()
              .sized(6.0F, 0.5F)
@@ -101,7 +85,7 @@
      }
  
      @Nullable
-@@ -884,6 +_,21 @@
+@@ -884,6 +_,22 @@
          boolean p_20598_,
          boolean p_20599_
      ) {
@@ -120,6 +104,7 @@
 +            boolean p_20599_,
 +            org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason
 +    ) {
++        // CraftBukkit end
          Consumer<T> consumer;
          if (p_20594_ != null) {
              consumer = createDefaultStackConfig(p_20593_, p_20594_, p_20595_);
@@ -132,7 +117,7 @@
      }
  
      public static <T extends Entity> Consumer<T> createDefaultStackConfig(ServerLevel p_263583_, ItemStack p_263568_, @Nullable Player p_263575_) {
-@@ -915,25 +_,57 @@
+@@ -915,19 +_,47 @@
          Consumer<T> p_263579_, ServerLevel p_263571_, ItemStack p_263582_, @Nullable Player p_263574_
      ) {
          CustomData customdata = p_263582_.getOrDefault(DataComponents.ENTITY_DATA, CustomData.EMPTY);
@@ -142,25 +127,29 @@
 +        }) : p_263579_;
      }
  
-+    // Youer start
-+    public AtomicReference<CreatureSpawnEvent.SpawnReason> spawnReasonAtomicReference = new AtomicReference<>(CreatureSpawnEvent.SpawnReason.DEFAULT);
      @Nullable
      public T spawn(ServerLevel p_262634_, BlockPos p_262707_, MobSpawnType p_262597_) {
-+        spawnReasonAtomicReference.set(CreatureSpawnEvent.SpawnReason.DEFAULT);
-         return this.spawn(p_262634_, null, p_262707_, p_262597_, false, false);
-     }
- 
-     @Nullable
-+    public T spawn(ServerLevel worldserver, BlockPos blockposition, MobSpawnType enummobspawn, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
-+        return this.spawn(worldserver, null, blockposition, enummobspawn, false, false, spawnReason); // CraftBukkit - decompile error
-+        // CraftBukkit end
+-        return this.spawn(p_262634_, null, p_262707_, p_262597_, false, false);
++        // CraftBukkit start
++        return this.spawn(p_262634_, p_262707_, p_262597_, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
++    public T spawn(ServerLevel p_262634_, BlockPos p_262707_, MobSpawnType p_262597_, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        return this.spawn(p_262634_, null, p_262707_, p_262597_, false, false, spawnReason);
++        // CraftBukkit end
+     }
+ 
+     @Nullable
      public T spawn(ServerLevel p_262704_, @Nullable Consumer<T> p_262621_, BlockPos p_262672_, MobSpawnType p_262644_, boolean p_262690_, boolean p_262590_) {
 +        // CraftBukkit start
++        return this.spawn(p_262704_, p_262621_, p_262672_, p_262644_, p_262690_, p_262590_, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    @Nullable
++    public T spawn(ServerLevel p_262704_, @Nullable Consumer<T> p_262621_, BlockPos p_262672_, MobSpawnType p_262644_, boolean p_262690_, boolean p_262590_, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        // CraftBukkit start
 +        // Paper start - PreCreatureSpawnEvent
-+        org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason = spawnReasonAtomicReference.getAndSet(CreatureSpawnEvent.SpawnReason.DEFAULT);
 +        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
 +                io.papermc.paper.util.MCUtil.toLocation(p_262704_, p_262672_),
 +                org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(this),
@@ -179,19 +168,6 @@
          }
  
          return t;
-     }
- 
-     @Nullable
-+    public T spawn(ServerLevel pLevel, @Nullable Consumer<T> pConsumer, BlockPos pPos, MobSpawnType pSpawnType, boolean pShouldOffsetY, boolean pShouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
-+        spawnReasonAtomicReference.set(spawnReason);
-+        return spawn(pLevel, pConsumer, pPos, pSpawnType, pShouldOffsetY, pShouldOffsetYMore);
-+    }
-+    // Mohist end
-+
-+    @Nullable
-     public T create(ServerLevel p_262637_, @Nullable Consumer<T> p_262629_, BlockPos p_262595_, MobSpawnType p_262666_, boolean p_262685_, boolean p_262588_) {
-         T t = this.create(p_262637_);
-         if (t == null) {
 @@ -958,6 +_,15 @@
                  mob.yHeadRot = mob.getYRot();
                  mob.yBodyRot = mob.getYRot();
@@ -241,7 +217,7 @@
      public String getDescriptionId() {
          if (this.descriptionId == null) {
              this.descriptionId = Util.makeDescriptionId("entity", BuiltInRegistries.ENTITY_TYPE.getKey(this));
-@@ -1062,10 +_,18 @@
+@@ -1062,10 +_,27 @@
      }
  
      public static Optional<Entity> create(CompoundTag p_20643_, Level p_20644_) {
@@ -258,10 +234,49 @@
 +                    if (generation) p_185990_.generation = true; // Paper - Don't fire sync event during generation
 +                    p_185990_.load(p_20643_);
 +                },
-+                () -> LOGGER.debug("Skipping Entity with id {}", p_20643_.getString("id"))
++                // Purpur start - log skipped entity's position
++                () -> {
++                    LOGGER.debug("Skipping Entity with id {}", p_20643_.getString("id"));
++
++                    try {
++                        ListTag pos = p_20643_.getList("Pos", 6);
++                        EntityType.LOGGER.warn("Location: {} {},{},{}", p_20644_.getWorld().getName(), pos.getDouble(0), pos.getDouble(1), pos.getDouble(2));
++                    } catch (Throwable ignore) {}
++                }
++                // Purpur end
          );
      }
  
+@@ -1090,7 +_,7 @@
+     }
+ 
+     public static Optional<EntityType<?>> by(CompoundTag p_20638_) {
+-        return BuiltInRegistries.ENTITY_TYPE.getOptional(ResourceLocation.parse(p_20638_.getString("id")));
++        return BuiltInRegistries.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(p_20638_.getString("id"))); // Paper - Validate ResourceLocation
+     }
+ 
+     @Nullable
+@@ -1114,9 +_,20 @@
+     public static Stream<Entity> loadEntitiesRecursive(final List<? extends Tag> p_147046_, final Level p_147047_) {
+         final Spliterator<? extends Tag> spliterator = p_147046_.spliterator();
+         return StreamSupport.stream(new Spliterator<Entity>() {
++            final java.util.Map<EntityType<?>, Integer> loadedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
+             @Override
+             public boolean tryAdvance(Consumer<? super Entity> p_147066_) {
+                 return spliterator.tryAdvance(p_147059_ -> EntityType.loadEntityRecursive((CompoundTag)p_147059_, p_147047_, p_147062_ -> {
++                        // Paper start - Entity load/save limit per chunk
++                        final EntityType<?> entityType = p_147062_.getType();
++                        final int saveLimit = p_147047_.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
++                        if (saveLimit > -1) {
++                            if (this.loadedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
++                                return null;
++                            }
++                            this.loadedEntityCounts.merge(entityType, 1, Integer::sum);
++                        }
++                        // Paper end - Entity load/save limit per chunk
+                         p_147066_.accept(p_147062_);
+                         return p_147062_;
+                     }));
 @@ -1149,14 +_,23 @@
      }
  

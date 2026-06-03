@@ -1,47 +1,13 @@
 --- a/net/minecraft/world/inventory/AnvilMenu.java
 +++ b/net/minecraft/world/inventory/AnvilMenu.java
-@@ -1,25 +_,30 @@
- package net.minecraft.world.inventory;
- 
-+import com.destroystokyo.paper.event.entity.AnvilDamagedEvent;
-+import com.mohistmc.youer.YouerConfig;
- import com.mojang.logging.LogUtils;
- import it.unimi.dsi.fastutil.objects.Object2IntMap.Entry;
- import javax.annotation.Nullable;
--import net.minecraft.core.BlockPos;
- import net.minecraft.core.Holder;
- import net.minecraft.core.component.DataComponents;
- import net.minecraft.network.chat.Component;
-+import net.minecraft.network.protocol.game.ClientboundContainerSetDataPacket;
-+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
-+import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.tags.BlockTags;
- import net.minecraft.util.Mth;
- import net.minecraft.util.StringUtil;
- import net.minecraft.world.entity.player.Inventory;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.ItemStack;
--import net.minecraft.world.item.Items;
- import net.minecraft.world.item.enchantment.Enchantment;
- import net.minecraft.world.item.enchantment.EnchantmentHelper;
- import net.minecraft.world.item.enchantment.ItemEnchantments;
--import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.AnvilBlock;
- import net.minecraft.world.level.block.state.BlockState;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryAnvil;
-+import org.bukkit.craftbukkit.inventory.view.CraftAnvilView;
- import org.slf4j.Logger;
- 
- public class AnvilMenu extends ItemCombinerMenu {
 @@ -44,6 +_,30 @@
      private static final int ADDITIONAL_SLOT_X_PLACEMENT = 76;
      private static final int RESULT_SLOT_X_PLACEMENT = 134;
      private static final int SLOT_Y_PLACEMENT = 47;
 +    // CraftBukkit start
 +    public static final int DEFAULT_DENIED_COST = -1;
-+    public int maximumRepairCost = Math.min(Short.MAX_VALUE, Math.max(41, YouerConfig.maximumRepairCost));
-+    private CraftAnvilView bukkitEntity;
++    public int maximumRepairCost = Math.min(Short.MAX_VALUE, Math.max(41, com.mohistmc.youer.YouerConfig.maximumRepairCost));
++    private org.bukkit.craftbukkit.inventory.view.CraftAnvilView bukkitEntity;
 +    // CraftBukkit end
 +    public boolean bypassEnchantmentLevelRestriction = false; // Paper - bypass anvil level restrictions
 +    // Purpur start - Anvil API
@@ -50,14 +16,14 @@
 +    // Purpur end - Anvil API
 +
 +    @Override
-+    public CraftAnvilView getBukkitView() {
++    public org.bukkit.craftbukkit.inventory.view.CraftAnvilView getBukkitView() {
 +        if (bukkitEntity != null) {
 +            return bukkitEntity;
 +        }
 +
-+        CraftInventoryAnvil inventory = new CraftInventoryAnvil(
++        org.bukkit.craftbukkit.inventory.CraftInventoryAnvil inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryAnvil(
 +                access.getLocation(), this.inputSlots, this.resultSlots);
-+        bukkitEntity = new CraftAnvilView(this.player.getBukkitEntity(), inventory, this);
++        bukkitEntity = new org.bukkit.craftbukkit.inventory.view.CraftAnvilView(this.player.getBukkitEntity(), inventory, this);
 +        bukkitEntity.updateFromLegacy(inventory);
 +        return bukkitEntity;
 +    }
@@ -80,7 +46,7 @@
 +        if (org.purpurmc.purpur.event.inventory.AnvilTakeResultEvent.getHandlerList().getRegisteredListeners().length > 0) new org.purpurmc.purpur.event.inventory.AnvilTakeResultEvent(player.getBukkitEntity(), getBukkitView(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(activeQuickItem)).callEvent();
 +        // Purpur end - Anvil API
          if (!p_150474_.getAbilities().instabuild) {
-+            if (this.bypassCost) ((ServerPlayer) player).lastSentExp = -1; else // Purpur - Anvil API
++            if (this.bypassCost) ((net.minecraft.server.level.ServerPlayer) player).lastSentExp = -1; else // Purpur - Anvil API
              p_150474_.giveExperienceLevels(-this.cost.get());
          }
  
@@ -101,10 +67,10 @@
 +            if (!p_150474_.getAbilities().instabuild && blockstate.is(BlockTags.ANVIL) && p_150474_.getRandom().nextFloat() < breakChance) {
                  BlockState blockstate1 = AnvilBlock.damage(blockstate);
 +                // Paper start - AnvilDamageEvent
-+                AnvilDamagedEvent event = new AnvilDamagedEvent(getBukkitView(), blockstate1 != null ? org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(blockstate1) : null);
++                com.destroystokyo.paper.event.entity.AnvilDamagedEvent event = new com.destroystokyo.paper.event.entity.AnvilDamagedEvent(getBukkitView(), blockstate1 != null ? org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(blockstate1) : null);
 +                if (!event.callEvent()) {
 +                    return;
-+                } else if (event.getDamageState() == AnvilDamagedEvent.DamageState.BROKEN) {
++                } else if (event.getDamageState() == com.destroystokyo.paper.event.entity.AnvilDamagedEvent.DamageState.BROKEN) {
 +                    blockstate1 = null;
 +                } else {
 +                    blockstate1 = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getDamageState().getMaterial().createBlockData()).getState().setValue(AnvilBlock.FACING, blockstate.getValue(AnvilBlock.FACING));
@@ -149,7 +115,7 @@
                      if (l2 <= 0) {
 -                        this.resultSlots.setItem(0, ItemStack.EMPTY);
 -                        this.cost.set(0);
-+                        CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
++                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
 +                        this.cost.set(DEFAULT_DENIED_COST); // CraftBukkit - use a variable for set a cost for denied item
                          return;
                      }
@@ -160,7 +126,7 @@
                      if (!flag && (!itemstack1.is(itemstack2.getItem()) || !itemstack1.isDamageableItem())) {
 -                        this.resultSlots.setItem(0, ItemStack.EMPTY);
 -                        this.cost.set(0);
-+                        CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
++                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
 +                        this.cost.set(DEFAULT_DENIED_COST); // CraftBukkit - use a variable for set a cost for denied item
 +
                          return;
@@ -201,7 +167,7 @@
                      if (flag3 && !flag2) {
 -                        this.resultSlots.setItem(0, ItemStack.EMPTY);
 -                        this.cost.set(0);
-+                        CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
++                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
 +                        this.cost.set(DEFAULT_DENIED_COST); // CraftBukkit - use a variable for set a cost for denied item
                          return;
                      }
@@ -311,20 +277,20 @@
              }
  
 -            this.resultSlots.setItem(0, itemstack1);
-+            CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), itemstack1); // CraftBukkit
++            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), itemstack1); // CraftBukkit
 +            sendAllDataToRemote(); // CraftBukkit - SPIGOT-6686: Always send completed inventory to stay in sync with client
              this.broadcastChanges();
 +
 +            // Purpur start - Anvil API
 +            if ((this.canDoUnsafeEnchants || org.purpurmc.purpur.PurpurConfig.allowInapplicableEnchants || org.purpurmc.purpur.PurpurConfig.allowIncompatibleEnchants) && itemstack1 != ItemStack.EMPTY) { // Purpur - Config to allow unsafe enchants
-+                ((ServerPlayer) this.player).connection.send(new ClientboundContainerSetSlotPacket(this.containerId, this.incrementStateId(), 2, itemstack1));
-+                ((ServerPlayer) this.player).connection.send(new ClientboundContainerSetDataPacket(this.containerId, 0, this.cost.get()));
++                ((net.minecraft.server.level.ServerPlayer) this.player).connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(this.containerId, this.incrementStateId(), 2, itemstack1));
++                ((net.minecraft.server.level.ServerPlayer) this.player).connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetDataPacket(this.containerId, 0, this.cost.get()));
 +            }
 +            // Purpur end - Anvil API
          } else {
 -            this.resultSlots.setItem(0, ItemStack.EMPTY);
 -            this.cost.set(0);
-+            CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
++            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
 +            this.cost.set(DEFAULT_DENIED_COST); // CraftBukkit - use a variable for set a cost for denied item
 +
          }

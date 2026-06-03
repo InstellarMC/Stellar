@@ -659,12 +659,7 @@ public class CommonHooks {
                     int updateFlag = snap.getFlags();
                     BlockState oldBlock = snap.getState();
                     BlockState newBlock = level.getBlockState(snap.getPos());
-                    // Youer start
-                    if (newBlock.getBlock() instanceof BaseFireBlock ff ) {
-                        ff.onPlace$context = context;
-                    }
-                    // Youer end
-                    newBlock.onPlace(level, snap.getPos(), oldBlock, false);
+                    newBlock.onPlace(level, snap.getPos(), oldBlock, false, context); // Stellar
 
                     level.markAndNotifyBlock(snap.getPos(), level.getChunkAt(snap.getPos()), oldBlock, newBlock, updateFlag, 512);
                 }

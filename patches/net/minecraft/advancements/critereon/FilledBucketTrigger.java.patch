@@ -1,0 +1,10 @@
+--- a/net/minecraft/advancements/critereon/FilledBucketTrigger.java
++++ b/net/minecraft/advancements/critereon/FilledBucketTrigger.java
+@@ -16,6 +_,7 @@
+     }
+ 
+     public void trigger(ServerPlayer p_38773_, ItemStack p_38774_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
+         this.trigger(p_38773_, p_38777_ -> p_38777_.matches(p_38774_));
+     }
+ 

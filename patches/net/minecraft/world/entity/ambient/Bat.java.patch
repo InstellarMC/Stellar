@@ -1,18 +1,5 @@
 --- a/net/minecraft/world/entity/ambient/Bat.java
 +++ b/net/minecraft/world/entity/ambient/Bat.java
-@@ -21,10 +_,12 @@
- import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
- import net.minecraft.world.entity.ai.attributes.Attributes;
- import net.minecraft.world.entity.ai.targeting.TargetingConditions;
-+import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.LevelAccessor;
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
- 
- public class Bat extends AmbientCreature {
-     public static final float FLAP_LENGTH_SECONDS = 0.5F;
 @@ -39,11 +_,58 @@
  
      public Bat(EntityType<? extends Bat> p_27412_, Level p_27413_) {
@@ -48,7 +35,7 @@
 +    }
 +
 +    @Override
-+    public void onMount(Player rider) {
++    public void onMount(net.minecraft.world.entity.player.Player rider) {
 +        super.onMount(rider);
 +        if (isResting()) {
 +            setResting(false);
@@ -125,14 +112,14 @@
                  }
  
 -                if (this.level().getNearestPlayer(BAT_RESTING_TARGETING, this) != null) {
-+                if (this.level().getNearestPlayer(BAT_RESTING_TARGETING, this) != null && CraftEventFactory.handleBatToggleSleepEvent(this, true)) { // CraftBukkit - Call BatToggleSleepEvent
++                if (this.level().getNearestPlayer(BAT_RESTING_TARGETING, this) != null && org.bukkit.craftbukkit.event.CraftEventFactory.handleBatToggleSleepEvent(this, true)) { // CraftBukkit - Call BatToggleSleepEvent
                      this.setResting(false);
                      if (!flag) {
                          this.level().levelEvent(null, 1025, blockpos, 0);
                      }
                  }
 -            } else {
-+            } else if (CraftEventFactory.handleBatToggleSleepEvent(this, true)) { // CraftBukkit - Call BatToggleSleepEvent
++            } else if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBatToggleSleepEvent(this, true)) { // CraftBukkit - Call BatToggleSleepEvent
                  this.setResting(false);
                  if (!flag) {
                      this.level().levelEvent(null, 1025, blockpos, 0);
@@ -141,7 +128,7 @@
              this.zza = 0.5F;
              this.setYRot(this.getYRot() + f1);
 -            if (this.random.nextInt(100) == 0 && this.level().getBlockState(blockpos1).isRedstoneConductor(this.level(), blockpos1)) {
-+            if (this.random.nextInt(100) == 0 && this.level().getBlockState(blockpos1).isRedstoneConductor(this.level(), blockpos1) && CraftEventFactory.handleBatToggleSleepEvent(this, false)) { // CraftBukkit - Call BatToggleSleepEvent
++            if (this.random.nextInt(100) == 0 && this.level().getBlockState(blockpos1).isRedstoneConductor(this.level(), blockpos1) && org.bukkit.craftbukkit.event.CraftEventFactory.handleBatToggleSleepEvent(this, false)) { // CraftBukkit - Call BatToggleSleepEvent
                  this.setResting(true);
              }
          }
@@ -156,7 +143,7 @@
              return false;
          } else {
 -            if (!this.level().isClientSide && this.isResting()) {
-+            if (!this.level().isClientSide && this.isResting() && CraftEventFactory.handleBatToggleSleepEvent(this, true)) { // CraftBukkit - Call BatToggleSleepEvent
++            if (!this.level().isClientSide && this.isResting() && org.bukkit.craftbukkit.event.CraftEventFactory.handleBatToggleSleepEvent(this, true)) { // CraftBukkit - Call BatToggleSleepEvent
                  this.setResting(false);
              }
  
@@ -165,3 +152,54 @@
          }
      }
  
+@@ -225,7 +_,7 @@
+         } else {
+             int i = p_218100_.getMaxLocalRawBrightness(p_218102_);
+             int j = 4;
+-            if (isHalloween()) {
++            if (isSpookySeason(p_218100_.getMinecraftWorld())) { // Purpur // Stellar - Port SparklyPaper patches; Optimize Spooky Season
+                 j = 7;
+             } else if (p_218103_.nextBoolean()) {
+                 return false;
+@@ -235,12 +_,40 @@
+         }
+     }
+ 
++    // Pufferfish start - only check for spooky season once an hour
++    private static boolean isSpookySeason = false;
++    private static final int ONE_HOUR = 20 * 60 * 60;
++    private static int lastSpookyCheck = -ONE_HOUR;
++    // Stellar start - Port SparklyPaper patches; Optimize Spooky Season
++    private static boolean isSpookySeason(Level level) {
++        if (level.purpurConfig.forceHalloweenSeason) return true;
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.spookyOptimize)
++            return net.sparklypower.sparklypaper.HalloweenManager.isSpookySeason()
++                || net.sparklypower.sparklypaper.HalloweenManager.isHalloween();
++        return isHalloween();
++    }
++
++    public static boolean isHalloweenSeason(Level level) {
++        if (level.purpurConfig.forceHalloweenSeason) return true;
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.spookyOptimize)
++            return net.sparklypower.sparklypaper.HalloweenManager.isHalloween();
++        return isHalloween();
++    }
++
++    @SuppressWarnings("RedundantExplicitChronoField")
++    // Stellar end - Port SparklyPaper patches; Optimize Spooky Season
+     private static boolean isHalloween() {
++        if (net.minecraft.server.MinecraftServer.currentTick - lastSpookyCheck > ONE_HOUR) {
+         LocalDate localdate = LocalDate.now();
+         int i = localdate.get(ChronoField.DAY_OF_MONTH);
+         int j = localdate.get(ChronoField.MONTH_OF_YEAR);
+-        return j == 10 && i >= 20 || j == 11 && i <= 3;
++
++        isSpookySeason = j == 10 && i >= 20 || j == 11 && i <= 3;
++        lastSpookyCheck = net.minecraft.server.MinecraftServer.currentTick;
++        }
++        return isSpookySeason;
+     }
++    // Pufferfish end
+ 
+     private void setupAnimationStates() {
+         if (this.isResting()) {

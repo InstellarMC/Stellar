@@ -1,0 +1,26 @@
+--- a/net/minecraft/world/entity/ai/navigation/AmphibiousPathNavigation.java
++++ b/net/minecraft/world/entity/ai/navigation/AmphibiousPathNavigation.java
+@@ -12,10 +_,23 @@
+         super(p_217788_, p_217789_);
+     }
+ 
++    // Stellar start - Process pathfinding asynchronously
++    private static final dev.kaiijumc.kaiiju.path.NodeEvaluatorGenerator GENERATOR =
++        (dev.kaiijumc.kaiiju.path.NodeEvaluatorFeatures features) -> {
++            AmphibiousNodeEvaluator evaluator = new AmphibiousNodeEvaluator(false);
++            evaluator.setCanPassDoors(features.canOpenDoors());
++            evaluator.setCanOpenDoors(features.canOpenDoors());
++            evaluator.setCanFloat(features.canFloat());
++            evaluator.setCanWalkOverFences(features.canWalkOverFences());
++            return evaluator;
++        };
++    // Stellar end - Process pathfinding asynchronously
++
+     @Override
+     protected PathFinder createPathFinder(int p_217792_) {
+         this.nodeEvaluator = new AmphibiousNodeEvaluator(false);
+         this.nodeEvaluator.setCanPassDoors(true);
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.asyncPathProcess.enabled) return new PathFinder(this.nodeEvaluator, p_217792_, GENERATOR); // Stellar - Process pathfinding asynchronously
+         return new PathFinder(this.nodeEvaluator, p_217792_);
+     }
+ 

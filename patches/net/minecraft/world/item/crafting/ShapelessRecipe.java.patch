@@ -1,21 +1,8 @@
 --- a/net/minecraft/world/item/crafting/ShapelessRecipe.java
 +++ b/net/minecraft/world/item/crafting/ShapelessRecipe.java
-@@ -4,27 +_,48 @@
- import com.mojang.serialization.DataResult;
- import com.mojang.serialization.MapCodec;
- import com.mojang.serialization.codecs.RecordCodecBuilder;
--import com.mojang.serialization.codecs.RecordCodecBuilder.Instance;
--import java.util.List;
- import net.minecraft.core.HolderLookup;
- import net.minecraft.core.NonNullList;
- import net.minecraft.network.RegistryFriendlyByteBuf;
- import net.minecraft.network.codec.StreamCodec;
+@@ -13,18 +_,37 @@
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.level.Level;
-+import org.bukkit.NamespacedKey;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.inventory.CraftRecipe;
-+import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
  
 -public class ShapelessRecipe implements CraftingRecipe {
 +public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBookExactChoiceRecipe<CraftingInput> implements CraftingRecipe {
@@ -38,14 +25,14 @@
 +    // CraftBukkit start
 +    @SuppressWarnings("unchecked")
 +    @Override
-+    public org.bukkit.inventory.ShapelessRecipe toBukkitRecipe(NamespacedKey id) {
-+        CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
-+        CraftShapelessRecipe recipe = new CraftShapelessRecipe(id, result, this);
++    public org.bukkit.inventory.ShapelessRecipe toBukkitRecipe(org.bukkit.NamespacedKey id) {
++        org.bukkit.craftbukkit.inventory.CraftItemStack result = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.result);
++        org.bukkit.craftbukkit.inventory.CraftShapelessRecipe recipe = new org.bukkit.craftbukkit.inventory.CraftShapelessRecipe(id, result, this);
 +        recipe.setGroup(this.group);
-+        recipe.setCategory(CraftRecipe.getCategory(this.category()));
++        recipe.setCategory(org.bukkit.craftbukkit.inventory.CraftRecipe.getCategory(this.category()));
 +
 +        for (Ingredient list : this.ingredients) {
-+            recipe.addIngredient(CraftRecipe.toBukkit(list));
++            recipe.addIngredient(org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(list));
 +        }
 +        return recipe;
 +    }

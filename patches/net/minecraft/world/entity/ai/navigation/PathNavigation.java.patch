@@ -9,7 +9,7 @@
      private boolean isStuck;
  
      public PathNavigation(Mob p_26515_, Level p_26516_) {
-@@ -129,6 +_,7 @@
+@@ -129,12 +_,14 @@
  
      @Nullable
      protected Path createPath(Set<BlockPos> p_148223_, int p_148224_, boolean p_148225_, int p_148226_, float p_148227_) {
@@ -17,6 +17,37 @@
          if (p_148223_.isEmpty()) {
              return null;
          } else if (this.mob.getY() < (double)this.level.getMinBuildHeight()) {
+             return null;
+         } else if (!this.canUpdatePath()) {
+             return null;
++        } else if (this.path instanceof dev.kaiijumc.kaiiju.path.AsyncPath async && !async.isProcessed() && async.hasSamePosition(p_148223_)) { return this.path; // Stellar - Process pathfinding asynchronously
+         } else if (this.path != null && !this.path.isDone() && p_148223_.contains(this.targetPos)) {
+             return this.path;
+         } else {
+@@ -143,6 +_,23 @@
+             int i = (int)(p_148227_ + (float)p_148224_);
+             PathNavigationRegion pathnavigationregion = new PathNavigationRegion(this.level, blockpos.offset(-i, -i, -i), blockpos.offset(i, i, i));
+             Path path = this.pathFinder.findPath(pathnavigationregion, this.mob, p_148223_, p_148227_, p_148226_, this.maxVisitedNodesMultiplier);
++            // Stellar start - Process pathfinding asynchronously
++            if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.asyncPathProcess.enabled) {
++                if (!p_148223_.isEmpty()) this.targetPos = p_148223_.iterator().next();
++
++                dev.kaiijumc.kaiiju.path.AsyncPathProcessor.awaitProcess(mob, path, processed -> {
++                    if (processed != this.path) return;
++
++                    if (processed == null || processed.getTarget() == null) return;
++
++                    this.targetPos = processed.getTarget();
++                    this.reachRange = p_148226_;
++                    this.resetStuckTimeout();
++                });
++
++                return path;
++            }
++            // Stellar end - Process pathfinding asynchronously
+             this.level.getProfiler().pop();
+             if (path != null && path.getTarget() != null) {
+                 this.targetPos = path.getTarget();
 @@ -167,7 +_,7 @@
          return path != null && this.moveTo(path, p_26533_);
      }
@@ -26,7 +57,7 @@
          if (p_26537_ == null) {
              this.path = null;
              return false;
-@@ -199,6 +_,7 @@
+@@ -199,10 +_,12 @@
      }
  
      public void tick() {
@@ -34,7 +65,18 @@
          this.tick++;
          if (this.hasDelayedRecomputation) {
              this.recomputePath();
-@@ -232,10 +_,10 @@
+         }
++        if (this.path != null && !this.path.isProcessed()) return; // Stellar - Process pathfinding asynchronously
+ 
+         if (!this.isDone()) {
+             if (this.canUpdatePath()) {
+@@ -228,14 +_,16 @@
+         return this.level.getBlockState(blockpos.below()).isAir() ? p_186132_.y : WalkNodeEvaluator.getFloorLevel(this.level, blockpos);
+     }
+ 
++    @SuppressWarnings("DataFlowIssue") // Stellar - Process pathfinding asynchronously
+     protected void followThePath() {
++        if (!this.path.isProcessed()) return; // Stellar - Process pathfinding asynchronously
          Vec3 vec3 = this.getTempMobPos();
          this.maxDistanceToWaypoint = this.mob.getBbWidth() > 0.75F ? this.mob.getBbWidth() / 2.0F : 0.75F - this.mob.getBbWidth() / 2.0F;
          Vec3i vec3i = this.path.getNextNodePos();
@@ -48,3 +90,12 @@
          if (flag || this.canCutCorner(this.path.getNextNode().type) && this.shouldTargetNextNodeInDirection(vec3)) {
              this.path.advance();
          }
+@@ -385,7 +_,7 @@
+     public boolean shouldRecomputePath(BlockPos p_200904_) {
+         if (this.hasDelayedRecomputation) {
+             return false;
+-        } else if (this.path != null && !this.path.isDone() && this.path.getNodeCount() != 0) {
++        } else if (this.path != null && this.path.isProcessed() && !this.path.isDone() && this.path.getNodeCount() != 0) { // Stellar - Process pathfinding asynchronously
+             Node node = this.path.getEndNode();
+             Vec3 vec3 = new Vec3(((double)node.x + this.mob.getX()) / 2.0, ((double)node.y + this.mob.getY()) / 2.0, ((double)node.z + this.mob.getZ()) / 2.0);
+             return p_200904_.closerToCenterThan(vec3, (double)(this.path.getNodeCount() - this.path.getNextNodeIndex()));

@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/level/BlockGetter.java
 +++ b/net/minecraft/world/level/BlockGetter.java
-@@ -9,6 +_,7 @@
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.Direction;
- import net.minecraft.util.Mth;
-+import net.minecraft.world.level.block.Block;
- import net.minecraft.world.level.block.entity.BlockEntity;
- import net.minecraft.world.level.block.entity.BlockEntityType;
- import net.minecraft.world.level.block.state.BlockState;
 @@ -29,10 +_,19 @@
  
      BlockState getBlockState(BlockPos p_45571_);
@@ -15,7 +7,7 @@
 +    // Paper start - if loaded util
 +    @Nullable BlockState getBlockStateIfLoaded(BlockPos blockposition);
 +
-+    default @Nullable Block getBlockIfLoaded(BlockPos blockposition) {
++    default @Nullable net.minecraft.world.level.block.Block getBlockIfLoaded(BlockPos blockposition) {
 +        BlockState type = this.getBlockStateIfLoaded(blockposition);
 +        return type == null ? null : type.getBlock();
 +    }

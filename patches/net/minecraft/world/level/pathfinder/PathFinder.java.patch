@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/net/minecraft/world/level/pathfinder/PathFinder.java
-@@ -21,7 +_,7 @@
+@@ -21,49 +_,98 @@
      private static final float FUDGING = 1.5F;
      private final Node[] neighbors = new Node[32];
      private final int maxVisitedNodes;
@@ -8,9 +8,37 @@
 +    public final NodeEvaluator nodeEvaluator; // Stellar - public
      private static final boolean DEBUG = false;
      private final BinaryHeap openSet = new BinaryHeap();
++    // Stellar start - Process pathfinding asynchronously
++    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
++    private final @Nullable dev.kaiijumc.kaiiju.path.NodeEvaluatorGenerator evaluatorGenerator;
  
-@@ -38,13 +_,12 @@
+     public PathFinder(NodeEvaluator p_77425_, int p_77426_) {
++        this(p_77425_, p_77426_, null);
++    }
++
++    public PathFinder(NodeEvaluator p_77425_, int p_77426_, @Nullable dev.kaiijumc.kaiiju.path.NodeEvaluatorGenerator evaluatorGenerator) {
++    // Stellar end - Process pathfinding asynchronously
+         this.nodeEvaluator = p_77425_;
+         this.maxVisitedNodes = p_77426_;
++        this.evaluatorGenerator = evaluatorGenerator; // Stellar - Process pathfinding asynchronously
+     }
+ 
+     @Nullable
+     public Path findPath(PathNavigationRegion p_77428_, Mob p_77429_, Set<BlockPos> p_77430_, float p_77431_, int p_77432_, float p_77433_) {
++        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().entities.asyncPathProcess.enabled) // Stellar - Process pathfinding asynchronously
+         this.openSet.clear();
+-        this.nodeEvaluator.prepare(p_77428_, p_77429_);
+-        Node node = this.nodeEvaluator.getStart();
++        // Stellar start - Process pathfinding asynchronously
++        NodeEvaluator evaluator = this.evaluatorGenerator == null
++            ? this.nodeEvaluator
++            : dev.kaiijumc.kaiiju.path.NodeEvaluatorCache.take(this.evaluatorGenerator, this.nodeEvaluator);
++
++        evaluator.prepare(p_77428_, p_77429_);
++        Node node = evaluator.getStart();
++        // Stellar end - Process pathfinding asynchronously
          if (node == null) {
++            dev.kaiijumc.kaiiju.path.NodeEvaluatorCache.remove(evaluator); // Stellar - Process pathfinding asynchronously
              return null;
          } else {
 -            Map<Target, BlockPos> map = p_77430_.stream()
@@ -23,19 +51,51 @@
 +            // Paper start - Perf: remove streams and optimize collection
 +            List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
 +            for (final BlockPos pos : p_77430_) {
-+                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), pos));
++                map.add(new java.util.AbstractMap.SimpleEntry<>(evaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), pos)); // Stellar - Process pathfinding asynchronously
 +            }
 +            // Paper end - Perf: remove streams and optimize collection
++            // Stellar start - Process pathfinding asynchronously
++            if (this.evaluatorGenerator == null) {
++                dev.kaiijumc.kaiiju.path.NodeEvaluatorCache.remove(evaluator);
++            // Stellar end - Process pathfinding asynchronously
              Path path = this.findPath(p_77428_.getProfiler(), node, map, p_77431_, p_77432_, p_77433_);
++            if (false) // Stellar - Process pathfinding asynchronously
              this.nodeEvaluator.done();
              return path;
-@@ -52,18 +_,19 @@
++            } // Stellar - Process pathfinding asynchronously
++
++            return new dev.kaiijumc.kaiiju.path.AsyncPath(
++                Lists.newArrayList(),
++                p_77430_,
++                () -> this.processPath(p_77428_.getProfiler(), evaluator, node, map, p_77431_, p_77432_, p_77433_),
++                () -> {
++                    evaluator.done();
++                    dev.kaiijumc.kaiiju.path.NodeEvaluatorCache.returnEvaluator(evaluator);
++                }
++            );
+         }
      }
  
      @Nullable
 -    private Path findPath(ProfilerFiller p_164717_, Node p_164718_, Map<Target, BlockPos> p_164719_, float p_164720_, int p_164721_, float p_164722_) {
 +    // Paper start - Perf: remove streams and optimize collection
 +    private Path findPath(ProfilerFiller p_164717_, Node p_164718_, List<Map.Entry<Target, BlockPos>> p_164719_, float p_164720_, int p_164721_, float p_164722_) {
++        // Stellar start - Process pathfinding asynchronously
++        try {
++            return this.processPath(p_164717_, this.nodeEvaluator, p_164718_, p_164719_, p_164720_, p_164721_, p_164722_);
++        } catch (Exception e) {
++            LOGGER.error("Failed to process path", e);
++            return null;
++        } finally {
++            this.nodeEvaluator.done();
++        }
++    }
++
++    @SuppressWarnings("DataFlowIssue")
++    // @0org.jetbrains.annotations.NotNull // Stellar - NotNull is always implied
++    private synchronized Path processPath(ProfilerFiller p_164717_, NodeEvaluator nodeEvaluator, Node p_164718_, List<Map.Entry<Target, BlockPos>> p_164719_, float p_164720_, int p_164721_, float p_164722_) {
++        org.apache.commons.lang3.Validate.isTrue(!p_164719_.isEmpty());
++        // Stellar end - Process pathfinding asynchronously
          p_164717_.push("find_path");
          p_164717_.markForCharting(MetricCategory.PATH_FINDING);
 -        Set<Target> set = p_164719_.keySet();
@@ -54,7 +114,7 @@
          int j = (int)((float)this.maxVisitedNodes * p_164722_);
  
          while (!this.openSet.isEmpty()) {
-@@ -74,14 +_,17 @@
+@@ -74,19 +_,22 @@
              Node node = this.openSet.pop();
              node.closed = true;
  
@@ -75,6 +135,12 @@
                  break;
              }
  
+             if (!(node.distanceTo(p_164718_) >= p_164720_)) {
+-                int k = this.nodeEvaluator.getNeighbors(this.neighbors, node);
++                int k = nodeEvaluator.getNeighbors(this.neighbors, node); // Stellar - Process pathfinding asynchronously
+ 
+                 for (int l = 0; l < k; l++) {
+                     Node node1 = this.neighbors[l];
 @@ -96,7 +_,7 @@
                      if (node1.walkedDistance < p_164720_ && (!node1.inOpenSet() || f1 < node1.g)) {
                          node1.cameFrom = node;

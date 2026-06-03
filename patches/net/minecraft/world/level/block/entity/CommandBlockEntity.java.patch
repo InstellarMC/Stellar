@@ -1,20 +1,13 @@
 --- a/net/minecraft/world/level/block/entity/CommandBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/CommandBlockEntity.java
-@@ -15,12 +_,20 @@
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.phys.Vec2;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.command.CraftBlockCommandSender;
- 
- public class CommandBlockEntity extends BlockEntity {
-     private boolean powered;
+@@ -21,6 +_,13 @@
      private boolean auto;
      private boolean conditionMet;
      private final BaseCommandBlock commandBlock = new BaseCommandBlock() {
 +        // CraftBukkit start
 +        @Override
 +        public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
-+            return new CraftBlockCommandSender(wrapper, CommandBlockEntity.this);
++            return new org.bukkit.craftbukkit.command.CraftBlockCommandSender(wrapper, CommandBlockEntity.this);
 +        }
 +        // CraftBukkit end
 +

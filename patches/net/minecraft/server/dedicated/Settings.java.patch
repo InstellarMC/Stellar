@@ -1,11 +1,10 @@
 --- a/net/minecraft/server/dedicated/Settings.java
 +++ b/net/minecraft/server/dedicated/Settings.java
-@@ -20,19 +_,43 @@
+@@ -20,19 +_,42 @@
  import java.util.function.Supplier;
  import java.util.function.UnaryOperator;
  import javax.annotation.Nullable;
 +
-+import joptsimple.OptionSet;
  import net.minecraft.core.RegistryAccess;
  import org.slf4j.Logger;
  
@@ -14,13 +13,13 @@
      public final Properties properties;
 +    private static final boolean skipComments = Boolean.getBoolean("Paper.skipServerPropertiesComments"); // Paper - allow skipping server.properties comments
 +    // CraftBukkit start
-+    private OptionSet options = null;
++    private joptsimple.OptionSet options = null;
  
      public Settings(Properties p_139801_) {
          this.properties = p_139801_;
      }
  
-+    public Settings(Properties p_139801_, final OptionSet options) {
++    public Settings(Properties p_139801_, final joptsimple.OptionSet options) {
 +        this(p_139801_);
 +        this.options = options;
 +    }

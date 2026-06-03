@@ -1,21 +1,5 @@
 --- a/net/minecraft/server/commands/SummonCommand.java
 +++ b/net/minecraft/server/commands/SummonCommand.java
-@@ -1,7 +_,6 @@
- package net.minecraft.server.commands;
- 
- import com.mojang.brigadier.CommandDispatcher;
--import com.mojang.brigadier.context.CommandContext;
- import com.mojang.brigadier.exceptions.CommandSyntaxException;
- import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
- import net.minecraft.commands.CommandBuildContext;
-@@ -23,6 +_,7 @@
- import net.minecraft.world.entity.MobSpawnType;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.phys.Vec3;
-+import org.bukkit.event.entity.CreatureSpawnEvent;
- 
- public class SummonCommand {
-     private static final SimpleCommandExceptionType ERROR_FAILED = new SimpleCommandExceptionType(Component.translatable("commands.summon.failed"));
 @@ -85,6 +_,7 @@
              ServerLevel serverlevel = p_270582_.getLevel();
              Entity entity = EntityType.loadEntityRecursive(compoundtag, serverlevel, p_138828_ -> {
@@ -29,7 +13,7 @@
                  }
  
 -                if (!serverlevel.tryAddFreshEntityWithPassengers(entity)) {
-+                if (!serverlevel.tryAddFreshEntityWithPassengers(entity, CreatureSpawnEvent.SpawnReason.COMMAND)) { // Youer - TODO fix mixin // Stellar - no
++                if (!serverlevel.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND)) { // CraftBukkit - pass a spawn reason of "COMMAND"
                      throw ERROR_DUPLICATE_UUID.create();
                  } else {
                      return entity;

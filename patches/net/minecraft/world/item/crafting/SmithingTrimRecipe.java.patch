@@ -1,22 +1,6 @@
 --- a/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
 +++ b/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
-@@ -2,7 +_,6 @@
- 
- import com.mojang.serialization.MapCodec;
- import com.mojang.serialization.codecs.RecordCodecBuilder;
--import com.mojang.serialization.codecs.RecordCodecBuilder.Instance;
- import java.util.Optional;
- import java.util.stream.Stream;
- import net.minecraft.core.Holder;
-@@ -19,13 +_,24 @@
- import net.minecraft.world.item.armortrim.TrimPattern;
- import net.minecraft.world.item.armortrim.TrimPatterns;
- import net.minecraft.world.level.Level;
-+import org.bukkit.NamespacedKey;
-+import org.bukkit.craftbukkit.inventory.CraftRecipe;
-+import org.bukkit.craftbukkit.inventory.CraftSmithingTrimRecipe;
- 
- public class SmithingTrimRecipe implements SmithingRecipe {
+@@ -24,8 +_,16 @@
      final Ingredient template;
      final Ingredient base;
      final Ingredient addition;
@@ -53,8 +37,8 @@
 +
 +    // CraftBukkit start
 +    @Override
-+    public org.bukkit.inventory.Recipe toBukkitRecipe(NamespacedKey id) {
-+        return new CraftSmithingTrimRecipe(id, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition), this.copyDataComponents); // Paper - Option to prevent data components copy
++    public org.bukkit.inventory.Recipe toBukkitRecipe(org.bukkit.NamespacedKey id) {
++        return new org.bukkit.craftbukkit.inventory.CraftSmithingTrimRecipe(id, org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.template), org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.base), org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.addition), this.copyDataComponents); // Paper - Option to prevent data components copy
 +    }
 +    // CraftBukkit end
  

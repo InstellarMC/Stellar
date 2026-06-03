@@ -43,6 +43,8 @@ public class WorldConfiguration extends ConfigurationPart {
 
         public boolean disableDropItem = false;
 
+        public boolean turtleHelmetCheck = true;
+
     }
 
     public Chunks chunks;
@@ -57,6 +59,32 @@ public class WorldConfiguration extends ConfigurationPart {
                 but it can have a significant impact on TPS.
                 """)
         public IntOr.Disabled randomTickBatching = IntOr.Disabled.DISABLED;
+    }
+
+    public Structure structure;
+    public class Structure extends ConfigurationPart {
+
+        public NetherPortal netherPortal;
+        public class NetherPortal extends ConfigurationPart {
+
+            public Width width;
+            public class Width extends ConfigurationPart {
+
+                int min = 2; public int min() { return Math.max(this.min, 1); }
+                int max = 21; public int max() { return Math.max(this.min, this.max); }
+
+            }
+
+            public Height height;
+            public class Height extends ConfigurationPart {
+
+                int min = 3; public int min() { return Math.max(this.min, 2); }
+                int max = 21; public int max() { return Math.max(this.min, this.max); }
+
+            }
+
+        }
+
     }
 
     public Blocks blocks;

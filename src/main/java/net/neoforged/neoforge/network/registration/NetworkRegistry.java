@@ -12,6 +12,7 @@ import com.mohistmc.youer.bukkit.messaging.PacketRecorder;
 import com.mohistmc.youer.bukkit.messaging.PluginsPayload;
 import com.mohistmc.youer.util.I18n;
 import com.mojang.logging.LogUtils;
+import dev.instellar.stellar.plugin.messaging.RawPayload;
 import io.netty.channel.ChannelHandlerContext;
 import java.util.ArrayList;
 import java.util.Collections;

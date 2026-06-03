@@ -1,22 +1,6 @@
 --- a/net/minecraft/world/entity/monster/Zombie.java
 +++ b/net/minecraft/world/entity/monster/Zombie.java
-@@ -8,6 +_,7 @@
- import net.minecraft.core.BlockPos;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.NbtOps;
-+import net.minecraft.nbt.Tag;
- import net.minecraft.network.syncher.EntityDataAccessor;
- import net.minecraft.network.syncher.EntityDataSerializers;
- import net.minecraft.network.syncher.SynchedEntityData;
-@@ -63,12 +_,15 @@
- import net.minecraft.world.level.ServerLevelAccessor;
- import net.minecraft.world.level.block.Blocks;
- import net.minecraft.world.level.block.state.BlockState;
-+import org.bukkit.event.entity.CreatureSpawnEvent;
-+import org.bukkit.event.entity.EntityTransformEvent;
- 
- public class Zombie extends Monster {
-     private static final ResourceLocation SPEED_MODIFIER_BABY_ID = ResourceLocation.withDefaultNamespace("baby");
+@@ -69,6 +_,7 @@
      private static final AttributeModifier SPEED_MODIFIER_BABY = new AttributeModifier(
          SPEED_MODIFIER_BABY_ID, 0.5, AttributeModifier.Operation.ADD_MULTIPLIED_BASE
      );
@@ -247,60 +231,51 @@
          return SoundEvents.ZOMBIE_DEATH;
      }
  
-@@ -406,32 +_,38 @@
+@@ -406,12 +_,19 @@
      @Override
      public boolean killedEntity(ServerLevel p_219160_, LivingEntity p_219161_) {
          boolean flag = super.killedEntity(p_219160_, p_219161_);
 -        if ((p_219160_.getDifficulty() == Difficulty.NORMAL || p_219160_.getDifficulty() == Difficulty.HARD) && p_219161_ instanceof Villager villager) {
-+        if ((p_219160_.getDifficulty() == Difficulty.NORMAL || p_219160_.getDifficulty() == Difficulty.HARD) && p_219161_ instanceof Villager villager && net.neoforged.neoforge.event.EventHooks.canLivingConvert(p_219161_, EntityType.ZOMBIE_VILLAGER, (timer) -> {})) {
-             if (p_219160_.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
-                 return flag;
-             }
+-            if (p_219160_.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
+-                return flag;
+-            }
 -
 -            ZombieVillager zombievillager = villager.convertTo(EntityType.ZOMBIE_VILLAGER, false);
--            if (zombievillager != null) {
--                zombievillager.finalizeSpawn(
--                    p_219160_,
--                    p_219160_.getCurrentDifficultyAt(zombievillager.blockPosition()),
--                    MobSpawnType.CONVERSION,
--                    new Zombie.ZombieGroupData(false, true)
--                );
--                zombievillager.setVillagerData(villager.getVillagerData());
--                zombievillager.setGossips(villager.getGossips().store(NbtOps.INSTANCE));
--                zombievillager.setTradeOffers(villager.getOffers().copy());
--                zombievillager.setVillagerXp(villager.getVillagerXp());
--                if (!this.isSilent()) {
--                    p_219160_.levelEvent(null, 1026, this.blockPosition(), 0);
++        final double fallbackChance = p_219160_.getDifficulty() == Difficulty.HARD ? 100d : p_219160_.getDifficulty() == Difficulty.NORMAL ? 50d : 0d; // Paper - Configurable chance of villager zombie infection
++        if (this.random.nextDouble() * 100 < p_219160_.paperConfig().entities.behavior.zombieVillagerInfectionChance.or(fallbackChance) &&  p_219161_ instanceof Villager villager && net.neoforged.neoforge.event.EventHooks.canLivingConvert(p_219161_, EntityType.ZOMBIE_VILLAGER, (timer) -> {})) { // Neo // Paper - Configurable chance of villager zombie infection
 +            // CraftBukkit start
 +            flag = zombifyVillager(p_219160_, villager, this.blockPosition(), this.isSilent(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.INFECTION) == null;
 +        }
 +        return flag;
 +    }
 +
-+    public static ZombieVillager zombifyVillager(ServerLevel worldserver, Villager entityvillager, net.minecraft.core.BlockPos blockPosition, boolean silent, CreatureSpawnEvent.SpawnReason spawnReason) {
++    public static ZombieVillager zombifyVillager(ServerLevel p_219160_, Villager villager, net.minecraft.core.BlockPos blockPosition, boolean silent, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
 +        {
-+            ZombieVillager entityzombievillager = (ZombieVillager) entityvillager.convertTo(EntityType.ZOMBIE_VILLAGER, false, EntityTransformEvent.TransformReason.INFECTION, spawnReason);
++            ZombieVillager zombievillager = (ZombieVillager) villager.convertTo(EntityType.ZOMBIE_VILLAGER, false, org.bukkit.event.entity.EntityTransformEvent.TransformReason.INFECTION, spawnReason);
 +            // CraftBukkit end
 +
-+            if (entityzombievillager != null) {
-+                entityzombievillager.finalizeSpawn(worldserver, worldserver.getCurrentDifficultyAt(entityzombievillager.blockPosition()), MobSpawnType.CONVERSION, new Zombie.ZombieGroupData(false, true));
-+                entityzombievillager.setVillagerData(entityvillager.getVillagerData());
-+                entityzombievillager.setGossips((Tag) entityvillager.getGossips().store(NbtOps.INSTANCE));
-+                entityzombievillager.setTradeOffers(entityvillager.getOffers().copy());
-+                entityzombievillager.setVillagerXp(entityvillager.getVillagerXp());
+             if (zombievillager != null) {
+                 zombievillager.finalizeSpawn(
+                     p_219160_,
+@@ -423,15 +_,17 @@
+                 zombievillager.setGossips(villager.getGossips().store(NbtOps.INSTANCE));
+                 zombievillager.setTradeOffers(villager.getOffers().copy());
+                 zombievillager.setVillagerXp(villager.getVillagerXp());
+-                if (!this.isSilent()) {
+-                    p_219160_.levelEvent(null, 1026, this.blockPosition(), 0);
 +                // CraftBukkit start
 +                if (!silent) {
-+                    worldserver.levelEvent((Player) null, 1026, blockPosition, 0);
++                    p_219160_.levelEvent((Player) null, 1026, blockPosition, 0);
                  }
  
 -                flag = false;
 +                // flag = false;
              }
--        }
- 
++
++            return zombievillager;
+         }
+-
 -        return flag;
-+            return entityzombievillager;
-+        }
 +        // CraftBukkit end
      }
  
@@ -310,7 +285,7 @@
          p_34300_ = super.finalizeSpawn(p_34297_, p_34298_, p_34299_, p_34300_);
          float f = p_34298_.getSpecialMultiplier();
 -        this.setCanPickUpLoot(randomsource.nextFloat() < 0.55F * f);
-+        this.setCanPickUpLoot(this.level().paperConfig().entities.behavior.mobsCanAlwaysPickUpLoot.zombies || randomsource.nextFloat() < 0.55F * f);
++        this.setCanPickUpLoot(this.level().paperConfig().entities.behavior.mobsCanAlwaysPickUpLoot.zombies || randomsource.nextFloat() < 0.55F * f); // Paper - Add world settings for mobs picking up loot
          if (p_34300_ == null) {
              p_34300_ = new Zombie.ZombieGroupData(getSpawnAsBabyOdds(randomsource), true);
          }
@@ -323,3 +298,12 @@
                          }
                      }
                  }
+@@ -495,7 +_,7 @@
+             LocalDate localdate = LocalDate.now();
+             int i = localdate.get(ChronoField.DAY_OF_MONTH);
+             int j = localdate.get(ChronoField.MONTH_OF_YEAR);
+-            if (j == 10 && i == 31 && randomsource.nextFloat() < 0.25F) {
++            if (net.minecraft.world.entity.ambient.Bat.isHalloweenSeason(p_34297_.getMinecraftWorld()) && this.random.nextFloat() < this.level().purpurConfig.chanceHeadHalloweenOnEntity) { // Purpur
+                 this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(randomsource.nextFloat() < 0.1F ? Blocks.JACK_O_LANTERN : Blocks.CARVED_PUMPKIN));
+                 this.armorDropChances[EquipmentSlot.HEAD.getIndex()] = 0.0F;
+             }

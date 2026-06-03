@@ -1,24 +1,5 @@
 --- a/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-@@ -1,5 +_,6 @@
- package net.minecraft.server.network;
- 
-+import com.mohistmc.youer.util.ThreadUtils;
- import com.mojang.authlib.GameProfile;
- import com.mojang.logging.LogUtils;
- import java.util.List;
-@@ -32,10 +_,10 @@
- import net.minecraft.server.network.config.JoinWorldTask;
- import net.minecraft.server.network.config.ServerResourcePackConfigurationTask;
- import net.minecraft.server.network.config.SynchronizeRegistriesTask;
--import net.minecraft.server.packs.PackResources;
- import net.minecraft.server.packs.repository.KnownPack;
- import net.minecraft.server.players.PlayerList;
- import net.minecraft.world.flag.FeatureFlags;
-+import org.bukkit.craftbukkit.CraftServerLinks;
- import org.slf4j.Logger;
- 
- public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketListenerImpl implements ServerConfigurationPacketListener, TickablePacketListener {
 @@ -44,16 +_,30 @@
      private final GameProfile gameProfile;
      private final Queue<ConfigurationTask> configurationTasks = new ConcurrentLinkedQueue<>();
@@ -121,7 +102,7 @@
 +            if (!this.connectionType.isNeoForge() && !net.neoforged.neoforge.network.registration.NetworkRegistry.initializeOtherConnection(this)) {
 +                return;
 +            }
-+            ThreadUtils.executeOnMainThread(this::runConfiguration);
++            com.mohistmc.youer.util.ThreadUtils.executeOnMainThread(this::runConfiguration);
 +        }
      }
  

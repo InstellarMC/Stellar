@@ -1,19 +1,5 @@
 --- a/net/minecraft/world/inventory/BeaconMenu.java
 +++ b/net/minecraft/world/inventory/BeaconMenu.java
-@@ -8,10 +_,13 @@
- import net.minecraft.world.Container;
- import net.minecraft.world.SimpleContainer;
- import net.minecraft.world.effect.MobEffect;
-+import net.minecraft.world.entity.player.Inventory;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.Blocks;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryBeacon;
-+import org.bukkit.craftbukkit.inventory.view.CraftBeaconView;
- 
- public class BeaconMenu extends AbstractContainerMenu {
-     private static final int PAYMENT_SLOT = 0;
 @@ -32,10 +_,31 @@
          public int getMaxStackSize() {
              return 1;
@@ -30,16 +16,16 @@
      private final ContainerLevelAccess access;
      private final ContainerData beaconData;
 +    // CraftBukkit start
-+    private CraftBeaconView bukkitEntity = null;
-+    private Inventory player;
++    private org.bukkit.craftbukkit.inventory.view.CraftBeaconView bukkitEntity = null;
++    private net.minecraft.world.entity.player.Inventory player;
 +    @Override
-+    public CraftBeaconView getBukkitView() {
++    public org.bukkit.craftbukkit.inventory.view.CraftBeaconView getBukkitView() {
 +        if (bukkitEntity != null) {
 +            return bukkitEntity;
 +        }
 +
-+        CraftInventoryBeacon inventory = new CraftInventoryBeacon(this.beacon);
-+        bukkitEntity = new CraftBeaconView(this.player.player.getBukkitEntity(), inventory, this);
++        org.bukkit.craftbukkit.inventory.CraftInventoryBeacon inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryBeacon(this.beacon);
++        bukkitEntity = new org.bukkit.craftbukkit.inventory.view.CraftBeaconView(this.player.player.getBukkitEntity(), inventory, this);
 +        return bukkitEntity;
 +    }
 +    // CraftBukkit end
@@ -50,7 +36,7 @@
      public BeaconMenu(int p_39039_, Container p_39040_, ContainerData p_39041_, ContainerLevelAccess p_39042_) {
          super(MenuType.BEACON, p_39039_);
          checkContainerDataCount(p_39041_, 3);
-+        this.player = (Inventory) p_39040_; // CraftBukkit - TODO: check this
++        this.player = (net.minecraft.world.entity.player.Inventory) p_39040_; // CraftBukkit - TODO: check this
          this.beaconData = p_39041_;
          this.access = p_39042_;
          this.paymentSlot = new BeaconMenu.PaymentSlot(this.beacon, 0, 136, 110);
