@@ -212,6 +212,23 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     public FluidState getFluidState(BlockPos pos) {
         return Fluids.EMPTY.defaultFluidState(); // SPIGOT-6634
     }
+    // Paper start - if loaded util
+    @javax.annotation.Nullable
+    @Override
+    public ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public BlockState getBlockStateIfLoaded(BlockPos blockposition) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public FluidState getFluidIfLoaded(BlockPos blockposition) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    // Paper end
 
     @Override
     public WorldBorder getWorldBorder() {
@@ -252,15 +269,4 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     @Override
     public void scheduleTick(BlockPos pos, Fluid fluid, int delay, net.minecraft.world.ticks.TickPriority priority) {}
     // Paper end - add more methods
-
-    @javax.annotation.Nullable
-    @Override
-    public ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public BlockState getBlockStateIfLoaded(BlockPos blockposition) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 }

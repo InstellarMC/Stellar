@@ -687,7 +687,7 @@
      }
  
      @Override
-@@ -167,6 +_,13 @@
+@@ -167,8 +_,15 @@
          return null;
      }
  
@@ -699,21 +699,40 @@
 +    // Paper end
 +
      public boolean isInWorldBounds(BlockPos p_46740_) {
-         return !this.isOutsideBuildHeight(p_46740_) && isInWorldBoundsHorizontal(p_46740_);
-     }
-@@ -184,7 +_,7 @@
+-        return !this.isOutsideBuildHeight(p_46740_) && isInWorldBoundsHorizontal(p_46740_);
++        return p_46740_.isInsideBuildHeightAndWorldBoundsHorizontal(this); // Paper - use better/optimized check
      }
  
-     public LevelChunk getChunkAt(BlockPos p_46746_) {
+     public static boolean isInSpawnableBounds(BlockPos p_46742_) {
+@@ -183,12 +_,75 @@
+         return p_46725_ < -20000000 || p_46725_ >= 20000000;
+     }
+ 
+-    public LevelChunk getChunkAt(BlockPos p_46746_) {
 -        return this.getChunk(SectionPos.blockToSectionCoord(p_46746_.getX()), SectionPos.blockToSectionCoord(p_46746_.getZ()));
+-    }
+-
+-    public LevelChunk getChunk(int p_46727_, int p_46728_) {
+-        return (LevelChunk)this.getChunk(p_46727_, p_46728_, ChunkStatus.FULL);
++    public final LevelChunk getChunkAt(BlockPos p_46746_) { // Paper - help inline
 +        return this.getChunk(p_46746_.getX() >> 4, p_46746_.getZ() >> 4); // Stellar - inline
-     }
- 
-     public LevelChunk getChunk(int p_46727_, int p_46728_) {
-@@ -193,6 +_,48 @@
- 
-     @Nullable
-     @Override
++    }
++
++    @Override // Paper
++    public final LevelChunk getChunk(int p_46727_, int p_46728_) { // Paper - final to help inline
++        // Paper start - Perf: make sure loaded chunks get the inlined variant of this function
++        net.minecraft.server.level.ServerChunkCache cps = ((net.minecraft.server.level.ServerLevel)this).getChunkSource();
++        LevelChunk ifLoaded = cps.getChunkAtIfLoadedImmediately(p_46727_, p_46728_);
++        if (ifLoaded != null) {
++            return ifLoaded;
++        }
++        return (LevelChunk) cps.getChunk(p_46727_, p_46728_, ChunkStatus.FULL, true); // Paper - avoid a method jump
++        // Paper end - Perf: make sure loaded chunks get the inlined variant of this function
++    }
++
++    // Paper start - if loaded
++    @Nullable
++    @Override
 +    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((net.minecraft.server.level.ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
 +    }
@@ -738,6 +757,18 @@
 +        }
 +    }
 +
++    @Override
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
++        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++
++        return chunk == null ? null : chunk.getFluidState(blockposition);
++    }
++
++    @Override
++    public final boolean hasChunkAt(BlockPos pos) {
++        return getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4) != null; // Paper - Perf: Optimize Level.hasChunkAt(BlockPosition)Z
++    }
++
 +    public final boolean isLoadedAndInBounds(BlockPos blockposition) { // Paper - final for inline
 +        return getWorldBorder().isWithinBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
 +    }
@@ -752,13 +783,9 @@
 +    //  reduces need to do isLoaded before getType
 +    public final @Nullable BlockState getBlockStateIfLoadedAndInBounds(BlockPos blockposition) {
 +        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
-+    }
-+
-+    @Nullable
-+    @Override
-     public ChunkAccess getChunk(int p_46502_, int p_46503_, ChunkStatus p_331611_, boolean p_46505_) {
-         ChunkAccess chunkaccess = this.getChunkSource().getChunk(p_46502_, p_46503_, p_331611_, p_46505_);
-         if (chunkaccess == null && p_46505_) {
+     }
+ 
+     @Nullable
 @@ -202,13 +_,44 @@
          }
      }

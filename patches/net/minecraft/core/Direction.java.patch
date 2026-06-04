@@ -9,10 +9,15 @@
      DOWN(0, 1, -1, "down", Direction.AxisDirection.NEGATIVE, Direction.Axis.Y, new Vec3i(0, -1, 0)),
      UP(1, 0, -1, "up", Direction.AxisDirection.POSITIVE, Direction.Axis.Y, new Vec3i(0, 1, 0)),
      NORTH(2, 3, 2, "north", Direction.AxisDirection.NEGATIVE, Direction.Axis.Z, new Vec3i(0, 0, -1)),
-@@ -55,6 +_,39 @@
+@@ -55,6 +_,44 @@
          .sorted(Comparator.comparingInt(p_235683_ -> p_235683_.data2d))
          .toArray(Direction[]::new);
  
++    // Paper start - Perf: Inline shift direction fields // Stellar start - lithium: math.fast_blockpos - Avoid indirection to aid inlining
++    // private final int adjX;
++    // private final int adjY;
++    // private final int adjZ;
++    // Paper end - Perf: Inline shift direction fields // Stellar end - lithium: math.fast_blockpos - Avoid indirection to aid inlining
 +    // Paper start - optimise collisions
 +    private static final int RANDOM_OFFSET = 2017601568;
 +    private Direction opposite;
@@ -54,11 +59,11 @@
          this.axisDirection = p_122360_;
          this.normal = p_122362_;
 +
-+        // Stellar start - lithium: math.fast_blockpos - Avoid indirection to aid inlining // Paper start - Perf: Inline shift direction fields
++        // Paper start - Perf: Inline shift direction fields // Stellar start - lithium: math.fast_blockpos - Avoid indirection to aid inlining
 +        this.offsetX = p_122362_.getX();
 +        this.offsetY = p_122362_.getY();
 +        this.offsetZ = p_122362_.getZ();
-+        // Stellar end - lithium: math.fast_blockpos - Avoid indirection to aid inlining // Paper end - Perf: Inline shift direction fields
++        // Paper end - Perf: Inline shift direction fields // Stellar end - lithium: math.fast_blockpos - Avoid indirection to aid inlining
      }
  
      public static Direction[] orderedByNearest(Entity p_122383_) {

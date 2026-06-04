@@ -174,7 +174,7 @@
                          this.setSuccess(true);
                          return p_338600_;
                      }
-@@ -194,10 +_,39 @@
+@@ -194,10 +_,40 @@
  
                      for (AbstractChestedHorse abstractchestedhorse : p_338297_.level()
                          .getEntitiesOfClass(AbstractChestedHorse.class, new AABB(blockpos), p_349915_ -> p_349915_.isAlive() && !p_349915_.hasChest())) {
@@ -182,7 +182,8 @@
 -                            p_338735_.shrink(1);
 -                            this.setSuccess(true);
 -                            return p_338735_;
-+                        if (abstractchestedhorse.isTamed()) { // Youer - moved down
++                        // CraftBukkit start
++                        if (abstractchestedhorse.isTamed()) {
 +                            ItemStack itemstack1 = p_338735_.copyWithCount(1); // Paper - shrink below
 +                            ServerLevel world = p_338297_.level();
 +                            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, p_338297_.pos());
@@ -209,7 +210,7 @@
 +                                    return p_338735_;
 +                                }
 +                            }
-+                            if (abstractchestedhorse.getSlot(499).set(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()))) { // Youer - moved up
++                            if (abstractchestedhorse.getSlot(499).set(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()))) { // Stellar
 +                                if (shrink) p_338735_.shrink(1); // Paper - shrink here
 +                                this.setSuccess(true);
 +                                return p_338735_;
@@ -372,7 +373,7 @@
                  BlockPos blockpos = p_302450_.pos().relative(p_302450_.state().getValue(DispenserBlock.FACING));
 +                // CraftBukkit start
 +                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, p_302450_.pos());
-+                org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(p_123524_.copyWithCount(1)); // Single item in event
++                org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(p_123524_.copyWithCount(1)); // Paper - single item in event
 +
 +                org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
 +                if (!DispenserBlock.eventFired) {
@@ -431,12 +432,14 @@
                  return p_123524_;
              }
          });
-@@ -317,18 +_,47 @@
+@@ -317,18 +_,49 @@
              protected ItemStack execute(BlockSource p_302430_, ItemStack p_123462_) {
                  Level level = p_302430_.level();
                  BlockPos blockpos = p_302430_.pos().relative(p_302430_.state().getValue(DispenserBlock.FACING));
 -                PrimedTnt primedtnt = new PrimedTnt(level, (double)blockpos.getX() + 0.5, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5, null);
 +                // CraftBukkit start
++                // PrimedTnt primedtnt = new PrimedTnt(level, (double)blockpos.getX() + 0.5, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5, null);
++
 +                ItemStack itemstack1 = p_123462_.copyWithCount(1); // Paper - shrink at end and single item in event
 +                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, p_302430_.pos());
 +                org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack1);
@@ -451,7 +454,7 @@
 +                    return p_123462_;
 +                }
 +
-+                boolean shrink = true; // Paper - shrink below
++                boolean shrink = true; // Paper
 +                if (!event.getItem().equals(craftItem)) {
 +                    shrink = false; // Paper - shrink below
 +                    // Chain to handler for new item
@@ -489,7 +492,7 @@
 +
 +                    // CraftBukkit start
 +                    org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, p_302425_.pos());
-+                    org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(p_123536_.copyWithCount(1)); // Single item in event
++                    org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(p_123536_.copyWithCount(1)); // Paper - single item in event
 +
 +                    org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockpos.getX(), blockpos.getY(), blockpos.getZ()));
 +                    if (!DispenserBlock.eventFired) {
@@ -530,7 +533,7 @@
 +
 +                // CraftBukkit start
 +                org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, p_302452_.pos());
-+                org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(p_123542_.copyWithCount(1)); // Single item in event
++                org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(p_123542_.copyWithCount(1)); // Paper - single item in event
 +
 +                org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockpos.getX(), blockpos.getY(), blockpos.getZ()));
 +                if (!DispenserBlock.eventFired) {

@@ -109,8 +109,8 @@
      }
  
      public static long getZeroNode(int p_285381_, int p_285068_) {
-@@ -190,6 +_,12 @@
-         return p_123241_ & -1048576L;
+@@ -207,15 +_,18 @@
+         return asLong(blockToSectionCoord(p_175569_.getX()), blockToSectionCoord(p_175569_.getY()), blockToSectionCoord(p_175569_.getZ()));
      }
  
 +    // Paper start
@@ -119,12 +119,6 @@
 +    }
 +    // Paper end
 +
-     public BlockPos origin() {
-         return new BlockPos(sectionToBlockCoord(this.x()), sectionToBlockCoord(this.y()), sectionToBlockCoord(this.z()));
-     }
-@@ -208,14 +_,11 @@
-     }
- 
      public static long asLong(int p_123210_, int p_123211_, int p_123212_) {
 -        long i = 0L;
 -        i |= ((long)p_123210_ & 4194303L) << 42;

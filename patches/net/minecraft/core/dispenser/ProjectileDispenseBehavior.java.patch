@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/ProjectileDispenseBehavior.java
 +++ b/net/minecraft/core/dispenser/ProjectileDispenseBehavior.java
-@@ -27,18 +_,48 @@
+@@ -27,18 +_,49 @@
          Level level = p_338635_.level();
          Direction direction = p_338635_.state().getValue(DispenserBlock.FACING);
          Position position = this.dispenseConfig.positionFunction().getDispensePosition(p_338635_, direction);
@@ -8,6 +8,7 @@
 +        // Paper - move down
 +
 +        // CraftBukkit start
++        // Projectile projectile = this.projectileItem.asProjectile(level, position, p_338423_, direction);
 +        ItemStack itemstack1 = p_338423_.copyWithCount(1); // Paper
 +        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, p_338635_.pos());
 +        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack1);

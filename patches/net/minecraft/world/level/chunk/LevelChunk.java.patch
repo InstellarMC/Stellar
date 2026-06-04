@@ -94,7 +94,7 @@
      }
  
      public LevelChunk(ServerLevel p_196850_, ProtoChunk p_196851_, @Nullable LevelChunk.PostLoadProcessor p_196852_) {
-@@ -139,16 +_,34 @@
+@@ -139,16 +_,38 @@
          this.setAllStarts(p_196851_.getAllStarts());
          this.setAllReferences(p_196851_.getAllReferences());
  
@@ -123,6 +123,10 @@
 +    }
 +
 +    // Paper start - If loaded util
++    @Override
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
++        return this.getFluidState(blockposition);
++    }
 +    @Override
 +    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
 +        return this.getBlockState(blockposition);

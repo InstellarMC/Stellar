@@ -34,9 +34,9 @@
      private volatile DisconnectionDetails delayedDisconnect;
      @Nullable
      BandwidthDebugMonitor bandwidthDebugMonitor;
-+    public String hostname = ""; // CraftBukkit - add field
 +    @Nullable
-+    private ProtocolInfo<?> inboundProtocol;
++    private ProtocolInfo<?> inboundProtocol; // Neo
++    public String hostname = ""; // CraftBukkit - add field
 +    // Paper start - NetworkClient implementation
 +    public int protocolVersion;
 +    public java.net.InetSocketAddress virtualHost;

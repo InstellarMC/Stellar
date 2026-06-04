@@ -811,10 +811,17 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
         return this.handle.getMoonPhase();
     }
 
+    // Paper start
     @Nullable
     @Override
     public BlockState getBlockStateIfLoaded(final BlockPos blockposition) {
         return this.handle.getBlockStateIfLoaded(blockposition);
+    }
+
+    @Nullable
+    @Override
+    public FluidState getFluidIfLoaded(final BlockPos blockposition) {
+        return this.handle.getFluidIfLoaded(blockposition);
     }
 
     @Nullable

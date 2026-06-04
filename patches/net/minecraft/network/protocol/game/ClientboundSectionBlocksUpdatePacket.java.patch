@@ -1,6 +1,15 @@
 --- a/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
 +++ b/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
-@@ -37,6 +_,14 @@
+@@ -30,13 +_,23 @@
+ 
+         for (short short1 : p_285027_) {
+             this.positions[j] = short1;
++            if (p_285414_ != null) // CraftBukkit - SPIGOT-6076, Mojang bug when empty chunk section notified
+             this.states[j] = p_285414_.getBlockState(
+                 SectionPos.sectionRelativeX(short1), SectionPos.sectionRelativeY(short1), SectionPos.sectionRelativeZ(short1)
+             );
++            else this.states[j] = net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(); // CraftBukkit - SPIGOT-6076, Mojang bug when empty chunk section notified
+             j++;
          }
      }
  

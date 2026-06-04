@@ -16,7 +16,7 @@
 +    }
 +    // CraftBukkit end
 +
-+    public DefaultDispenseItemBehavior() {} // Youer - fix decompile
++    public DefaultDispenseItemBehavior() {}
 +
      @Override
      public final ItemStack dispense(BlockSource p_302432_, ItemStack p_123392_) {

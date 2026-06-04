@@ -1,11 +1,19 @@
 --- a/net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java
 +++ b/net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java
-@@ -17,7 +_,17 @@
+@@ -16,10 +_,25 @@
+     private static final int MAX_PAYLOAD_SIZE = 32767;
      public static final StreamCodec<FriendlyByteBuf, ServerboundCustomPayloadPacket> STREAM_CODEC = CustomPacketPayload.<FriendlyByteBuf>codec(
              p_319841_ -> DiscardedPayload.codec(p_319841_, 32767),
-             Util.make(Lists.newArrayList(new CustomPacketPayload.TypeAndCodec<>(BrandPayload.TYPE, BrandPayload.STREAM_CODEC)), p_333493_ -> {
+-            Util.make(Lists.newArrayList(new CustomPacketPayload.TypeAndCodec<>(BrandPayload.TYPE, BrandPayload.STREAM_CODEC)), p_333493_ -> {
 -            })
-+            }),
+-        )
+-        .map(ServerboundCustomPayloadPacket::new, ServerboundCustomPayloadPacket::payload);
++            // Stellar start - TODO: Treat all packets the same as far as CraftBukkit is concerned
++            // see https://github.com/PaperMC/Paper/blob/ver/1.21.4/paper-server/patches/sources/net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java.patch
++            Util.make(Lists.newArrayList(new CustomPacketPayload.TypeAndCodec<>(BrandPayload.TYPE, BrandPayload.STREAM_CODEC)), p_333493_ -> {
++            }), // Neo
++            // Stellar end - TODO: Treat all packets the same as far as CraftBukkit is concerned
++            // Neo start
 +            net.minecraft.network.ConnectionProtocol.PLAY,
 +            net.minecraft.network.protocol.PacketFlow.SERVERBOUND
 +        )
@@ -16,6 +24,9 @@
 +            }),
 +            net.minecraft.network.ConnectionProtocol.CONFIGURATION,
 +            net.minecraft.network.protocol.PacketFlow.SERVERBOUND
-         )
-         .map(ServerboundCustomPayloadPacket::new, ServerboundCustomPayloadPacket::payload);
++        )
++        .map(ServerboundCustomPayloadPacket::new, ServerboundCustomPayloadPacket::payload);
++            // Neo end
  
+     @Override
+     public PacketType<ServerboundCustomPayloadPacket> type() {

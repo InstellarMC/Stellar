@@ -9,7 +9,7 @@
      );
      public static final DataComponentType<BundleContents> BUNDLE_CONTENTS = register(
 -        "bundle_contents", p_341857_ -> p_341857_.persistent(BundleContents.CODEC).networkSynchronized(BundleContents.STREAM_CODEC).cacheEncoding()
-+        "bundle_contents", p_341857_ -> p_341857_.persistent(BundleContents.CODEC).networkSynchronized(io.papermc.paper.util.DataSanitizationUtil.BUNDLE_CONTENTS).cacheEncoding()
++        "bundle_contents", p_341857_ -> p_341857_.persistent(BundleContents.CODEC).networkSynchronized(io.papermc.paper.util.DataSanitizationUtil.BUNDLE_CONTENTS).cacheEncoding() // Paper - sanitize bundle contents
      );
      public static final DataComponentType<PotionContents> POTION_CONTENTS = register(
          "potion_contents", p_341836_ -> p_341836_.persistent(PotionContents.CODEC).networkSynchronized(PotionContents.STREAM_CODEC).cacheEncoding()
@@ -18,7 +18,7 @@
      );
      public static final DataComponentType<ItemContainerContents> CONTAINER = register(
 -        "container", p_341846_ -> p_341846_.persistent(ItemContainerContents.CODEC).networkSynchronized(ItemContainerContents.STREAM_CODEC).cacheEncoding()
-+        "container", p_341846_ -> p_341846_.persistent(ItemContainerContents.CODEC).networkSynchronized(io.papermc.paper.util.DataSanitizationUtil.CONTAINER).cacheEncoding()
++        "container", p_341846_ -> p_341846_.persistent(ItemContainerContents.CODEC).networkSynchronized(io.papermc.paper.util.DataSanitizationUtil.CONTAINER).cacheEncoding() // Paper - sanitize container contents
      );
      public static final DataComponentType<BlockItemStateProperties> BLOCK_STATE = register(
          "block_state",

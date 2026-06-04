@@ -28,13 +28,14 @@
          }
      }
  
-@@ -28,9 +_,15 @@
+@@ -28,9 +_,16 @@
  
          @Override
          public void sendToPlayer(ServerPlayer p_249642_, boolean p_251123_, ChatType.Bound p_251482_) {
 -            PlayerChatMessage playerchatmessage = this.message.filter(p_251123_);
 -            if (!playerchatmessage.isFullyFiltered()) {
 -                p_249642_.connection.sendPlayerChatMessage(playerchatmessage, p_251482_);
++            // Paper start
 +            this.sendToPlayer(p_249642_, p_251123_, p_251482_, null);
 +        }
 +

@@ -1,10 +1,15 @@
 --- a/net/minecraft/world/level/chunk/ProtoChunk.java
 +++ b/net/minecraft/world/level/chunk/ProtoChunk.java
-@@ -83,18 +_,27 @@
+@@ -83,18 +_,32 @@
          return new ChunkAccess.TicksToSave(this.blockTicks, this.fluidTicks);
      }
  
 +    // Paper start - If loaded util
++    @Override
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
++        return this.getFluidState(blockposition);
++    }
++
 +    @Override
 +    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
 +        return this.getBlockState(blockposition);

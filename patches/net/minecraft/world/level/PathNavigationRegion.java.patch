@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/PathNavigationRegion.java
 +++ b/net/minecraft/world/level/PathNavigationRegion.java
-@@ -75,6 +_,25 @@
+@@ -75,6 +_,31 @@
          }
      }
  
@@ -14,6 +14,12 @@
 +            return this.chunks[xx][zz];
 +        }
 +        return null;
++    }
++
++    @Override
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
++        ChunkAccess chunk = getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return chunk == null ? null : chunk.getFluidState(blockposition);
 +    }
 +
 +    @Override

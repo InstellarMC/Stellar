@@ -50,8 +50,8 @@
      public boolean isDirty() {
          return this.isDirty;
      }
-@@ -169,6 +_,20 @@
-             return new SynchedEntityData(this.entity, this.itemsById);
+@@ -135,6 +_,20 @@
+             p_135376_.setValue((T)p_254484_.value);
          }
      }
 +
@@ -69,5 +69,5 @@
 +    }
 +    // Paper end
  
-     public static class DataItem<T> {
-         final EntityDataAccessor<T> accessor;
+     public static class Builder {
+         private final SyncedDataHolder entity;
