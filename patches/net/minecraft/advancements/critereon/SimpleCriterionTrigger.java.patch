@@ -21,7 +21,7 @@
              set.remove(p_66255_);
              if (set.isEmpty()) {
 -                this.players.remove(p_66254_);
-+                p_66254_.criterionData.remove(p_66254_); // Paper - fix AdvancementDataPlayer leak
++                p_66254_.criterionData.remove(this); // Paper - fix AdvancementDataPlayer leak
              }
          }
      }
@@ -29,7 +29,7 @@
      @Override
      public final void removePlayerListeners(PlayerAdvancements p_66241_) {
 -        this.players.remove(p_66241_);
-+        p_66241_.criterionData.remove(p_66241_); // Paper - fix AdvancementDataPlayer leak
++        p_66241_.criterionData.remove(this); // Paper - fix AdvancementDataPlayer leak
      }
  
      protected void trigger(ServerPlayer p_66235_, Predicate<T> p_66236_) {
