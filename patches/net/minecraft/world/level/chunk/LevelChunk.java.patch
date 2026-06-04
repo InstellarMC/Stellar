@@ -21,10 +21,11 @@
      @Nullable
      private Supplier<FullChunkStatus> fullStatus;
      @Nullable
-@@ -82,6 +_,48 @@
+@@ -82,6 +_,49 @@
      private final Int2ObjectMap<GameEventListenerRegistry> gameEventListenerRegistrySections;
      private final LevelChunkTicks<Block> blockTicks;
      private final LevelChunkTicks<Fluid> fluidTicks;
++    public ServerLevel r; // Stellar - ItemsAdder
 +	// CraftBukkit start
 +    public boolean mustNotSave;
 +    public boolean needsDecoration;
@@ -70,12 +71,17 @@
  
      public LevelChunk(Level p_187945_, ChunkPos p_187946_) {
          this(p_187945_, p_187946_, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, null, null, null);
-@@ -99,7 +_,7 @@
+@@ -99,7 +_,12 @@
          @Nullable BlendingData p_196862_
      ) {
          super(p_196855_, p_196856_, p_196854_, p_196854_.registryAccess().registryOrThrow(Registries.BIOME), p_196859_, p_196860_, p_196862_);
 -        this.level = p_196854_;
 +        this.level = (ServerLevel) p_196854_; // CraftBukkit - type
++        // Stellar start - ItemsAdder
++        if (p_196854_ != null && p_196854_ instanceof ServerLevel) {
++            this.r = (ServerLevel) p_196854_;
++        }
++        // Stellar end - ItemsAdder
          this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
  
          for (Heightmap.Types heightmap$types : Heightmap.Types.values()) {
