@@ -117,6 +117,19 @@ public final class GlobalConfiguration extends ConfigurationPart {
         }
     }
 
+    public Advancements advancements;
+    public class Advancements extends ConfigurationPart {
+
+        @Comment("Configurates the number of idle ticks between each InventoryChangeTrigger trigger. Higher values can reduce server load at the cost of less responsive advancement triggering.")
+        int criteriaTriggerIdleTick = 0;
+
+        @PostProcess
+        private void postProcess() {
+            net.minecraft.advancements.critereon.InventoryChangeTrigger.idleTick = this.criteriaTriggerIdleTick;
+        }
+
+    }
+
     public SQL sql;
 
     public class SQL extends ConfigurationPart {

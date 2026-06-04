@@ -1,10 +1,24 @@
 --- a/net/minecraft/advancements/critereon/InventoryChangeTrigger.java
 +++ b/net/minecraft/advancements/critereon/InventoryChangeTrigger.java
-@@ -24,6 +_,7 @@
+@@ -23,7 +_,21 @@
+         return InventoryChangeTrigger.TriggerInstance.CODEC;
      }
  
++    // Stellar start - Optimize advancement criteria triggering
++    public static int idleTick;
++    private int ticksSkipped;
++
++    private boolean shouldTick() {
++        if (++this.ticksSkipped <= idleTick) return false;
++
++        this.ticksSkipped = 0;
++        return true;
++    }
++    // Stellar end - Optimize advancement criteria triggering
++
      public void trigger(ServerPlayer p_43150_, Inventory p_43151_, ItemStack p_43152_) {
 +        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().players.disableCriterionTrigger) return; // Stellar - disable criterion trigger config
++        if (idleTick > 0 && !this.shouldTick()) return; // Stellar - Optimize advancement criteria triggering
          int i = 0;
          int j = 0;
          int k = 0;
