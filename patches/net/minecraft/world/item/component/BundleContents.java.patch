@@ -1,5 +1,26 @@
 --- a/net/minecraft/world/item/component/BundleContents.java
 +++ b/net/minecraft/world/item/component/BundleContents.java
+@@ -19,7 +_,7 @@
+ 
+ public final class BundleContents implements TooltipComponent {
+     public static final BundleContents EMPTY = new BundleContents(List.of());
+-    public static final Codec<BundleContents> CODEC = ItemStack.CODEC.listOf().xmap(BundleContents::new, p_331551_ -> p_331551_.items);
++    public static final Codec<BundleContents> CODEC = ItemStack.CODEC.sizeLimitedListOf(256).xmap(BundleContents::new, p_331551_ -> p_331551_.items); // Paper - limit size
+     public static final StreamCodec<RegistryFriendlyByteBuf, BundleContents> STREAM_CODEC = ItemStack.STREAM_CODEC
+         .apply(ByteBufCodecs.list())
+         .map(BundleContents::new, p_331649_ -> p_331649_.items);
+@@ -29,6 +_,11 @@
+     final Fraction weight;
+ 
+     BundleContents(List<ItemStack> p_331277_, Fraction p_339622_) {
++        // Paper start - limit size
++        if (p_331277_.size() > 256) {
++            throw new IllegalArgumentException("Too many items");
++        }
++        // Paper end - limit size
+         this.items = p_331277_;
+         this.weight = p_339622_;
+     }
 @@ -141,7 +_,7 @@
          }
  

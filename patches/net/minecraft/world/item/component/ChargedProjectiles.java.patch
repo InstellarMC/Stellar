@@ -1,0 +1,23 @@
+--- a/net/minecraft/world/item/component/ChargedProjectiles.java
++++ b/net/minecraft/world/item/component/ChargedProjectiles.java
+@@ -11,13 +_,18 @@
+ 
+ public final class ChargedProjectiles {
+     public static final ChargedProjectiles EMPTY = new ChargedProjectiles(List.of());
+-    public static final Codec<ChargedProjectiles> CODEC = ItemStack.CODEC.listOf().xmap(ChargedProjectiles::new, p_331186_ -> p_331186_.items);
++    public static final Codec<ChargedProjectiles> CODEC = ItemStack.CODEC.sizeLimitedListOf(64).xmap(ChargedProjectiles::new, p_331186_ -> p_331186_.items); // Paper - limit size
+     public static final StreamCodec<RegistryFriendlyByteBuf, ChargedProjectiles> STREAM_CODEC = ItemStack.STREAM_CODEC
+-        .apply(ByteBufCodecs.list())
++        .apply(ByteBufCodecs.list(64)) // Paper - limit size
+         .map(ChargedProjectiles::new, p_330917_ -> p_330917_.items);
+     private final List<ItemStack> items;
+ 
+     private ChargedProjectiles(List<ItemStack> p_331523_) {
++        // Paper start - limit size
++        if (p_331523_.size() > 64) {
++            throw new IllegalArgumentException("Too many items");
++        }
++        // Paper end - limit size
+         this.items = p_331523_;
+     }
+ 
