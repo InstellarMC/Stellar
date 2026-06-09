@@ -1,12 +1,12 @@
 package io.papermc.paper.threadedregions;
 
-import ca.spottedleaf.concurrentutil.util.Validate;
 import ca.spottedleaf.moonrise.common.list.ReferenceList;
 import ca.spottedleaf.moonrise.common.util.TickThread;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import net.minecraft.world.entity.Entity;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -49,7 +49,7 @@ public final class EntityScheduler {
     private final ArrayDeque<ScheduledTask> currentlyExecuting = new ArrayDeque<>();
 
     public EntityScheduler(final CraftEntity entity) {
-        this.entity = Validate.notNull(entity);
+        this.entity = Objects.requireNonNull(entity);
     }
 
     // must own state lock
@@ -164,7 +164,7 @@ public final class EntityScheduler {
      *         since the scheduler has been retired.
      */
     public boolean schedule(final Consumer<? extends Entity> run, final Consumer<? extends Entity> retired, final long delay) {
-        Validate.notNull(run, "Run task may not be null");
+        Objects.requireNonNull(run, "Run task may not be null");
 
         final ScheduledTask task = new ScheduledTask(run, retired);
         synchronized (this.stateLock) {

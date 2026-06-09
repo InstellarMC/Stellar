@@ -1,8 +1,8 @@
 package io.papermc.paper.threadedregions.scheduler;
 
 import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
-import ca.spottedleaf.concurrentutil.util.Validate;
 import java.lang.invoke.VarHandle;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import net.minecraft.world.entity.Entity;
@@ -20,8 +20,8 @@ public final class FoliaEntityScheduler implements EntityScheduler {
     }
 
     private static Consumer<? extends Entity> wrap(final Plugin plugin, final Runnable runnable) {
-        Validate.notNull(plugin, "Plugin may not be null");
-        Validate.notNull(runnable, "Runnable may not be null");
+        Objects.requireNonNull(plugin, "Plugin may not be null");
+        Objects.requireNonNull(runnable, "Runnable may not be null");
 
         return (final Entity nmsEntity) -> {
             if (!plugin.isEnabled()) {
@@ -53,8 +53,8 @@ public final class FoliaEntityScheduler implements EntityScheduler {
     @Override
     public @Nullable ScheduledTask runDelayed(final Plugin plugin, final Consumer<ScheduledTask> task, final Runnable retired,
                                               final long delayTicks) {
-        Validate.notNull(plugin, "Plugin may not be null");
-        Validate.notNull(task, "Task may not be null");
+        Objects.requireNonNull(plugin, "Plugin may not be null");
+        Objects.requireNonNull(task, "Task may not be null");
         if (delayTicks <= 0) {
             throw new IllegalArgumentException("Delay ticks may not be <= 0");
         }
@@ -80,8 +80,8 @@ public final class FoliaEntityScheduler implements EntityScheduler {
     @Override
     public @Nullable ScheduledTask runAtFixedRate(final Plugin plugin, final Consumer<ScheduledTask> task,
                                                   final Runnable retired, final long initialDelayTicks, final long periodTicks) {
-        Validate.notNull(plugin, "Plugin may not be null");
-        Validate.notNull(task, "Task may not be null");
+        Objects.requireNonNull(plugin, "Plugin may not be null");
+        Objects.requireNonNull(task, "Task may not be null");
         if (initialDelayTicks <= 0) {
             throw new IllegalArgumentException("Initial delay ticks may not be <= 0");
         }
