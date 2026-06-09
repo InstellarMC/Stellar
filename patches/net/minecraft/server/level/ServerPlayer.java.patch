@@ -35,14 +35,30 @@
          @Override
          public void sendInitialData(AbstractContainerMenu p_143448_, NonNullList<ItemStack> p_143449_, ItemStack p_143450_, int[] p_143451_) {
              ServerPlayer.this.connection
-@@ -252,6 +_,10 @@
+@@ -236,6 +_,13 @@
+             }
+         }
+ 
++        // Paper start - Sync offhand slot in menus
++        @Override
++        public void sendOffHandSlotChange() {
++            this.sendSlotChange(ServerPlayer.this.inventoryMenu, net.minecraft.world.inventory.InventoryMenu.SHIELD_SLOT, ServerPlayer.this.inventoryMenu.getSlot(net.minecraft.world.inventory.InventoryMenu.SHIELD_SLOT).getItem().copy());
++        }
++        // Paper end - Sync offhand slot in menus
++
+         @Override
+         public void sendSlotChange(AbstractContainerMenu p_143441_, int p_143442_, ItemStack p_143443_) {
+             ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(p_143441_.containerId, p_143441_.incrementStateId(), p_143442_, p_143443_));
+@@ -252,6 +_,12 @@
          }
  
          private void broadcastDataValue(AbstractContainerMenu p_143455_, int p_143456_, int p_143457_) {
++            // Neo start
 +            if (ServerPlayer.this.connection.hasChannel(net.neoforged.neoforge.network.payload.AdvancedContainerSetDataPayload.TYPE)) {
 +                ServerPlayer.this.connection.send(new net.neoforged.neoforge.network.payload.AdvancedContainerSetDataPayload((byte) p_143455_.containerId, (short) p_143456_, p_143457_));
 +                return;
 +            }
++            // Neo end
              ServerPlayer.this.connection.send(new ClientboundContainerSetDataPacket(p_143455_.containerId, p_143456_, p_143457_));
          }
      };

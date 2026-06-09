@@ -2531,6 +2531,14 @@
  
                      for (Entry<ItemStack> entry : Int2ObjectMaps.fastIterable(p_9856_.getChangedSlots())) {
                          this.player.containerMenu.setRemoteSlotNoCopy(entry.getIntKey(), entry.getValue());
+@@ -1656,6 +_,7 @@
+                     } else {
+                         this.player.containerMenu.broadcastChanges();
+                     }
++                    if (p_9856_.getButtonNum() == Inventory.SLOT_OFFHAND && this.player.containerMenu != this.player.inventoryMenu) this.player.containerSynchronizer.sendOffHandSlotChange(); // Paper - update offhand data when the player is clicking in an inventory not their own as the sychronizer does not include offhand slots
+                 }
+             }
+         }
 @@ -1663,6 +_,14 @@
  
      @Override

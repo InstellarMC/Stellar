@@ -100,10 +100,16 @@
  
      protected AbstractContainerMenu(@Nullable MenuType<?> p_38851_, int p_38852_) {
          this.menuType = p_38851_;
-@@ -150,6 +_,15 @@
-         }
-     }
+@@ -147,8 +_,18 @@
  
+         if (this.synchronizer != null) {
+             this.synchronizer.sendInitialData(this, this.remoteSlots, this.remoteCarried, this.remoteDataSlots.toIntArray());
+-        }
+-    }
++            this.synchronizer.sendOffHandSlotChange(); // Paper - Sync offhand slot in menus; update player's offhand since the offhand slot is not added to the slots for menus but can be changed by swapping from a menu slot
++        }
++    }
++
 +    // CraftBukkit start
 +    public void broadcastCarriedItem() {
 +        this.remoteCarried = this.getCarried().copy();
@@ -112,10 +118,9 @@
 +        }
 +    }
 +    // CraftBukkit end
-+
+ 
      public void removeSlotListener(ContainerListener p_38944_) {
          this.containerListeners.remove(p_38944_);
-     }
 @@ -214,7 +_,7 @@
              this.lastSlots.set(p_150408_, itemstack1);
  
@@ -125,50 +130,6 @@
              }
          }
      }
-@@ -222,7 +_,16 @@
-     private void synchronizeSlotToRemote(int p_150436_, ItemStack p_150437_, Supplier<ItemStack> p_150438_) {
-         if (!this.suppressRemoteUpdates) {
-             ItemStack itemstack = this.remoteSlots.get(p_150436_);
--            if (!ItemStack.matches(itemstack, p_150437_)) {
-+            // Youer start - fix mixin issue #geckolib$forceGeckolibIdSync
-+            boolean flag;
-+            if (this.synchronizer != null && this.synchronizer.player() != null && this.synchronizer.player().getBukkitEntity().simplifyContainerDesyncCheck()) {
-+                // Only check the item type and count
-+                flag =  (p_150437_ == p_150437_ || (p_150437_.getCount() == p_150437_.getCount() && ItemStack.isSameItem(p_150437_, p_150437_)));
-+            } else {
-+                flag = ItemStack.matches(itemstack, p_150437_);
-+            }
-+            if (!flag) {  // Paper - add flag to simplify remote matching logic
-+                // Youer end - fix mixin issue
-                 ItemStack itemstack1 = p_150438_.get();
-                 this.remoteSlots.set(p_150436_, itemstack1);
-                 if (this.synchronizer != null) {
-@@ -232,6 +_,16 @@
-         }
-     }
- 
-+    // Paper start - add flag to simplify remote matching logic
-+    private boolean matchesRemote(final ItemStack stack, final ItemStack other) {
-+        if (this.synchronizer != null && this.synchronizer.player() != null && this.synchronizer.player().getBukkitEntity().simplifyContainerDesyncCheck()) {
-+            // Only check the item type and count
-+            return stack == other || (stack.getCount() == other.getCount() && ItemStack.isSameItem(stack, other));
-+        }
-+        return ItemStack.matches(stack, other);
-+    }
-+    // Paper end - add flag to simplify remote matching logic
-+
-     private void synchronizeDataSlotToRemote(int p_150441_, int p_150442_) {
-         if (!this.suppressRemoteUpdates) {
-             int i = this.remoteDataSlots.getInt(p_150441_);
-@@ -246,7 +_,7 @@
- 
-     private void synchronizeCarriedToRemote() {
-         if (!this.suppressRemoteUpdates) {
--            if (!ItemStack.matches(this.getCarried(), this.remoteCarried)) {
-+            if (!this.matchesRemote(this.getCarried(), this.remoteCarried)) { // Paper - add flag to simplify remote matching logic
-                 this.remoteCarried = this.getCarried().copy();
-                 if (this.synchronizer != null) {
-                     this.synchronizer.sendCarriedChange(this, this.remoteCarried);
 @@ -315,6 +_,7 @@
                      this.resetQuickCraft();
                  }
