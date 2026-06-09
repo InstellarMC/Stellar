@@ -175,6 +175,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean allowHeadlessPistons = false;
         @Comment("This setting controls if the vanilla damage tick should be skipped if damage was blocked via a shield.")
         public boolean skipVanillaDamageTickWhenShieldBlocked = false;
+        @Comment("This setting controls if equipment should be updated when handling certain player actions.")
+        public boolean updateEquipmentOnPlayerActions = true;
         @Comment("This setting controls what compression format is used for region files.")
         public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
         @Comment("Only checks an item's amount and type instead of its full data during inventory desync checks.")

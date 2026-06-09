@@ -618,6 +618,14 @@
          this.player
              .connection
              .send(
+@@ -634,6 +_,7 @@
+             );
+         this.player.connection.send(new ClientboundContainerSetSlotPacket(-2, 0, p_9880_.getSlot(), this.player.getInventory().getItem(p_9880_.getSlot())));
+         this.player.connection.send(new ClientboundSetCarriedItemPacket(this.player.getInventory().selected));
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
+     }
+ 
+     @Override
 @@ -750,6 +_,13 @@
          PacketUtils.ensureRunningOnSameThread(p_9905_, this, this.player.serverLevel());
          int i = p_9905_.getItem();
@@ -1247,7 +1255,7 @@
          BlockPos blockpos = p_9889_.getPos();
          this.player.resetLastActionTime();
          ServerboundPlayerActionPacket.Action serverboundplayeractionpacket$action = p_9889_.getAction();
-@@ -1031,20 +_,58 @@
+@@ -1031,36 +_,105 @@
              case SWAP_ITEM_WITH_OFFHAND:
                  if (!this.player.isSpectator()) {
                      ItemStack itemstack = this.player.getItemInHand(InteractionHand.OFF_HAND);
@@ -1277,6 +1285,7 @@
 +                    }
 +                    // CraftBukkit end
                      this.player.stopUsingItem();
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                  }
  
                  return;
@@ -1299,6 +1308,7 @@
 +                    // CraftBukkit end
 +                    if (this.player.level().stellarConfig().players.disableDropItem) return; // Stellar - Disable dropping items
                      this.player.drop(false);
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                  }
  
                  return;
@@ -1306,9 +1316,14 @@
                  if (!this.player.isSpectator()) {
 +                    if (this.player.level().stellarConfig().players.disableDropItem) return; // Stellar - Disable dropping items
                      this.player.drop(true);
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                  }
  
-@@ -1055,12 +_,38 @@
+                 return;
+             case RELEASE_USE_ITEM:
+                 this.player.releaseUsingItem();
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
+                 return;
              case START_DESTROY_BLOCK:
              case ABORT_DESTROY_BLOCK:
              case STOP_DESTROY_BLOCK:
@@ -1344,6 +1359,7 @@
 +                    }
 +                }
 +                // Paper end - Send block entities after destroy prediction
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                  return;
              default:
                  throw new IllegalArgumentException("Invalid player action");
@@ -1389,12 +1405,13 @@
              BlockPos blockpos = blockhitresult.getBlockPos();
              if (this.player.canInteractWithBlock(blockpos, 1.0)) {
                  Vec3 vec31 = vec3.subtract(Vec3.atCenterOf(blockpos));
-@@ -1095,7 +_,7 @@
+@@ -1095,7 +_,8 @@
                      this.player.resetLastActionTime();
                      int i = this.player.level().getMaxBuildHeight();
                      if (blockpos.getY() < i) {
 -                        if (this.awaitingPositionFromClient == null && serverlevel.mayInteract(this.player, blockpos)) {
 +                        if (this.awaitingPositionFromClient == null && (serverlevel.mayInteract(this.player, blockpos) || (serverlevel.paperConfig().spawn.allowUsingSignsInsideSpawnProtection && serverlevel.getBlockState(blockpos).getBlock() instanceof net.minecraft.world.level.block.SignBlock))) { // Paper - Allow using signs inside spawn protection
++                            this.player.stopUsingItem(); // CraftBukkit - SPIGOT-4706
                              InteractionResult interactionresult = this.player
                                  .gameMode
                                  .useItemOn(this.player, serverlevel, itemstack, interactionhand, blockhitresult);
@@ -1411,6 +1428,23 @@
                      } else {
                          Component component1 = Component.translatable("build.tooHigh", i - 1).withStyle(ChatFormatting.RED);
                          this.player.sendSystemMessage(component1, true);
+@@ -1120,14 +_,8 @@
+ 
+                     this.player.connection.send(new ClientboundBlockUpdatePacket(serverlevel, blockpos));
+                     this.player.connection.send(new ClientboundBlockUpdatePacket(serverlevel, blockpos.relative(direction)));
+-                } else {
+-                    LOGGER.warn(
+-                        "Rejecting UseItemOnPacket from {}: Location {} too far away from hit block {}.",
+-                        this.player.getGameProfile().getName(),
+-                        vec3,
+-                        blockpos
+-                    );
+-                }
++                } // Paper - Remove unused warning
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
+             }
+         }
+     }
 @@ -1135,6 +_,8 @@
      @Override
      public void handleUseItem(ServerboundUseItemPacket p_9932_) {
@@ -1529,7 +1563,7 @@
              throw new IllegalArgumentException("Expected packet sequence nr >= 0");
          } else {
              this.ackBlockChangesUpTo = Math.max(p_215202_, this.ackBlockChangesUpTo);
-@@ -1205,7 +_,17 @@
+@@ -1205,20 +_,38 @@
      @Override
      public void handleSetCarriedItem(ServerboundSetCarriedItemPacket p_9909_) {
          PacketUtils.ensureRunningOnSameThread(p_9909_, this, this.player.serverLevel());
@@ -1547,8 +1581,10 @@
              if (this.player.getInventory().selected != p_9909_.getSlot() && this.player.getUsedItemHand() == InteractionHand.MAIN_HAND) {
                  this.player.stopUsingItem();
              }
-@@ -1214,11 +_,18 @@
+ 
+             this.player.getInventory().selected = p_9909_.getSlot();
              this.player.resetLastActionTime();
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
          } else {
              LOGGER.warn("{} tried to set an invalid carried item", this.player.getName().getString());
 +            this.disconnect(Component.literal("Invalid hotbar selection (Hacking?)"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // CraftBukkit // Paper - kick event cause
@@ -2139,7 +2175,7 @@
                              ServerGamePacketListenerImpl.LOGGER
                                  .warn("Player {} tried to attack an invalid entity", ServerGamePacketListenerImpl.this.player.getName().getString());
                          }
-@@ -1589,6 +_,26 @@
+@@ -1589,6 +_,27 @@
                  );
              }
          }
@@ -2163,6 +2199,7 @@
 +            });
 +        }
 +        // Paper end - PlayerUseUnknownEntityEvent
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
      }
  
      @Override
@@ -2531,11 +2568,12 @@
  
                      for (Entry<ItemStack> entry : Int2ObjectMaps.fastIterable(p_9856_.getChangedSlots())) {
                          this.player.containerMenu.setRemoteSlotNoCopy(entry.getIntKey(), entry.getValue());
-@@ -1656,6 +_,7 @@
+@@ -1656,6 +_,8 @@
                      } else {
                          this.player.containerMenu.broadcastChanges();
                      }
 +                    if (p_9856_.getButtonNum() == Inventory.SLOT_OFFHAND && this.player.containerMenu != this.player.inventoryMenu) this.player.containerSynchronizer.sendOffHandSlotChange(); // Paper - update offhand data when the player is clicking in an inventory not their own as the sychronizer does not include offhand slots
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                  }
              }
          }
@@ -2612,6 +2650,14 @@
          this.player.resetLastActionTime();
          if (this.player.containerMenu.containerId == p_9854_.containerId() && !this.player.isSpectator()) {
              if (!this.player.containerMenu.stillValid(this.player)) {
+@@ -1694,6 +_,7 @@
+                 if (flag) {
+                     this.player.containerMenu.broadcastChanges();
+                 }
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
+             }
+         }
+     }
 @@ -1709,10 +_,16 @@
              }
  
@@ -2631,7 +2677,7 @@
                      if (blockentity != null) {
                          blockentity.saveToItem(itemstack, this.player.level().registryAccess());
                      }
-@@ -1721,11 +_,48 @@
+@@ -1721,11 +_,49 @@
  
              boolean flag1 = p_9915_.slotNum() >= 1 && p_9915_.slotNum() <= 45;
              boolean flag2 = itemstack.isEmpty() || itemstack.getCount() <= itemstack.getMaxStackSize();
@@ -2677,6 +2723,7 @@
                  this.player.inventoryMenu.broadcastChanges();
 -            } else if (flag && flag2 && this.dropSpamTickCount < 200) {
 -                this.dropSpamTickCount += 20;
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
 +            } else if (flag && flag2 && this.dropSpamTickCount < dev.instellar.stellar.configuration.GlobalConfiguration.get().spamLimiter.dropSpamLimit) {
 +                this.dropSpamTickCount += dev.instellar.stellar.configuration.GlobalConfiguration.get().spamLimiter.dropSpamIncrement;
                  this.player.drop(itemstack, true);

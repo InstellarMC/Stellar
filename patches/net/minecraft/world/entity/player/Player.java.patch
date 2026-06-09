@@ -1130,6 +1130,34 @@
          return this.decorateDisplayNameComponent(mutablecomponent);
      }
  
+@@ -1975,6 +_,27 @@
+         return this.cooldowns;
+     }
+ 
++    // Paper start - Force update attributes.
++    @Override
++    public void detectEquipmentUpdates() {
++        super.detectEquipmentUpdates();
++
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) {
++            return;
++        }
++
++        // Copied from the tick method
++        ItemStack mainHandItemStack = this.getMainHandItem();
++        if (!ItemStack.matches(this.lastItemInMainHand, mainHandItemStack)) {
++            if (!ItemStack.isSameItem(this.lastItemInMainHand, mainHandItemStack)) {
++                this.resetAttackStrengthTicker();
++            }
++
++            this.lastItemInMainHand = mainHandItemStack.copy();
++        }
++    }
++    // Paper end - Force update attributes.
++
+     @Override
+     protected float getBlockSpeedFactor() {
+         return !this.abilities.flying && !this.isFallFlying() ? super.getBlockSpeedFactor() : 1.0F;
 @@ -2004,33 +_,44 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }
