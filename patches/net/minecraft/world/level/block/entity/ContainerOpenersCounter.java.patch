@@ -8,7 +8,7 @@
  
      protected abstract void onOpen(Level p_155460_, BlockPos p_155461_, BlockState p_155462_);
  
-@@ -20,10 +_,36 @@
+@@ -20,10 +_,48 @@
  
      protected abstract void openerCountChanged(Level p_155463_, BlockPos p_155464_, BlockState p_155465_, int p_155466_, int p_155467_);
  
@@ -26,9 +26,21 @@
 +    }
 +    // CraftBukkit end
 +
++    // Paper start - delay open/close callbacks
++    public boolean delayCallbacks() {
++        return false;
++    }
++    // Paper end - delay open/close callbacks
++
      protected abstract boolean isOwnContainer(Player p_155451_);
  
      public void incrementOpeners(Player p_155453_, Level p_155454_, BlockPos p_155455_, BlockState p_155456_) {
++        // Paper start - delay open/close callbacks
++        if (this.delayCallbacks()) {
++            scheduleRecheck(p_155454_, p_155455_, p_155456_, 1);
++            return;
++        }
++        // Paper end - delay open/close callbacks
 +        int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
          int i = this.openCount++;
 +
@@ -45,10 +57,16 @@
          if (i == 0) {
              this.onOpen(p_155454_, p_155455_, p_155456_);
              p_155454_.gameEvent(p_155453_, GameEvent.CONTAINER_OPEN, p_155455_);
-@@ -35,7 +_,20 @@
+@@ -35,7 +_,26 @@
      }
  
      public void decrementOpeners(Player p_155469_, Level p_155470_, BlockPos p_155471_, BlockState p_155472_) {
++        // Paper start - delay open/close callbacks
++        if (this.delayCallbacks()) {
++            scheduleRecheck(p_155470_, p_155471_, p_155472_, 1);
++            return;
++        }
++        // Paper end - delay open/close callbacks
 +        int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
 +        if (this.openCount == 0) return; // Paper - Prevent ContainerOpenersCounter openCount from going negative
          int i = this.openCount--;
@@ -74,3 +92,16 @@
          int j = this.openCount;
          if (j != i) {
              boolean flag = i != 0;
+@@ -86,6 +_,11 @@
+     }
+ 
+     private static void scheduleRecheck(Level p_155481_, BlockPos p_155482_, BlockState p_155483_) {
+-        p_155481_.scheduleTick(p_155482_, p_155483_.getBlock(), 5);
++        // Paper start - delay open/close callbacks
++        scheduleRecheck(p_155481_, p_155482_, p_155483_, 5);
++    }
++    private static void scheduleRecheck(final Level level, final BlockPos blockPos, final BlockState blockState, final int delay) {
++        level.scheduleTick(blockPos, blockState.getBlock(), delay);
++        // Paper end - delay open/close callbacks
+     }
+ }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
-@@ -21,6 +_,42 @@
+@@ -21,8 +_,50 @@
  import net.minecraft.world.level.block.state.BlockState;
  
  public class BarrelBlockEntity extends RandomizableContainerBlockEntity {
@@ -42,4 +42,12 @@
 +
      private NonNullList<ItemStack> items = NonNullList.withSize(27, ItemStack.EMPTY);
      public final ContainerOpenersCounter openersCounter = new ContainerOpenersCounter() {
++        // Paper start - delay open/close callbacks
++        @Override
++        public boolean delayCallbacks() {
++            return true;
++        }
++        // Paper end - delay open/close callbacks
          @Override
+         protected void onOpen(Level p_155062_, BlockPos p_155063_, BlockState p_155064_) {
+             BarrelBlockEntity.this.playSound(p_155064_, SoundEvents.BARREL_OPEN);

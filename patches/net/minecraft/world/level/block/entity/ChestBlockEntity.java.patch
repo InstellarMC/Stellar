@@ -1,5 +1,18 @@
 --- a/net/minecraft/world/level/block/entity/ChestBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/ChestBlockEntity.java
+@@ -28,6 +_,12 @@
+     private static final int EVENT_SET_OPEN_COUNT = 1;
+     private NonNullList<ItemStack> items = NonNullList.withSize(27, ItemStack.EMPTY);
+     public final ContainerOpenersCounter openersCounter = new ContainerOpenersCounter() {
++        // Paper start - delay open/close callbacks
++        @Override
++        public boolean delayCallbacks() {
++            return true;
++        }
++        // Paper end - delay open/close callbacks
+         @Override
+         protected void onOpen(Level p_155357_, BlockPos p_155358_, BlockState p_155359_) {
+             ChestBlockEntity.playSound(p_155357_, p_155358_, p_155359_, SoundEvents.CHEST_OPEN);
 @@ -56,6 +_,36 @@
      };
      private final ChestLidController chestLidController = new ChestLidController();
