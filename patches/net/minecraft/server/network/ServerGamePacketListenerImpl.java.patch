@@ -2028,11 +2028,11 @@
      @Override
      public void handleInteract(ServerboundInteractPacket p_9866_) {
          PacketUtils.ensureRunningOnSameThread(p_9866_, this, this.player.serverLevel());
-+        if (this.player.isImmobile()) return; // CraftBukkit
++        if (this.player.isImmobile() || this.player.isSpectator()) return; // Paper
          final ServerLevel serverlevel = this.player.serverLevel();
          final Entity entity = p_9866_.getTarget(serverlevel);
 +        // Spigot Start
-+        if ( entity == player && !player.isSpectator() )
++        if ( entity == player )
 +        {
 +            disconnect( Component.literal( "Cannot interact with self!" ), org.bukkit.event.player.PlayerKickEvent.Cause.SELF_INTERACTION ); // Paper - kick event cause
 +            return;
