@@ -1816,7 +1816,7 @@
          if (this.isPassenger()) {
              this.getVehicle().positionRider(this);
          }
-@@ -1982,7 +_,7 @@
+@@ -1982,17 +_,23 @@
      }
  
      public boolean startRiding(Entity p_19966_, boolean p_19967_) {
@@ -1825,14 +1825,30 @@
              return false;
          } else if (!p_19966_.couldAcceptPassenger()) {
              return false;
-@@ -1993,6 +_,7 @@
+         } else {
++            // Stellar start - Paper: Backport SPIGOT-7947
++            if (!p_19967_ && !this.level().isClientSide() && !p_19966_.type.canSerialize()) { // SPIGOT-7947: Allow force riding all entities
++                return false;
++            }
++            // Stellar end - Paper: Backport SPIGOT-7947
+             for (Entity entity = p_19966_; entity.vehicle != null; entity = entity.vehicle) {
+                 if (entity.vehicle == this) {
+                     return false;
                  }
              }
  
-+        if (!net.neoforged.neoforge.event.EventHooks.canMountEntity(this, p_19966_, true)) return false;
++            if (!net.neoforged.neoforge.event.EventHooks.canMountEntity(this, p_19966_, true)) return false;
              if (p_19967_ || this.canRide(p_19966_) && p_19966_.canAddPassenger(this)) {
                  if (this.isPassenger()) {
                      this.stopRiding();
+@@ -2001,6 +_,7 @@
+                 this.setPose(Pose.STANDING);
+                 this.vehicle = p_19966_;
+                 this.vehicle.addPassenger(this);
++                this.level().gameEvent(this, GameEvent.ENTITY_MOUNT, this.vehicle.position);
+                 p_19966_.getIndirectPassengersStream()
+                     .filter(p_185984_ -> p_185984_ instanceof ServerPlayer)
+                     .forEach(p_185982_ -> CriteriaTriggers.START_RIDING_TRIGGER.trigger((ServerPlayer)p_185982_));
 @@ -2024,8 +_,10 @@
      public void removeVehicle() {
          if (this.vehicle != null) {
