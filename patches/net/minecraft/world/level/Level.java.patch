@@ -1644,7 +1644,7 @@
          private final String id;
  
          private ExplosionInteraction(String p_346300_) {
-@@ -1118,5 +_,77 @@
+@@ -1118,5 +_,82 @@
          public String getSerializedName() {
              return this.id;
          }
@@ -1679,6 +1679,11 @@
 +        return null;
 +    }
 +    // Paper end - optimize redstone (Alternate Current)
++    // Paper start - allow patching this logic
++    public final int getEntityCount() {
++        return this.moonrise$getEntityLookup().getEntityCount(); // Paper - rewrite chunk system
++    }
++    // Paper end - allow patching this logic
 +    // Purpur start
 +    public boolean isNether() {
 +        return getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER;
