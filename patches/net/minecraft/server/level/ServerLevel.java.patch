@@ -24,7 +24,7 @@
      private final GameEventDispatcher gameEventDispatcher;
      public boolean noSave;
      private final SleepStatus sleepStatus;
-@@ -199,86 +_,460 @@
+@@ -199,86 +_,449 @@
      private final List<CustomSpawner> customSpawners;
      @Nullable
      private EndDragonFight dragonFight;
@@ -383,8 +383,7 @@
              p_215006_,
              p_215007_,
 -            p_214999_.getMaxChainedNeighborUpdates()
-+            minecraftserver.getMaxChainedNeighborUpdates()
-         );
+-        );
 -        this.tickTime = p_215009_;
 -        this.server = p_214999_;
 -        this.customSpawners = p_215008_;
@@ -392,6 +391,20 @@
 -        ChunkGenerator chunkgenerator = p_215004_.generator();
 -        boolean flag = p_214999_.forceSynchronousWrites();
 -        DataFixer datafixer = p_214999_.getFixerUpper();
+-        EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(
+-            new SimpleRegionStorage(
+-                new RegionStorageInfo(p_215001_.getLevelId(), p_215003_, "entities"),
+-                p_215001_.getDimensionPath(p_215003_).resolve("entities"),
+-                datafixer,
+-                flag,
+-                DataFixTypes.ENTITY_CHUNK
+-            ),
+-            this,
+-            p_214999_
+-        );
+-        this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage);
++            minecraftserver.getMaxChainedNeighborUpdates()
++        );
 +        // CraftBukkit start
 +        this.pvpMode = minecraftserver.isPvpAllowed();
 +        this.convertable = convertable_conversionsession;
@@ -464,22 +477,7 @@
 +        this.purpurConfig = new org.purpurmc.purpur.PurpurWorldConfig(name, environment); // Purpur
 +        boolean flag = minecraftserver.forceSynchronousWrites();
 +        DataFixer datafixer = minecraftserver.getFixerUpper();
-         EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(
-             new SimpleRegionStorage(
--                new RegionStorageInfo(p_215001_.getLevelId(), p_215003_, "entities"),
--                p_215001_.getDimensionPath(p_215003_).resolve("entities"),
-+                new RegionStorageInfo(convertable_conversionsession.getLevelId(), resourcekey, "entities"),
-+                convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"),
-                 datafixer,
-                 flag,
-                 DataFixTypes.ENTITY_CHUNK
-             ),
-             this,
--            p_214999_
-+            minecraftserver
-         );
--        this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage);
-+
++        // Paper - rewrite chunk system
          this.chunkSource = new ServerChunkCache(
              this,
 -            p_215001_,
