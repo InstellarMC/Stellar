@@ -78,6 +78,15 @@
      }
  
      @Override
+@@ -56,7 +_,7 @@
+     }
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+-        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 10.0).add(Attributes.MOVEMENT_SPEED, 0.2F);
++        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 10.0).add(Attributes.MOVEMENT_SPEED, 0.2F).add(Attributes.ATTACK_DAMAGE, 0.0D); // Purpur
+     }
+ 
+     @Override
 @@ -70,7 +_,7 @@
      }
  
