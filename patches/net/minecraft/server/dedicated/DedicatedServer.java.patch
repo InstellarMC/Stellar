@@ -44,7 +44,7 @@
 -                    }
 -                } catch (IOException ioexception1) {
 -                    DedicatedServer.LOGGER.error("Exception handling console input", (Throwable)ioexception1);
-+                if (net.neoforged.neoforge.server.console.TerminalHandler.handleCommands(DedicatedServer.this)) return; // Stellar - Delegate to Paper
++                // if (net.neoforged.neoforge.server.console.TerminalHandler.handleCommands(DedicatedServer.this)) return; // Stellar - Delegate to Paper
 +                if (!org.bukkit.craftbukkit.Main.useConsole) {
 +                    return;
                  }
