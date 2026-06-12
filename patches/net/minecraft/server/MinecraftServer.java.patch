@@ -966,7 +966,7 @@
          this.running = false;
          if (p_129884_) {
              try {
-@@ -660,16 +_,105 @@
+@@ -660,16 +_,107 @@
          }
      }
  
@@ -1052,6 +1052,8 @@
 +            // anything at 3+ won't be caught here but also will trip watchdog....
 +            // tasks are default scheduled at -1 + delay, and first tick will tick at 1
 +            this.server.spark.enableBeforePlugins(); // Paper - spark
++            final long actualDoneTimeMs = System.currentTimeMillis() - net.minecraft.server.Main.BOOT_TIME.toEpochMilli(); // Paper - Improve startup message // Stellar - See net.minecraft.server.Main#main for boot time tracking
++            LOGGER.info("Done ({})! For help, type \"help\"", String.format(java.util.Locale.ROOT, "%.3fs", actualDoneTimeMs / 1000.00D)); // Paper - Improve startup message
 +            org.spigotmc.WatchdogThread.tick();
 +            org.spigotmc.WatchdogThread.hasStarted = true; // Paper
 +            // Paper end - Improved Watchdog Support

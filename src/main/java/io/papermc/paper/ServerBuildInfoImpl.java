@@ -59,7 +59,7 @@ public record ServerBuildInfoImpl(
                         .orElse(OptionalInt.empty()),
             getManifestAttribute(manifest, ATTRIBUTE_BUILD_TIME)
                 .map(Instant::parse)
-                .orElse(Main.BOOT_TIME),
+                .orElse(net.minecraft.server.Main.BOOT_TIME), // Stellar - See net.minecraft.server.Main#main for boot time tracking
             getManifestAttribute(manifest, ATTRIBUTE_GIT_BRANCH),
             getManifestAttribute(manifest, ATTRIBUTE_GIT_COMMIT)
         );

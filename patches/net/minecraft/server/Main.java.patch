@@ -1,7 +1,10 @@
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -63,8 +_,17 @@
+@@ -61,10 +_,20 @@
+ import org.slf4j.Logger;
+ 
  public class Main {
++    public static final java.time.Instant BOOT_TIME = java.time.Instant.now(); // Stellar - track initial start time
      private static final Logger LOGGER = LogUtils.getLogger();
  
 +    // Paper start - Reset loggers after shutdown
