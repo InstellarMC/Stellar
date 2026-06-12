@@ -795,7 +795,7 @@
      }
  
      public void tickCustomSpawners(boolean p_8800_, boolean p_8801_) {
-@@ -464,27 +_,92 @@
+@@ -464,27 +_,98 @@
          this.players.stream().filter(LivingEntity::isSleeping).collect(Collectors.toList()).forEach(p_184116_ -> p_184116_.stopSleepInBed(false, false));
      }
  
@@ -819,6 +819,12 @@
 +            if (section == null || !section.isRandomlyTickingBlocks()) {
 +                continue;
 +            }
++
++            // Stellar start: PaperMC/Paper#11500 - Lazy initialization of IBlockDataList
++            if (!((ca.spottedleaf.moonrise.patches.block_counting.BlockCountingChunkSection)section).anyTickingBlocks()) {
++                continue;
++            }
++            // Stellar end: PaperMC/Paper#11500 - Lazy initialization of IBlockDataList
 +
 +            final ca.spottedleaf.moonrise.common.list.IBlockDataList tickList = ((ca.spottedleaf.moonrise.patches.block_counting.BlockCountingChunkSection)section).moonrise$getTickingBlockList();
 +            if (tickList.size() == 0) {

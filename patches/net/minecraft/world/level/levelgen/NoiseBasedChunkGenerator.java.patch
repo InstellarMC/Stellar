@@ -83,7 +83,7 @@
      }
  
      private ChunkAccess doFill(Blender p_224285_, StructureManager p_224286_, RandomState p_224287_, ChunkAccess p_224288_, int p_224289_, int p_224290_) {
-@@ -405,6 +_,24 @@
+@@ -405,6 +_,25 @@
  
                                  blockstate = this.debugPreliminarySurfaceLevel(noisechunk, l3, l2, k4, blockstate);
                                  if (blockstate != AIR && !SharedConstants.debugVoidTerrain(p_224288_.getPos())) {
@@ -96,6 +96,7 @@
 +
 +                                        if (!blockstate.isRandomlyTicking()) {
 +                                            ++levelchunksection.tickingBlockCount;
++                                            levelchunksection.createTickingBlocks(); // Stellar: PaperMC/Paper#11500 - Lazy initialization of IBlockDataList
 +                                            levelchunksection.tickingBlocks.remove(i4, i3, l4);
 +                                            levelchunksection.tickingBlocks.add(i4, i3, l4, blockstate);
 +                                        }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/net/minecraft/world/level/chunk/LevelChunkSection.java
-@@ -13,34 +_,73 @@
+@@ -13,34 +_,86 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.level.material.FluidState;
  
@@ -31,7 +31,19 @@
 +    }
 +
 +    public int specialCollidingBlocks; // Stellar - private -> public
-+    public final ca.spottedleaf.moonrise.common.list.IBlockDataList tickingBlocks = new ca.spottedleaf.moonrise.common.list.IBlockDataList(); // Stellar - private -> public
++    public ca.spottedleaf.moonrise.common.list.IBlockDataList tickingBlocks = null; // Stellar - private -> public // Stellar: PaperMC/Paper#11500 - Lazy initialization of IBlockDataList
++
++    // Stellar start: PaperMC/Paper#11500 - Lazy initialization of IBlockDataList
++    @Override
++    public final boolean anyTickingBlocks() {
++        return tickingBlocks != null;
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal // Stellar
++    public final void createTickingBlocks() { // Stellar - private -> public
++        if (tickingBlocks == null) tickingBlocks = new ca.spottedleaf.moonrise.common.list.IBlockDataList();
++    }
++    // Stellar end: PaperMC/Paper#11500 - Lazy initialization of IBlockDataList
 +
 +    @Override
 +    public final int moonrise$getSpecialCollidingBlocks() {
@@ -40,6 +52,7 @@
 +
 +    @Override
 +    public final ca.spottedleaf.moonrise.common.list.IBlockDataList moonrise$getTickingBlockList() {
++        this.createTickingBlocks(); // Stellar: PaperMC/Paper#11500 - Lazy initialization of IBlockDataList
 +        return this.tickingBlocks;
 +    }
 +    // Paper end - block counting
@@ -101,7 +114,7 @@
              this.nonEmptyBlockCount++;
              if (p_62995_.isRandomlyTicking()) {
                  this.tickingBlockCount++;
-@@ -85,7 +_,24 @@
+@@ -85,7 +_,26 @@
  
          if (!fluidstate1.isEmpty()) {
              this.tickingFluidCount++;
@@ -118,16 +131,18 @@
 +        }
 +
 +        if (blockstate.isRandomlyTicking()) {
++            this.createTickingBlocks(); // Stellar: PaperMC/Paper#11500 - Lazy initialization of IBlockDataList
 +            this.tickingBlocks.remove(p_62992_, p_62993_, p_62994_);
 +        }
 +        if (p_62995_.isRandomlyTicking()) {
++            this.createTickingBlocks(); // Stellar: PaperMC/Paper#11500 - Lazy initialization of IBlockDataList
 +            this.tickingBlocks.add(p_62992_, p_62993_, p_62994_, p_62995_);
 +        }
 +        // Paper end - block counting
  
          return blockstate;
      }
-@@ -107,34 +_,66 @@
+@@ -107,34 +_,67 @@
      }
  
      public void recalcBlockCounts() {
@@ -156,7 +171,7 @@
 +        this.tickingBlockCount = (short)0;
 +        this.tickingFluidCount = (short)0;
 +        this.specialCollidingBlocks = (short)0;
-+        this.tickingBlocks.clear();
++        this.tickingBlocks = null; // Stellar: PaperMC/Paper#11500 - Lazy initialization of IBlockDataList
 +
 +        if (this.maybeHas((final BlockState state) -> !state.isAir())) {
 +            final PalettedContainer.Data<BlockState> data = this.states.data;
@@ -194,6 +209,7 @@
 +
 +                    java.util.Objects.checkFromToIndex(0, paletteCount, raw.length);
 +                    for (int i = 0; i < paletteCount; ++i) {
++                        this.createTickingBlocks(); // Stellar: PaperMC/Paper#11500 - Lazy initialization of IBlockDataList
 +                        this.tickingBlocks.add(raw[i], state);
 +                    }
 +                }
