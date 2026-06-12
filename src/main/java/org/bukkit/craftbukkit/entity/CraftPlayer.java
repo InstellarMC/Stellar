@@ -209,6 +209,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, io.papermc.
     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
     private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
     private long lastSaveTime; // Paper - getLastPlayed replacement API
+    private @Nullable CraftScoreboard scoreboardOverride;
 
     public CraftPlayer(CraftServer server, ServerPlayer entity) {
         super(server, entity);
@@ -2818,6 +2819,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player, io.papermc.
     @Override
     public CraftScoreboard getScoreboard() {
         return this.server.getScoreboardManager().getPlayerBoard(this);
+    }
+
+    public @Nullable CraftScoreboard getScoreboardOverride() {
+        return this.scoreboardOverride;
+    }
+
+    public void setScoreboardOverride(@Nullable CraftScoreboard scoreboardOverride) {
+        this.scoreboardOverride = scoreboardOverride;
     }
 
     @Override

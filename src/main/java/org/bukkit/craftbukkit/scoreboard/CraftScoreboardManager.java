@@ -26,7 +26,6 @@ public final class CraftScoreboardManager implements ScoreboardManager {
     private final CraftScoreboard mainScoreboard;
     private final MinecraftServer server;
     private final Collection<CraftScoreboard> scoreboards = new WeakCollection<>();
-    private final Map<CraftPlayer, CraftScoreboard> playerBoards = new HashMap<>();
 
     public CraftScoreboardManager(MinecraftServer minecraftserver, net.minecraft.world.scores.Scoreboard scoreboardServer) {
         this.mainScoreboard = new CraftScoreboard(scoreboardServer);
@@ -62,7 +61,7 @@ public final class CraftScoreboardManager implements ScoreboardManager {
 
     // CraftBukkit method
     public CraftScoreboard getPlayerBoard(CraftPlayer player) {
-        CraftScoreboard board = this.playerBoards.get(player);
+        CraftScoreboard board = player.getScoreboardOverride();
         return board == null ? this.getMainScoreboard() : board;
     }
 
@@ -80,9 +79,9 @@ public final class CraftScoreboardManager implements ScoreboardManager {
         }
 
         if (scoreboard == this.mainScoreboard) {
-            this.playerBoards.remove(player);
+            player.setScoreboardOverride(null);
         } else {
-            this.playerBoards.put(player, scoreboard);
+            player.setScoreboardOverride(scoreboard);
         }
 
         // Old objective tracking
@@ -108,7 +107,7 @@ public final class CraftScoreboardManager implements ScoreboardManager {
 
     // CraftBukkit method
     public void removePlayer(CraftPlayer player) {
-        this.playerBoards.remove(player);
+        player.setScoreboardOverride(null);
     }
 
     // CraftBukkit method
