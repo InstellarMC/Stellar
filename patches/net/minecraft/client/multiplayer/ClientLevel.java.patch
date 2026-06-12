@@ -75,8 +75,15 @@
          this.getProfiler().pop();
  
          for (Entity entity : p_104640_.getPassengers()) {
-@@ -330,8 +_,10 @@
+@@ -325,13 +_,17 @@
+         return true;
      }
+ 
++    /*// Stellar start - dead code
+     public int getEntityCount() {
+         return this.entityStorage.count();
+     }
++    */// Stellar end - dead code
  
      public void addEntity(Entity p_104741_) {
 +        if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.EntityJoinLevelEvent(p_104741_, this)).isCanceled()) return;

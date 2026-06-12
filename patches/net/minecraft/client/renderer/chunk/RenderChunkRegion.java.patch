@@ -19,13 +19,21 @@
      }
  
      @Override
-@@ -36,6 +_,11 @@
+@@ -36,6 +_,19 @@
      }
  
      @Override
 +    public @org.jetbrains.annotations.Nullable BlockState getBlockStateIfLoaded(BlockPos blockposition) {
 +        return net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
 +    }
++
++    // Stellar start - if loaded util - dead code
++
++    @Override
++    public FluidState getFluidIfLoaded(final BlockPos blockposition) {
++        return net.minecraft.world.level.material.Fluids.EMPTY.defaultFluidState();
++    }
++    // Stellar end - if loaded util - dead code
 +
 +    @Override
      public FluidState getFluidState(BlockPos p_112943_) {
