@@ -163,6 +163,118 @@
      }
  
      public void add(BlockPos p_217920_, Holder<PoiType> p_217921_) {
+@@ -126,40 +_,56 @@
+     public Optional<BlockPos> find(
+         Predicate<Holder<PoiType>> p_27187_, Predicate<BlockPos> p_27188_, BlockPos p_27189_, int p_27190_, PoiManager.Occupancy p_27191_
+     ) {
+-        return this.findAll(p_27187_, p_27188_, p_27189_, p_27190_, p_27191_).findFirst();
++        // Paper start - re-route to faster logic
++        BlockPos ret = io.papermc.paper.util.PoiAccess.findAnyPoiPosition(this, p_27187_, p_27188_, p_27189_, p_27190_, p_27191_, false);
++        return Optional.ofNullable(ret);
++        // Paper end - re-route to faster logic
+     }
+ 
+     public Optional<BlockPos> findClosest(Predicate<Holder<PoiType>> p_27193_, BlockPos p_27194_, int p_27195_, PoiManager.Occupancy p_27196_) {
+-        return this.getInRange(p_27193_, p_27194_, p_27195_, p_27196_)
+-            .map(PoiRecord::getPos)
+-            .min(Comparator.comparingDouble(p_217977_ -> p_217977_.distSqr(p_27194_)));
++        // Paper start - optimise POI lookup
++        final PoiRecord closest = ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.findNearestPoiRecord(
++                (PoiManager)(Object)this, p_27193_, null, p_27194_, p_27195_, (double)((long)p_27195_ * (long)p_27195_), p_27196_, ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.LOAD_FOR_SEARCHING
++        );
++        return closest == null ? Optional.empty() : Optional.of(closest.getPos());
++        // Paper end - optimise POI lookup
+     }
+ 
+     public Optional<Pair<Holder<PoiType>, BlockPos>> findClosestWithType(
+         Predicate<Holder<PoiType>> p_218003_, BlockPos p_218004_, int p_218005_, PoiManager.Occupancy p_218006_
+     ) {
+-        return this.getInRange(p_218003_, p_218004_, p_218005_, p_218006_)
+-            .min(Comparator.comparingDouble(p_217909_ -> p_217909_.getPos().distSqr(p_218004_)))
+-            .map(p_217959_ -> Pair.of(p_217959_.getPoiType(), p_217959_.getPos()));
++        // Paper start - optimise POI lookup
++        final PoiRecord closest = ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.findNearestPoiRecord(
++                (PoiManager)(Object)this, p_218003_, null, p_218004_, p_218005_, (double)((long)p_218005_ * (long)p_218005_), p_218006_, ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.LOAD_FOR_SEARCHING
++        );
++        return closest == null ? Optional.empty() : Optional.of(Pair.of(closest.getPoiType(), closest.getPos()));
++        // Paper end - optimise POI lookup
+     }
+ 
+     public Optional<BlockPos> findClosest(
+         Predicate<Holder<PoiType>> p_148659_, Predicate<BlockPos> p_148660_, BlockPos p_148661_, int p_148662_, PoiManager.Occupancy p_148663_
+     ) {
+-        return this.getInRange(p_148659_, p_148661_, p_148662_, p_148663_)
+-            .map(PoiRecord::getPos)
+-            .filter(p_148660_)
+-            .min(Comparator.comparingDouble(p_217918_ -> p_217918_.distSqr(p_148661_)));
++        // Paper start - optimise POI lookup
++        final PoiRecord closest = ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.findNearestPoiRecord(
++                (PoiManager)(Object)this, p_148659_, p_148660_, p_148661_, p_148662_, (double)((long)p_148662_ * (long)p_148662_), p_148663_, ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.LOAD_FOR_SEARCHING
++        );
++        return closest == null ? Optional.empty() : Optional.of(closest.getPos());
++        // Paper end - optimise POI lookup
+     }
+ 
+     public Optional<BlockPos> take(Predicate<Holder<PoiType>> p_217947_, BiPredicate<Holder<PoiType>, BlockPos> p_217948_, BlockPos p_217949_, int p_217950_) {
+-        return this.getInRange(p_217947_, p_217949_, p_217950_, PoiManager.Occupancy.HAS_SPACE)
+-            .filter(p_217934_ -> p_217948_.test(p_217934_.getPoiType(), p_217934_.getPos()))
+-            .findFirst()
+-            .map(p_217881_ -> {
+-                p_217881_.acquireTicket();
+-                return p_217881_.getPos();
+-            });
++        // Paper start - optimise POI lookup
++        final PoiRecord record = ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.findAnyPoiRecord(
++                (PoiManager)(Object)this, p_217947_, p_217948_, p_217949_, p_217950_, (double)((long)p_217950_ * (long)p_217950_), PoiManager.Occupancy.HAS_SPACE, ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.LOAD_FOR_SEARCHING
++        );
++
++        if (record == null) {
++            return Optional.empty();
++        }
++
++        record.acquireTicket();
++        return Optional.of(record.getPos());
++        // Paper end - optimise POI lookup
+     }
+ 
+     public Optional<BlockPos> getRandom(
+@@ -170,8 +_,21 @@
+         int p_217956_,
+         RandomSource p_217957_
+     ) {
+-        List<PoiRecord> list = Util.toShuffledList(this.getInRange(p_217952_, p_217955_, p_217956_, p_217954_), p_217957_);
+-        return list.stream().filter(p_217945_ -> p_217953_.test(p_217945_.getPos())).findFirst().map(PoiRecord::getPos);
++        // Paper start - optimise POI lookup
++        final List<PoiRecord> list = new java.util.ArrayList<>();
++        ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.findAnyPoiRecords(
++                (PoiManager)(Object)this, p_217952_, p_217953_, p_217955_, p_217956_, (double)((long)p_217956_ * (long)p_217956_), p_217954_, ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.LOAD_FOR_SEARCHING, Integer.MAX_VALUE, list
++        );
++
++        // the old method shuffled the list and then tried to find the first element in it that
++        // matched positionPredicate, however we moved positionPredicate into the poi search. This means we can avoid a
++        // shuffle entirely, and just pick a random element from list
++        if (list.isEmpty()) {
++            return Optional.empty();
++        }
++
++        return Optional.ofNullable(list.get(p_217957_.nextInt(list.size())).getPos());
++        // Paper end - optimise POI lookup
+     }
+ 
+     public boolean release(BlockPos p_27155_) {
+@@ -195,8 +_,10 @@
+     }
+ 
+     public int sectionsToVillage(SectionPos p_27099_) {
+-        this.distanceTracker.runAllUpdates();
+-        return this.distanceTracker.getLevel(p_27099_.asLong());
++        // Paper start - rewrite chunk system
++        this.villageDistanceTracker.propagateUpdates();
++        return convertBetweenLevels(this.villageDistanceTracker.getLevel(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkSectionKey(p_27099_)));
++        // Paper end - rewrite chunk system
+     }
+ 
+     boolean isVillageCenter(long p_27198_) {
 @@ -211,19 +_,26 @@
  
      @Override

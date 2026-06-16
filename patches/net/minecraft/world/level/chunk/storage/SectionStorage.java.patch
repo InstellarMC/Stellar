@@ -15,7 +15,7 @@
      private final Function<Runnable, Codec<R>> codec;
 @@ -43,6 +_,15 @@
      private final ChunkIOErrorReporter errorReporter;
-     protected final LevelHeightAccessor levelHeightAccessor;
+     public final LevelHeightAccessor levelHeightAccessor;
  
 +    // Paper start - rewrite chunk system
 +    private final RegionFileStorage regionStorage;
