@@ -1,13 +1,12 @@
 package org.bukkit.entity.minecart;
 
-import com.destroystokyo.paper.loottable.LootableEntityInventory;
 import org.bukkit.entity.Minecart;
 import org.bukkit.inventory.InventoryHolder;
 
 /**
  * Represents a Minecart with a Hopper inside it
  */
-public interface HopperMinecart extends Minecart, InventoryHolder, LootableEntityInventory {
+public interface HopperMinecart extends Minecart, InventoryHolder, com.destroystokyo.paper.loottable.LootableEntityInventory { // Paper - LootTable API
 
     /**
      * Checks whether or not this Minecart will pick up

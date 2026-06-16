@@ -36,7 +36,7 @@ public interface Lootable {
     @Nullable
     LootTable getLootTable();
 
-    // Paper start
+    // Paper start - LootTable API
     /**
      * Set the loot table and seed for a container or entity at the same time.
      *
@@ -59,7 +59,7 @@ public interface Lootable {
     default void clearLootTable() {
         this.setLootTable(null);
     }
-    // Paper end
+    // Paper end - LootTable API
 
     /**
      * Set the seed used when this Loot Table generates loot.

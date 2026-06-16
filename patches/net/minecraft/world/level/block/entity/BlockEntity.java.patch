@@ -1,11 +1,12 @@
 --- a/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -27,8 +_,9 @@
+@@ -27,8 +_,10 @@
  import net.minecraft.world.level.block.state.BlockState;
  import org.slf4j.Logger;
  
 -public abstract class BlockEntity implements net.neoforged.neoforge.common.extensions.IBlockEntityExtension {
 +public abstract class BlockEntity extends net.neoforged.neoforge.attachment.AttachmentHolder implements net.neoforged.neoforge.common.extensions.IBlockEntityExtension {
++    static boolean ignoreTileUpdates; // Paper - Perf: Optimize Hoppers
      private static final Logger LOGGER = LogUtils.getLogger();
 +    @Deprecated // Neo: always use getType()
      private final BlockEntityType<?> type;
@@ -103,6 +104,14 @@
          ResourceLocation resourcelocation = BlockEntityType.getKey(this.getType());
          if (resourcelocation == null) {
              throw new RuntimeException(this.getClass() + " is missing a mapping! This is a bug!");
+@@ -182,6 +_,7 @@
+ 
+     public void setChanged() {
+         if (this.level != null) {
++            if (ignoreTileUpdates) return; // Paper - Perf: Optimize Hoppers
+             setChanged(this.level, this.worldPosition, this.blockState);
+         }
+     }
 @@ -216,10 +_,14 @@
  
      public void setRemoved() {

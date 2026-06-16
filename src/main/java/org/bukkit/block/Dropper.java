@@ -1,11 +1,9 @@
 package org.bukkit.block;
 
-import com.destroystokyo.paper.loottable.LootableBlockInventory;
-
 /**
  * Represents a captured state of a dropper.
  */
-public interface Dropper extends Container, LootableBlockInventory {
+public interface Dropper extends Container, com.destroystokyo.paper.loottable.LootableBlockInventory { // Paper - LootTable API
 
     /**
      * Tries to drop a randomly selected item from the dropper's inventory,

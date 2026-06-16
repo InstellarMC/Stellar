@@ -1,5 +1,13 @@
 --- a/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
+@@ -53,6 +_,7 @@
+ 
+     @Override
+     public ItemStack getItem(int p_59611_) {
++        if (p_59611_ == 0) // Paper - Perf: Optimize Hoppers
+         this.unpackLootTable(null);
+         return super.getItem(p_59611_);
+     }
 @@ -115,4 +_,13 @@
          p_331200_.remove("LootTable");
          p_331200_.remove("LootTableSeed");

@@ -1,6 +1,5 @@
 package org.bukkit.entity.minecart;
 
-import com.destroystokyo.paper.loottable.LootableEntityInventory;
 import org.bukkit.entity.Minecart;
 import org.bukkit.inventory.InventoryHolder;
 
@@ -9,5 +8,5 @@ import org.bukkit.inventory.InventoryHolder;
  * minecarts} have their own inventory that can be accessed using methods
  * from the {@link InventoryHolder} interface.
  */
-public interface StorageMinecart extends Minecart, InventoryHolder, LootableEntityInventory {
+public interface StorageMinecart extends Minecart, InventoryHolder, com.destroystokyo.paper.loottable.LootableEntityInventory { // Paper - LootTable API
 }

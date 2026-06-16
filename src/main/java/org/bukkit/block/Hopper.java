@@ -1,12 +1,9 @@
 package org.bukkit.block;
 
-
-import com.destroystokyo.paper.loottable.LootableBlockInventory;
-
 /**
  * Represents a captured state of a hopper.
  */
-public interface Hopper extends Container, LootableBlockInventory { // Paper
+public interface Hopper extends Container, com.destroystokyo.paper.loottable.LootableBlockInventory { // Paper - LootTable API
     // Paper start - Expanded Hopper API
     /**
      * Sets the cooldown before the hopper transfers or sucks in another item
