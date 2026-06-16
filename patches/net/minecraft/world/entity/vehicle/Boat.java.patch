@@ -151,6 +151,15 @@
                          && d0 < (double)((float)blockpos$mutableblockpos.getY() + fluidstate.getHeight(this.level(), blockpos$mutableblockpos))) {
                          if (!fluidstate.isSource()) {
                              return Boat.Status.UNDER_FLOWING_WATER;
+@@ -631,7 +_,7 @@
+             this.waterLevel = this.getY(1.0);
+             double d2 = (double)(this.getWaterLevelAbove() - this.getBbHeight()) + 0.101;
+             if (this.level().noCollision(this, this.getBoundingBox().move(0.0, d2 - this.getY(), 0.0))) {
+-                this.setPos(this.getX(), d2, this.getZ());
++                this.move(MoverType.SELF, new Vec3(0.0D, d2 - this.getY(), 0.0D)); // Paper - Check distance in entity interactions // TODO Still needed?
+                 this.setDeltaMovement(this.getDeltaMovement().multiply(1.0, 0.0, 1.0));
+                 this.lastYd = 0.0;
+             }
 @@ -805,6 +_,13 @@
  
      @Override
