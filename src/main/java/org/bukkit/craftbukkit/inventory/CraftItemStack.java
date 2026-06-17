@@ -273,19 +273,18 @@ public final class CraftItemStack extends ItemStack {
     // Paper end
 
     @Override
-    public void addUnsafeEnchantment(Enchantment ench, int level) {
-        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
+    public void addUnsafeEnchantment(Enchantment enchant, int level) {
+        Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
 
-        if (!CraftItemStack.makeTag(this.handle)) {
+        // Paper start
+        if (this.handle == null) {
             return;
         }
-        ItemEnchantments list = CraftItemStack.getEnchantmentList(this.handle);
-        if (list == null) {
-            list = ItemEnchantments.EMPTY;
-        }
-        ItemEnchantments.Mutable listCopy = new ItemEnchantments.Mutable(list);
-        listCopy.set(CraftEnchantment.bukkitToMinecraftHolder(ench), level);
-        this.handle.set(DataComponents.ENCHANTMENTS, listCopy.toImmutable());
+
+        EnchantmentHelper.updateEnchantments(this.handle, mutable -> { // data component api doesn't really support mutable things once already set yet
+            mutable.set(CraftEnchantment.bukkitToMinecraftHolder(enchant), level);
+        }, true);
+        // Paper end
     }
 
     static boolean makeTag(net.minecraft.world.item.ItemStack item) {
@@ -311,29 +310,31 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
-    public int removeEnchantment(Enchantment ench) {
-        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
+    public int removeEnchantment(Enchantment enchant) {
+        Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
 
-        ItemEnchantments list = CraftItemStack.getEnchantmentList(this.handle);
-        if (list == null) {
+        // Paper start
+        if (this.handle == null) {
             return 0;
         }
-        int level = this.getEnchantmentLevel(ench);
-        if (level <= 0) {
+
+        ItemEnchantments itemEnchantments = this.handle.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        if (itemEnchantments.isEmpty()) {
             return 0;
         }
-        int size = list.size();
 
-        if (size == 1) {
-            this.handle.remove(DataComponents.ENCHANTMENTS);
-            return level;
+        Holder<net.minecraft.world.item.enchantment.Enchantment> removedEnchantment = CraftEnchantment.bukkitToMinecraftHolder(enchant);
+        if (itemEnchantments.keySet().contains(removedEnchantment)) {
+            int previousLevel = itemEnchantments.getLevel(removedEnchantment);
+
+            ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(itemEnchantments); // data component api doesn't really support mutable things once already set yet
+            mutable.removeIf(enchantment -> enchantment.equals(removedEnchantment));
+            this.handle.set(DataComponents.ENCHANTMENTS, mutable.toImmutable());
+            return previousLevel;
         }
 
-        ItemEnchantments.Mutable listCopy = new ItemEnchantments.Mutable(list);
-        listCopy.set(CraftEnchantment.bukkitToMinecraftHolder(ench), -1); // Negative to remove
-        this.handle.set(DataComponents.ENCHANTMENTS, listCopy.toImmutable());
-
-        return level;
+        return 0;
+        // Paper end
     }
 
     @Override
@@ -345,7 +346,7 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public Map<Enchantment, Integer> getEnchantments() {
-        return CraftItemStack.getEnchantments(this.handle);
+        return this.hasItemMeta() ? this.getItemMeta().getEnchants() : ImmutableMap.<Enchantment, Integer>of(); // Paper - use Item Meta
     }
 
     static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {

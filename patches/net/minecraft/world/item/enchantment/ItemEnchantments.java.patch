@@ -1,0 +1,53 @@
+--- a/net/minecraft/world/item/enchantment/ItemEnchantments.java
++++ b/net/minecraft/world/item/enchantment/ItemEnchantments.java
+@@ -29,10 +_,18 @@
+ import net.minecraft.world.item.component.TooltipProvider;
+ 
+ public class ItemEnchantments implements TooltipProvider {
+-    public static final ItemEnchantments EMPTY = new ItemEnchantments(new Object2IntOpenHashMap<>(), true);
++    // Paper start - sort enchantments
++    private static final java.util.Comparator<Holder<Enchantment>> ENCHANTMENT_ORDER = java.util.Comparator.comparing(Holder::getRegisteredName);
++    public static final ItemEnchantments EMPTY = new ItemEnchantments(new it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER), true);
++    // Paper end - sort enchantments
+     private static final Codec<Integer> LEVEL_CODEC = Codec.intRange(0, 255);
+-    private static final Codec<Object2IntOpenHashMap<Holder<Enchantment>>> LEVELS_CODEC = Codec.unboundedMap(Enchantment.CODEC, LEVEL_CODEC)
+-        .xmap(Object2IntOpenHashMap::new, Function.identity());
++    // Paper start - sort enchantments
++    private static final Codec<it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<Holder<Enchantment>>> LEVELS_CODEC = Codec.unboundedMap(Enchantment.CODEC, LEVEL_CODEC)
++        .xmap(map ->
++            net.minecraft.Util.make(new it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER), m -> m.putAll(map)),
++            Function.identity()
++        );
++    // Paper end - sort enchantments
+     private static final Codec<ItemEnchantments> FULL_CODEC = RecordCodecBuilder.create(
+         p_337961_ -> p_337961_.group(
+                     LEVELS_CODEC.fieldOf("levels").forGetter(p_340785_ -> p_340785_.enchantments),
+@@ -42,16 +_,16 @@
+     );
+     public static final Codec<ItemEnchantments> CODEC = Codec.withAlternative(FULL_CODEC, LEVELS_CODEC, p_340783_ -> new ItemEnchantments(p_340783_, true));
+     public static final StreamCodec<RegistryFriendlyByteBuf, ItemEnchantments> STREAM_CODEC = StreamCodec.composite(
+-        ByteBufCodecs.map(Object2IntOpenHashMap::new, Enchantment.STREAM_CODEC, ByteBufCodecs.VAR_INT),
++        ByteBufCodecs.map((v) -> new it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER), Enchantment.STREAM_CODEC, ByteBufCodecs.VAR_INT), // Paper - sort enchantments
+         p_340784_ -> p_340784_.enchantments,
+         ByteBufCodecs.BOOL,
+         p_330450_ -> p_330450_.showInTooltip,
+         ItemEnchantments::new
+     );
+-    final Object2IntOpenHashMap<Holder<Enchantment>> enchantments;
++    final it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<Holder<Enchantment>> enchantments; // Paper - sort enchantments
+     public final boolean showInTooltip;
+ 
+-    ItemEnchantments(Object2IntOpenHashMap<Holder<Enchantment>> p_341287_, boolean p_330219_) {
++    ItemEnchantments(final it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<Holder<Enchantment>> p_341287_, boolean p_330219_) { // Paper - sort enchantments
+         this.enchantments = p_341287_;
+         this.showInTooltip = p_330219_;
+ 
+@@ -143,7 +_,7 @@
+     }
+ 
+     public static class Mutable {
+-        private final Object2IntOpenHashMap<Holder<Enchantment>> enchantments = new Object2IntOpenHashMap<>();
++        private final it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<Holder<Enchantment>> enchantments = new it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER); // Paper - sort enchantments
+         public boolean showInTooltip;
+ 
+         public Mutable(ItemEnchantments p_330722_) {
