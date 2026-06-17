@@ -1591,6 +1591,15 @@
          this.server
              .getPlayerList()
              .broadcast(
+@@ -1007,7 +_,7 @@
+                 (double)p_8686_.getX(),
+                 (double)p_8686_.getY(),
+                 (double)p_8686_.getZ(),
+-                64.0,
++                64.0, // Paper - diff on change (the 64.0 distance is used as defaults for sound ranges in spigot config for ender dragon, end portal and wither)
+                 this.dimension(),
+                 new ClientboundLevelEventPacket(p_8685_, p_8686_, p_8687_, false)
+             );
 @@ -1019,6 +_,7 @@
  
      @Override
