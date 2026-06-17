@@ -448,7 +448,7 @@
              int i = p_9264_.getCount();
              int j = p_9264_.getDamageValue();
              InteractionResultHolder<ItemStack> interactionresultholder = p_9264_.use(p_9263_, p_9262_, p_9265_);
-@@ -304,24 +_,86 @@
+@@ -304,24 +_,87 @@
          }
      }
  
@@ -504,6 +504,7 @@
 +                // Paper end - Don't resync blocks
 +            } else if (blockstate.getBlock() instanceof net.minecraft.world.level.block.CakeBlock) {
 +                p_9266_.getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
++            // Paper start - extend Player Interact cancellation // TODO: consider merging this into the extracted method
 +            } else if (blockstate.is(net.minecraft.world.level.block.Blocks.JIGSAW) || blockstate.is(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK) || blockstate.getBlock() instanceof net.minecraft.world.level.block.CommandBlock) {
 +                p_9266_.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerClosePacket(this.player.containerMenu.containerId));
 +            }
