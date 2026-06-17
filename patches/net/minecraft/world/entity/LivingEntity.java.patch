@@ -41,7 +41,7 @@
      protected int lerpSteps;
      protected double lerpX;
      protected double lerpY;
-@@ -251,13 +_,39 @@
+@@ -251,14 +_,42 @@
      private float swimAmount;
      private float swimAmountO;
      protected Brain<?> brain;
@@ -78,24 +78,24 @@
      protected LivingEntity(EntityType<? extends LivingEntity> p_20966_, Level p_20967_) {
          super(p_20966_, p_20967_);
 -        this.attributes = new AttributeMap(DefaultAttributes.getSupplier(p_20966_));
+-        this.setHealth(this.getMaxHealth());
 +        this.attributes = new AttributeMap(DefaultAttributes.getSupplier(p_20966_), this); // Purpur
-+        this.initAttributes(); // Purpur
-         this.setHealth(this.getMaxHealth());
-         this.blocksBuilding = true;
-         this.rotA = (float)((Math.random() + 1.0) * 0.01F);
-@@ -267,7 +_,12 @@
-         this.yHeadRot = this.getYRot();
-         NbtOps nbtops = NbtOps.INSTANCE;
-         this.brain = this.makeBrain(new Dynamic<>(nbtops, nbtops.createMap(ImmutableMap.of(nbtops.createString("memories"), nbtops.emptyMap()))));
 +        this.craftAttributes = new org.bukkit.craftbukkit.attribute.CraftAttributeMap(attributes); // CraftBukkit
++        this.initAttributes(); // Purpur
 +        // CraftBukkit - setHealth(getMaxHealth()) inlined and simplified to skip the instanceof check for EntityPlayer, as getBukkitEntity() is not initialized in constructor
 +        this.entityData.set(LivingEntity.DATA_HEALTH_ID, (float) this.getAttribute(Attributes.MAX_HEALTH).getValue());
+         this.blocksBuilding = true;
+         this.rotA = (float)((Math.random() + 1.0) * 0.01F);
+         this.reapplyPosition();
+@@ -269,6 +_,8 @@
+         this.brain = this.makeBrain(new Dynamic<>(nbtops, nbtops.createMap(ImmutableMap.of(nbtops.createString("memories"), nbtops.emptyMap()))));
      }
-+
-+    protected void initAttributes() {} // Purpur
  
++    protected void initAttributes() {} // Purpur
++
      public Brain<?> getBrain() {
          return this.brain;
+     }
 @@ -320,8 +_,11 @@
              .add(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE)
              .add(Attributes.WATER_MOVEMENT_EFFICIENCY)

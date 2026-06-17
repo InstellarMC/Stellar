@@ -1,5 +1,6 @@
 package dev.instellar.stellar.command.brigadier;
 
+import com.destroystokyo.paper.util.SneakyThrow;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -17,6 +18,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -65,42 +67,43 @@ public final class CreateFakePlayersCommand {
     ) throws CommandSyntaxException {
         FakePlayerFactory.unloadLevel(dimension);
 
-        final ReferenceArraySet<ServerPlayer> fakePlayers = new ReferenceArraySet<>();
         final int max = amount + lotNo;
         boolean success = true;
+        @Nullable Object exception = null;
         try {
-            for (; lotNo < max; lotNo++) {
+            while (lotNo++ < max) {
                 final var gameProfile = new GameProfile(UUID.randomUUID(), "FakePlayer" + String.format("%04d", lotNo));
                 final var cookie = CommonListenerCookie.createInitial(gameProfile, false);
                 final var connection = new Connection(PacketFlow.SERVERBOUND);
-                connection.channel = new EmbeddedChannel(connection);
+                connection.channel = new EmbeddedChannel();
                 ServerPlayer fakePlayer = FakePlayerFactory.get(dimension, gameProfile);
-                fakePlayers.add(fakePlayer);
 
                 ctx.getSource().getServer().getPlayerList().placeNewPlayer(connection, fakePlayer, cookie, Optional.empty());
             }
-        } catch (final Exception ignored) {
+        } catch (final Exception e) {
             success = false;
+            exception = e;
         }
 
         if (lotNo != max && !success) {
-            final var message = text("Created").appendSpace().append(text(String.valueOf(lotNo - (max - amount))))
+            final var message = text("Created ").append(text(String.valueOf(lotNo - (max - amount))))
                 // Created X
-                .appendSpace().append(text("/")).appendSpace().append(text(String.valueOf(amount)))
+                .append(text(" / ")).append(text(String.valueOf(amount)))
                 // Created X / Y
-                .appendSpace().append(text("fake players before an error occurred."))
+                .append(text(" fake players before an error occurred."))
                 // Created X / Y fake players before an error occurred.
                 .color(NamedTextColor.RED);
 
             ctx.getSource().getSender().sendMessage(message);
+            SneakyThrow.sneaky((Throwable) exception);
             return lotNo - (max - amount);
         }
 
-        final var message = text("Successfully created").appendSpace().append(text(String.valueOf(amount)))
-            // Successfully created X
-            .appendSpace().append(text("fake players."))
-            // Successfully created X fake players.
-            .color(net.kyori.adventure.text.format.NamedTextColor.GREEN);
+        // Successfully created X fake players.
+        final var message = text("Successfully created ")
+            .append(text(String.valueOf(amount)))
+            .append(text(" fake players."))
+            .color(NamedTextColor.GREEN);
 
         ctx.getSource().getSender().sendMessage(message);
         return amount;
