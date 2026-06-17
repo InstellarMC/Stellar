@@ -1082,7 +1082,7 @@
      public boolean addItem(ItemStack p_36357_) {
          return this.inventory.add(p_36357_);
      }
-@@ -1799,27 +_,59 @@
+@@ -1799,27 +_,63 @@
          }
      }
  
@@ -1091,10 +1091,10 @@
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
 -            this.respawnEntityOnShoulder(this.getShoulderEntityLeft());
 +            // CraftBukkit start
-+            if (this.respawnEntityOnShoulder(this.getShoulderEntityLeft())) {
++            if (this.respawnEntityOnShoulderHasSuccess(this.getShoulderEntityLeft())) {
 +                this.setShoulderEntityLeft(new CompoundTag());
 +            }
-+            if (this.respawnEntityOnShoulder(this.getShoulderEntityRight())) {
++            if (this.respawnEntityOnShoulderHasSuccess(this.getShoulderEntityRight())) {
 +                this.setShoulderEntityRight(new CompoundTag());
 +            }
 +            // CraftBukkit end
@@ -1117,14 +1117,15 @@
 +        if (entity != null) {
              this.setShoulderEntityRight(new CompoundTag());
          }
--    }
--
--    private void respawnEntityOnShoulder(CompoundTag p_36371_) {
 +        return entity;
-+    }
+     }
 +    // Paper - maintain old signature
+ 
+     private void respawnEntityOnShoulder(CompoundTag p_36371_) {
++        this.respawnEntityOnShoulder0(p_36371_);
++    }
 +
-+    private boolean respawnEntityOnShoulder(CompoundTag p_36371_) { // CraftBukkit void->boolean
++    private boolean respawnEntityOnShoulderHasSuccess(CompoundTag p_36371_) { // CraftBukkit void->boolean // Stellar - rename method: resolve Mixin conflicts
 +        return this.respawnEntityOnShoulder0(p_36371_) != null;
 +    }
 +
