@@ -1091,10 +1091,10 @@
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
 -            this.respawnEntityOnShoulder(this.getShoulderEntityLeft());
 +            // CraftBukkit start
-+            if (this.respawnEntityOnShoulderHasSuccess(this.getShoulderEntityLeft())) {
++            if (this.respawnEntityOnShoulderHasResult(this.getShoulderEntityLeft())) {
 +                this.setShoulderEntityLeft(new CompoundTag());
 +            }
-+            if (this.respawnEntityOnShoulderHasSuccess(this.getShoulderEntityRight())) {
++            if (this.respawnEntityOnShoulderHasResult(this.getShoulderEntityRight())) {
 +                this.setShoulderEntityRight(new CompoundTag());
 +            }
 +            // CraftBukkit end
@@ -1125,7 +1125,7 @@
 +        this.respawnEntityOnShoulder0(p_36371_);
 +    }
 +
-+    private boolean respawnEntityOnShoulderHasSuccess(CompoundTag p_36371_) { // CraftBukkit void->boolean // Stellar - rename method: resolve Mixin conflicts
++    private boolean respawnEntityOnShoulderHasResult(CompoundTag p_36371_) { // CraftBukkit void->boolean // Stellar - rename method: resolve Mixin conflicts
 +        return this.respawnEntityOnShoulder0(p_36371_) != null;
 +    }
 +
