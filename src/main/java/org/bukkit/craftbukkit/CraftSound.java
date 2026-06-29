@@ -13,33 +13,27 @@ public class CraftSound {
     public static Sound minecraftToBukkit(SoundEvent minecraft) {
         Preconditions.checkArgument(minecraft != null);
 
-        // Stellar start
-        if (dev.instellar.stellar.configuration.GlobalConfiguration.get().compatibility.ignorePixelmonDeathSound && "pixelmon".equals(minecraft.getLocation().getNamespace())) {
-            return null;
+        // Stellar start: Youer
+        var sound = com.mohistmc.youer.neoforge.NeoForgeInjectBukkit.SOUNDS.get(minecraft);
+        if (sound != null) {
+            return sound;
         }
-        // Stellar end
+        // Stellar end: Youer
 
-        if (Sound.MODD_SOUNDS.containsKey(minecraft)) {
-            return Sound.MODD_SOUNDS.get(minecraft);
-        }
-
-        net.minecraft.core.Registry<SoundEvent> registry = CraftRegistry.getMinecraftRegistry(Registries.SOUND_EVENT);
-        Sound bukkit = Registry.SOUNDS.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.SOUND_EVENT, Registry.SOUNDS);
     }
 
     public static SoundEvent bukkitToMinecraft(Sound bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        if (Sound.MODD_SOUNDS.containsValue(bukkit)) {
-            return Sound.MODD_SOUNDS.inverse().get(bukkit);
+        // Stellar start: Youer
+        var sound = com.mohistmc.youer.neoforge.NeoForgeInjectBukkit.SOUNDS.inverse().get(bukkit);
+        if (sound != null) {
+            return sound;
         }
+        // Stellar end: Youer
 
-        return CraftRegistry.getMinecraftRegistry(Registries.SOUND_EVENT)
-                .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     public static Holder<SoundEvent> bukkitToMinecraftHolder(Sound bukkit) {

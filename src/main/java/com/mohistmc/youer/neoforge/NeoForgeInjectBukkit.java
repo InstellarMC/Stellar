@@ -48,29 +48,30 @@ import org.bukkit.entity.SpawnCategory;
 import org.bukkit.entity.Villager;
 import org.bukkit.potion.PotionType;
 
-public class NeoForgeInjectBukkit {
+@org.jspecify.annotations.NullMarked // Stellar
+public final class NeoForgeInjectBukkit { // Stellar
 
-    public static BiMap<ResourceKey<LevelStem>, World.Environment> environment =
-            HashBiMap.create(ImmutableMap.<ResourceKey<LevelStem>, World.Environment>builder()
-                    .put(LevelStem.OVERWORLD, World.Environment.NORMAL)
-                    .put(LevelStem.NETHER, World.Environment.NETHER)
-                    .put(LevelStem.END, World.Environment.THE_END)
-                    .build());
-
-    public static BiMap<World.Environment, ResourceKey<LevelStem>> environment0 =
-            HashBiMap.create(ImmutableMap.<World.Environment, ResourceKey<LevelStem>>builder()
-                    .put(World.Environment.NORMAL, LevelStem.OVERWORLD)
-                    .put(World.Environment.NETHER, LevelStem.NETHER)
-                    .put(World.Environment.THE_END, LevelStem.END)
-                    .build());
+    // Stellar start
+    // A single BiMap is sufficient here. Guava's BiMap#inverse() returns a
+    // cached inverse view backed by the same underlying data structure rather than
+    // creating a copy, so maintaining a second BiMap would only duplicate state and increase memory usage.
+    //
+    // Keeping a single source of truth also prevents the forward and reverse maps
+    // from becoming inconsistent when custom dimensions/environments are
+    // added or removed dynamically at runtime.
+    public static BiMap<ResourceKey<LevelStem>, World.Environment> ENVIRONMENTS = net.minecraft.Util.make(HashBiMap.create(), (map) -> {
+        map.put(LevelStem.OVERWORLD, World.Environment.NORMAL);
+        map.put(LevelStem.NETHER, World.Environment.NETHER);
+        map.put(LevelStem.END, World.Environment.THE_END);
+    });
+    // Stellar end
 
     public static Map<Villager.Profession, ResourceLocation> profession = new HashMap<>();
     public static Map<org.bukkit.attribute.Attribute, ResourceLocation> attributemap = new HashMap<>();
     public static Map<StatType<?>, Statistic> statisticMap = new HashMap<>();
     public static Map<net.minecraft.world.level.biome.Biome, Biome> biomeBiomeMap = new HashMap<>();
-    public static Map<MobCategory, SpawnCategory> spawnCategoryMap = new HashMap<>();
-    public static Map<SpawnCategory, MobCategory> CategoryspawnMap = new HashMap<>();
-
+    public static Map<SpawnCategory, MobCategory> MOB_CATEGORIES = new HashMap<>();
+    public static final BiMap<SoundEvent, Sound> SOUNDS = HashBiMap.create();
 
     public static void init() {
         addEnumMaterialInItems();
@@ -194,13 +195,12 @@ public class NeoForgeInjectBukkit {
         int i = World.Environment.values().length;
         for (Entry<ResourceKey<LevelStem>, LevelStem> entry : registry.entrySet()) {
             ResourceKey<LevelStem> key = entry.getKey();
-            World.Environment environment1 = environment.get(key);
+            World.Environment environment1 = ENVIRONMENTS.get(key);
             if (environment1 == null) {
                 String name = MohistDynamEnum.normalizeName(key.location().toString());
                 int id = i - 1;
                 environment1 = MohistDynamEnum.addEnum(World.Environment.class, name, List.of(Integer.TYPE), List.of(id));
-                environment.put(key, environment1);
-                environment0.put(environment1, key);
+                ENVIRONMENTS.put(key, environment1);
                 Youer.LOGGER.debug("Registered forge DimensionType as environment {}", environment1);
                 i++;
             }
@@ -272,8 +272,7 @@ public class NeoForgeInjectBukkit {
             } catch (Exception e) {
                 String name = category.name();
                 SpawnCategory spawnCategory = MohistDynamEnum.addEnum(SpawnCategory.class, name);
-                spawnCategoryMap.put(category, spawnCategory);
-                CategoryspawnMap.put(spawnCategory, category);
+                MOB_CATEGORIES.put(spawnCategory, category);
                 spawnCategory.isMods = true;
                 Youer.LOGGER.debug("Registered forge MobCategory as SpawnCategory(Bukkit) {}", spawnCategory);
             }
@@ -316,7 +315,7 @@ public class NeoForgeInjectBukkit {
             if (isMods(resourceLocation)) {
                 String name = resourceLocation.getPath().replace(".", "_").toUpperCase(Locale.ROOT);
                 Sound sound = MohistDynamEnum.addEnum(Sound.class, name, List.of(String.class), List.of(resourceLocation.toString()));
-                Sound.MODD_SOUNDS.put(statType, sound);
+                SOUNDS.put(statType, sound);
                 Youer.LOGGER.debug("Registered mods SoundEvent as Sound(Bukkit) {}", sound.name());
             }
         }

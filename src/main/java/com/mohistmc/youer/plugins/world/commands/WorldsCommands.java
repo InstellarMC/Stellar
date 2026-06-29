@@ -68,7 +68,7 @@ public class WorldsCommands extends Command {
                 if (Bukkit.getWorld(args[1]) == null) {
                     DemoGUI wh = new DemoGUI(I18n.as("worldmanage.gui.title0") + worldName);
                     List<String> environments = new ArrayList<>();
-                    for (World.Environment environment : NeoForgeInjectBukkit.environment.values()) {
+                    for (World.Environment environment : NeoForgeInjectBukkit.ENVIRONMENTS.values()) { // Stellar
                         environments.add(environment.name());
                     }
                     environments.add("VOID");

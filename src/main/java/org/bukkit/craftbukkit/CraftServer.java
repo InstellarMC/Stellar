@@ -1384,7 +1384,7 @@ public final class CraftServer implements Server {
             biomeProvider = this.getBiomeProvider(name);
         }
 
-        ResourceKey<LevelStem> actualDimension = NeoForgeInjectBukkit.environment0.get(creator.environment());
+        ResourceKey<LevelStem> actualDimension = NeoForgeInjectBukkit.ENVIRONMENTS.inverse().get(creator.environment()); // Stellar
         LevelStorageSource.LevelStorageAccess worldSession;
         try {
             worldSession = LevelStorageSource.createDefault(this.getWorldContainer().toPath()).validateAndCreateAccess(name, actualDimension);

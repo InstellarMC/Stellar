@@ -576,7 +576,7 @@
 +                    }
 +                }
 +                com.mohistmc.youer.neoforge.NeoForgeInjectBukkit.addEnumEnvironment(this.registryAccess().registryOrThrow(Registries.LEVEL_STEM));
-+                Level.craftWorldData(com.mohistmc.youer.neoforge.NeoForgeInjectBukkit.environment.get(resourcekey), this.server.getGenerator(name), this.server.getBiomeProvider(name));
++                Level.craftWorldData(com.mohistmc.youer.neoforge.NeoForgeInjectBukkit.ENVIRONMENTS.get(resourcekey), this.server.getGenerator(name), this.server.getBiomeProvider(name));
                  ServerLevel serverlevel1 = new ServerLevel(
                      this,
                      this.executor,

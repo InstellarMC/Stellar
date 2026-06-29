@@ -7,11 +7,11 @@ import org.bukkit.entity.SpawnCategory;
 public class CraftSpawnCategory {
 
     public static boolean isValidForLimits(SpawnCategory spawnCategory) {
-        return spawnCategory != null && (spawnCategory.isMods || spawnCategory.ordinal() < SpawnCategory.MISC.ordinal()); // Youer - fix mod
+        return spawnCategory != null && (spawnCategory.isMods || spawnCategory.ordinal() < SpawnCategory.MISC.ordinal()); // Stellar: Youer
     }
 
     public static String getConfigNameSpawnLimit(SpawnCategory spawnCategory) {
-        if (spawnCategory.isMods) return "spawn-limits.mods." + spawnCategory.name().toLowerCase();
+        if (spawnCategory.isMods) return "spawn-limits.mods." + spawnCategory.name().toLowerCase(); // Stellar: Youer
         return switch (spawnCategory) {
             case MONSTER -> "spawn-limits.monsters";
             case ANIMAL -> "spawn-limits.animals";
@@ -25,7 +25,7 @@ public class CraftSpawnCategory {
     }
 
     public static String getConfigNameTicksPerSpawn(SpawnCategory spawnCategory) {
-        if (spawnCategory.isMods) return "ticks-per." + spawnCategory.name().toLowerCase();
+        if (spawnCategory.isMods) return "ticks-per." + spawnCategory.name().toLowerCase(); // Stellar: Youer
         return switch (spawnCategory) {
             case MONSTER -> "ticks-per.monster-spawns";
             case ANIMAL -> "ticks-per.animal-spawns";
@@ -56,14 +56,21 @@ public class CraftSpawnCategory {
             case WATER_AMBIENT -> SpawnCategory.WATER_AMBIENT;
             case UNDERGROUND_WATER_CREATURE -> SpawnCategory.WATER_UNDERGROUND_CREATURE;
             case MISC -> SpawnCategory.MISC;
-            default -> SpawnCategory.valueOf(enumCreatureType.name());
+            // Stellar start: Youer
+            default -> {
+                var spawnCategory = SpawnCategory.valueOf(enumCreatureType.name());
+                if (spawnCategory.isMods) {
+                    yield spawnCategory;
+                }
+
+                throw new UnsupportedOperationException("Unknown EnumCreatureType " + enumCreatureType + " for SpawnCategory");
+            }
+            // Stellar end: Youer
         };
     }
 
     public static MobCategory toNMS(SpawnCategory spawnCategory) {
-        if (spawnCategory.isMods) {
-            return NeoForgeInjectBukkit.CategoryspawnMap.get(spawnCategory);
-        }
+        if (spawnCategory.isMods) return NeoForgeInjectBukkit.MOB_CATEGORIES.get(spawnCategory); // Stellar: Youer
         return switch (spawnCategory) {
             case MONSTER -> MobCategory.MONSTER;
             case ANIMAL -> MobCategory.CREATURE;

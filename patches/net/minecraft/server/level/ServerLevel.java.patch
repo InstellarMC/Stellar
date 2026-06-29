@@ -437,7 +437,7 @@
 +        }
 +        ChunkGenerator chunkgenerator = worlddimension.generator();
 +        if (environment == null) {
-+            environment = com.mohistmc.youer.neoforge.NeoForgeInjectBukkit.environment.get(getTypeKey());
++            environment = com.mohistmc.youer.neoforge.NeoForgeInjectBukkit.ENVIRONMENTS.get(getTypeKey());
 +        }
 +        if (biomeProvider != null) {
 +            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(K, convertable_conversionsession, environment, worlddimension.type().value(), chunkgenerator, minecraftserver.registryAccess());
