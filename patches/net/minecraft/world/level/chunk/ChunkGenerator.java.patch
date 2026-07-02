@@ -80,6 +80,27 @@
                  blockpos$mutableblockpos.set(SectionPos.sectionToBlockCoord(chunkpos.x, 8), 32, SectionPos.sectionToBlockCoord(chunkpos.z, 8));
                  double d1 = blockpos$mutableblockpos.distSqr(p_223185_);
                  boolean flag = pair == null || d1 < d0;
+@@ -258,11 +_,16 @@
+         int i = p_223197_.spacing();
+ 
+         for (int j = -p_223194_; j <= p_223194_; j++) {
+-            boolean flag = j == -p_223194_ || j == p_223194_;
++            // Paper start - Perf: iterate over border chunks instead of entire square chunk area
++            final int radius = p_223194_; // OBFHELPER
++            final boolean xEdge = j == -radius || j == radius;
+ 
+-            for (int k = -p_223194_; k <= p_223194_; k++) {
+-                boolean flag1 = k == -p_223194_ || k == p_223194_;
+-                if (flag || flag1) {
++            for (int z = -radius; z <= radius; z += xEdge ? 1 : radius * 2) {
++                // boolean zEdge = z == -radius || z == radius;
++                // if (xEdge || zEdge) {
++                if (true) {
++                    final int k = z; // OBFHELPER
++                    // Paper end - Perf: iterate over border chunks instead of entire square chunk area
+                     int l = p_223192_ + i * j;
+                     int i1 = p_223193_ + i * k;
+                     ChunkPos chunkpos = p_223197_.getPotentialStructureChunk(p_223196_, l, i1);
 @@ -293,7 +_,7 @@
                      return Pair.of(p_223203_.getLocatePos(p_223204_), holder);
                  }
